@@ -11,23 +11,12 @@ import torch.fx as fx
 import pytest
 
 from growingnn.actions.utils.model_transformations import add_new_residual_layer, _find_call_module
-
-
-class ModelSimpleTest(nn.Module): 
-    def __init__(self):
-        super().__init__()
-        self.l1 = nn.Linear(4, 4)
-        self.l2 = nn.Linear(4, 4)
-    
-    def forward(self, x):
-        x = self.l1(x)
-        x = self.l2(x)
-        return x
+from tests.model_factory import ModelFactory
 
 @pytest.mark.description("Finding a non-existing layer should raise a ValueError")
 def test_finding_non_existing_layer_should_raise_value_error():
     # Arrange
-    model = ModelSimpleTest() 
+    model = ModelFactory.simple_chain_2()
     not_existing_layer_name = "res1"
     existing_layer_name = "l1"
     gm = fx.symbolic_trace(model)
@@ -41,7 +30,7 @@ def test_finding_non_existing_layer_should_raise_value_error():
 @pytest.mark.description("Residual branch uses zero weights, so output should match the graph before the edit.")
 def test_adding_residual_layer_without_change():
     # Arrange
-    model = ModelSimpleTest() 
+    model = ModelFactory.simple_chain_2()
     x = torch.randn(1, 4)
     gm = fx.symbolic_trace(model) 
     y_initial = gm(x)
@@ -59,7 +48,7 @@ def test_adding_residual_layer_without_change():
 @pytest.mark.description("Adding a residual layer should add a new module to the graph")
 def test_adding_residual_layer_should_add_new_module_to_graph():
     # Arrange
-    model = ModelSimpleTest() 
+    model = ModelFactory.simple_chain_2()
     new_layer_name = "res1"
     gm = fx.symbolic_trace(model) 
 

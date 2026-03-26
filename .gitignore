@@ -1,0 +1,71 @@
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Packaging / install
+build/
+dist/
+*.egg-info/
+*.egg
+pip-wheel-metadata/
+
+# Testing & coverage
+.pytest_cache/
+.pytest_tmp/
+junit.xml
+report.xml
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Type checkers / linters
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# IDE / editors (uncomment if you want to ignore)
+# .idea/
+# .vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs & temp
+*.log
+*.tmp
+*.temp
+.cache/
+
+# Pipenv (keep `Pipfile` tracked; ignore lock if you prefer local-only resolution)
+Pipfile.lock
+Pipfile
+
+# uv / PDM (optional toolchains)
+.uv/
+uv.lock
+.pdm-python
+.pdm-build/
+__pypackages__/
