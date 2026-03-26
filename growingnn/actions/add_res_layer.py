@@ -1,6 +1,7 @@
 
 from torch import fx, nn
 
+from growingnn.actions.utils.layer_Factory import LinearFactory
 from growingnn.actions.utils.model_analyser import module_dependency_pairs
 from growingnn.actions.utils.model_transformations import add_new_residual_layer
 from .action import Action, Layer_Type
@@ -19,10 +20,15 @@ class AddResLayer(Action):
         actions = []
         pairs = module_dependency_pairs(model)
         for layer_from_id, layer_to_id in pairs:
+            layer_from = getattr(model, layer_from_id, None)
             layer_to = getattr(model, layer_to_id, None)
+
+            layer_from_out_features = layer_from.out_features
+            layer_to_in_features = layer_to.in_features
             if not isinstance(layer_to, nn.modules.conv._ConvNd):
-                for layer_type in Layer_Type:
-                    actions.append(AddResLayer([layer_from_id, layer_to_id, layer_type]))
+                for type in Layer_Type:
+                    layer = LinearFactory.create_linear(layer_from_out_features, layer_to_in_features, type)
+                    actions.append(AddResLayer([layer_from_id, layer_to_id, layer]))
         return actions
     
     def __str__(self):

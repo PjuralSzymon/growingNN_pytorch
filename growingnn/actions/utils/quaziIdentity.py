@@ -1,6 +1,7 @@
-from collections import OrderedDict
 import numpy as np
 import cv2 as cv
+
+import growingnn.config as config
 
 
 class LRUCache:

@@ -13,7 +13,7 @@ import pytest
 from growingnn.actions.utils.model_transformations import add_new_residual_layer, _find_call_module
 from tests.model_factory import ModelFactory
 
-@pytest.mark.description("Finding a non-existing layer should raise a ValueError")
+"Finding a non-existing layer should raise a ValueError"
 def test_finding_non_existing_layer_should_raise_value_error():
     # Arrange
     model = ModelFactory.simple_chain_2()
@@ -27,7 +27,7 @@ def test_finding_non_existing_layer_should_raise_value_error():
     with pytest.raises(ValueError, match="No call_module node"):
         _find_call_module(nodes, not_existing_layer_name)
 
-@pytest.mark.description("Residual branch uses zero weights, so output should match the graph before the edit.")
+"Residual branch uses zero weights, so output should match the graph before the edit."
 def test_adding_residual_layer_without_change():
     # Arrange
     model = ModelFactory.simple_chain_2()
@@ -45,7 +45,7 @@ def test_adding_residual_layer_without_change():
     #Assert
     assert torch.allclose(y_after, y_initial)
 
-@pytest.mark.description("Adding a residual layer should add a new module to the graph")
+"Adding a residual layer should add a new module to the graph"
 def test_adding_residual_layer_should_add_new_module_to_graph():
     # Arrange
     model = ModelFactory.simple_chain_2()

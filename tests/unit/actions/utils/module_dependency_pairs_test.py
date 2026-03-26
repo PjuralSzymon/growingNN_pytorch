@@ -13,7 +13,7 @@ from growingnn.actions.utils.model_analyser import module_dependency_pairs
 from tests.model_factory import ModelFactory
 
 
-@pytest.mark.description("Module dependency pairs should be correct for a linear chain of modules")
+"Module dependency pairs should be correct for a linear chain of modules"
 def test_module_dependency_pairs_linear_chain():
     # Arrange
     model = ModelFactory.simple_chain_3()
@@ -27,7 +27,7 @@ def test_module_dependency_pairs_linear_chain():
         ("l2", "l3"),
     }
 
-@pytest.mark.description("With a residual branch, l1 also reaches l4 directly; pairs include (l1,l4) in addition to the chain.")
+"With a residual branch, l1 also reaches l4 directly; pairs include (l1,l4) in addition to the chain."
 def test_module_dependency_pairs_with_residual_skip():
     # Arrange
     model = ModelFactory.residual_skip()
