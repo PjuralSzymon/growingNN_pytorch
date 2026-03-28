@@ -39,8 +39,8 @@ class LinearFactory:
     @staticmethod
     def create_random_linear(in_features: int, out_features: int) -> nn.Linear:
         layer = nn.Linear(in_features, out_features)
-        layer.weight.data.random_(0, 1)
-        layer.bias.data.random_(0, 1)
+        layer.weight.data.normal_(0.0, 0.01)
+        layer.bias.data.normal_(0.0, 0.01)
         return layer
 
     @staticmethod

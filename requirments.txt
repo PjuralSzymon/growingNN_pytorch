@@ -2,3 +2,6 @@ numpy>=1.22.0
 torch>=2.0.0
 opencv-python>=4.5.0
 pytest>=7.0.0
+pydot>=1.4.0
+graphviz>=0.20
+matplotlib>=3.5.0

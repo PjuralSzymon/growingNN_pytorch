@@ -12,7 +12,7 @@ def _find_call_module(nodes, target_name):
     )
 
 
-def add_new_residual_layer(gm, src_name, dst_name, new_layer, name="res_layer"):
+def add_new_residual_layer(gm, src_name, dst_name, new_layer, name):
     nodes = list(gm.graph.nodes)
 
     gm.add_module(name, new_layer)

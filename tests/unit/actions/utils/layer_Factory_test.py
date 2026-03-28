@@ -11,7 +11,7 @@ if str(_REPO_ROOT) not in sys.path:
 from growingnn.actions.utils.layer_Factory import LinearFactory
 
 
-@pytest.mark.description("create_zero_linear sets weight and bias to all zeros")
+"create_zero_linear sets weight and bias to all zeros"
 def test_create_zero_linear_has_zero_weights_and_bias():
     layer = LinearFactory.create_zero_linear(in_features=5, out_features=7)
     assert torch.all(layer.weight == 0)
