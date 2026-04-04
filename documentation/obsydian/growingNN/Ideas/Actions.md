@@ -1,1 +1,1 @@
-1. Actions need a deeperer research in terms of what configuration can be best for global use, fo example how to configure weight initalization range for non zero residual layers
+1. Actions need deeper research in terms of what configuration can be best for global use, for example how to configure weight initialization range for non-zero residual layers.

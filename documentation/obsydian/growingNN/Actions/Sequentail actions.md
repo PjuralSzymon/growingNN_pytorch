@@ -1,6 +1,5 @@
-In orignal paper for groiwngNN adding sequentail layers is very simple becoause layer is allways conencted wiht a activation funciton and nodes are pretty stanalone toolls but in pytorch everything can me a module and it's hard to rpedict what it iwll be in a every use case so even if a fucntion that going over layers called: 
+In the original paper for growingNN, adding sequential layers is very simple because a layer is always connected with an activation function and nodes are pretty standalone tools, but in PyTorch everything can be a module and it is hard to predict what it will be in every use case. So even if a function that goes over layers is called:
 module_sequential_pairs(...)
-Will only return pair of layers palced sequentailly it is a posisble that beetwen thsoe layers there will be some activation function or something even diffrent and custom so to go around this, we are adding the following logic
+it will only return pairs of layers placed sequentially, it is possible that between those layers there will be some activation function or something even different and custom. To work around this, we are adding the following logic:
 
-To palced a laer beetwen l1 ->l2 wirh start with l2 and go backward until you find l1 
-and then add the new layer on apath to l1 form l2 but jsut before l2 this way we can handle what ever will be palced beetwen l1 and l2 with an idea that everyhint beetwen those 2 layers will be a part of l1 just like act funcitons not a part of l2 
+To place a layer between l1 -> l2, we start with l2 and go backward until we find l1, and then add the new layer on a path from l2 to l1 but just before l2. This way we can handle whatever will be placed between l1 and l2, with the idea that everything between those two layers will be a part of l1, just like activation functions, not a part of l2.
