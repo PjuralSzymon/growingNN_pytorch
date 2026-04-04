@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "7085b1c10d9f3b82",
+        "id": "0e2c165d9bb692f1",
         "type": "tabs",
         "children": [
           {
-            "id": "d838444ad6861ec8",
+            "id": "63e363e17cdd2fe8",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -19,22 +19,6 @@
               },
               "icon": "lucide-file",
               "title": "Adding residual layers"
-            }
-          }
-        ]
-      },
-      {
-        "id": "0e2c165d9bb692f1",
-        "type": "tabs",
-        "children": [
-          {
-            "id": "63e363e17cdd2fe8",
-            "type": "leaf",
-            "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Podgląd grafu"
             }
           }
         ]
@@ -199,10 +183,13 @@
       "bases:Stwórz nową bazę danych": false
     }
   },
-  "active": "d838444ad6861ec8",
+  "active": "63e363e17cdd2fe8",
   "lastOpenFiles": [
-    "Pasted image 20260404172754.png",
+    "Pasted image 20260404173518.png",
+    "Pasted image 20260404173508.png",
+    "Bez nazwy.canvas",
     "Adding residual layers.md",
+    "Pasted image 20260404172754.png",
     "tests/regression",
     "tests",
     "Witaj.md",
