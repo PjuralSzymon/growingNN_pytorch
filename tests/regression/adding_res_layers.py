@@ -57,5 +57,5 @@ if __name__ == "__main__":
     plt.xlabel("step")
     plt.show()
 
-    if args.save_output:
+    if not args.save_output:
         clear_regression_folder()
