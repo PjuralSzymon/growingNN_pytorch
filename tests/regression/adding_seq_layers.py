@@ -8,21 +8,21 @@ import torch
 import torch.fx as fx
 from torch.fx.passes.graph_drawer import FxGraphDrawer
 
-
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from growingnn.actions.action import Layer_Type
-from growingnn.actions.add_res_layer import AddResLayer
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from tests.model_factory import ModelFactory
 from tests.regression.regression_utils import FOLDER_NAME, clear_regression_folder, parse_regression_cli
+from growingnn.actions.add_seq_layer import AddSeqLayer
+
 
 
 if __name__ == "__main__":
     args = parse_regression_cli()
-    model = ModelFactory.simple_chain_3()
+    model = ModelFactory.simple_chain_2_diffrent_input_output_features()
     gm = fx.symbolic_trace(model)
     executed_actions = []
     x = torch.randn(2, 4)
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     # Act
     id = 0
     for _ in range(30):
-        actions: List[AddResLayer] = AddResLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])
+        actions: List[AddSeqLayer] = AddSeqLayer.generate_all_actions(gm)
         id += 1
         idx = rng.randrange(len(actions))
         print(f"idx: {id} " + "--------------------------------")

@@ -10,7 +10,12 @@ import torch.nn as nn
 import torch.fx as fx
 import pytest
 
-from growingnn.actions.utils.model_transformations import add_new_residual_layer, _find_call_module
+from growingnn.actions.utils.layer_Factory import Layer_Type, LinearFactory
+from growingnn.actions.utils.model_transformations import (
+    add_new_residual_layer,
+    add_new_seq_layer,
+    _find_call_module,
+)
 from tests.model_factory import ModelFactory
 
 "Finding a non-existing layer should raise a ValueError"
@@ -58,6 +63,28 @@ def test_adding_residual_layer_should_add_new_module_to_graph():
 
     #Assert
     assert _find_call_module(nodes, new_layer_name) is not None
+
+
+"EYE linear inserted between l1 and l2 leaves the forward pass unchanged."
+def test_add_seq_layer_eye_preserves_output_simple_chain():
+    model = ModelFactory.simple_chain_2()
+    x = torch.randn(2, 4)
+    gm = fx.symbolic_trace(model)
+    y0 = gm(x)
+    layer = LinearFactory.create_linear(4, 4, Layer_Type.EYE)
+    add_new_seq_layer(gm, "l1", "l2", layer, name="seq1")
+    assert torch.allclose(gm(x), y0)
+
+
+"Insert only on the l1→l4 branch; l1→l2→l3 path must stay valid."
+def test_add_seq_layer_eye_between_l1_and_l4_on_residual_skip():
+    model = ModelFactory.residual_skip()
+    x = torch.randn(2, 4)
+    gm = fx.symbolic_trace(model)
+    y0 = gm(x)
+    layer = LinearFactory.create_linear(4, 4, Layer_Type.EYE)
+    add_new_seq_layer(gm, "l1", "l4", layer, name="seq_l1_l4")
+    assert torch.allclose(gm(x), y0)
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ if str(_REPO_ROOT) not in sys.path:
 
 import pytest
 
-from growingnn.actions.utils.model_analyser import module_dependency_pairs
+from growingnn.actions.utils.model_analyser import module_dependency_pairs, module_sequential_pairs
 from tests.model_factory import ModelFactory
 
 
@@ -40,6 +40,24 @@ def test_module_dependency_pairs_with_residual_skip():
         ("l1", "l4"),
         ("l2", "l3"),
     }
+
+
+"Sequential pairs are only immediate module-to-module steps along the graph."
+def test_module_sequential_pairs_linear_chain():
+    model = ModelFactory.simple_chain_3()
+    gm = fx.symbolic_trace(model)
+    assert set(module_sequential_pairs(gm)) == {("l1", "l2"), ("l2", "l3")}
+
+
+def test_module_sequential_pairs_with_residual_skip():
+    model = ModelFactory.residual_skip()
+    gm = fx.symbolic_trace(model)
+    assert set(module_sequential_pairs(gm)) == {
+        ("l1", "l2"),
+        ("l1", "l4"),
+        ("l2", "l3"),
+    }
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

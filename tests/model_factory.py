@@ -17,6 +17,20 @@ class ModelFactory:
 
         return ModelSimpleTest()
 
+    def simple_chain_2_diffrent_input_output_features() -> nn.Module:
+        class ModelSimpleTest(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.l1 = nn.Linear(4, 3)
+                self.l2 = nn.Linear(3, 2)
+
+            def forward(self, x):
+                x = self.l1(x)
+                x = self.l2(x)
+                return x
+
+        return ModelSimpleTest()
+
     @staticmethod
     def simple_chain_3() -> nn.Module:
         class ModelSimpleTest(nn.Module):

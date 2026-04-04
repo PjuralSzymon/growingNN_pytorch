@@ -23,3 +23,27 @@ def module_dependency_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
                 edges.append((src, str(cur.target)))
             stack.extend(cur.users)
     return list(dict.fromkeys(edges))
+    
+
+def module_sequential_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str, str]]:
+    """
+    This function returns all ``(ancestor, descendant)`` pairs that are next to each other in the model.
+    For ``l1 -> l2 -> l3`` this yields ``(l1,l2), (l2,l3)``.
+    """
+    gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
+    edges: list[tuple[str, str]] = []
+    for n in gm.graph.nodes:
+        if n.op != "call_module":
+            continue
+        src = str(n.target)
+        stack, seen = list(n.users), set()
+        while stack:
+            cur = stack.pop()
+            if cur in seen:
+                continue
+            seen.add(cur)
+            if cur.op == "call_module":
+                edges.append((src, str(cur.target)))
+                continue
+            stack.extend(cur.users)
+    return list(dict.fromkeys(edges))

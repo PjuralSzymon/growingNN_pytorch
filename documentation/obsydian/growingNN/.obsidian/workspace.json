@@ -54,8 +54,37 @@
               "icon": "lucide-file",
               "title": "Part 1"
             }
+          },
+          {
+            "id": "9c0af402949a371b",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Reports/TODO.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "TODO"
+            }
+          },
+          {
+            "id": "eadbda1b8bf8cf0b",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "tests/regression/Adding Sequential Layers.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Adding Sequential Layers"
+            }
           }
-        ]
+        ],
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -128,7 +157,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Reports/Part 1.md",
+                "file": "tests/regression/Adding Sequential Layers.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -138,7 +167,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Linki zwrotne do Part 1"
+              "title": "Linki zwrotne do Adding Sequential Layers"
             }
           },
           {
@@ -147,12 +176,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Reports/Part 1.md",
+                "file": "tests/regression/Adding Sequential Layers.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Łącza wychodzące od Part 1"
+              "title": "Łącza wychodzące od Adding Sequential Layers"
             }
           },
           {
@@ -190,13 +219,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Reports/Part 1.md",
+                "file": "tests/regression/Adding Sequential Layers.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Konspekt Part 1"
+              "title": "Konspekt Adding Sequential Layers"
             }
           }
         ]
@@ -217,12 +246,19 @@
       "bases:Stwórz nową bazę danych": false
     }
   },
-  "active": "b756425f231e08c3",
+  "active": "eadbda1b8bf8cf0b",
   "lastOpenFiles": [
+    "Pasted image 20260404192232.png",
+    "Pasted image 20260404192219.png",
+    "tests/regression/Pasted image 20260404174521.png",
+    "tests/regression/Adding Sequential Layers.md",
+    "tests/regression/Pasted image 20260404192146.png",
     "tests/regression/Adding residual layers.md",
-    "tests/regression/Pasted image 20260404173955.png",
-    "Pasted image 20260404174521.png",
+    "Actions/Sequentail actions.md",
+    "Reports/TODO.md",
+    "Actions",
     "Reports/Part 1.md",
+    "tests/regression/Pasted image 20260404173955.png",
     "Ideas/Actions.md",
     "Reports",
     "Ideas",
