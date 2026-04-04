@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 
 from growingnn.actions.utils import quaziIdentity
+from growingnn.config import ADDING_RES_LAYERS_WEIGHT_INITIALIZATION_RANGE
 
 
 class Layer_Type(Enum):
@@ -38,9 +39,10 @@ class LinearFactory:
 
     @staticmethod
     def create_random_linear(in_features: int, out_features: int) -> nn.Linear:
+        mean, std = ADDING_RES_LAYERS_WEIGHT_INITIALIZATION_RANGE
         layer = nn.Linear(in_features, out_features)
-        layer.weight.data.normal_(0.0, 0.01)
-        layer.bias.data.normal_(0.0, 0.01)
+        layer.weight.data.normal_(mean, std)
+        layer.bias.data.normal_(mean, std)
         return layer
 
     @staticmethod
