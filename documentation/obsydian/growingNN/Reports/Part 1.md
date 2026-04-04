@@ -1,0 +1,2 @@
+(03.2026 - ...)
+1. During testing it seemed like a waste of reserces setting residual layers to quazi identitiy weight initalization. That;s why it was changed and the weight intialization for residual layers were only set to zero or random initalizaiton close to zero, where in orignal paper it was tree types zero, Qidentiti and random

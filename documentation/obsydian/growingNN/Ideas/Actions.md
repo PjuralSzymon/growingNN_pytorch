@@ -1,0 +1,1 @@
+1. Actions need a deeperer research in terms of what configuration can be best for global use, fo example how to configure weight initalization range for non zero residual layers
