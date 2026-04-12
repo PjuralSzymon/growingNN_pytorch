@@ -17,6 +17,28 @@ class ModelFactory:
 
         return ModelSimpleTest()
 
+    @staticmethod
+    def simple_conv_chain_2() -> nn.Module:
+        class ModelSimpleConvTest(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.c1 = nn.Conv2d(4, 4, kernel_size=3, stride=1, padding=1)
+                self.c2 = nn.Conv2d(4, 4, kernel_size=3, stride=1, padding=1)
+                self.pool = nn.AdaptiveAvgPool2d(1)
+                self.l1 = nn.Linear(4, 4)
+                self.l2 = nn.Linear(4, 4)
+
+            def forward(self, x):
+                x = self.c1(x)
+                x = self.c2(x)
+                x = self.pool(x)
+                x = x.flatten(1)
+                x = self.l1(x)
+                x = self.l2(x)
+                return x
+
+        return ModelSimpleConvTest()
+
     def simple_chain_2_diffrent_input_output_features() -> nn.Module:
         class ModelSimpleTest(nn.Module):
             def __init__(self):

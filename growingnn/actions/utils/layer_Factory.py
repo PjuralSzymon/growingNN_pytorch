@@ -54,3 +54,18 @@ class LinearFactory:
         layer.bias.data.zero_()
         return layer
 
+class ConvFactory:
+
+    @staticmethod
+    def create_conv(in_channels: int, out_channels: int, kernel_size: int, stride: int, padding: int, type: Layer_Type) -> nn.Conv2d:
+        if type == Layer_Type.ZERO:
+            return ConvFactory.create_zero_conv(in_channels, out_channels, kernel_size, stride, padding)
+        else:
+            raise ValueError(f"Unsupported layer type: {type}")
+
+    @staticmethod
+    def create_zero_conv(in_channels: int, out_channels: int, kernel_size: int, stride: int, padding: int) -> nn.Conv2d:
+        layer = nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding)
+        layer.weight.data.zero_()
+        layer.bias.data.zero_()
+        return layer
