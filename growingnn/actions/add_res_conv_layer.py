@@ -3,6 +3,8 @@ from typing import List
 from torch import ceil, clip, floor, fx, nn
 import torch
 
+from growingnn import config
+from growingnn.actions.utils.conv_to_linear_adapter import can_insert_conv_before_linear
 from growingnn.actions.utils.layer_Factory import ConvFactory, LinearFactory
 from growingnn.actions.utils.model_analyser import module_dependency_pairs
 from growingnn.actions.utils.name_factory import unique_call_module_name
@@ -34,8 +36,8 @@ class AddResConvLayer(Action):
             layer_from = getattr(model, layer_from_id, None)
             layer_to = getattr(model, layer_to_id, None)
             if  isinstance(layer_from, nn.modules.conv._ConvNd):
+                name = unique_call_module_name(name_prefix, model)
                 if  isinstance(layer_to, nn.modules.conv._ConvNd):
-                    name = unique_call_module_name(name_prefix, model)
                     layer = ConvFactory.create_zero_conv(
                         in_channels=layer_from.out_channels,
                         out_channels=layer_from.out_channels,
@@ -44,7 +46,17 @@ class AddResConvLayer(Action):
                         padding=layer_from.padding
                     )
                     actions.append(AddResConvLayer([layer_from_id, layer_to_id, layer, name]))
-                                
+                elif  isinstance(layer_to, nn.modules.Linear):
+                    if can_insert_conv_before_linear(layer_from.out_channels, layer_to.in_features):
+                        layer = ConvFactory.create_zero_conv_before_linear(
+                            in_channels=layer_from.out_channels,
+                            out_channels=layer_from.out_channels,
+                            kernel_size=layer_from.kernel_size,
+                            stride=1,
+                            padding=layer_from.padding
+                        )
+                        actions.append(AddResConvLayer([layer_from_id, layer_to_id, layer, name]))
+                                    
         return actions
     
     def __str__(self):

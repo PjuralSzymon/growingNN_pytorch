@@ -2,6 +2,9 @@
 from typing import List
 
 from torch import fx, nn
+
+from growingnn import config
+from growingnn.actions.utils.conv_to_linear_adapter import can_insert_conv_before_linear
 from .action import Action, Layer_Type
 
 from growingnn.actions.utils.layer_Factory import ConvFactory, LinearFactory
@@ -30,9 +33,9 @@ class AddSeqConvLayer(Action):
 
             if  isinstance(layer_from, nn.modules.conv._ConvNd):
                 print(layer_to.type)
+                name = unique_call_module_name(name_prefix, model)
                 if  isinstance(layer_to, layer_types):
-                    name = unique_call_module_name(name_prefix, model)
-                    layer = ConvFactory.create_zero_conv(
+                    layer = ConvFactory.create_eye_conv(
                         in_channels=layer_from.out_channels,
                         out_channels=layer_from.out_channels,
                         kernel_size=layer_from.kernel_size,
@@ -40,6 +43,16 @@ class AddSeqConvLayer(Action):
                         padding=layer_from.padding
                     )
                     actions.append(AddSeqConvLayer([layer_from_id, layer_to_id, layer, name]))
+                elif  isinstance(layer_to, nn.modules.Linear):
+                    if can_insert_conv_before_linear(layer_from.out_channels, layer_to.in_features):
+                        layer = ConvFactory.create_zero_conv_before_linear(
+                            in_channels=layer_from.out_channels,
+                            out_channels=layer_from.out_channels,
+                            kernel_size=layer_from.kernel_size,
+                            stride=1,
+                            padding=layer_from.padding
+                        )
+                        actions.append(AddSeqConvLayer([layer_from_id, layer_to_id, layer, name]))
         return actions
     
     def __str__(self):
