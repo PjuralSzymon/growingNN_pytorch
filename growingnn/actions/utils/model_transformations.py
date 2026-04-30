@@ -1,5 +1,7 @@
 import operator
 
+from torch import fx
+
 # Common functions: 
 
 def _insert_call_module_after(gm, insert_after, module_name, module_input):
@@ -86,3 +88,36 @@ def add_new_seq_layer(gm, src_name, dst_name, new_layer, name):
 
     gm.graph.lint()
     gm.recompile()
+
+
+def delete_layer(gm: fx.GraphModule, layer_id: str) -> fx.GraphModule:
+    graph = gm.graph
+
+    layer_node = next(
+        n for n in graph.nodes
+        if n.op == "call_module" and n.target == layer_id
+    )
+
+    input_nodes = list(layer_node.all_input_nodes)
+    output_nodes = list(layer_node.users)
+
+    # Connect every input of deleted layer to every output of deleted layer
+    new_input = input_nodes[0]
+    for input_node in input_nodes[1:]:
+        with gm.graph.inserting_after(new_input):
+            new_input = gm.graph.call_function(
+                operator.add,
+                args=(new_input, input_node),
+            )
+    for output_node in output_nodes:
+        output_node.replace_input_with(layer_node, new_input)
+
+    # Remove deleted layer node from graph
+    graph.erase_node(layer_node)
+    if hasattr(gm, layer_id):
+        delattr(gm, layer_id)
+
+    graph.lint()
+    gm.recompile()
+
+    return gm

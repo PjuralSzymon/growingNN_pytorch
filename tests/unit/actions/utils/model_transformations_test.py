@@ -15,7 +15,9 @@ from growingnn.actions.utils.model_transformations import (
     add_new_residual_layer,
     add_new_seq_layer,
     _find_call_module,
+    delete_layer
 )
+
 from tests.model_factory import ModelFactory
 
 "Finding a non-existing layer should raise a ValueError"
@@ -86,6 +88,43 @@ def test_add_seq_layer_eye_between_l1_and_l4_on_residual_skip():
     add_new_seq_layer(gm, "l1", "l4", layer, name="seq_l1_l4")
     assert torch.allclose(gm(x), y0)
 
+
+"Deleting a middle layer should reconnect its input directly to its output layer."
+def test_delete_layer_removes_middle_layer_from_linear_chain():
+    # Arrange
+    model = ModelFactory.simple_chain_3()
+    gm = fx.symbolic_trace(model)
+
+    # Act
+    delete_layer(gm, "l2")
+    module_names = [
+        str(n.target)
+        for n in gm.graph.nodes
+        if n.op == "call_module"
+    ]
+
+    # Assert
+    assert module_names == ["l1", "l3"]
+    assert not hasattr(gm, "l2")
+
+
+"Deleting a branch layer should preserve the graph and remove only that layer."
+def test_delete_layer_removes_branch_layer_from_residual_graph():
+    # Arrange
+    model = ModelFactory.residual_skip()
+    gm = fx.symbolic_trace(model)
+
+    # Act
+    delete_layer(gm, "l2")
+    module_names = [
+        str(n.target)
+        for n in gm.graph.nodes
+        if n.op == "call_module"
+    ]
+
+    # Assert
+    assert module_names == ["l1", "l3", "l4"]
+    assert not hasattr(gm, "l2")
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
