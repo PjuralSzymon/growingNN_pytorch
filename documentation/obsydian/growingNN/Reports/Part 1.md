@@ -4,4 +4,5 @@
 3. (30.04.2026) Delete layer action is almost ready but regression test seems to fail in 1 particulas scenario and be a bit unstable, 
 	1. It fails when we add few (<10) layers and then remove those 10 for some reason 1 is allways left Maybe it don't handle the case when all the inputs come form add modules ?
 	2. If fails when we add and then remove a lot of layers maybe the same reason as 1.
-	3. 
+4. (05.05.2026) I found a fix delee layer was not workign due to wrong detection of hidden layers the fix works better but still it don't get what is input layer only knows output layer I think I fixed it but funciton for detecting that needs some optimziation also I discovered an issue with adding layers it looks like we can add a layer which is after the output layer The error was that gm.graph.inserting_after was used during adding res layer but instead we should use: insert before
+5. (06.05.2026) A lot of problems were fixed but there is a new more general one after removing layers we can be left with many intermidate modules that don't do anything like: ![[Pasted image 20260506222448.png]] Those were not added during the process of removing it is a effect of removing everyhting else 
