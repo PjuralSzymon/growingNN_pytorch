@@ -104,6 +104,8 @@ def delete_layer(gm: fx.GraphModule, layer_id: str) -> fx.GraphModule:
     # Connect every input of deleted layer to every output of deleted layer
     new_input = input_nodes[0]
     for input_node in input_nodes[1:]:
+        if input_node is new_input:
+            continue
         with gm.graph.inserting_after(new_input):
             new_input = gm.graph.call_function(
                 operator.add,
