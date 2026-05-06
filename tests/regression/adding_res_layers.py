@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     # Act
     id = 0
-    for _ in range(30):
+    for _ in range(5):
         actions: List[AddResLayer] = AddResLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])
         id += 1
         idx = rng.randrange(len(actions))

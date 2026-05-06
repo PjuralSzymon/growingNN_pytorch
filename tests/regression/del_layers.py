@@ -35,7 +35,10 @@ if __name__ == "__main__":
 
     # Act
     iterantions = 50
-    grow_iterations = int(iterantions/2)
+    grow_iterations = int(iterantions/2)-1
+    #TODO handling those 0 and +1 should be also added to other regresison tests
+    draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified0", fmt="pdf")
+    draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph0", fmt="pdf")
     for id in range(iterantions):
         actions: List[Action] = []
         if id < grow_iterations:
@@ -45,16 +48,19 @@ if __name__ == "__main__":
             actions += AddSeqLayer.generate_all_actions(gm)
         else:
             actions += DelLayer.generate_all_actions(gm)
+        if len(actions) == 0:
+            print(f"No actions to execute for iteration {id}")
+            continue
         idx = rng.randrange(len(actions))
-        print(f"idx: {id} " + "--------------------------------")
-        print(f"gm.graph: {gm.graph}")
-        print("action used: ", actions[idx])
-        draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified" + str(id), fmt="pdf")
-        draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph" + str(id), fmt="pdf")
         actions[idx].execute(gm)
         output_final = gm(x)
         dn = float(torch.norm(output_initial - output_final))
         norms.append(dn)
+        print(f"idx: {id} " + "--------------------------------")
+        print(f"gm.graph: {gm.graph}")
+        print("action used: ", actions[idx])
+        draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified" + str(id+1), fmt="pdf")
+        draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph" + str(id+1), fmt="pdf")
         print(f"diffrence norm: {dn}")
 
     plt.plot(range(len(norms)), norms)
