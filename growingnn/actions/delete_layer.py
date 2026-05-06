@@ -25,3 +25,7 @@ class DelLayer(Action):
         for layer_id in layers:
             actions.append(DelLayer([layer_id]))
         return actions
+
+
+    def __str__(self):
+        return " ( Delete Layer Action: " + str(self.params) + " ) "
