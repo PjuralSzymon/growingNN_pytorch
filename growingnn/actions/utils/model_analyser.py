@@ -2,53 +2,90 @@ import torch.nn as nn
 import torch.fx as fx
 
 
-def _has_module(
-    start: fx.Node,
-    next_nodes: callable,
-    seen: set[fx.Node] | None = None,
-) -> bool:
-    """
-    Generic graph traversal.
-
-    Starting from `start`, walk through the graph using `next_nodes`
-    (which defines the direction: upstream or downstream).
-
-    Return True if we encounter any `call_module` node along the way.
-    """
-    # Track visited nodes to avoid infinite loops in cyclic graphs
-    seen = seen or set()
-    if start in seen:
-        return False
-    seen.add(start)
-
-    # Explore neighboring nodes (inputs or users depending on direction)
-    for n in next_nodes(start):
-        # If we directly hit a module → success
-        # Otherwise, keep searching recursively
-        if n.op == "call_module" or _has_module(n, next_nodes, seen):
-            return True
-
-    # No module found in this direction
-    return False
-
+def _has_module(nodes) -> bool:
+    if isinstance(nodes, list):
+        print(f"List node ! nodes: {nodes} - {len(nodes)} type: {type(nodes)}")
+        if len(nodes) == 0:
+            return False
+        if len(nodes) == 1 and nodes[0] == None:
+            return False
+        return True
+    elif isinstance(nodes, dict):
+        print(f"Dict node ! nodes: {nodes} - {len(nodes)} type: {type(nodes)}")
+        if len(nodes) == 0:
+            return False
+        if len(nodes) == 1 and nodes[list(nodes.keys())[0]] == None:
+            return False
+        return True
 
 def _has_module_upstream(node: fx.Node) -> bool:
-    """
-    Check if there is any `call_module` BEFORE this node in the graph.
-    Uses `.all_input_nodes` → walks backward (toward inputs).
-    """
-    return _has_module(node, lambda n: n.all_input_nodes)
-
+    return _has_module(node.all_input_nodes)
 
 def _has_module_downstream(node: fx.Node) -> bool:
-    """
-    Check if there is any `call_module` AFTER this node in the graph.
-    Uses `.users` → walks forward (toward outputs).
-    """
-    return _has_module(node, lambda n: n.users)
+    p
+    return _has_module(node.users)
+
+
+def is_internal_call_module(node: fx.Node) -> bool:
+    return (
+        node.op == "call_module"
+        and not any(inp.op == "placeholder" for inp in node.all_input_nodes)
+        and not any(user.op == "output" for user in node.users)
+    )
 
 def _is_hidden_module(node: fx.Node) -> bool:
-    return _has_module_upstream(node) and _has_module_downstream(node)
+    if len(node.users)==0 or len(node.all_input_nodes) == 0:
+        print(f"node: {node.target} has no users or all_input_nodes")
+        return False
+    if any(user.op == "output" for user in node.users):
+        print(f"node: {node.target} has output is users")
+        return False
+
+    if "placeholder" in node.all_input_nodes:
+        print(f"node: {node.target} has placeholder is all_input_nodes")
+        return False
+
+    if len(node.all_input_nodes) == 0:
+        print(f"node: {node.target} has no all_input_nodes")
+        return False
+    if len(node.all_input_nodes) == 1 and node.all_input_nodes[0] == None:
+        print(f"node: {node.target} has no all_input_nodes")
+        return False
+
+    if len(node.all_input_nodes) == 1:
+        if node.all_input_nodes[0] == None:
+            print(f"node: {node.target} all_input_nodes has only 1 value and it is None")
+            return False
+        if len(node.all_input_nodes[0].all_input_nodes) == 0:
+            print(f"node: {node.target} all_input_nodes has only 1 value and it has no all_input_nodes")
+            return False
+
+    has_real_input = any(
+            not inp.op == "placeholder"
+            for inp in node.all_input_nodes
+        )
+
+    has_real_user = any(
+        not user.op == "output"
+        for user in node.users
+    )
+    print(f"{node.target} -------------------------")
+    print(f"node.users: {node.users}")
+    print(f"user keyrs: {str(list(node.users.keys()))}")
+    print(f"node.op: {node.op}")
+    print(f"has_real_input: {has_real_input}")
+    print(f"has_real_user: {has_real_user}")
+    print(f"node.all_input_nodes: {node.all_input_nodes}")
+    for subNode in node.all_input_nodes:
+        print(f"subNode: {subNode.target}")
+        print(f"subNode.users: {subNode.users}")
+        print(f"subNode.all_input_nodes: {subNode.all_input_nodes}")
+    print("-------------------------")
+    print(f"node: {node.target} is a hidden module")
+    return True
+
+def _is_at_least_one_hidden_module(n1: fx.Node, n2: fx.Node) -> bool:
+    return _is_hidden_module(n1) or _is_hidden_module(n2)
 
 def get_all_hidden_modules(model: nn.Module | fx.GraphModule) -> list[str]:
     gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
@@ -57,6 +94,7 @@ def get_all_hidden_modules(model: nn.Module | fx.GraphModule) -> list[str]:
         if n.op != "call_module":
             continue
         if not _is_hidden_module(n):
+            print(f"n.target: {n.target} is not a hidden module")
             continue
         nodes.append(str(n.target))
     return nodes
@@ -78,7 +116,8 @@ def module_dependency_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
             if cur in seen:
                 continue
             seen.add(cur)
-            if cur.op == "call_module":
+            print(f"cur: {cur.target} is hidden: {_is_hidden_module(cur)}")
+            if cur.op == "call_module" and _is_hidden_module(cur):
                 edges.append((src, str(cur.target)))
             stack.extend(cur.users)
     return list(dict.fromkeys(edges))
@@ -101,7 +140,7 @@ def module_sequential_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
             if cur in seen:
                 continue
             seen.add(cur)
-            if cur.op == "call_module":
+            if cur.op == "call_module" and _is_at_least_one_hidden_module(n, cur):
                 edges.append((src, str(cur.target)))
                 continue
             stack.extend(cur.users)
