@@ -1,0 +1,33 @@
+
+- Marzec
+    - {     **DONE**    } Moduł z akcjami
+    - {     **DONE**    } Akcja warstw sekwencyjnych
+- Kwiecien
+    - {     **DONE**    } Akcja warstw rezydualnych
+    - {     **DONE**    } Akcja warstw Conv
+- Maj
+    - {  **IN PROG**  } Akcja usuwania warstw
+    - {     **TODO**    } Akcja zmian ilosci neuronow
+- Czerwiec
+    - {     **TODO**    } Alg symulacyjny
+    - {     **TODO**    } Score Fun
+    - {     **TODO**    } Scheduler symulacji
+    - {     **TODO**    } Nowa akcja optymalizacyjna SLWD (Bilski)
+- Lipiec
+    - {     **TODO**    } Alg treningowy
+    - {     **TODO**    } Eksperymenty wstepne
+- sierpien
+    - {     **TODO**    } Eksperymenty Trening modeli
+- Wrzesien
+    - {     **TODO**    } Eksperymenty Optymalizacji modeli
+- Pazdziernik
+    - {     **TODO**    } Eksperymenty Finalne 
+- Listopad
+    - {     **TODO**    } Pisanie finalnej wersji
+- Grudzien
+    - {     **TODO**    } Poprawki
+- Styczen 
+    - {     **TODO**    } SUBMISSION !!!
+- Luty
+    - {     **TODO**    } Dokumentacja
+    - {     **TODO**    } Strona internetowa

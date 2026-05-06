@@ -41,16 +41,26 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Reports/Part 1.md",
+                "file": "Actions/Residual actions.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Part 1"
+              "title": "Residual actions"
+            }
+          },
+          {
+            "id": "edbff2203738e9b6",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Podgląd grafu"
             }
           }
         ],
-        "currentTab": 2
+        "currentTab": 3
       }
     ],
     "direction": "vertical"
@@ -209,23 +219,27 @@
       "bases:Stwórz nową bazę danych": false
     }
   },
-  "active": "a87ef3127d602824",
+  "active": "edbff2203738e9b6",
   "lastOpenFiles": [
-    "Pasted image 20260506222448.png",
-    "Actions/Del Layer.md",
-    "Actions/utils/Model Analyser.md",
-    "Actions/utils/Model Transformer.md",
-    "Actions/Conv actions.md",
+    "tests/regression/Adding residual layers.md",
+    "tests/regression/Adding Sequential Layers.md",
     "Actions/Residual actions.md",
     "Actions/Sequentail actions.md",
-    "tests/regression/Adding Sequential Layers.md",
-    "Actions/utils",
-    "Reports/TODO.md",
-    "Ideas/Actions.md",
+    "Actions/Conv actions.md",
+    "Actions/Del Layer.md",
+    "Pasted image 20260506223240.png",
     "Reports/Part 1.md",
+    "Reports/PLAN.md",
+    "Pasted image 20260506222841.png",
+    "Pasted image 20260506222839.png",
+    "Reports/TODO.md",
+    "Pasted image 20260506222448.png",
+    "Actions/utils/Model Analyser.md",
+    "Actions/utils/Model Transformer.md",
+    "Actions/utils",
+    "Ideas/Actions.md",
     "Reports/Progres report.md",
     "re[prts",
-    "tests/regression/Adding residual layers.md",
     "Pasted image 20260404192232.png",
     "Pasted image 20260404192219.png",
     "tests/regression/Pasted image 20260404174521.png",
@@ -236,8 +250,6 @@
     "Ideas",
     "tests/regression/Pasted image 20260404172754.png",
     "Bez nazwy.canvas",
-    "tests/regression/Pasted image 20260404173518.png",
-    "tests/regression/Pasted image 20260404173508.png",
     "tests/regression",
     "tests",
     "Witaj.md",

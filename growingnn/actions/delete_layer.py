@@ -20,7 +20,6 @@ class DelLayer(Action):
     @staticmethod
     def generate_all_actions(model: nn.Module | fx.GraphModule) -> List[Action]:
         actions : List[Action] = []
-        name_prefix = "del_layer"
         layers = get_all_hidden_modules(model)
         for layer_id in layers:
             actions.append(DelLayer([layer_id]))
