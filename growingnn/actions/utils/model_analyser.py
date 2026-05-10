@@ -1,30 +1,7 @@
 import torch.nn as nn
 import torch.fx as fx
 
-
-def _has_module(nodes) -> bool:
-    if isinstance(nodes, list):
-        print(f"List node ! nodes: {nodes} - {len(nodes)} type: {type(nodes)}")
-        if len(nodes) == 0:
-            return False
-        if len(nodes) == 1 and nodes[0] == None:
-            return False
-        return True
-    elif isinstance(nodes, dict):
-        print(f"Dict node ! nodes: {nodes} - {len(nodes)} type: {type(nodes)}")
-        if len(nodes) == 0:
-            return False
-        if len(nodes) == 1 and nodes[list(nodes.keys())[0]] == None:
-            return False
-        return True
-
-def _has_module_upstream(node: fx.Node) -> bool:
-    return _has_module(node.all_input_nodes)
-
-def _has_module_downstream(node: fx.Node) -> bool:
-    p
-    return _has_module(node.users)
-
+from growingnn.config import EDITABLE_MODULES
 
 def is_internal_call_module(node: fx.Node) -> bool:
     return (
@@ -35,29 +12,22 @@ def is_internal_call_module(node: fx.Node) -> bool:
 
 def _is_hidden_module(node: fx.Node) -> bool:
     if len(node.users)==0 or len(node.all_input_nodes) == 0:
-        print(f"node: {node.target} has no users or all_input_nodes")
         return False
     if any(user.op == "output" for user in node.users):
-        print(f"node: {node.target} has output is users")
         return False
 
     if "placeholder" in node.all_input_nodes:
-        print(f"node: {node.target} has placeholder is all_input_nodes")
         return False
 
     if len(node.all_input_nodes) == 0:
-        print(f"node: {node.target} has no all_input_nodes")
         return False
     if len(node.all_input_nodes) == 1 and node.all_input_nodes[0] == None:
-        print(f"node: {node.target} has no all_input_nodes")
         return False
 
     if len(node.all_input_nodes) == 1:
         if node.all_input_nodes[0] == None:
-            print(f"node: {node.target} all_input_nodes has only 1 value and it is None")
             return False
         if len(node.all_input_nodes[0].all_input_nodes) == 0:
-            print(f"node: {node.target} all_input_nodes has only 1 value and it has no all_input_nodes")
             return False
 
     has_real_input = any(
@@ -69,20 +39,27 @@ def _is_hidden_module(node: fx.Node) -> bool:
         not user.op == "output"
         for user in node.users
     )
-    print(f"{node.target} -------------------------")
-    print(f"node.users: {node.users}")
-    print(f"user keyrs: {str(list(node.users.keys()))}")
-    print(f"node.op: {node.op}")
-    print(f"has_real_input: {has_real_input}")
-    print(f"has_real_user: {has_real_user}")
-    print(f"node.all_input_nodes: {node.all_input_nodes}")
-    for subNode in node.all_input_nodes:
-        print(f"subNode: {subNode.target}")
-        print(f"subNode.users: {subNode.users}")
-        print(f"subNode.all_input_nodes: {subNode.all_input_nodes}")
-    print("-------------------------")
-    print(f"node: {node.target} is a hidden module")
     return True
+
+def _is_editable_module(node: fx.Node, gm: fx.GraphModule) -> bool:
+    if node.op != "call_module":
+        print(f"node.target: {node.target} is not a editable module")
+        return False
+    
+    layer_module = getattr(gm, str(node.target), None)
+    if layer_module is None:
+        print(f"layer_module: {layer_module} is not a editable module")
+        return False
+
+    module = gm.get_submodule(str(node.target))
+
+    for editable_module_type in EDITABLE_MODULES:
+        if isinstance(module, editable_module_type):
+            print(f"node.target: {node.target} is a editable module of type: {editable_module_type}")
+            return True
+        else:
+            print(f"node.target: {node.target} is not a editable module is type: {type(module)}")
+    return False
 
 def _is_at_least_one_hidden_module(n1: fx.Node, n2: fx.Node) -> bool:
     return _is_hidden_module(n1) or _is_hidden_module(n2)
@@ -107,7 +84,7 @@ def module_dependency_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
     gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
     edges: list[tuple[str, str]] = []
     for n in gm.graph.nodes:
-        if n.op != "call_module":
+        if not _is_editable_module(n, gm):
             continue
         src = str(n.target)
         stack, seen = list(n.users), set()
@@ -117,9 +94,12 @@ def module_dependency_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
                 continue
             seen.add(cur)
             print(f"cur: {cur.target} is hidden: {_is_hidden_module(cur)}")
-            if cur.op == "call_module" and _is_hidden_module(cur):
+            if _is_editable_module(cur, gm) and _is_hidden_module(cur):
+                print(f" adding pair: {src} -> {cur.target}")
                 edges.append((src, str(cur.target)))
             stack.extend(cur.users)
+    print(f"edges: {edges}")
+    print(f"edges 2: {list(dict.fromkeys(edges))}")
     return list(dict.fromkeys(edges))
     
 
@@ -131,7 +111,7 @@ def module_sequential_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
     gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
     edges: list[tuple[str, str]] = []
     for n in gm.graph.nodes:
-        if n.op != "call_module":
+        if not _is_editable_module(n, gm):
             continue
         src = str(n.target)
         stack, seen = list(n.users), set()
@@ -140,8 +120,11 @@ def module_sequential_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
             if cur in seen:
                 continue
             seen.add(cur)
-            if cur.op == "call_module" and _is_at_least_one_hidden_module(n, cur):
+            if _is_editable_module(cur, gm) and _is_at_least_one_hidden_module(n, cur):
+                print(f" adding pair: {src} -> {cur.target}")
                 edges.append((src, str(cur.target)))
                 continue
             stack.extend(cur.users)
+    print(f"edges: {edges}")
+    print(f"edges 2: {list(dict.fromkeys(edges))}")
     return list(dict.fromkeys(edges))

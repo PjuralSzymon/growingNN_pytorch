@@ -1,6 +1,7 @@
 """Project-wide defaults for growingnn."""
 
 import numpy as np
+from torch import nn
 
 FLOAT_TYPE = np.float32
 
@@ -11,3 +12,5 @@ RESHEPERS_CACHE_ENABLE_MONITORING = True
 
 ADDING_RES_LAYERS_WEIGHT_INITIALIZATION_RANGE = (0.0, 0.01)
 RES_CONV_TO_LINEAR_GLOBAL_POOL_TYPE = "max"  # "avg" | "max"
+
+EDITABLE_MODULES = [nn.Linear, nn.Conv2d, nn.Conv1d, nn.Conv3d]
