@@ -8,6 +8,13 @@
 - Maj
     - {  **IN PROG**  } Akcja usuwania warstw
     - {     **TODO**    } Akcja zmian ilosci neuronow
+	    - {     **TODO**    } Update do wizualizacji żeby pokazywał shape
+	    - {     **TODO**    } Unit test z bardzo skomplikowana siecia 
+		    - {     **TODO**    } Unit test dla is editable module
+	    - {     **TODO**    } Akcja usuwania neuronow w danej wartswie 
+	    - {     **TODO**    } Propagacja zmian na cala siec
+	    - {     **TODO**    } Testy regresyjne
+	- {     **TODO**    } Dodać testy regresyjne na dużych modelach 
 - Czerwiec
     - {     **TODO**    } Alg symulacyjny
     - {     **TODO**    } Score Fun
