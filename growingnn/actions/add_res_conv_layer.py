@@ -36,26 +36,29 @@ class AddResConvLayer(Action):
             layer_to = getattr(model, layer_to_id, None)
             if  isinstance(layer_from, nn.modules.conv._ConvNd):
                 name = unique_call_module_name(name_prefix, model)
-                if  isinstance(layer_to, nn.modules.conv._ConvNd):
+                if isinstance(layer_to, nn.modules.conv._ConvNd):
+                    # Residual is ``merge + proj(src)`` on *outputs*; proj out channels must match ``layer_to``.
                     layer = ConvFactory.create_zero_conv(
                         in_channels=layer_from.out_channels,
-                        out_channels=layer_from.out_channels,
+                        out_channels=layer_to.out_channels,
                         kernel_size=layer_from.kernel_size,
                         stride=1,
-                        padding=layer_from.padding
+                        padding=layer_from.padding,
                     )
                     actions.append(AddResConvLayer([layer_from_id, layer_to_id, layer, name]))
-                elif  isinstance(layer_to, nn.modules.Linear):
-                    if can_insert_conv_before_linear(layer_from.out_channels, layer_to.in_features):
+                elif isinstance(layer_to, nn.modules.Linear):
+                    if can_insert_conv_before_linear(
+                        layer_from.out_channels, layer_to.in_features
+                    ):
+                        # Sum is on ``layer_to`` *output* (``out_features``); flattened conv must match that width.
                         layer = ConvFactory.create_zero_conv_before_linear(
                             in_channels=layer_from.out_channels,
-                            out_channels=layer_from.out_channels,
+                            out_channels=layer_to.out_features,
                             kernel_size=layer_from.kernel_size,
                             stride=1,
-                            padding=layer_from.padding
+                            padding=layer_from.padding,
                         )
-                        actions.append(AddResConvLayer([layer_from_id, layer_to_id, layer, name]))
-                                    
+                        actions.append(AddResConvLayer([layer_from_id, layer_to_id, layer, name]))                                    
         return actions
     
     def __str__(self):
