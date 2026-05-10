@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 from typing import List
 
-import matplotlib.pyplot as plt
 import torch
 import torch.fx as fx
 from torch.fx.passes.graph_drawer import FxGraphDrawer
@@ -15,9 +14,16 @@ if str(_REPO_ROOT) not in sys.path:
 
 from growingnn.actions.action import Layer_Type
 from growingnn.actions.add_res_layer import AddResLayer
+from growingnn.actions.utils.model_analyser import get_amount_of_parameters
+from growingnn.core.logger import logger
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from tests.model_factory import ModelFactory
-from tests.regression.regression_utils import FOLDER_NAME, clear_regression_folder, parse_regression_cli
+from tests.regression.regression_utils import (
+    FOLDER_NAME,
+    clear_regression_folder,
+    parse_regression_cli,
+    plot_norms_and_parameter_count,
+)
 
 
 if __name__ == "__main__":
@@ -29,6 +35,8 @@ if __name__ == "__main__":
     rng = random.Random(42)
     output_initial = gm(x)
     norms = []
+    parameter_amounts = []
+    parameter_amounts.append(get_amount_of_parameters(gm))
 
     # Act
     id = 0
@@ -36,21 +44,19 @@ if __name__ == "__main__":
         actions: List[AddResLayer] = AddResLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])
         id += 1
         idx = rng.randrange(len(actions))
-        print(f"idx: {id} " + "--------------------------------")
-        print(f"gm.graph: {gm.graph}")
-        print("action used: ", actions[idx])
+        logger.info("idx: %s --------------------------------", id)
+        logger.debug("gm.graph: %s", gm.graph)
+        logger.info("action used: %s", actions[idx])
         draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified" + str(id), fmt="pdf")
         draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph" + str(id), fmt="pdf")
         actions[idx].execute(gm)
         output_final = gm(x)
         dn = float(torch.norm(output_initial - output_final))
         norms.append(dn)
-        print(f"diffrence norm: {dn}")
+        parameter_amounts.append(get_amount_of_parameters(gm))
+        logger.info("diffrence norm: %s", dn)
 
-    plt.plot(range(len(norms)), norms)
-    plt.ylabel("||Δout||")
-    plt.xlabel("step")
-    plt.show()
+    plot_norms_and_parameter_count(norms, parameter_amounts)
 
     if not args.save_output:
         clear_regression_folder()

@@ -1,7 +1,8 @@
 import torch.nn as nn
 import torch.fx as fx
 
-from growingnn.config import EDITABLE_MODULES
+from growingnn.core.config import EDITABLE_MODULES
+from growingnn.core.logger import logger
 
 def is_internal_call_module(node: fx.Node) -> bool:
     return (
@@ -43,22 +44,30 @@ def _is_hidden_module(node: fx.Node) -> bool:
 
 def _is_editable_module(node: fx.Node, gm: fx.GraphModule) -> bool:
     if node.op != "call_module":
-        print(f"node.target: {node.target} is not a editable module")
+        logger.debug("node.target: %s is not an editable module", node.target)
         return False
     
     layer_module = getattr(gm, str(node.target), None)
     if layer_module is None:
-        print(f"layer_module: {layer_module} is not a editable module")
+        logger.debug("layer_module: %s is not an editable module", layer_module)
         return False
 
     module = gm.get_submodule(str(node.target))
 
     for editable_module_type in EDITABLE_MODULES:
         if isinstance(module, editable_module_type):
-            print(f"node.target: {node.target} is a editable module of type: {editable_module_type}")
+            logger.debug(
+                "node.target: %s is an editable module of type: %s",
+                node.target,
+                editable_module_type,
+            )
             return True
         else:
-            print(f"node.target: {node.target} is not a editable module is type: {type(module)}")
+            logger.debug(
+                "node.target: %s is not an editable module; actual type: %s",
+                node.target,
+                type(module),
+            )
     return False
 
 def _is_at_least_one_hidden_module(n1: fx.Node, n2: fx.Node) -> bool:
@@ -71,7 +80,7 @@ def get_all_hidden_modules(model: nn.Module | fx.GraphModule) -> list[str]:
         if n.op != "call_module":
             continue
         if not _is_hidden_module(n):
-            print(f"n.target: {n.target} is not a hidden module")
+            logger.debug("n.target: %s is not a hidden module", n.target)
             continue
         nodes.append(str(n.target))
     return nodes
@@ -93,15 +102,14 @@ def module_dependency_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
             if cur in seen:
                 continue
             seen.add(cur)
-            print(f"cur: {cur.target} is hidden: {_is_hidden_module(cur)}")
+            logger.debug("cur: %s is hidden: %s", cur.target, _is_hidden_module(cur))
             if _is_editable_module(cur, gm) and _is_hidden_module(cur):
-                print(f" adding pair: {src} -> {cur.target}")
+                logger.debug("adding dependency pair: %s -> %s", src, cur.target)
                 edges.append((src, str(cur.target)))
             stack.extend(cur.users)
-    print(f"edges: {edges}")
-    print(f"edges 2: {list(dict.fromkeys(edges))}")
+    logger.debug("module_dependency_pairs edges: %s", edges)
     return list(dict.fromkeys(edges))
-    
+
 
 def module_sequential_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str, str]]:
     """
@@ -121,12 +129,11 @@ def module_sequential_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
                 continue
             seen.add(cur)
             if _is_editable_module(cur, gm) and _is_at_least_one_hidden_module(n, cur):
-                print(f" adding pair: {src} -> {cur.target}")
+                logger.debug("adding sequential pair: %s -> %s", src, cur.target)
                 edges.append((src, str(cur.target)))
                 continue
             stack.extend(cur.users)
-    print(f"edges: {edges}")
-    print(f"edges 2: {list(dict.fromkeys(edges))}")
+    logger.debug("module_sequential_pairs edges: %s", edges)
     return list(dict.fromkeys(edges))
 
 def get_amount_of_parameters(model: nn.Module | fx.GraphModule) -> int:

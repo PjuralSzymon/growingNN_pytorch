@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 from typing import List
 
-import matplotlib.pyplot as plt
 import torch
 import torch.fx as fx
 from torch.fx.passes.graph_drawer import FxGraphDrawer
@@ -13,15 +12,21 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from growingnn.actions.action import Action, Layer_Type
-from growingnn.actions.add_res_layer import AddResLayer
-from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from growingnn.actions.add_res_conv_layer import AddResConvLayer
+from growingnn.actions.add_res_layer import AddResLayer
 from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
 from growingnn.actions.add_seq_layer import AddSeqLayer
 from growingnn.actions.delete_layer import DelLayer
-from tests.model_factory import ModelFactory
-from tests.regression.regression_utils import FOLDER_NAME, clear_regression_folder, parse_regression_cli
 from growingnn.actions.utils.model_analyser import get_amount_of_parameters
+from growingnn.core.logger import logger
+from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
+from tests.model_factory import ModelFactory
+from tests.regression.regression_utils import (
+    FOLDER_NAME,
+    clear_regression_folder,
+    parse_regression_cli,
+    plot_norms_and_parameter_count,
+)
 
 
 if __name__ == "__main__":
@@ -43,7 +48,7 @@ if __name__ == "__main__":
     draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified0", fmt="pdf")
     draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph0", fmt="pdf")
     for id in range(iterantions):
-        print(f"idx: {id} " + "--------------------------------")
+        logger.info("idx: %s --------------------------------", id)
         actions: List[Action] = []
         if id < grow_iterations:
             actions += AddResLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])
@@ -53,40 +58,28 @@ if __name__ == "__main__":
         else:
             actions += DelLayer.generate_all_actions(gm)
         if len(actions) == 0:
-            print(f"No actions to execute for iteration {id}")
+            logger.warning("No actions to execute for iteration %s", id)
             continue
         idx = rng.randrange(len(actions))
-#        print(f"gm.graph: {gm.graph}")
-        print("action used: ", actions[idx])
+        logger.info("action used: %s", actions[idx])
         actions[idx].execute(gm)
         try:
             output_final = gm(x)
-        except Exception as e:
+        except Exception:
             draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified_error" + str(id+1), fmt="pdf")
-            print(f"Error executing action {actions[idx]}")
-            print(e)
+            logger.exception(
+                "Error executing action %s",
+                actions[idx],
+            )
             break
         dn = float(torch.norm(output_initial - output_final))
         norms.append(dn)
         parameter_amounts.append(get_amount_of_parameters(gm))
         draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified" + str(id+1), fmt="pdf")
         draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph" + str(id+1), fmt="pdf")
-        print(f"diffrence norm: {dn}")
+        logger.info("diffrence norm: %s", dn)
 
-    steps = range(len(norms))
-    fig, ax1 = plt.subplots()
-    ax1.plot(steps, norms, color="C0")
-    ax1.set_xlabel("step")
-    ax1.set_ylabel("||Δout||", color="C0")
-    ax1.tick_params(axis="y", labelcolor="C0")
-
-    ax2 = ax1.twinx()
-    ax2.plot(steps, parameter_amounts[1 : 1 + len(norms)], color="C1")
-    ax2.set_ylabel("amount of params", color="C1")
-    ax2.tick_params(axis="y", labelcolor="C1")
-
-    fig.tight_layout()
-    plt.show()
+    plot_norms_and_parameter_count(norms, parameter_amounts)
 
     if not args.save_output:
         clear_regression_folder()

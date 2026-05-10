@@ -3,7 +3,6 @@ from typing import List
 from torch import ceil, clip, floor, fx, nn
 import torch
 
-from growingnn import config
 from growingnn.actions.utils.conv_to_linear_adapter import can_insert_conv_before_linear
 from growingnn.actions.utils.layer_Factory import ConvFactory, LinearFactory
 from growingnn.actions.utils.model_analyser import module_dependency_pairs

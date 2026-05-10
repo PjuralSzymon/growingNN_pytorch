@@ -3,15 +3,14 @@ from typing import List
 
 from torch import fx, nn
 
-from growingnn import config
 from growingnn.actions.utils.conv_to_linear_adapter import can_insert_conv_before_linear
 from .action import Action, Layer_Type
 
-from growingnn.actions.utils.layer_Factory import ConvFactory, LinearFactory
-from growingnn.actions.utils.model_analyser import module_dependency_pairs, module_sequential_pairs
+from growingnn.actions.utils.layer_Factory import ConvFactory
+from growingnn.actions.utils.model_analyser import module_sequential_pairs
 from growingnn.actions.utils.name_factory import unique_call_module_name
-from growingnn.actions.utils.model_transformations import add_new_residual_layer, add_new_seq_layer
-from .action import Action, Layer_Type
+from growingnn.actions.utils.model_transformations import add_new_seq_layer
+from growingnn.core.logger import logger
 
 
 class AddSeqConvLayer(Action):
@@ -31,8 +30,12 @@ class AddSeqConvLayer(Action):
             layer_from = getattr(model, layer_from_id, None)
             layer_to = getattr(model, layer_to_id, None)
 
-            if  isinstance(layer_from, nn.modules.conv._ConvNd):
-                print(layer_to.type)
+            if isinstance(layer_from, nn.modules.conv._ConvNd):
+                logger.debug(
+                    "seq_conv candidate layer_to_id=%r type=%s",
+                    layer_to_id,
+                    type(layer_to),
+                )
                 name = unique_call_module_name(name_prefix, model)
                 if  isinstance(layer_to, layer_types):
                     layer = ConvFactory.create_eye_conv(
