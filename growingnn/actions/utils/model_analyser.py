@@ -128,3 +128,7 @@ def module_sequential_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
     print(f"edges: {edges}")
     print(f"edges 2: {list(dict.fromkeys(edges))}")
     return list(dict.fromkeys(edges))
+
+def get_amount_of_parameters(model: nn.Module | fx.GraphModule) -> int:
+    gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
+    return sum(p.numel() for p in gm.parameters())
