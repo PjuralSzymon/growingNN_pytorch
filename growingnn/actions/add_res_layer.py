@@ -19,6 +19,9 @@ class AddResLayer(Action):
 
     @staticmethod
     def generate_all_actions(model: nn.Module | fx.GraphModule, layer_types: List[Layer_Type] = Layer_Type) -> List[Action]:
+        """Residual add is ``dst + proj(src)`` on *outputs*; proj must be
+        ``Linear(layer_from.out_features, layer_to.out_features)`` (see ``add_new_residual_layer``).
+        """
         actions : List[Action] = []
         name_prefix = "res_linear_"
         pairs = module_dependency_pairs(model)
@@ -27,11 +30,13 @@ class AddResLayer(Action):
             layer_to = getattr(model, layer_to_id, None)
 
             layer_from_out_features = layer_from.out_features
-            layer_to_in_features = layer_to.in_features
+            layer_to_out_features = layer_to.out_features
             if not isinstance(layer_to, nn.modules.conv._ConvNd):
                 for type in layer_types:
                     name = unique_call_module_name(name_prefix + type.name, model)
-                    layer = LinearFactory.create_linear(layer_from_out_features, layer_to_in_features, type)
+                    layer = LinearFactory.create_linear(
+                        layer_from_out_features, layer_to_out_features, type
+                    )
                     actions.append(AddResLayer([layer_from_id, layer_to_id, layer, name]))
         return actions
     
