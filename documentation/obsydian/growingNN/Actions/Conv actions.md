@@ -29,3 +29,9 @@ Those layers are generated with zero weight initialization but with single 1 in 
 ## Connections between conv and linear
 
 It was much harder to implement this operation in PyTorch than in growingNN. PyTorch doesn't require those specific shapes in the layers that we can get to know the exact values, so we need to go over it, and one of the ways was the implementation of create_zero_conv_before_linear which after the conv layer adds adaptive max or average pool and then flatten. It is not clear to me why only flatten did not work without adaptive pooling, apparently
+
+## Regression test for conv res layers
+For simple Conv layers
+![[Pasted image 20260510212242.png]]
+For big network with a lot of conv layers and lienar:
+![[Pasted image 20260510214937.png]]
