@@ -32,7 +32,7 @@ from tests.regression.regression_utils import (
 
 if __name__ == "__main__":
     args = parse_regression_cli()
-    model = ModelFactory.simple_conv_chain_2()
+    model = ModelFactory.complex_residual_conv_many_widths()
     gm = fx.symbolic_trace(model)
     executed_actions = []
     x = torch.randn(2, 4, 8, 8)
@@ -43,21 +43,15 @@ if __name__ == "__main__":
     parameter_amounts.append(get_amount_of_parameters(gm))
 
     # Act
-    id = 0
-    for _ in range(30):
-        actions: List[AddSeqConvLayer] = AddSeqConvLayer.generate_all_actions(gm)
-        id += 1
-        idx = rng.randrange(len(actions))
+    for id in range(30):
         logger.info("idx: %s --------------------------------", id)
         logger.debug("gm.graph: %s", gm.graph)
+        actions: List[AddSeqConvLayer] = AddSeqConvLayer.generate_all_actions(gm)
+        idx = rng.randrange(len(actions))
         logger.info("action used: %s", actions[idx])
         draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified" + str(id), fmt="pdf")
         draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph" + str(id), fmt="pdf")
         actions[idx].execute(gm)
-
-
-        draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified_Q" + str(id), fmt="pdf")
-        draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_Q" + str(id), fmt="pdf")
 
         y_new = gm(x)
         dn = float(torch.norm(y - y_new))
