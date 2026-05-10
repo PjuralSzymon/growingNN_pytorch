@@ -59,7 +59,7 @@ if __name__ == "__main__":
             actions += DelLayer.generate_all_actions(gm)
         if len(actions) == 0:
             logger.warning("No actions to execute for iteration %s", id)
-            continue
+            break
         idx = rng.randrange(len(actions))
         logger.info("action used: %s", actions[idx])
         actions[idx].execute(gm)
