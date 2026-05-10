@@ -22,7 +22,7 @@ from tests.regression.regression_utils import FOLDER_NAME, clear_regression_fold
 
 if __name__ == "__main__":
     args = parse_regression_cli()
-    model = ModelFactory.simple_chain_3()
+    model = ModelFactory.complex_residual_many_widths()
     gm = fx.symbolic_trace(model)
     executed_actions = []
     x = torch.randn(2, 4)

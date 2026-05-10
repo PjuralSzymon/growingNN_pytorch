@@ -21,17 +21,20 @@ from growingnn.actions.add_seq_layer import AddSeqLayer
 from growingnn.actions.delete_layer import DelLayer
 from tests.model_factory import ModelFactory
 from tests.regression.regression_utils import FOLDER_NAME, clear_regression_folder, parse_regression_cli
+from growingnn.actions.utils.model_analyser import get_amount_of_parameters
 
 
 if __name__ == "__main__":
     args = parse_regression_cli()
-    model = ModelFactory.simple_chain_3()
+    model = ModelFactory.complex_residual_many_widths()
     gm = fx.symbolic_trace(model)
     executed_actions = []
     x = torch.randn(2, 4)
     rng = random.Random(42)
     output_initial = gm(x)
     norms = []
+    parameter_amounts = []
+    parameter_amounts.append(get_amount_of_parameters(gm))
 
     # Act
     iterantions = 50
@@ -40,6 +43,7 @@ if __name__ == "__main__":
     draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified0", fmt="pdf")
     draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph0", fmt="pdf")
     for id in range(iterantions):
+        print(f"idx: {id} " + "--------------------------------")
         actions: List[Action] = []
         if id < grow_iterations:
             actions += AddResLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])
@@ -52,20 +56,36 @@ if __name__ == "__main__":
             print(f"No actions to execute for iteration {id}")
             continue
         idx = rng.randrange(len(actions))
+#        print(f"gm.graph: {gm.graph}")
+        print("action used: ", actions[idx])
         actions[idx].execute(gm)
-        output_final = gm(x)
+        try:
+            output_final = gm(x)
+        except Exception as e:
+            draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified_error" + str(id+1), fmt="pdf")
+            print(f"Error executing action {actions[idx]}")
+            print(e)
+            break
         dn = float(torch.norm(output_initial - output_final))
         norms.append(dn)
-        print(f"idx: {id} " + "--------------------------------")
-        print(f"gm.graph: {gm.graph}")
-        print("action used: ", actions[idx])
+        parameter_amounts.append(get_amount_of_parameters(gm))
         draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified" + str(id+1), fmt="pdf")
         draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph" + str(id+1), fmt="pdf")
         print(f"diffrence norm: {dn}")
 
-    plt.plot(range(len(norms)), norms)
-    plt.ylabel("||Δout||")
-    plt.xlabel("step")
+    steps = range(len(norms))
+    fig, ax1 = plt.subplots()
+    ax1.plot(steps, norms, color="C0")
+    ax1.set_xlabel("step")
+    ax1.set_ylabel("||Δout||", color="C0")
+    ax1.tick_params(axis="y", labelcolor="C0")
+
+    ax2 = ax1.twinx()
+    ax2.plot(steps, parameter_amounts[1 : 1 + len(norms)], color="C1")
+    ax2.set_ylabel("amount of params", color="C1")
+    ax2.tick_params(axis="y", labelcolor="C1")
+
+    fig.tight_layout()
     plt.show()
 
     if not args.save_output:

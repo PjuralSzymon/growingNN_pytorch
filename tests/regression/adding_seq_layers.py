@@ -22,7 +22,8 @@ from growingnn.actions.add_seq_layer import AddSeqLayer
 
 if __name__ == "__main__":
     args = parse_regression_cli()
-    model = ModelFactory.simple_chain_2_diffrent_input_output_features()
+    #model = ModelFactory.simple_chain_2_diffrent_input_output_features()
+    model = ModelFactory.complex_residual_many_widths()
     gm = fx.symbolic_trace(model)
     executed_actions = []
     x = torch.randn(2, 4)
