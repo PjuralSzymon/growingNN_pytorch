@@ -1,5 +1,16 @@
+import torch.nn as nn
 from torch.fx.passes.graph_drawer import FxGraphDrawer
 from graphviz import Digraph
+
+
+def module_weight_shape_suffix(mod: nn.Module) -> str:
+    """Extra graphviz label fragment for modules whose `.weight` shape is informative."""
+    if isinstance(mod, nn.Linear):
+        return f"\\nweight {tuple(mod.weight.shape)}"
+    if isinstance(mod, (nn.Conv1d, nn.Conv2d, nn.Conv3d)):
+        return f"\\nweight {tuple(mod.weight.shape)}"
+    return ""
+
 
 def draw_torch_fx_graph(gm, output_file="fx_graph", fmt="svg"):
     fmt = fmt.lower().removeprefix(".")
@@ -44,7 +55,9 @@ def draw_filtered_fx_graph(gm, output_file="fx_graph", fmt="svg"):
 
     def short_label(node):
         if node.op == "call_module":
-            return f"module\\n{node.target}"
+            base = f"module\\n{node.target}"
+            mod = gm.get_submodule(str(node.target))
+            return base + module_weight_shape_suffix(mod)
         if node.op == "call_function":
             name = getattr(node.target, "__name__", str(node.target))
             return f"function\\n{name}"
