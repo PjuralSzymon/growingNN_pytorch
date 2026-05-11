@@ -123,6 +123,7 @@ def module_sequential_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
             continue
         src = str(n.target)
         stack, seen = list(n.users), set()
+        logger.debug("module_sequential_pairs: node: %s stack: %s", n.target, stack)
         while stack:
             cur = stack.pop()
             if cur in seen:
@@ -139,3 +140,23 @@ def module_sequential_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
 def get_amount_of_parameters(model: nn.Module | fx.GraphModule) -> int:
     gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
     return sum(p.numel() for p in gm.parameters())
+
+
+
+def _sequential_adj(model: nn.Module | fx.GraphModule) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
+    pred: dict[str, list[str]] = {}
+    succ: dict[str, list[str]] = {}
+    for a, b in dict.fromkeys(module_sequential_pairs(model)):
+        pred.setdefault(b, []).append(a)
+        succ.setdefault(a, []).append(b)
+    return pred, succ
+
+
+def get_input_layers(layer_id: str, model: nn.Module | fx.GraphModule) -> list[str]:
+    pred, _ = _sequential_adj(model)
+    return list(pred.get(layer_id, []))
+
+
+def get_output_layers(layer_id: str, model: nn.Module | fx.GraphModule) -> list[str]:
+    _, succ = _sequential_adj(model)
+    return list(succ.get(layer_id, []))

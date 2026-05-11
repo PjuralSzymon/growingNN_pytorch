@@ -1,0 +1,17 @@
+---
+description: Documentation writing style
+alwaysApply: true
+---
+
+When writing documentation:
+- Explan everything with scientific tone but only very simple language
+- Do not use complicated long words
+- Short sentences
+- Style of writting a book 
+- Explain what it do why and where it is used
+- Then write technicalities
+- Allways add as many numbers/references as posisble 
+- Add a lot of function names and so on
+- Write text as short as possible
+- NEVER USE ** 
+- Every description of action should have: Generating actions,  Executing actions, Comparison with the original growingNN paper, Known limitations

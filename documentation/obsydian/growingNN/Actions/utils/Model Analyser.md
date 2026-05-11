@@ -7,7 +7,7 @@ In this module we have functions used by actions to analyse the graph where to a
   
 ### `module_dependency_pairs` 
 Returns all **reachable module pairs** `(ancestor, descendant)`.  
-Used in adding: [[Residual actions]]
+Used in adding: [[Residual Linear Actions]]
   
 - Captures **full dependency paths** (transitive connections)  
 - Includes indirect relationships  
@@ -18,7 +18,7 @@ returns (l1, l2), (l1, l3), (l2, l3)
 
 ### `module_sequential_pairs`  
 Returns only **direct neighboring module pairs**.  
-Used in adding: [[Sequentail actions]]
+Used in adding: [[Sequentail Linear Actions]]
   
 - Captures **local / adjacent relationships**  
 - Skips indirect connections  

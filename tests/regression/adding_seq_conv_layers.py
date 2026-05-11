@@ -53,8 +53,17 @@ if __name__ == "__main__":
         draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph" + str(id), fmt="pdf")
         actions[idx].execute(gm)
 
-        y_new = gm(x)
-        dn = float(torch.norm(y - y_new))
+        try:
+            output_final = gm(x)
+        except Exception:
+            draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified_error" + str(id+1), fmt="pdf")
+            logger.exception(
+                "Error executing action %s",
+                actions[idx],
+            )
+            break
+
+        dn = float(torch.norm(y - output_final))
         norms.append(dn)
         parameter_amounts.append(get_amount_of_parameters(gm))
         logger.info("diffrence norm: %s", dn)

@@ -46,16 +46,16 @@ class AddSeqConvLayer(Action):
                         padding=layer_from.padding
                     )
                     actions.append(AddSeqConvLayer([layer_from_id, layer_to_id, layer, name]))
-                elif  isinstance(layer_to, nn.modules.Linear):
-                    if can_insert_conv_before_linear(layer_from.out_channels, layer_to.in_features):
-                        layer = ConvFactory.create_zero_conv_before_linear(
-                            in_channels=layer_from.out_channels,
-                            out_channels=layer_from.out_channels,
-                            kernel_size=layer_from.kernel_size,
-                            stride=1,
-                            padding=layer_from.padding
-                        )
-                        actions.append(AddSeqConvLayer([layer_from_id, layer_to_id, layer, name]))
+                # elif  isinstance(layer_to, nn.modules.Linear):
+                #     if can_insert_conv_before_linear(layer_from.out_channels, layer_to.in_features):
+                #         layer = ConvFactory.create_zero_conv_before_linear(
+                #             in_channels=layer_from.out_channels,
+                #             out_channels=layer_from.out_channels,
+                #             kernel_size=layer_from.kernel_size,
+                #             stride=1,
+                #             padding=layer_from.padding
+                #         )
+                #         actions.append(AddSeqConvLayer([layer_from_id, layer_to_id, layer, name]))
         return actions
     
     def __str__(self):
