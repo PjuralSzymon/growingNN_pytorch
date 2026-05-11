@@ -1,0 +1,33 @@
+---
+description: Unit testing conventions
+alwaysApply: true
+---
+
+Unit test rules:
+- Every test must contain a short description comment/docstring explaining the expected behavior.
+- Use Arrange / Act / Assert structure in every test.
+- Keep each section explicitly labeled.
+- Tests should verify one behavior only.
+- Prefer small deterministic tests.
+- Test names should clearly describe expected behavior.
+
+Example:
+
+def test_has_module_upstream_detects_previous_module():
+    """
+    _has_module_upstream should return True when a module exists before the node.
+    """
+
+    # Arrange
+    model = ModelFactory.simple_chain_3()
+    gm = fx.symbolic_trace(model)
+    l2_node = next(
+        n for n in gm.graph.nodes
+        if n.op == "call_module" and n.target == "l2"
+    )
+
+    # Act
+    result = _has_module_upstream(l2_node)
+
+    # Assert
+    assert result is True

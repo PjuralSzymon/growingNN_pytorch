@@ -1,0 +1,15 @@
+---
+description: Implementation rules for this GrowingNN successor repo
+alwaysApply: true
+---
+
+This repository is a newer implementation/version of:
+https://github.com/PjuralSzymon/growingnn
+
+When implementing features, follow the existing architecture, naming style, and design philosophy of this repo first. Do not rewrite large parts unless necessary.
+
+Core framework idea:
+The framework is based on dynamic neural network architecture growth/shrinking during training. The main conceptual reference is:
+https://link.springer.com/chapter/10.1007/978-3-031-63749-0_25
+
+Each function should have at least one unit test
