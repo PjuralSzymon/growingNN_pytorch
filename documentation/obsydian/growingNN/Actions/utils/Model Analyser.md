@@ -56,3 +56,9 @@ Returns `True` if the node is a **hidden layer**, meaning:
 In practice, this excludes:
 - input layers (no upstream modules)
 - output layers (no downstream modules)
+
+---
+
+### Related
+
+For how `torch.fx` names nested submodules (e.g. `layer1.0.conv1`), why `getattr` returns `None` for those names, and which API to use instead, see [[Dotted Module Names in torch.fx]].
