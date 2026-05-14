@@ -1,3 +1,4 @@
+from doctest import FAIL_FAST
 import random
 import sys
 from pathlib import Path
@@ -5,7 +6,8 @@ from typing import List
 
 import torch
 import torch.fx as fx
-from torchvision.models import resnet50, ResNet50_Weights
+from torchvision.models import resnet18, ResNet18_Weights
+from torchvision.models.maxvit import F
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
@@ -30,20 +32,20 @@ from tests.regression.regression_utils import (
 
 # Which growth actions to consider (delete is always available in the shrink phase).
 USE_ADD_RES_LAYER = True
-USE_ADD_RES_CONV_LAYER = True
-USE_ADD_SEQ_LAYER = True
-USE_ADD_SEQ_CONV_LAYER = True
-USE_DEL_LAYER = True
+USE_ADD_RES_CONV_LAYER = False
+USE_ADD_SEQ_LAYER = False
+USE_ADD_SEQ_CONV_LAYER = False
+USE_DEL_LAYER = False
 
 BATCH_SIZE = 2
 INPUT_SHAPE = (3, 64, 64)
 ITERATIONS = 50
 
 
-def _load_pretrained_resnet50() -> torch.nn.Module:
-    """Real pretrained ResNet-50 from torchvision. ``eval()`` to keep BN running stats fixed."""
-    weights = ResNet50_Weights.DEFAULT
-    model = resnet50(weights=weights)
+def _load_pretrained_resnet18() -> torch.nn.Module:
+    """Real pretrained ResNet-18 from torchvision. ``eval()`` to keep BN running stats fixed."""
+    weights = ResNet18_Weights.DEFAULT
+    model = resnet18(weights=weights)
     model.eval()
     return model
 
@@ -72,7 +74,7 @@ def _generate_actions(gm: fx.GraphModule) -> List[Action]:
 if __name__ == "__main__":
     args = parse_regression_cli()
 
-    model = _load_pretrained_resnet50()
+    model = _load_pretrained_resnet18()
     gm = fx.symbolic_trace(model)
 
     rng = random.Random(42)
@@ -88,6 +90,7 @@ if __name__ == "__main__":
 
     draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified0", fmt="pdf")
     draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph0", fmt="pdf")
+    logger.info("Initial ResNet-18 Graph loaded and saved")
 
     for id in range(ITERATIONS):
         logger.info("idx: %s --------------------------------", id)

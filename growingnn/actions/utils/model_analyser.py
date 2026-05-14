@@ -95,7 +95,7 @@ def module_dependency_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
             else:
                 logger.debug("pair: %s -> %s not added becouse: editable: %s, hidden: %s", src, cur.target, _is_editable_module(cur, gm), _is_at_least_one_hidden_module(n, cur))
             stack.extend(cur.users)
-    logger.debug("module_dependency_pairs edges: %s", edges)
+    logger.debug("number of dependency pairs: %s", len(edges))
     return list(dict.fromkeys(edges))
 
 
@@ -123,7 +123,7 @@ def module_sequential_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
             else:
                 logger.debug("pair: %s -> %s not added becouse: editable: %s, hidden: %s", src, cur.target, _is_editable_module(cur, gm), _is_at_least_one_hidden_module(n, cur))
             stack.extend(cur.users)
-    logger.debug("module_sequential_pairs edges: %s", edges)
+    logger.debug("number of sequential pairs: %s", len(edges))
     return list(dict.fromkeys(edges))
 
 def get_amount_of_parameters(model: nn.Module | fx.GraphModule) -> int:

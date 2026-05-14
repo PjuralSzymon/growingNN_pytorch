@@ -48,7 +48,6 @@ if __name__ == "__main__":
         logger.info("idx: %s --------------------------------", id)
         actions: List[AddResConvLayer] = AddResConvLayer.generate_all_actions(gm)
         idx = rng.randrange(len(actions))
-        logger.debug("gm.graph: %s", gm.graph)
         logger.info("action used: %s", actions[idx])
 
         actions[idx].execute(gm)

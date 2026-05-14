@@ -45,7 +45,6 @@ if __name__ == "__main__":
         id += 1
         idx = rng.randrange(len(actions))
         logger.info("idx: %s --------------------------------", id)
-        logger.debug("gm.graph: %s", gm.graph)
         logger.info("action used: %s", actions[idx])
         draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified" + str(id), fmt="pdf")
         draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph" + str(id), fmt="pdf")

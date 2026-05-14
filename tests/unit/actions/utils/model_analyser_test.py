@@ -1,3 +1,4 @@
+from ast import Mod
 import sys
 from pathlib import Path
 
@@ -30,6 +31,39 @@ def test_module_dependency_pairs_linear_chain():
         ("l1", "l2"),
         ("l2", "l3"),
     }
+
+
+"Module dependency pairs should work around activation and batch normalization layers"
+def test_module_dependency_pairs_linear_chain_with_activation():
+    # Arrange
+    model = ModelFactory.simple_chain_3_with_activation()
+    gm = fx.symbolic_trace(model)
+
+    # Act 
+    pairs = set(module_dependency_pairs(gm))
+
+    #Assert
+    assert pairs == {
+        ("l1", "l2"),
+        ("l2", "l3"),
+    }
+
+"Module dependency pairs should avoid dependency pairs with activation and batch normalization layers"
+def test_avoid_dependency_pairs_with_activation():
+    # Arrange
+    model_normal = ModelFactory.complex_residual_many_widths()
+    model_activations = ModelFactory.complex_residual_many_widths_with_activation()
+    gm_normal = fx.symbolic_trace(model_normal)
+    gm_activations = fx.symbolic_trace(model_activations)
+
+    # Act
+    pairs_normal = set(module_dependency_pairs(gm_normal))
+    pairs_activations = set(module_dependency_pairs(gm_activations))
+
+    #Assert
+    print("pairs_normal: %s", pairs_normal)
+    print("pairs_activations: %s", pairs_activations)
+    assert len(pairs_normal) == len(pairs_activations)
 
 "With a residual branch, l1 also reaches l4 directly; pairs include (l1,l4) in addition to the chain."
 def test_module_dependency_pairs_with_residual_skip():

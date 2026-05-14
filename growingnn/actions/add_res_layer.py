@@ -39,9 +39,6 @@ class AddResLayer(Action):
                         layer_from_out_features, layer_to_out_features, type
                     )
                     actions.append(AddResLayer([layer_from_id, layer_to_id, layer, name]))
-        logger.info("AAAActions: %s", actions)
-        for action in actions:
-            logger.info("AAAAaction - : %s", action)
         return actions
     
     def __str__(self):
