@@ -11,6 +11,15 @@ Usage (from repo root)::
     python tests/run_all_test.py
 """
 
+import pytest
+import sys
+from pathlib import Path
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+import growingnn.core.config
 from __future__ import annotations
 
 import os
@@ -18,6 +27,8 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+
+growingnn.core.config.ENABLE_LOGGING = False
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 TESTS = REPO_ROOT / "tests"

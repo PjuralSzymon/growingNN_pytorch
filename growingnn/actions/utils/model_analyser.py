@@ -16,30 +16,17 @@ def _is_hidden_module(node: fx.Node) -> bool:
         return False
     if any(user.op == "output" for user in node.users):
         return False
-
     if "placeholder" in node.all_input_nodes:
         return False
-
     if len(node.all_input_nodes) == 0:
         return False
     if len(node.all_input_nodes) == 1 and node.all_input_nodes[0] == None:
         return False
-
     if len(node.all_input_nodes) == 1:
         if node.all_input_nodes[0] == None:
             return False
         if len(node.all_input_nodes[0].all_input_nodes) == 0:
             return False
-
-    has_real_input = any(
-            not inp.op == "placeholder"
-            for inp in node.all_input_nodes
-        )
-
-    has_real_user = any(
-        not user.op == "output"
-        for user in node.users
-    )
     return True
 
 def _is_editable_module(node: fx.Node, gm: fx.GraphModule) -> bool:
@@ -102,10 +89,11 @@ def module_dependency_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
             if cur in seen:
                 continue
             seen.add(cur)
-            logger.debug("cur: %s is hidden: %s", cur.target, _is_hidden_module(cur))
-            if _is_editable_module(cur, gm) and _is_hidden_module(cur):
+            if _is_editable_module(cur, gm) and _is_at_least_one_hidden_module(n, cur):
                 logger.debug("adding dependency pair: %s -> %s", src, cur.target)
                 edges.append((src, str(cur.target)))
+            else:
+                logger.debug("pair: %s -> %s not added becouse: editable: %s, hidden: %s", src, cur.target, _is_editable_module(cur, gm), _is_at_least_one_hidden_module(n, cur))
             stack.extend(cur.users)
     logger.debug("module_dependency_pairs edges: %s", edges)
     return list(dict.fromkeys(edges))
@@ -123,7 +111,6 @@ def module_sequential_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
             continue
         src = str(n.target)
         stack, seen = list(n.users), set()
-        logger.debug("module_sequential_pairs: node: %s stack: %s", n.target, stack)
         while stack:
             cur = stack.pop()
             if cur in seen:
@@ -133,6 +120,8 @@ def module_sequential_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
                 logger.debug("adding sequential pair: %s -> %s", src, cur.target)
                 edges.append((src, str(cur.target)))
                 continue
+            else:
+                logger.debug("pair: %s -> %s not added becouse: editable: %s, hidden: %s", src, cur.target, _is_editable_module(cur, gm), _is_at_least_one_hidden_module(n, cur))
             stack.extend(cur.users)
     logger.debug("module_sequential_pairs edges: %s", edges)
     return list(dict.fromkeys(edges))

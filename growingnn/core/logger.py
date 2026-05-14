@@ -2,6 +2,8 @@ import logging
 
 from .config import ENABLE_LOGGING, LOG_LEVEL
 
+logging.raiseExceptions = False
+
 logger = logging.getLogger("growingnn")
 
 if ENABLE_LOGGING:

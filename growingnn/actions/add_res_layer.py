@@ -6,6 +6,7 @@ from growingnn.actions.utils.layer_Factory import LinearFactory
 from growingnn.actions.utils.model_analyser import module_dependency_pairs
 from growingnn.actions.utils.name_factory import unique_call_module_name
 from growingnn.actions.utils.model_transformations import add_new_residual_layer
+from growingnn.core.logger import logger
 from .action import Action, Layer_Type
 
 
@@ -38,6 +39,9 @@ class AddResLayer(Action):
                         layer_from_out_features, layer_to_out_features, type
                     )
                     actions.append(AddResLayer([layer_from_id, layer_to_id, layer, name]))
+        logger.info("AAAActions: %s", actions)
+        for action in actions:
+            logger.info("AAAAaction - : %s", action)
         return actions
     
     def __str__(self):
