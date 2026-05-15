@@ -2,31 +2,31 @@ from typing import List
 
 from torch import fx, nn
 
-from growingnn.actions.utils.model_analyser import get_all_hidden_modules, get_input_layers, get_output_layers, module_sequential_pairs
+from growingnn.actions.utils.model_analyser import get_all_hidden_modules, get_input_layers, get_layer_module, get_output_layers, module_sequential_pairs
 from growingnn.actions.utils.model_transformations import delete_layer
 from .action import Action
 
 
 def has_same_output_shape(model: nn.Module | fx.GraphModule, input_layers: list[str]) -> bool:
-    mods = [getattr(model, i) for i in input_layers]
+    mods = [get_layer_module(i, model) for i in input_layers]
     return bool(input_layers) and all(isinstance(m, nn.Linear) for m in mods) and len({m.out_features for m in mods}) == 1
 
 
 def has_same_input_shape(model: nn.Module | fx.GraphModule, output_layers: list[str]) -> bool:
-    mods = [getattr(model, i) for i in output_layers]
+    mods = [get_layer_module(i, model) for i in output_layers]
     return bool(output_layers) and all(isinstance(m, nn.Linear) for m in mods) and len({m.in_features for m in mods}) == 1
 
 
 def get_common_output_shape(model: nn.Module | fx.GraphModule, input_layers: list[str]) -> int | None:
     if not has_same_output_shape(model, input_layers):
         return None
-    return getattr(model, input_layers[0]).out_features
+    return get_layer_module(input_layers[0], model).out_features
 
 
 def get_common_input_shape(model: nn.Module | fx.GraphModule, output_layers: list[str]) -> int | None:
     if not has_same_input_shape(model, output_layers):
         return None
-    return getattr(model, output_layers[0]).in_features
+    return get_layer_module(output_layers[0], model).in_features
 
 
 class DelLayer(Action):

@@ -7,7 +7,7 @@ from growingnn.actions.utils.conv_to_linear_adapter import can_insert_conv_befor
 from .action import Action, Layer_Type
 
 from growingnn.actions.utils.layer_Factory import ConvFactory
-from growingnn.actions.utils.model_analyser import module_sequential_pairs
+from growingnn.actions.utils.model_analyser import get_layer_module, module_sequential_pairs
 from growingnn.actions.utils.name_factory import unique_call_module_name
 from growingnn.actions.utils.model_transformations import add_new_seq_layer
 from growingnn.core.logger import logger
@@ -27,8 +27,8 @@ class AddSeqConvLayer(Action):
         layer_types = (nn.modules.conv._ConvNd, nn.modules.AdaptiveAvgPool2d, nn.modules.AdaptiveMaxPool2d, nn.modules.AdaptiveAvgPool1d, nn.modules.AdaptiveMaxPool1d)
         pairs = module_sequential_pairs(model)
         for layer_from_id, layer_to_id in pairs:
-            layer_from = getattr(model, layer_from_id, None)
-            layer_to = getattr(model, layer_to_id, None)
+            layer_from = get_layer_module(layer_from_id, model)
+            layer_to = get_layer_module(layer_to_id, model)
 
             if isinstance(layer_from, nn.modules.conv._ConvNd):
                 logger.debug(
