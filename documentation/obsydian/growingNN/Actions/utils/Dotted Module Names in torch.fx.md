@@ -1,7 +1,8 @@
-
 This note explains how `torch.fx` names submodules in an `fx.GraphModule`, how to read those names, why `getattr` returns `None` for them, and which API the framework should use.
 
-It is used by [[Model Analyser]] and [[Model Transformer]] when they walk the graph and need the actual `nn.Module` object behind a `call_module` node.
+Hub: [[Index]].
+
+It is used by [[Model Analyser]], [[Model Transformer]], `get_layer_module` in `growingnn/actions/delete_layer.py`, and action generators in `growingnn/actions/add_res_layer.py`, `add_res_conv_layer.py`, `add_seq_layer.py`, and `add_seq_conv_layer.py` when they walk the graph and need the actual `nn.Module` object behind a `call_module` node. [[FX graph drawer]] uses `get_submodule` for labels. [[Name factory]] must pick names that stay unique next to every dotted `call_module` target.
 
 ---
 
@@ -36,7 +37,7 @@ So the dotted name `layer1.0.conv1` is read left to right as:
 
 Python's `getattr` does one attribute lookup. It treats the dot as part of the attribute name, not as a path separator. There is no attribute on `gm` literally named `layer1.0.conv1`, so `getattr(gm, "layer1.0.conv1", None)` returns `None`.
 
-This is why the early check `getattr(gm, str(node.target), None) is None` in `_is_editable_module` (`growingnn/actions/utils/model_analyser.py`, line 50) incorrectly rejected every nested submodule in ResNet-18, even though those submodules are real `nn.Conv2d` instances and `nn.Conv2d` is in `EDITABLE_MODULES` (`growingnn/core/config.py`, line 15).
+Older drafts of `_is_editable_module` in `growingnn/actions/utils/model_analyser.py` used `getattr(gm, str(node.target), None)` before the module type check. That form incorrectly rejected every nested submodule in ResNet-18, even when the module was a real `nn.Conv2d` and `nn.Conv2d` is listed in `EDITABLE_MODULES` in `growingnn/core/config.py`.
 
 ### The correct API
 
@@ -63,13 +64,15 @@ Behavior on missing or empty names
 
 ### Symptom in the log
 
-With `LOG_LEVEL = "DEBUG"` and `LOG_TO_FILE = True` (`growingnn/core/config.py`, lines 19 and 20), `tests/regression/growingnn.log` shows many lines like:
-- `layer_module: None is not an editable module` (from line 52 of `model_analyser.py`)
-- `pair: conv1 -> layer1.0.conv1 not added becouse: editable: False, hidden: True` (from line 109 of `model_analyser.py`)
+With `LOG_LEVEL = "DEBUG"` and `LOG_TO_FILE = True` (`growingnn/core/config.py`), log files can show lines from `module_dependency_pairs` such as `pair: stem -> outer.middle.inner.l1 not added becouse: editable: False, hidden: True` when the editable resolver was wrong, or `adding dependency pair: ...` after `get_layer_module` and `_is_editable_module` were fixed.
 
-The pair was skipped because the editable check returned `False`. The hidden check correctly returned `True`, so the node really exists in the graph.
+The pair was skipped when the editable check returned `False`. The hidden check could still return `True`, so the node was present in the graph.
 
 ### Known limitations
 
 - The bug only shows up on models whose submodules have dotted names. Flat factories in `tests/model_factory.py` (e.g. `simple_chain_3`, `complex_residual_many_widths`) have no dots and are not affected.
-- After switching to `get_submodule`, the analyser will start producing edges for every nested editable module. Downstream actions in [[Sequentail Linear Actions]], [[Residual Linear Actions]], [[Sequential Conv Action]], [[Residual Conv Action]], and [[Del Layer Action]] that assume short names may need to be reviewed.
+- After switching to `get_submodule` via `get_layer_module` in `growingnn/actions/utils/model_analyser.py` (see function `get_layer_module` near line 32), the analyser can mark nested modules as editable when their type is in `EDITABLE_MODULES` from `growingnn/core/config.py`. Downstream actions in [[Sequentail Linear Actions]], [[Residual Linear Actions]], [[Sequential Conv Action]], [[Residual Conv Action]], and [[Del Layer Action]] must keep using `get_layer_module` or `get_submodule` for dotted string ids.
+
+### Framework helper `get_layer_module`
+
+The repo resolves FX targets with `get_layer_module(target, gm)` in `model_analyser.py`. It calls `gm.get_submodule(str(name))`. Actions that used `getattr(model, layer_id, None)` were updated to call this helper. See also [[Model Analyser]] and [[FX Shape Probe]].

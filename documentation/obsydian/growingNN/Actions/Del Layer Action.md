@@ -1,17 +1,19 @@
 
 ## Overview
 
-`DelLayer` removes hidden layers from a torch.fx `GraphModule`. We list all hidden modules, filter to those that pass the rules below, and that list is the delete actions the search can choose for that model.
+`DelLayer` removes hidden layers from a torch.fx `GraphModule`. Hub: [[Index]]. We list all hidden modules, filter to those that pass the rules below, and that list is the delete actions the search can choose for that model.
 
 ## Generating actions
 
-Hidden ids come from `get_all_hidden_modules` (`module_analyser.py`). For each `layer_id` we use sequential neighbours only (`module_sequential_pairs`): immediate predecessors as inputs, immediate successors as outputs.
+Hidden ids come from `get_all_hidden_modules` in `growingnn/actions/utils/model_analyser.py`. For each `layer_id` we use sequential neighbours only from `module_sequential_pairs`: immediate predecessors as inputs, immediate successors as outputs.
+
+Width checks use `get_layer_module` in `growingnn/actions/delete_layer.py` so dotted ids resolve with `nn.Module.get_submodule` instead of `getattr(model, dotted_string)`. See [[Dotted Module Names in torch.fx]].
 
 We emit `DelLayer([layer_id])` only if every input is `nn.Linear` with the same `out_features`, every output is `nn.Linear` with the same `in_features`, and those two widths match. Otherwise we skip that id so the bypass stays a same-width linear shortcut.
 
 ## Executing actions
 
-`DelLayer.execute` calls `delete_layer` (`model_transformations.py`). We find the `call_module` for `layer_id`, sum its `all_input_nodes` with `operator.add` if there are several, rewire every user to that sum, erase the node, drop the submodule, then `lint` and `recompile`. Non-module ops (activations, views) are not cleaned up automatically.
+`DelLayer.execute` calls `delete_layer` in [[Model Transformer]]. We find the `call_module` for `layer_id`, sum its `all_input_nodes` with `operator.add` if there are several, rewire every user to that sum, erase the node, drop the submodule, then `lint` and `recompile`. Non-module ops (activations, views) are not cleaned up automatically.
 
 ## Comparison with the original growingNN paper
 

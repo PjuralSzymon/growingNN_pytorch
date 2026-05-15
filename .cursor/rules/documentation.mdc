@@ -15,3 +15,6 @@ When writing documentation:
 - Write text as short as possible
 - NEVER USE ** 
 - Every description of action should have: Generating actions,  Executing actions, Comparison with the original growingNN paper, Known limitations
+- Documentation is in obsydian only so if possible add to what other apge some page relates to create good dependency graph, for example: "It is used by [[Model Analyser]] and [[Model Transformer]] when they ..."
+- Prefer many short .md files than one long .md file 
+- Create new files and folders 
