@@ -4,6 +4,7 @@ from pathlib import Path
 
 import torch.fx as fx
 
+
 _REPO_ROOT = Path(__file__).resolve().parents[4]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
@@ -16,6 +17,8 @@ from growingnn.actions.utils.model_analyser import (
     module_dependency_pairs,
     module_sequential_pairs,
 )
+from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
+
 from tests.model_factory import ModelFactory
 
 
@@ -41,6 +44,23 @@ def test_module_dependency_pairs_linear_chain_with_activation():
 
     # Act 
     pairs = set(module_dependency_pairs(gm))
+
+    #Assert
+    assert pairs == {
+        ("l1", "l2"),
+        ("l2", "l3"),
+    }
+
+
+"Module dependency pairs should work around activation and batch normalization layers"
+def test_module_dependency_pairs_linear_chain_with_activation():
+    # Arrange
+    model = ModelFactory.deeply_nested_submodules()
+    gm = fx.symbolic_trace(model)
+
+    # Act 
+    pairs = set(module_dependency_pairs(gm))
+    print("pairs: %s", pairs)
 
     #Assert
     assert pairs == {

@@ -32,7 +32,7 @@ from tests.regression.regression_utils import (
 
 # Which growth actions to consider (delete is always available in the shrink phase).
 USE_ADD_RES_LAYER = True
-USE_ADD_RES_CONV_LAYER = False
+USE_ADD_RES_CONV_LAYER = True
 USE_ADD_SEQ_LAYER = False
 USE_ADD_SEQ_CONV_LAYER = False
 USE_DEL_LAYER = False
