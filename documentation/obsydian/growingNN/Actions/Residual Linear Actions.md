@@ -34,7 +34,7 @@ The original paper doesn't focus on conv layer initialization; it is using globa
 
 2. `module_dependency_pairs` can list many skips; cost grows with graph size.
 
-3. Residual linear moves do not use [[FX Shape Probe]]; width checks come from `out_features` / `in_features` on the two linears only.
+3. Residual linear moves do not use [[Layer Analyser]]; width checks come from `out_features` / `in_features` on the two linears only.
 
 ### Plot from regression
 

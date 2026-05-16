@@ -12,7 +12,7 @@ Lines 34 to 42: `USE_ADD_RES_LAYER`, `USE_ADD_RES_CONV_LAYER`, `USE_ADD_SEQ_LAYE
 
 ### Links to new safety logic
 
-`AddResConvLayer.generate_all_actions` uses FX Shape Probe (`growingnn/actions/utils/fx_shape_probe.py`) so conv residual candidates that would break `torch.add` on different spatial sizes (for example a pair from `layer3` to `layer4` on ResNet-18) are skipped when shape metadata is present. See Residual Conv Action (`growingnn/actions/add_res_conv_layer.py`).
+`AddResConvLayer.generate_all_actions` uses Layer Analyser (`growingnn/actions/utils/layer_analyser.py`) so conv residual candidates that would break `torch.add` on different spatial sizes (for example a pair from `layer3` to `layer4` on ResNet-18) are skipped when shape metadata is present. See Residual Conv Action (`growingnn/actions/add_res_conv_layer.py`).
 
 ### Related
 

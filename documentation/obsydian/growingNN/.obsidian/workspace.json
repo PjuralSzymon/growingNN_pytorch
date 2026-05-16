@@ -39,14 +39,10 @@
             "id": "c3c11eef4872f0e7",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Actions/utils/FX Shape Probe.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "FX Shape Probe"
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Podgląd grafu"
             }
           }
         ],
@@ -211,6 +207,13 @@
   },
   "active": "c3c11eef4872f0e7",
   "lastOpenFiles": [
+    "Reports/Part 1.md",
+    "Actions/utils/Layer Analyser.md",
+    "Package version.md",
+    "references/Paper and references.md",
+    "references/Pasted image 20260404192219.png",
+    "references",
+    "Actions/utils/FX Shape Probe.md",
     "tests/regression/ResNet18 regression script.md",
     "tests/regression/Regression utils.md",
     "tests/regression/Adding Sequential Layers.md",
@@ -224,31 +227,24 @@
     "Actions/Base action and Layer Type.md",
     "Reports/TODO.md",
     "Reports/PLAN.md",
-    "Reports/Part 1.md",
     "Actions/Residual Linear Actions.md",
     "Actions/Sequentail Linear Actions.md",
     "Actions/Residual Conv Action.md",
-    "Actions/utils/FX Shape Probe.md",
-    "Package version.md",
     "tests/Test runners.md",
     "tests/Unit tests index.md",
-    "Paper and references.md",
     "Utils/FX graph drawer.md",
     "Utils",
     "Actions/Delete neurons action.md",
-    "Actions/utils/Quasi identity.md",
-    "Actions/utils/Conv to linear adapter.md",
     "Core",
-    "Pasted image 20260511225619.png",
-    "Pasted image 20260511225255.png",
-    "Pasted image 20260510215912.png",
+    "references/Pasted image 20260511225619.png",
+    "references/Pasted image 20260511225255.png",
+    "references/Pasted image 20260510215912.png",
     "Pasted image 20260510214937.png",
     "Pasted image 20260510212242.png",
-    "Pasted image 20260510211911.png",
-    "Pasted image 20260506223240.png",
-    "Pasted image 20260506222841.png",
-    "Pasted image 20260506222839.png",
-    "Pasted image 20260506222448.png",
+    "references/Pasted image 20260510211911.png",
+    "references/Pasted image 20260506223240.png",
+    "references/Pasted image 20260506222841.png",
+    "references/Pasted image 20260506222839.png",
     "Actions/utils",
     "re[prts",
     "Actions",
@@ -256,7 +252,6 @@
     "Ideas",
     "Bez nazwy.canvas",
     "tests/regression",
-    "tests",
-    "reports"
+    "tests"
   ]
 }

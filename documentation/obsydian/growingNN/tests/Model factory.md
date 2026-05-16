@@ -1,7 +1,7 @@
 
 This note is about `tests/model_factory.py` and the class `ModelFactory`.
 
-What it does. It builds small `torch.nn.Module` objects for unit tests and for drawings in regression scripts. Why. Tests need fixed width, short forward paths, and known edge cases. Where. Imported from `tests/unit/actions/utils/fx_shape_probe_test.py`, from `tests/regression/utils_testing.py`, and from other tests under `tests/`. Unit test layout is described in `tests/Unit tests.md` (not linked in the vault graph).
+What it does. It builds small `torch.nn.Module` objects for unit tests and for drawings in regression scripts. Why. Tests need fixed width, short forward paths, and known edge cases. Where. Imported from `tests/unit/actions/utils/layer_analyser_test.py`, from `tests/regression/utils_testing.py`, and from other tests under `tests/`. Unit test layout is described in `tests/Unit tests.md` (not linked in the vault graph).
 
 ---
 

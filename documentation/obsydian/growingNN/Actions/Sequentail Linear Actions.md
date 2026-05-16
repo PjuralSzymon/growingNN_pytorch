@@ -1,5 +1,5 @@
 The Obsidian file is named `Sequentail Linear Actions.md` (typo: Sequentail). Content is about sequential linear insertion. 
-Regression behaviour is described in `tests/regression/Adding Sequential Layers.md` (not linked in the vault graph). Code lives in `growingnn/actions/add_seq_layer.py` (`AddSeqLayer`). It uses [[Model Analyser]]: `module_sequential_pairs` and `get_layer_module`. It uses `SUPPORTED_MODULES = (nn.Linear,)` like [[Residual Linear Actions]]. Execution calls `add_new_seq_layer` in [[Model Transformer]].
+Regression behaviour is described in `tests/regression/Adding Sequential Layers.md` (not linked in the vault graph). Code lives in `growingnn/actions/add_seq_layer.py` (`AddSeqLayer`). It uses [[Model Analyser]] `module_sequential_pairs` and [[Layer Analyser]] `get_layer_output_shapes` / `get_layer_input_shapes` with `find_bridge_linear_sizes` on rank-2 tensor shapes only (no `isinstance` on module type). Execution calls `add_new_seq_layer` in [[Model Transformer]].
 
 In the original paper for growingNN, adding sequential layers is very simple because a layer is always connected with an activation function and nodes are pretty standalone tools, but in PyTorch everything can be a module and it is hard to predict what it will be in every use case. So even if a function that goes over layers is called:
 module_sequential_pairs(...)

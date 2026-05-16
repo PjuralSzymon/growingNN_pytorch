@@ -73,4 +73,4 @@ The pair was skipped when the editable check returned `False`. The hidden check 
 
 ### Framework helper `get_layer_module`
 
-The repo resolves FX targets with `get_layer_module(target, gm)` in `model_analyser.py`. It calls `gm.get_submodule(str(name))`. Actions that used `getattr(model, layer_id, None)` were updated to call this helper. See also [[Model Analyser]] and [[FX Shape Probe]].
+The repo resolves FX targets with `get_layer_module(target, gm)` in `model_analyser.py`. It calls `gm.get_submodule(str(name))`. Actions that used `getattr(model, layer_id, None)` were updated to call this helper. See also [[Model Analyser]] and [[Layer Analyser]].

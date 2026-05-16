@@ -22,7 +22,7 @@ Lines 24 to 41.
 
 Steps. `gm.add_module(name, new_layer)` at line 27. Finds `src` and `dst` nodes by string name at lines 29 to 30. Inserts `new_out = call_module(name, args=(src,))` after `dst` at line 32. Builds `added = operator.add(dst, new_out)` at lines 34 to 35. Replaces every use of `dst` with `added`, then forces `added.args = (dst, new_out)` at lines 37 to 38 so the add keeps the original `dst` tensor and the skip branch.
 
-Meaning. Output tensor of `dst` becomes `dst + proj(src)` in forward order. Shapes of `dst` and `proj(src)` must broadcast. [[FX Shape Probe]] filters some bad conv pairs at action generation time.
+Meaning. Output tensor of `dst` becomes `dst + proj(src)` in forward order. Shapes of `dst` and `proj(src)` must broadcast. [[Layer Analyser]] filters some bad conv pairs at action generation time.
 
 ---
 
@@ -62,7 +62,7 @@ The paper describes dynamic graphs and mutations during training. This file is t
 
 1. `delete_layer` submodule removal with `hasattr` or `delattr` does not support dotted names (see above).
 
-2. `add_new_residual_layer` does not check shapes; callers must filter (see [[FX Shape Probe]] for conv).
+2. `add_new_residual_layer` does not check shapes; callers must filter (see [[Layer Analyser]] for conv).
 
 3. All functions assume `gm` is already a traced `GraphModule` with stable `call_module` targets.
 

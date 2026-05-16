@@ -10,8 +10,8 @@ After adaptive pool and flatten, a conv map with `out_channels` produces a vecto
 
 ### Known limitations
 
-Divisibility is necessary but not sufficient for every graph shape. Spatial size and batch layout still matter at runtime. [[FX Shape Probe]] does not filter conv-to-linear pairs today.
+Divisibility is necessary but not sufficient for every graph shape. Spatial size and batch layout still matter at runtime. [[Layer Analyser]] does not filter conv-to-linear pairs today.
 
 ### Related
 
-[[Residual Conv Action]], [[Layer Factory]], [[FX Shape Probe]].
+[[Residual Conv Action]], [[Layer Factory]], [[Layer Analyser]].
