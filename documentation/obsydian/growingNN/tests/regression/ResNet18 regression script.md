@@ -1,10 +1,8 @@
 This note is about `tests/regression/resnet_regression_test.py`.
 
-Hub: [[Index]].
+What it does. It loads a real pretrained ResNet-18 from `torchvision.models.resnet18` with `ResNet18_Weights.DEFAULT`, sets `eval()`, traces with `torch.fx.symbolic_trace` into `gm`, then loops up to `ITERATIONS = 50` steps. Each step builds a list of actions from `AddResLayer.generate_all_actions`, `AddResConvLayer.generate_all_actions`, and optional seq or delete flags, picks one action at random, calls `execute`, runs `gm(x)` with `BATCH_SIZE = 2` and `INPUT_SHAPE = (3, 64, 64)`, logs norms, draws FX graphs into `testResults/regression/` via FX graph drawer (`growingnn/utils/fx_graph_drawer.py`): `draw_filtered_fx_graph` and `draw_torch_fx_graph`.
 
-What it does. It loads a real pretrained ResNet-18 from `torchvision.models.resnet18` with `ResNet18_Weights.DEFAULT`, sets `eval()`, traces with `torch.fx.symbolic_trace` into `gm`, then loops up to `ITERATIONS = 50` steps. Each step builds a list of actions from `AddResLayer.generate_all_actions`, `AddResConvLayer.generate_all_actions`, and optional seq or delete flags, picks one action at random, calls `execute`, runs `gm(x)` with `BATCH_SIZE = 2` and `INPUT_SHAPE = (3, 64, 64)`, logs norms, draws FX graphs into `testResults/regression/` via [[FX graph drawer]] `draw_filtered_fx_graph` and `draw_torch_fx_graph`.
-
-Why. It stress-tests growth on a large real graph with dotted submodule names. Where. Run as a script from the `tests` folder; CLI uses `parse_regression_cli` from [[Regression utils]].
+Why. It stress-tests growth on a large real graph with dotted submodule names. Where. Run as a script from the `tests` folder; CLI uses `parse_regression_cli` from `tests/regression/regression_utils.py`.
 
 ---
 
@@ -14,8 +12,8 @@ Lines 34 to 42: `USE_ADD_RES_LAYER`, `USE_ADD_RES_CONV_LAYER`, `USE_ADD_SEQ_LAYE
 
 ### Links to new safety logic
 
-`AddResConvLayer.generate_all_actions` uses [[FX Shape Probe]] so conv residual candidates that would break `torch.add` on different spatial sizes (for example a pair from `layer3` to `layer4` on ResNet-18) are skipped when shape metadata is present. See [[Residual Conv Action]].
+`AddResConvLayer.generate_all_actions` uses FX Shape Probe (`growingnn/actions/utils/fx_shape_probe.py`) so conv residual candidates that would break `torch.add` on different spatial sizes (for example a pair from `layer3` to `layer4` on ResNet-18) are skipped when shape metadata is present. See Residual Conv Action (`growingnn/actions/add_res_conv_layer.py`).
 
 ### Related
 
-[[Residual Linear Actions]], [[Residual Conv Action]], [[Model Analyser]], [[Utils testing script]], [[Regression utils]], [[FX graph drawer]], [[Test runners]], [[Index]].
+Residual Linear Actions, Residual Conv Action, Model Analyser, `tests/regression/utils_testing.py`, `tests/regression/regression_utils.py`, FX graph drawer, `tests/run_all_test.py`.

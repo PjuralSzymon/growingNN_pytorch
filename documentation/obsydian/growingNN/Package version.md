@@ -2,4 +2,4 @@ The package `growingnn` exposes `__version__` in `growingnn/__init__.py`. Curren
 
 ### Related
 
-[[Index]], [[Config]] for runtime defaults separate from version strings.
+[[Config]] for runtime defaults separate from version strings.

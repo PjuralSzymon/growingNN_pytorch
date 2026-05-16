@@ -1,10 +1,10 @@
-This note is about `growingnn/actions/utils/fx_shape_probe.py`. Hub: [[Index]]. It runs `torch.fx.passes.shape_prop.ShapeProp` once on an `fx.GraphModule` and records output shapes for each `call_module` target string.
+This note is about `growingnn/actions/utils/fx_shape_probe.py`. It runs `torch.fx.passes.shape_prop.ShapeProp` once on an `fx.GraphModule` and records output shapes for each `call_module` target string.
 
 Why it exists. `module_dependency_pairs` in `growingnn/actions/utils/model_analyser.py` only knows graph reachability. A pair like `layer3.0.conv2` to `layer4.1.conv1` on ResNet-18 can be reachable while the two tensors have different height and width. `add_new_residual_layer` in `growingnn/actions/utils/model_transformations.py` builds `torch.add(dst, proj(src))`. For conv to conv, `proj` uses stride 1, so its spatial size matches the source conv output. The destination conv output can be smaller after a stride-2 stage. Then `torch.add` raises `RuntimeError` on shape mismatch. The probe removes those pairs before action generation.
 
 Where it is used. `AddResConvLayer.generate_all_actions` in `growingnn/actions/add_res_conv_layer.py` calls `call_module_output_shapes(gm)` after `module_dependency_pairs(gm)`. For `isinstance(layer_to, nn.modules.conv._ConvNd)`, it requires `out_shapes[from] == out_shapes[to]` when `out_shapes` is non-empty. Conv to linear branch is not filtered by this equality in the same way (line 64 onward in `add_res_conv_layer.py`).
 
-It is linked from [[Model Analyser]], [[Residual Conv Action]], and [[ResNet18 regression script]]. Tests live in `tests/unit/actions/utils/fx_shape_probe_test.py` using `ModelFactory.simple_conv_chain_2` in `tests/model_factory.py` and `torch.fx.symbolic_trace`.
+It is used from [[Model Analyser]], [[Residual Conv Action]], and `tests/regression/resnet_regression_test.py`. Tests live in `tests/unit/actions/utils/fx_shape_probe_test.py` using `ModelFactory.simple_conv_chain_2` in `tests/model_factory.py` and `torch.fx.symbolic_trace`.
 
 ---
 

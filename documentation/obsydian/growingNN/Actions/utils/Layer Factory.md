@@ -30,4 +30,4 @@ Enum at lines 16 to 19: `ZERO`, `RANDOM`, `EYE`. See [[Base action and Layer Typ
 
 ### Related
 
-[[Residual Linear Actions]], [[Residual Conv Action]], [[Sequential Conv Action]], [[Config]], [[Quasi identity]], [[Index]].
+[[Residual Linear Actions]], [[Residual Conv Action]], [[Sequential Conv Action]], [[Config]], [[Quasi identity]].

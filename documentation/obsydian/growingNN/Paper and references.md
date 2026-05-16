@@ -9,7 +9,3 @@ Official FX docs: `https://docs.pytorch.org/docs/stable/fx.html` . Used for `sym
 ### `nn.Module.get_submodule`
 
 Docs: `https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.get_submodule` . Central to [[Dotted Module Names in torch.fx]] and `get_layer_module` in [[Model Analyser]].
-
-### Related
-
-[[Index]], [[Part 1]].

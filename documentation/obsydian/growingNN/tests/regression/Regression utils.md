@@ -10,7 +10,7 @@ Lines 13 to 17. Logs at debug level, deletes the folder if it exists with `shuti
 
 ### `plot_norms_and_parameter_count`
 
-Lines 20 to 38. Builds a twin-axis matplotlib figure: left axis plots `norms` sequence, right axis plots `parameter_amounts` slice aligned to steps. Calls `plt.show()` at line 38. Non-headless runs may open a window unless the caller sets a backend such as `Agg` (see [[Test runners]]).
+Lines 20 to 38. Builds a twin-axis matplotlib figure: left axis plots `norms` sequence, right axis plots `parameter_amounts` slice aligned to steps. Calls `plt.show()` at line 38. Non-headless runs may open a window unless the caller sets a backend such as `Agg` (see `tests/run_all_test.py`, which sets `MPLBACKEND=Agg` for regression subprocesses).
 
 ### `parse_regression_cli`
 
@@ -22,4 +22,4 @@ Importing this module pulls in `matplotlib`. Unit tests that import action modul
 
 ### Related
 
-[[ResNet18 regression script]], [[Utils testing script]], [[Test runners]], [[Index]].
+`tests/regression/resnet_regression_test.py`, `tests/regression/utils_testing.py`, `tests/run_all_test.py`.

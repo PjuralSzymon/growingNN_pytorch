@@ -18,4 +18,4 @@ Silencing `raiseExceptions` hides all handler bugs, not only the pytest case. Us
 
 ### Related
 
-[[Config]], [[Index]], regression scripts that call `logger.info` such as [[ResNet18 regression script]].
+[[Config]], regression scripts that call `logger.info` such as `tests/regression/resnet_regression_test.py`.

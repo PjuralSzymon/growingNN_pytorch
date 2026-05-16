@@ -7,4 +7,4 @@ Why. Quick manual check of dotted FX names on a small nested net without downloa
 
 ### Related
 
-[[Model factory]], [[Dotted Module Names in torch.fx]], [[ResNet18 regression script]].
+`tests/model_factory.py`, dotted submodule names (see vault page Dotted Module Names in torch.fx), `tests/regression/resnet_regression_test.py`.

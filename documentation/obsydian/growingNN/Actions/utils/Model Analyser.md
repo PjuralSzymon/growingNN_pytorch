@@ -1,6 +1,6 @@
-Hub: [[Index]]. This file is about `growingnn/actions/utils/model_analyser.py`. It reads a model or an `fx.GraphModule` and answers graph questions. It does not edit the graph. Actions use it to know where to add or delete layers.
+This file is about `growingnn/actions/utils/model_analyser.py`. It reads a model or an `fx.GraphModule` and answers graph questions. It does not edit the graph. Actions use it to know where to add or delete layers.
 
-It is used by [[Residual Linear Actions]], [[Residual Conv Action]], [[Sequentail Linear Actions]], [[Sequential Conv Action]], and [[Del Layer Action]]. Shape checks for residual conv pairs use [[FX Shape Probe]] from `AddResConvLayer.generate_all_actions` in `growingnn/actions/add_res_conv_layer.py` (lines 37 to 39, 50 to 54). Submodule lookup follows [[Dotted Module Names in torch.fx]] via `get_layer_module` and `nn.Module.get_submodule`. Unit tests live in `tests/unit/actions/utils/model_analyser_test.py`; see also [[Unit tests index]]. Graph edits use [[Model Transformer]]. New layer objects use [[Layer Factory]] and [[Name factory]].
+It is used by [[Residual Linear Actions]], [[Residual Conv Action]], [[Sequentail Linear Actions]], [[Sequential Conv Action]], and [[Del Layer Action]]. Shape checks for residual conv pairs use [[FX Shape Probe]] from `AddResConvLayer.generate_all_actions` in `growingnn/actions/add_res_conv_layer.py` (lines 37 to 39, 50 to 54). Submodule lookup follows [[Dotted Module Names in torch.fx]] via `get_layer_module` and `nn.Module.get_submodule`. Unit tests live in `tests/unit/actions/utils/model_analyser_test.py` (vault test notes under `tests/` are not linked in the graph). Graph edits use [[Model Transformer]]. New layer objects use [[Layer Factory]] and [[Name factory]].
 
 ---
 
@@ -54,4 +54,4 @@ What they do. They read the undirected adjacency built from `module_sequential_p
 
 ### Related
 
-Hub: [[Index]]. Names with dots, `getattr` pitfalls, and `get_submodule`: [[Dotted Module Names in torch.fx]]. Residual conv shape guard: [[FX Shape Probe]]. Graph edits: [[Model Transformer]]. New layer wiring: [[Layer Factory]], [[Name factory]].
+Names with dots, `getattr` pitfalls, and `get_submodule`: [[Dotted Module Names in torch.fx]]. Residual conv shape guard: [[FX Shape Probe]]. Graph edits: [[Model Transformer]]. New layer wiring: [[Layer Factory]], [[Name factory]].

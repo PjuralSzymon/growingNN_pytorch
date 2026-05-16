@@ -18,3 +18,5 @@ When writing documentation:
 - Documentation is in obsydian only so if possible add to what other apge some page relates to create good dependency graph, for example: "It is used by [[Model Analyser]] and [[Model Transformer]] when they ..."
 - Prefer many short .md files than one long .md file 
 - Create new files and folders 
+- There should not be anything like index, connections should see what relates to what index and list of all things is destroying it
+- Pages under `documentation/obsydian/growingNN/tests/` are outside the vault link graph: never use Obsidian wiki links `[[...]]` or embed tags `![[...]]` there; describe modules and code with plain names and repo paths. Other vault pages must not wiki-link to any page under `tests/`; cite `tests/...` paths instead.

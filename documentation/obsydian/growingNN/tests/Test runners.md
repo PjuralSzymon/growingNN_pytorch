@@ -12,4 +12,4 @@ Sets `growingnn.core.config.ENABLE_LOGGING` to `False` then calls `pytest.main([
 
 ### Related
 
-[[Unit tests index]], [[ResNet18 regression script]], [[Index]].
+`tests/Unit tests.md`, `tests/regression/resnet_regression_test.py` (described in `tests/regression/ResNet18 regression script.md`).

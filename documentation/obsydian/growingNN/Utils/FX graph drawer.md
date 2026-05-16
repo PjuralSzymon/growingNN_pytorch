@@ -14,7 +14,7 @@ Lines 27 to 82. Builds a `graphviz.Digraph` by hand. Keeps only nodes whose `op`
 
 ### Where it is used
 
-[[ResNet18 regression script]] draws graphs into `testResults/regression/`. [[Utils testing script]] does the same for a small nested model.
+`tests/regression/resnet_regression_test.py` draws graphs into `testResults/regression/`. `tests/regression/utils_testing.py` does the same for a small nested model.
 
 ### Known limitations
 
@@ -22,4 +22,4 @@ Filtered view hides data flow through getters and placeholders; it is a sketch, 
 
 ### Related
 
-[[ResNet18 regression script]], [[Utils testing script]], [[Regression utils]], [[Dotted Module Names in torch.fx]], [[Test runners]], [[Index]].
+`tests/regression/resnet_regression_test.py`, `tests/regression/utils_testing.py`, `tests/regression/regression_utils.py`, [[Dotted Module Names in torch.fx]], `tests/run_all_test.py`.

@@ -14,7 +14,7 @@ Use. [[Residual Linear Actions]] passes `layer_types=[Layer_Type.EYE]` in regres
 
 ### Comparison with the original growingNN paper
 
-The paper speaks about several init modes for new weights. This repo encodes three discrete modes in `Layer_Type`. See [[Part 1]] note dated 15.03.2026 about dropping quasi-identity for some residual paths in favour of zero or small random draws.
+The paper speaks about several init modes for new weights. This repo encodes three discrete modes in `Layer_Type`. Residual add paths in this repo prefer zero or small random init rather than quasi-identity for new weights, while `Layer_Type.EYE` remains available for explicit eye init via [[Layer Factory]].
 
 ### Known limitations
 
@@ -22,4 +22,4 @@ The base `generate_all_actions` is not used in production; each action class def
 
 ### Related
 
-[[Residual Linear Actions]], [[Layer Factory]], [[Index]].
+[[Residual Linear Actions]], [[Layer Factory]].
