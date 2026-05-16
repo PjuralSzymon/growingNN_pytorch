@@ -1,10 +1,10 @@
-
 from typing import List
 
 from torch import fx, nn
 
 from growingnn.actions.utils.layer_Factory import LinearFactory
-from growingnn.actions.utils.model_analyser import get_layer_module, module_sequential_pairs
+from growingnn.actions.utils.layer_analyser import LayerBridgeFinder, LayerShapeAnalyser
+from growingnn.actions.utils.model_analyser import module_sequential_pairs
 from growingnn.actions.utils.name_factory import unique_call_module_name
 from growingnn.actions.utils.model_transformations import add_new_seq_layer
 from growingnn.core.logger import logger
@@ -12,8 +12,6 @@ from .action import Action, Layer_Type
 
 
 class AddSeqLayer(Action):
-
-    SUPPORTED_MODULES = (nn.Linear,)
 
     def execute(self, model: nn.Module | fx.GraphModule):
         add_new_seq_layer(model, self.params[0], self.params[1], self.params[2], self.params[3])
@@ -23,37 +21,23 @@ class AddSeqLayer(Action):
 
     @staticmethod
     def generate_all_actions(model: nn.Module | fx.GraphModule) -> List[Action]:
+        gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
+        out_shapes = LayerShapeAnalyser.get_layer_output_shapes(gm)
+        in_shapes = LayerShapeAnalyser.get_layer_input_shapes(gm)
         actions: List[Action] = []
-        name_prefix = "seq_linear"
-        pairs = module_sequential_pairs(model)
-        logger.debug("[generate_all_actions] pairs: %s", pairs)
-        for layer_from_id, layer_to_id in pairs:
-            layer_from = get_layer_module(layer_from_id, model)
-            layer_to = get_layer_module(layer_to_id, model)
-
-            if not isinstance(layer_from, AddSeqLayer.SUPPORTED_MODULES):
+        for layer_from_id, layer_to_id in module_sequential_pairs(gm):
+            sizes = LayerBridgeFinder.find_bridge_linear_sizes(
+                out_shapes.get(layer_from_id),
+                in_shapes.get(layer_to_id),
+            )
+            if sizes is None:
+                logger.debug("AddSeqLayer skip %s -> %s", layer_from_id, layer_to_id)
                 continue
-            if not isinstance(layer_to, AddSeqLayer.SUPPORTED_MODULES):
-                continue
-
-            logger.debug(
-                "id: %s layer_from: %s type: %s",
-                layer_from_id,
-                layer_from,
-                type(layer_from),
-            )
-            logger.debug(
-                "id: %s layer_to: %s type: %s",
-                layer_to_id,
-                layer_to,
-                type(layer_to),
-            )
-
-            layer_from_out_features = layer_from.out_features
-            layer_to_in_features = layer_to.in_features
-            name = unique_call_module_name(name_prefix, model)
-            layer = LinearFactory.create_linear(
-                layer_from_out_features, layer_to_in_features, Layer_Type.EYE
-            )
+            name = unique_call_module_name("seq_linear", gm)
+            layer = LinearFactory.create_linear(sizes[0], sizes[1], Layer_Type.EYE)
+            logger.debug("AddSeqLayer %s -> %s: Linear(%d, %d) out=%s in=%s", layer_from_id, layer_to_id, sizes[0], sizes[1], out_shapes.get(layer_from_id), in_shapes.get(layer_to_id))
             actions.append(AddSeqLayer([layer_from_id, layer_to_id, layer, name]))
         return actions
+
+    def __str__(self):
+        return " ( Add Seq Layer Action: " + str(self.params) + " ) "

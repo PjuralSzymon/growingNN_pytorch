@@ -1,19 +1,18 @@
-
 from typing import List
 
 from torch import fx, nn
 
-from growingnn.actions.utils.conv_to_linear_adapter import can_insert_conv_before_linear
-from .action import Action, Layer_Type
-
 from growingnn.actions.utils.layer_Factory import ConvFactory
+from growingnn.actions.utils.layer_analyser import LayerBridgeFinder, LayerShapeAnalyser
 from growingnn.actions.utils.model_analyser import get_layer_module, module_sequential_pairs
 from growingnn.actions.utils.name_factory import unique_call_module_name
 from growingnn.actions.utils.model_transformations import add_new_seq_layer
 from growingnn.core.logger import logger
+from .action import Action
 
 
 class AddSeqConvLayer(Action):
+
     def execute(self, model: nn.Module | fx.GraphModule):
         add_new_seq_layer(model, self.params[0], self.params[1], self.params[2], self.params[3])
 
@@ -22,41 +21,41 @@ class AddSeqConvLayer(Action):
 
     @staticmethod
     def generate_all_actions(model: nn.Module | fx.GraphModule) -> List[Action]:
-        actions : List[Action] = []
-        name_prefix = "seq_linear"
-        layer_types = (nn.modules.conv._ConvNd, nn.modules.AdaptiveAvgPool2d, nn.modules.AdaptiveMaxPool2d, nn.modules.AdaptiveAvgPool1d, nn.modules.AdaptiveMaxPool1d)
-        pairs = module_sequential_pairs(model)
-        for layer_from_id, layer_to_id in pairs:
+        gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
+        out_shapes = LayerShapeAnalyser.get_layer_output_shapes(gm)
+        in_shapes = LayerShapeAnalyser.get_layer_input_shapes(gm)
+        actions: List[Action] = []
+        for layer_from_id, layer_to_id in module_sequential_pairs(gm):
+            s_out = out_shapes.get(layer_from_id)
+            s_in = in_shapes.get(layer_to_id)
             layer_from = get_layer_module(layer_from_id, model)
-            layer_to = get_layer_module(layer_to_id, model)
-
-            if isinstance(layer_from, nn.modules.conv._ConvNd):
-                logger.debug(
-                    "seq_conv candidate layer_to_id=%r type=%s",
-                    layer_to_id,
-                    type(layer_to),
+            channels = LayerBridgeFinder.find_seq_conv_bridge_channels(s_out, s_in)
+            if channels is not None:
+                name = unique_call_module_name("seq_conv", gm)
+                layer = ConvFactory.create_eye_conv(
+                    channels,
+                    channels,
+                    layer_from.kernel_size,
+                    stride=1,
+                    padding=layer_from.padding,
                 )
-                name = unique_call_module_name(name_prefix, model)
-                if  isinstance(layer_to, layer_types):
-                    layer = ConvFactory.create_eye_conv(
-                        in_channels=layer_from.out_channels,
-                        out_channels=layer_from.out_channels,
-                        kernel_size=layer_from.kernel_size,
-                        stride=1,
-                        padding=layer_from.padding
-                    )
-                    actions.append(AddSeqConvLayer([layer_from_id, layer_to_id, layer, name]))
-                # elif  isinstance(layer_to, nn.modules.Linear):
-                #     if can_insert_conv_before_linear(layer_from.out_channels, layer_to.in_features):
-                #         layer = ConvFactory.create_zero_conv_before_linear(
-                #             in_channels=layer_from.out_channels,
-                #             out_channels=layer_from.out_channels,
-                #             kernel_size=layer_from.kernel_size,
-                #             stride=1,
-                #             padding=layer_from.padding
-                #         )
-                #         actions.append(AddSeqConvLayer([layer_from_id, layer_to_id, layer, name]))
+                logger.debug("AddSeqConvLayer %s -> %s: eye conv %d out=%s in=%s", layer_from_id, layer_to_id, channels, s_out, s_in)
+                actions.append(AddSeqConvLayer([layer_from_id, layer_to_id, layer, name]))
+                continue
+            sizes = LayerBridgeFinder.find_seq_conv_before_linear_sizes(s_out, s_in)
+            if sizes is None:
+                continue
+            name = unique_call_module_name("seq_conv", gm)
+            layer = ConvFactory.create_zero_conv_before_linear(
+                sizes[0],
+                sizes[1],
+                layer_from.kernel_size,
+                stride=1,
+                padding=layer_from.padding,
+            )
+            logger.debug("AddSeqConvLayer %s -> %s: conv->linear (%d,%d) conv=%s lin_in=%s", layer_from_id, layer_to_id, sizes[0], sizes[1], s_out, s_in)
+            actions.append(AddSeqConvLayer([layer_from_id, layer_to_id, layer, name]))
         return actions
-    
+
     def __str__(self):
         return " ( Add Seq Conv Layer Action: " + str(self.params) + " ) "
