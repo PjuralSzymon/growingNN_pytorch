@@ -1,0 +1,26 @@
+---
+description: Commit message format with fix/feat/refactor(R5) prefix
+alwaysApply: true
+---
+
+Commit message rules:
+
+- Every commit subject must start with exactly one of: `fix(R5)`, `feat(R5)`, `refactor(R5)`.
+- After the prefix, add one space, then a single-line description of what changed (no second subject line, no body required unless the user asks for detail).
+- Use present tense or imperative: "add", "fix", "remove", not "added" or "adding".
+- The description should be specific enough to understand the commit without opening the diff.
+
+Prefix meaning:
+
+- `fix(R5)` — bug fix, regression fix, broken tests, incorrect behavior.
+- `feat(R5)` — new behavior, new module, new action, new test coverage for new capability.
+- `refactor(R5)` — structure or naming change without intended behavior change; docs-only vault edits; dependency or tooling cleanup.
+
+Examples:
+
+```
+feat(R5) filter conv residual actions with ShapeProp output shape equality
+fix(R5) skip ResNet layer3 to layer4 pairs that mismatch spatial size on add
+refactor(R5) rewrite FX Shape Probe vault page with per-function sections
+feat(R5) add call_module_output_shapes and wire it in AddResConvLayer
+```
