@@ -24,5 +24,30 @@ def test_generate_all_actions_uses_shape_bridge_for_linear_chain():
     assert len(actions) == 2
     for action in actions:
         layer = action.params[2]
-        assert layer.in_features > 0
-        assert layer.out_features > 0
+        if isinstance(layer, torch.nn.Linear):
+            assert layer.in_features > 0
+            assert layer.out_features > 0
+
+
+def test_generate_all_actions_proposes_plain_linear_between_conv_and_linear():
+    """
+    AddSeqLayer should propose a bare Linear for conv->linear pairs (pool/flatten remain in the graph).
+    """
+
+    # Arrange
+    model = ModelFactory.simple_conv_chain_2()
+    gm = fx.symbolic_trace(model)
+
+    # Act
+    actions = AddSeqLayer.generate_all_actions(gm)
+
+    # Assert
+    conv_to_linear = [
+        a
+        for a in actions
+        if isinstance(a.params[2], torch.nn.Linear)
+        and a.params[0] == "c2"
+        and a.params[1] == "l1"
+    ]
+    assert len(conv_to_linear) == 1
+    assert conv_to_linear[0].params[2].in_features == conv_to_linear[0].params[2].out_features

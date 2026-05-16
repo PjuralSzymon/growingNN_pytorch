@@ -26,16 +26,42 @@ class AddSeqLayer(Action):
         in_shapes = LayerShapeAnalyser.get_layer_input_shapes(gm)
         actions: List[Action] = []
         for layer_from_id, layer_to_id in module_sequential_pairs(gm):
-            sizes = LayerBridgeFinder.find_bridge_linear_sizes(
-                out_shapes.get(layer_from_id),
-                in_shapes.get(layer_to_id),
-            )
-            if sizes is None:
+            s_out = out_shapes.get(layer_from_id)
+            s_in = in_shapes.get(layer_to_id)
+            sizes = LayerBridgeFinder.find_bridge_linear_sizes(s_out, s_in)
+            if sizes is not None:
+                name = unique_call_module_name("seq_linear", gm)
+                layer = LinearFactory.create_linear(sizes[0], sizes[1], Layer_Type.EYE)
+                logger.debug(
+                    "AddSeqLayer %s -> %s: Linear(%d, %d) out=%s in=%s",
+                    layer_from_id,
+                    layer_to_id,
+                    sizes[0],
+                    sizes[1],
+                    s_out,
+                    s_in,
+                )
+                actions.append(AddSeqLayer([layer_from_id, layer_to_id, layer, name]))
+                continue
+            conv_linear_sizes = LayerBridgeFinder.find_seq_linear_after_conv_sizes(s_out, s_in)
+            if conv_linear_sizes is None:
                 logger.debug("AddSeqLayer skip %s -> %s", layer_from_id, layer_to_id)
                 continue
             name = unique_call_module_name("seq_linear", gm)
-            layer = LinearFactory.create_linear(sizes[0], sizes[1], Layer_Type.EYE)
-            logger.debug("AddSeqLayer %s -> %s: Linear(%d, %d) out=%s in=%s", layer_from_id, layer_to_id, sizes[0], sizes[1], out_shapes.get(layer_from_id), in_shapes.get(layer_to_id))
+            layer = LinearFactory.create_linear(
+                conv_linear_sizes[0],
+                conv_linear_sizes[1],
+                Layer_Type.EYE,
+            )
+            logger.debug(
+                "AddSeqLayer %s -> %s: conv->linear (%d, %d) out=%s in=%s",
+                layer_from_id,
+                layer_to_id,
+                conv_linear_sizes[0],
+                conv_linear_sizes[1],
+                s_out,
+                s_in,
+            )
             actions.append(AddSeqLayer([layer_from_id, layer_to_id, layer, name]))
         return actions
 

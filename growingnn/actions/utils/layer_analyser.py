@@ -198,6 +198,19 @@ class LayerBridgeFinder:
         )
 
     @staticmethod
+    def find_seq_linear_after_conv_sizes(
+        conv_output_shape: tuple[int, ...] | None,
+        linear_input_shape: tuple[int, ...] | None,
+    ) -> tuple[int, int] | None:
+        """``(in_features, out_features)`` for a linear on conv->…->linear (pool/flatten stay in the FX path)."""
+        if LayerBridgeFinder.conv_channels(conv_output_shape) is None:
+            return None
+        linear_in = LayerBridgeFinder.linear_feature_dim(linear_input_shape)
+        if linear_in is None:
+            return None
+        return linear_in, linear_in
+
+    @staticmethod
     def find_seq_conv_bridge_channels(
         from_output_shape: tuple[int, ...] | None,
         to_input_shape: tuple[int, ...] | None,
