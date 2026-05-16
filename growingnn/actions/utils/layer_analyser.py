@@ -92,6 +92,19 @@ class LayerBridgeFinder:
     """From activation shapes, decide if a bridge layer fits and what sizes it needs."""
 
     @staticmethod
+    def uniform_activation_shape(
+        shapes: list[tuple[int, ...] | None],
+    ) -> tuple[int, ...] | None:
+        if not shapes:
+            return None
+        if any(s is None for s in shapes):
+            return None
+        first = shapes[0]
+        if all(s == first for s in shapes):
+            return first
+        return None
+
+    @staticmethod
     def linear_feature_dim(shape: tuple[int, ...]) -> int | None:
         if len(shape) != 2:
             return None

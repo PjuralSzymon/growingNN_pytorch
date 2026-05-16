@@ -33,9 +33,9 @@ from tests.regression.regression_utils import (
 # Which growth actions to consider (delete is always available in the shrink phase).
 USE_ADD_RES_LAYER = True
 USE_ADD_RES_CONV_LAYER = True
-USE_ADD_SEQ_LAYER = False
-USE_ADD_SEQ_CONV_LAYER = False
-USE_DEL_LAYER = False
+USE_ADD_SEQ_LAYER = True
+USE_ADD_SEQ_CONV_LAYER = True
+USE_DEL_LAYER = True
 
 BATCH_SIZE = 2
 INPUT_SHAPE = (3, 64, 64)
@@ -86,6 +86,7 @@ if __name__ == "__main__":
 
     norms: List[float] = []
     parameter_amounts: List[int] = [get_amount_of_parameters(gm)]
+    used_action_types: List[str] = []
 
 
     draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified0", fmt="pdf")
@@ -101,16 +102,18 @@ if __name__ == "__main__":
             break
 
         idx = rng.randrange(len(actions))
-        logger.info("action used: %s", actions[idx])
+        chosen = actions[idx]
+        used_action_types.append(type(chosen).__name__)
+        logger.info("action used [%s]: %s", used_action_types[-1], chosen)
         try:
-            actions[idx].execute(gm)
+            chosen.execute(gm)
             with torch.no_grad():
                 output_final = gm(x)
         except Exception:
             draw_filtered_fx_graph(
                 gm, FOLDER_NAME + "/" + "fx_graph_simplified_error" + str(id + 1), fmt="pdf"
             )
-            logger.exception("Error executing action %s", actions[idx])
+            logger.exception("Error executing action %s", chosen)
             break
 
         dn = float(torch.norm(output_initial - output_final))
@@ -123,6 +126,11 @@ if __name__ == "__main__":
         logger.info("diffrence norm: %s", dn)
 
     plot_norms_and_parameter_count(norms, parameter_amounts)
+
+    action_counts: dict[str, int] = {}
+    for name in used_action_types:
+        action_counts[name] = action_counts.get(name, 0) + 1
+    logger.info("action summary: %s", action_counts)
 
     if not args.save_output:
         clear_regression_folder()

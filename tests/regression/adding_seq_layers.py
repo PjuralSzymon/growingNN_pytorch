@@ -28,12 +28,17 @@ from tests.regression.regression_utils import (
 if __name__ == "__main__":
     args = parse_regression_cli()
     #model = ModelFactory.simple_chain_2_diffrent_input_output_features()
-    model = ModelFactory.complex_residual_many_widths()
+    model = ModelFactory.complex_residual_conv_many_widths()
     gm = fx.symbolic_trace(model)
     executed_actions = []
-    x = torch.randn(2, 4)
+    # x = torch.randn(2, 4)
+    # rng = random.Random(42)
+    # output_initial = gm(x)
+
+    x = torch.randn(2, 4, 8, 8)
     rng = random.Random(42)
     output_initial = gm(x)
+
     norms = []
     parameter_amounts = []
     parameter_amounts.append(get_amount_of_parameters(gm))

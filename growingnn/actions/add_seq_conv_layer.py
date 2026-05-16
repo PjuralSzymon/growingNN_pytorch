@@ -42,19 +42,19 @@ class AddSeqConvLayer(Action):
                 logger.debug("AddSeqConvLayer %s -> %s: eye conv %d out=%s in=%s", layer_from_id, layer_to_id, channels, s_out, s_in)
                 actions.append(AddSeqConvLayer([layer_from_id, layer_to_id, layer, name]))
                 continue
-            sizes = LayerBridgeFinder.find_seq_conv_before_linear_sizes(s_out, s_in)
-            if sizes is None:
-                continue
-            name = unique_call_module_name("seq_conv", gm)
-            layer = ConvFactory.create_zero_conv_before_linear(
-                sizes[0],
-                sizes[1],
-                layer_from.kernel_size,
-                stride=1,
-                padding=layer_from.padding,
-            )
-            logger.debug("AddSeqConvLayer %s -> %s: conv->linear (%d,%d) conv=%s lin_in=%s", layer_from_id, layer_to_id, sizes[0], sizes[1], s_out, s_in)
-            actions.append(AddSeqConvLayer([layer_from_id, layer_to_id, layer, name]))
+            # sizes = LayerBridgeFinder.find_seq_conv_before_linear_sizes(s_out, s_in)
+            # if sizes is None:
+            #     continue
+            # name = unique_call_module_name("seq_conv", gm)
+            # layer = ConvFactory.create_zero_conv_before_linear(
+            #     sizes[0],
+            #     sizes[1],
+            #     layer_from.kernel_size,
+            #     stride=1,
+            #     padding=layer_from.padding,
+            # )
+            # logger.debug("AddSeqConvLayer %s -> %s: conv->linear (%d,%d) conv=%s lin_in=%s", layer_from_id, layer_to_id, sizes[0], sizes[1], s_out, s_in)
+            # actions.append(AddSeqConvLayer([layer_from_id, layer_to_id, layer, name]))
         return actions
 
     def __str__(self):
