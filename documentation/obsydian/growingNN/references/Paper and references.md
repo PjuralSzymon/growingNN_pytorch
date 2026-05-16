@@ -4,7 +4,11 @@ Szymon Pjura et al., growing neural networks with search over architectures. Pub
 
 ### PyTorch FX
 
-Official FX docs: `https://docs.pytorch.org/docs/stable/fx.html` . Used for `symbolic_trace`, `GraphModule`, `Node`, and passes such as `ShapeProp` referenced in [[Layer Analyser]].
+Official FX docs: `https://docs.pytorch.org/docs/stable/fx.html` . Used for `symbolic_trace`, `GraphModule`, `Node`, and passes such as `ShapeProp` in [[Layer Analyser]].
+
+### This repo vs older growingNN package
+
+Sequential conv→linear bridges moved from [[Sequential Conv Action]] to [[Sequentail Linear Actions]] (plain `nn.Linear` on the existing flatten path). See those pages under `documentation/obsydian/growingNN/Actions/`.
 
 ### `nn.Module.get_submodule`
 

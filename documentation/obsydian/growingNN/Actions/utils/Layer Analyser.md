@@ -1,101 +1,85 @@
-This note is about `growingnn/actions/utils/layer_analyser.py`. Public API: `get_layer_output_shapes`, `get_layer_input_shapes`. Not the same file as [[Model Analyser]] (graph reachability).
+File: `growingnn/actions/utils/layer_analyser.py`. Two static-only classes: `LayerShapeAnalyser` (run `ShapeProp`, read shapes) and `LayerBridgeFinder` (decide bridge sizes from shapes). Not the same as [[Model Analyser]] (graph reachability).
 
-### Overall idea
-
-Residual conv sums two activations: `torch.add(dst, proj(src))` in `add_new_residual_layer` ([[Model Transformer]]).
-
-[[Model Analyser]] lists reachable layer pairs. Reachability does not imply equal tensor shape. On ResNet-18, `layer3.0.conv2` to `layer4.1.conv1` can be reachable but different H×W after stride-2. Then `torch.add` fails.
-
-This module runs `ShapeProp` once and builds shape maps keyed by `call_module` target strings. [[Residual Conv Action]] compares output shapes for conv-to-conv pairs.
+Used by [[Sequentail Linear Actions]], [[Sequential Conv Action]], [[Residual Linear Actions]], [[Residual Conv Action]], and [[Del Layer Action]]. Tests: `tests/unit/actions/utils/layer_analyser_test.py`, `tests/unit/actions/add_seq_layer_shape_test.py`, `tests/unit/actions/delete_layer_test.py`.
 
 ---
 
-### `get_layer_output_shapes(gm, example=None)`
+## LayerShapeAnalyser
 
-What. Returns `{layer_id: output_shape_tuple}` for every `call_module` node, e.g. `{"c1": (1, 4, 16, 16)}`.
+What. Runs `torch.fx.passes.shape_prop.ShapeProp` once and builds maps keyed by `call_module` target strings.
 
-How. Uses `example` if given, else `_default_example_input` (`randn(1, 3, 224, 224)` on model device). Runs `ShapeProp(gm).propagate`. On failure returns `{}`.
+Why. `module_dependency_pairs` says two layers are connected. That does not mean tensors match for `torch.add` or for a new bridge layer.
 
----
+Methods:
 
-### `get_layer_input_shapes(gm, example=None)`
+- `node_shape(node)` reads `node.meta["val"]` or `tensor_meta` (lines 14 to 23).
+- `default_example_input(gm)` picks `randn(1, in_features)` from the first `nn.Linear`, else `randn(1, C, 224, 224)` from the first conv, else `(1, 3, 224, 224)` (lines 26 to 40).
+- `collect_layer_shapes(gm, example)` returns `(outputs, inputs)` dicts (lines 52 to 74).
+- `get_layer_output_shapes(gm, example)` and `get_layer_input_shapes(gm, example)` are thin wrappers (lines 77 to 88).
 
-What. Returns `{layer_id: input_shape_tuple}` where the input is the shape of the first FX arg to that `call_module` (usually the previous layer's output).
-
-How. Same propagation as output shapes. Input shape for layer L is read from `_node_shape` on `L.args[0]` when that arg is an `fx.Node`.
-
----
-
-### Helpers (private)
-
-`_node_shape`, `_default_example_input`, `_input_shape_for_layer`, `_collect_layer_shapes` — shared propagation for both public functions.
+Input shape for layer L is the shape of `L.args[0]` when that arg is an `fx.Node`.
 
 ---
 
-### Where it is used (production)
+## LayerBridgeFinder
 
-`AddResConvLayer.generate_all_actions` in `growingnn/actions/add_res_conv_layer.py` uses `get_layer_output_shapes` for conv-to-conv equality (lines 39 to 54).
+What. Maps probed activation tuples to bridge sizes. No `isinstance` on modules for width.
 
-`AddSeqLayer.generate_all_actions` in `growingnn/actions/add_seq_layer.py` uses `find_bridge_linear_sizes` on rank-2 activations only: `(batch, features)` → `in_features` / `out_features` are the second dim. Shapes like `(1, 512, 7, 7)` return `None` (conv path, not a flattened linear).
+Helpers:
 
----
+- `linear_feature_dim(shape)` — rank 2 only; uses last dim as feature count.
+- `conv_channels(shape)` — rank 4 only; uses channel dim index 1.
+- `uniform_activation_shape(shapes)` — one shared tuple if all entries match; used by [[Del Layer Action]].
 
-### What the conv residual check actually does (lines 50 to 54)
+Bridge finders:
 
-This is the only reason the module exists in production. The code is easy to read backwards, so here is the logic in plain form.
+| Method | Returns | Used by |
+|--------|---------|---------|
+| `find_bridge_linear_sizes` | `(in_f, out_f)` rank-2 → rank-2 | `AddSeqLayer` linear→linear |
+| `find_bridge_res_linear_sizes` | `(in_f, out_f)` from two outputs | `AddResLayer` |
+| `find_equal_conv_output_shapes` | bool, equal 4D tuples | `AddResConvLayer` conv→conv |
+| `find_conv_before_linear_sizes(..., for_residual=True)` | `(channels, linear_out)` | `AddResConvLayer` conv→linear residual |
+| `find_seq_conv_bridge_channels` | channel count, equal 4D | `AddSeqConvLayer` conv→conv |
+| `find_seq_linear_after_conv_sizes` | `(F, F)` conv 4D + linear 2D in | `AddSeqLayer` conv→linear |
+| `find_seq_conv_before_linear_sizes` | `(C, C)` | commented out in seq conv action |
 
-Setup. `out_shapes = get_layer_output_shapes(gm)`. For each conv-to-conv pair from [[Model Analyser]]:
+`find_seq_linear_after_conv_sizes` does not add pool or flatten. It sizes a plain `nn.Linear` on the existing FX path (see [[Sequentail Linear Actions]]).
 
-```
-s_from = out_shapes.get(layer_from_id)
-s_to   = out_shapes.get(layer_to_id)
-```
-
-Step 1 — is shape filtering on? `if out_shapes:` means filtering runs only when `ShapeProp` produced a non-empty map. If propagation failed, `out_shapes` is `{}` and every conv pair is allowed (fail open).
-
-Step 2 — skip bad pairs:
-
-```
-if s_from is None or s_to is None or s_from != s_to:
-    continue
-```
-
-We do care about the full shape tuples, not only “not null”.
-
-| Case | What happens |
-|------|----------------|
-| `s_from` missing | Skip — cannot compare |
-| `s_to` missing | Skip — cannot compare |
-| `s_from != s_to` (e.g. `(1,256,56,56)` vs `(1,512,28,28)`) | Skip — `torch.add` would fail after `proj(src)` |
-| `s_from == s_to` (same tuple) | Keep — residual conv action is added |
-
-So “not null” is necessary but not enough. Both shapes must exist and be equal element-wise as tuples. That is how we drop ResNet pairs like `layer3` → `layer4` where reachability holds but spatial size differs.
-
-Conv-to-linear branches in the same function (lines 64 onward) do not call [[Layer Analyser]] at all. They only use [[Conv to linear adapter]] for channel divisibility.
+Divisibility rule `linear_in % channels == 0` lives inside `find_conv_before_linear_sizes` (lines 160 to 176). Same idea as [[Conv to linear adapter]].
 
 ---
 
-### Unit tests
+## Generating actions (where shapes matter)
 
-`tests/unit/actions/utils/layer_analyser_test.py` checks `get_layer_output_shapes` and `get_layer_input_shapes` on `ModelFactory.simple_conv_chain_2`.
+`AddResConvLayer` skips conv→conv when `find_equal_conv_output_shapes` is false (e.g. ResNet `layer3` → `layer4` different H×W).
 
----
+`AddSeqLayer` uses rank-2 bridges or `find_seq_linear_after_conv_sizes`.
 
-### Comparison with the original growingNN paper
-
-Chapter DOI `10.1007/978-3-031-63749-0_25` does not name `ShapeProp`. The check matches the paper goal: only propose moves that keep tensor math valid.
+`DelLayer` requires `in_shape == out_shape` as full tuples from neighbours (not only linear `out_features`).
 
 ---
 
-### Known limitations
+## Executing actions
 
-1. Default example `(1, 3, 224, 224)` may not match every model; then maps are `{}` and conv filtering is off.
-2. Shapes depend on probe resolution; regression may forward at 64×64 while probing at 224×224.
-3. Conv-to-linear residuals are not filtered here.
-4. Calling both getters runs `ShapeProp` twice unless you pass the same `example` and accept the cost (simple API by design).
+This file does not execute graph edits. Execution stays in [[Model Transformer]].
 
 ---
 
-### Related
+## Comparison with the original growingNN paper
 
-[[Model Analyser]], [[Residual Conv Action]], [[Model Transformer]], [[Conv to linear adapter]], [[Dotted Module Names in torch.fx]].
+DOI 10.1007/978-3-031-63749-0_25 does not name `ShapeProp`. The idea matches the paper: propose only moves that keep tensor math valid during search.
+
+---
+
+## Known limitations
+
+1. Default probe often uses 224×224 while `tests/regression/resnet_regression_test.py` forwards at 64×64; maps can be wrong or empty.
+2. `collect_layer_shapes` runs twice if you call both getters without sharing `collect_layer_shapes` once.
+3. Rank-3 or other ranks are not bridged.
+4. Empty maps after failed `ShapeProp` make some actions propose nothing (fail closed for that step).
+
+---
+
+## Related
+
+[[Model Analyser]], [[Model Transformer]], [[Conv to linear adapter]], [[Layer Factory]], [[Dotted Module Names in torch.fx]].

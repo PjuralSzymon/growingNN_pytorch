@@ -1,17 +1,52 @@
-This page is about `growingnn/actions/utils/conv_to_linear_adapter.py` and the function `can_insert_conv_before_linear`.
+File: `growingnn/actions/utils/conv_to_linear_adapter.py`. Function: `can_insert_conv_before_linear(conv_out_channels, linear_in_features)`.
 
-### What it does
+---
 
-It returns a boolean. Inputs are `conv_out_channels` and `linear_in_features` (both positive integers). It is true when `linear_in_features % conv_out_channels == 0` (lines 2 to 6 in the source file).
+## What it does
 
-### Why
+Returns true when `linear_in_features % conv_out_channels == 0` (positive integers).
 
-After adaptive pool and flatten, a conv map with `out_channels` produces a vector length equal to `out_channels`. A following linear expects `in_features`. Exact divisibility is a cheap static check that those lengths can line up for some spatial layouts. [[Residual Conv Action]] calls this before proposing `ConvFactory.create_zero_conv_before_linear` in `layer_Factory.py`.
+---
 
-### Known limitations
+## Why
 
-Divisibility is necessary but not sufficient for every graph shape. Spatial size and batch layout still matter at runtime. [[Layer Analyser]] does not filter conv-to-linear pairs today.
+After global pool and flatten, a conv with `C` output channels gives a length-`C` vector per spatial cell (when pooled to 1×1). A following linear expects `in_features`. Divisibility is a cheap static check.
 
-### Related
+---
 
-[[Residual Conv Action]], [[Layer Factory]], [[Layer Analyser]].
+## Where it is used today
+
+Production actions use [[Layer Analyser]] `LayerBridgeFinder.find_conv_before_linear_sizes` instead (same `%` rule at lines 167 to 170 in `layer_analyser.py`).
+
+`can_insert_conv_before_linear` remains for direct tests or future callers. [[Residual Conv Action]] does not import this file anymore.
+
+---
+
+## Generating actions
+
+Not an action class. No `generate_all_actions`.
+
+---
+
+## Executing actions
+
+Not applicable.
+
+---
+
+## Comparison with the original growingNN paper
+
+The paper does not name this helper. It is an implementation detail for conv-to-linear bridges.
+
+---
+
+## Known limitations
+
+1. Divisibility is necessary, not sufficient for every spatial layout.
+2. Prefer shape-based checks in [[Layer Analyser]] for new code.
+
+---
+
+## Related
+
+[[Layer Analyser]], [[Residual Conv Action]], [[Layer Factory]].

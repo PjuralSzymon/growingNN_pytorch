@@ -22,7 +22,9 @@ Enum at lines 16 to 19: `ZERO`, `RANDOM`, `EYE`. See [[Base action and Layer Typ
 
 `create_eye_conv` places a 1 on the centre tap of the kernel on the channel diagonal (lines 77 to 91). Used by [[Sequential Conv Action]].
 
-`create_zero_conv_before_linear` wraps a zero conv with `AdaptiveMaxPool2d(1)` or `AdaptiveAvgPool2d(1)` depending on `RES_CONV_TO_LINEAR_GLOBAL_POOL_TYPE` in [[Config]], then `Flatten` (lines 95 to 111). Used by [[Residual Conv Action]] for conv-to-linear skips.
+`create_zero_conv_before_linear` wraps a zero conv with `AdaptiveMaxPool2d(1)` or `AdaptiveAvgPool2d(1)` per `RES_CONV_TO_LINEAR_GLOBAL_POOL_TYPE` in [[Config]], then `Flatten` (lines 110 to 127). Used by [[Residual Conv Action]] for residual conv→linear skips only.
+
+[[Sequentail Linear Actions]] uses plain `create_linear` for conv→linear sequential inserts (pool/flatten stay in the FX graph).
 
 ### Known limitations
 
