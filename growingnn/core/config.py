@@ -16,7 +16,7 @@ EDITABLE_MODULES = [nn.Linear, nn.Conv2d, nn.Conv1d, nn.Conv3d]
 
 # LOGGING
 ENABLE_LOGGING = True
-LOG_LEVEL = "DEBUG"  # str: NOTSET | DEBUG | INFO | WARNING | WARN | ERROR | CRITICAL; or int
+LOG_LEVEL = "INFO"  # str: NOTSET | DEBUG | INFO | WARNING | WARN | ERROR | CRITICAL; or int
 LOG_TO_FILE = True
 LOG_FILE_NAME = "growingnn.log"
 LOG_FILE_MAX_BYTES = 100 * 1024 * 1024  # 100 MB per rotated file

@@ -41,12 +41,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Reports/TODO.md",
+                "file": "Reports/Part 1.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TODO"
+              "title": "Part 1"
             }
           }
         ],
@@ -211,6 +211,9 @@
   },
   "active": "c3c11eef4872f0e7",
   "lastOpenFiles": [
+    "resnetallactions.png",
+    "Pasted image 20260516173559.png",
+    "Reports/TODO.md",
     "Reports/Part 1.md",
     "Actions/utils/Layer Analyser.md",
     "Package version.md",
@@ -229,7 +232,6 @@
     "Actions/utils/Model Transformer.md",
     "Actions/utils/Name factory.md",
     "Actions/Base action and Layer Type.md",
-    "Reports/TODO.md",
     "Reports/PLAN.md",
     "Actions/Residual Linear Actions.md",
     "Actions/Sequentail Linear Actions.md",
@@ -248,7 +250,6 @@
     "references/Pasted image 20260510211911.png",
     "references/Pasted image 20260506223240.png",
     "references/Pasted image 20260506222841.png",
-    "references/Pasted image 20260506222839.png",
     "Actions/utils",
     "re[prts",
     "Actions",
