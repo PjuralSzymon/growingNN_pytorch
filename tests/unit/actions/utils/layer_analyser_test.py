@@ -43,6 +43,18 @@ def test_find_bridge_res_linear_sizes_uses_rank2_outputs():
     assert sizes == (4, 8)
 
 
+def test_find_seq_linear_after_conv_sizes_uses_linear_input_for_both_dims():
+    """
+    find_seq_linear_after_conv_sizes should size a plain linear from the target linear input (after flatten in graph).
+    """
+
+    # Arrange / Act
+    sizes = LayerBridgeFinder.find_seq_linear_after_conv_sizes((1, 8, 7, 7), (1, 64))
+
+    # Assert
+    assert sizes == (64, 64)
+
+
 def test_find_conv_before_linear_sizes_sequential_keeps_channel_width():
     """
     Sequential conv-before-linear should use equal in/out channels on the conv.

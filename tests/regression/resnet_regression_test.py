@@ -130,7 +130,12 @@ if __name__ == "__main__":
     action_counts: dict[str, int] = {}
     for name in used_action_types:
         action_counts[name] = action_counts.get(name, 0) + 1
-    logger.info("action summary: %s", action_counts)
+    logger.info("action summary (%d total):", len(used_action_types))
+    col = max((len(name) for name in action_counts), default=6)
+    logger.info("%-*s | %s", col, "action", "count")
+    logger.info("%s-+-%s", "-" * col, "-" * 5)
+    for name in sorted(action_counts):
+        logger.info("%-*s | %d", col, name, action_counts[name])
 
     if not args.save_output:
         clear_regression_folder()
