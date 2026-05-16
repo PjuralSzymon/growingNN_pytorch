@@ -12,4 +12,4 @@ Sets `growingnn.core.config.ENABLE_LOGGING` to `False` then calls `pytest.main([
 
 ### Related
 
-`tests/Unit tests.md`, `tests/regression/resnet_regression_test.py` (described in `tests/regression/ResNet18 regression script.md`).
+`documentation/obsydian/growingNN/tests/Unit tests.md`, `tests/regression/resnet_regression_test.py` (notes in `documentation/obsydian/growingNN/tests/regression/ResNet18 regression script.md`).

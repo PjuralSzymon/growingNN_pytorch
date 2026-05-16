@@ -1,4 +1,4 @@
-Code: `growingnn/actions/add_res_layer.py` (`AddResLayer`). Regression: `tests/regression/Adding residual layers.md` (plain path).
+Code: `growingnn/actions/add_res_layer.py` (`AddResLayer`). Regression driver: `tests/regression/adding_res_layers.py`.
 
 Uses [[Model Analyser]] `module_dependency_pairs`. Uses [[Layer Analyser]] `LayerShapeAnalyser.get_layer_output_shapes` and `LayerBridgeFinder.find_bridge_res_linear_sizes`. Executes `add_new_residual_layer` in [[Model Transformer]]. Builds layers with [[Layer Factory]] `LinearFactory.create_linear`. Names: [[Name factory]].
 

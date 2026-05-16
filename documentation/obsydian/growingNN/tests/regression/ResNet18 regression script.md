@@ -15,7 +15,7 @@ Each iteration:
 3. Picks one action at random (`random.Random(42)`).
 4. Appends `type(action).__name__` to `used_action_types`.
 5. `execute`, forward `gm(x)`, log output delta norm vs initial output.
-6. Writes PDF graphs via [[FX graph drawer]] into `testResults/regression/`.
+6. Writes PDF graphs via `growingnn/utils/fx_graph_drawer.py` into `testResults/regression/`.
 
 After the loop: `plot_norms_and_parameter_count`, then an action summary table in the log (`action` / `count` columns).
 
@@ -25,7 +25,7 @@ CLI: `parse_regression_cli` from `tests/regression/regression_utils.py` (`--save
 
 ## Why
 
-Stress test on a real torchvision model with dotted submodule names (`layer1.0.conv1`, etc.). Catches shape bugs from [[Layer Analyser]] on deep nets.
+Stress test on a real torchvision model with dotted submodule names (`layer1.0.conv1`, etc.). Catches shape bugs from `growingnn/actions/utils/layer_analyser.py` on deep nets.
 
 ---
 
@@ -37,7 +37,7 @@ The loop exits before 50 only when:
 - `execute` or forward raises — `logger.exception` then break
 - Uncaught error in graph export (outside the execute `try` today)
 
-If the run looks frozen, check DEBUG volume from `module_sequential_pairs` on a large mutated graph. Set [[Config]] `LOG_LEVEL` to `INFO` to see `idx:` and `action used` lines.
+If the run looks frozen, check DEBUG volume from `module_sequential_pairs` on a large mutated graph. Set `LOG_LEVEL` to `INFO` in `growingnn/core/config.py` to see `idx:` and `action used` lines.
 
 ---
 
@@ -49,12 +49,12 @@ Same high-level idea as the paper’s architecture search loop: propose moves, a
 
 ## Known limitations
 
-1. Forward at 64×64 but shape probe often uses 224×224 (see [[Layer Analyser]]).
+1. Forward at 64×64 but shape probe often uses 224×224 (see `documentation/obsydian/growingNN/Actions/utils/Layer Analyser.md`).
 2. Action generation cost grows as `seq_conv_*` and `res_conv__*` modules accumulate.
 3. PDF export every step is slow.
 
 ---
 
-## Related
+## Related code
 
-[[Residual Linear Actions]], [[Residual Conv Action]], [[Sequentail Linear Actions]], [[Sequential Conv Action]], [[Del Layer Action]], `tests/regression/regression_utils.py`, [[FX graph drawer]].
+Action modules: `growingnn/actions/add_res_layer.py`, `add_res_conv_layer.py`, `add_seq_layer.py`, `add_seq_conv_layer.py`, `delete_layer.py`. Helpers: `tests/regression/regression_utils.py`, `growingnn/utils/fx_graph_drawer.py`.

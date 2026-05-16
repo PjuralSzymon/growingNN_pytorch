@@ -1,4 +1,4 @@
-Regression script: `tests/regression/adding_seq_layers.py`. Action code: `growingnn/actions/add_seq_layer.py` (`AddSeqLayer`). Vault doc: Sequentail Linear Actions (`documentation/obsydian/growingNN/Actions/Sequentail Linear Actions.md`).
+Regression script: `tests/regression/adding_seq_layers.py`. Action code: `growingnn/actions/add_seq_layer.py` (`AddSeqLayer`). Product note: `documentation/obsydian/growingNN/Actions/Sequentail Linear Actions.md`.
 
 ---
 
@@ -24,7 +24,7 @@ After many sequential layers:
 
 ![](Pasted%20image%2020260404192232.png)
 
-ResNet-scale behaviour: `tests/regression/resnet_regression_test.py` (see `tests/regression/ResNet18 regression script.md`).
+ResNet-scale behaviour: `tests/regression/resnet_regression_test.py` (notes in `documentation/obsydian/growingNN/tests/regression/ResNet18 regression script.md`).
 
 ---
 
