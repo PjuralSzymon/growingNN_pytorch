@@ -12,4 +12,4 @@ Sequential conv→linear bridges moved from [[Sequential Conv Action]] to [[Sequ
 
 ### `nn.Module.get_submodule`
 
-Docs: `https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.get_submodule` . Central to [[Dotted Module Names in torch.fx]] and `get_layer_module` in [[Model Analyser]].
+Docs: `https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.get_submodule` . Used by `get_layer_module` in [[Model Analyser]] and by [[FX graph drawer]] labels.

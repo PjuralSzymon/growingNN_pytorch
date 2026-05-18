@@ -1,6 +1,6 @@
 This page documents `growingnn/actions/utils/model_transformations.py`. These functions edit an `fx.GraphModule` in place: they change `gm.graph`, add submodules on `gm`, then call `gm.graph.lint()` and `gm.recompile()`.
 
-They are called from [[Residual Linear Actions]], [[Residual Conv Action]], [[Sequentail Linear Actions]], [[Sequential Conv Action]], and [[Del Layer Action]]. Names for new modules come from [[Name factory]]. New layer objects come from [[Layer Factory]]. Analysis that chooses endpoints lives in [[Model Analyser]]. Dotted submodule names on `gm` use the same rules as [[Dotted Module Names in torch.fx]].
+They are called from [[Residual Linear Actions]], [[Residual Conv Action]], [[Sequentail Linear Actions]], [[Sequential Conv Action]], and [[Del Layer Action]]. Names for new modules come from [[Name factory]]. New layer objects come from [[Layer Factory]]. Analysis that chooses endpoints lives in [[Model Analyser]].
 
 ---
 

@@ -251,17 +251,17 @@
       "bases:Stwórz nową bazę danych": false
     }
   },
-  "active": "c19a7405498d8a33",
+  "active": "774e756e1df43433",
   "lastOpenFiles": [
-    "Reports/PLAN.md",
+    "Reports/meeting notes/Note 18.05.2026.md",
     "Reports/Part 1.md",
+    "Reports/PLAN.md",
+    "Actions/utils/Dotted Module Names in torch.fx.md",
     "references/Pasted image 20260506222448.png",
     "Pasted image 20260516173559.png",
-    "Reports/meeting notes/Note 18.05.2026.md",
     "Reports/meeting notes",
     "resnethistory200iters.png",
     "Reports/TODO.md",
-    "Actions/utils/Dotted Module Names in torch.fx.md",
     "resnetallactions.png",
     "Actions/utils/Layer Analyser.md",
     "Package version.md",

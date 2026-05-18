@@ -40,4 +40,4 @@ The paper allows rich reconnect patterns in theory. Here we only delete when seq
 
 ## Related
 
-[[Model Analyser]], [[Layer Analyser]], [[Model Transformer]], [[Dotted Module Names in torch.fx]].
+[[Model Analyser]], [[Layer Analyser]], [[Model Transformer]].

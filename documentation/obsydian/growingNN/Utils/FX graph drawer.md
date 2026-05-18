@@ -10,11 +10,11 @@ Lines 15 to 25. Uses PyTorch `FxGraphDrawer` from `torch.fx.passes.graph_drawer`
 
 ### `draw_filtered_fx_graph(gm, output_file, fmt)`
 
-Lines 27 to 82. Builds a `graphviz.Digraph` by hand. Keeps only nodes whose `op` is `call_module` or `call_function` (line 28). Walks backward through cut nodes with `find_kept_parents` so edges still connect skipped placeholders and `output` nodes (lines 36 to 54). Labels use `gm.get_submodule(str(node.target))` for `call_module` nodes (lines 57 to 60), so dotted names need `get_submodule` (see [[Dotted Module Names in torch.fx]]). Calls `dot.render(output_file, format=fmt, cleanup=True)` at line 82.
+Lines 27 to 82. Builds a `graphviz.Digraph` by hand. Keeps only nodes whose `op` is `call_module` or `call_function` (line 28). Walks backward through cut nodes with `find_kept_parents` so edges still connect skipped placeholders and `output` nodes (lines 36 to 54). Labels use `gm.get_submodule(str(node.target))` for `call_module` nodes (lines 57 to 60). Calls `dot.render(output_file, format=fmt, cleanup=True)` at line 82.
 
 ### Where it is used
 
-`tests/regression/resnet_regression_test.py` draws graphs into `testResults/regression/`. `tests/regression/utils_testing.py` does the same for a small nested model.
+`tests/regression/resnet_regression_test.py` draws graphs into `testResults/regression/`. `tests/regression/utils_testing.py` does the same for a small factory model.
 
 ### Known limitations
 
@@ -22,4 +22,4 @@ Filtered view hides data flow through getters and placeholders; it is a sketch, 
 
 ### Related
 
-`tests/regression/resnet_regression_test.py`, `tests/regression/utils_testing.py`, `tests/regression/regression_utils.py`, [[Dotted Module Names in torch.fx]], `tests/run_all_test.py`.
+`tests/regression/resnet_regression_test.py`, `tests/regression/utils_testing.py`, `tests/regression/regression_utils.py`, `tests/run_all_test.py`.

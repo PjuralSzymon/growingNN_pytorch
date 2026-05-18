@@ -82,4 +82,4 @@ DOI 10.1007/978-3-031-63749-0_25 does not name `ShapeProp`. The idea matches the
 
 ## Related
 
-[[Model Analyser]], [[Model Transformer]], [[Conv to linear adapter]], [[Layer Factory]], [[Dotted Module Names in torch.fx]].
+[[Model Analyser]], [[Model Transformer]], [[Conv to linear adapter]], [[Layer Factory]].

@@ -1,12 +1,12 @@
 File: `growingnn/actions/utils/model_analyser.py`. Reads an `nn.Module` or `fx.GraphModule`. Does not edit the graph.
 
-Used by all growth actions and [[Del Layer Action]]. Shape guards use [[Layer Analyser]]. Submodule paths: [[Dotted Module Names in torch.fx]]. Tests: `tests/unit/actions/utils/model_analyser_test.py`.
+Used by all growth actions and [[Del Layer Action]]. Shape guards use [[Layer Analyser]]. Tests: `tests/unit/actions/utils/model_analyser_test.py`.
 
 ---
 
 ### `get_layer_module(target, gm)`
 
-Resolves a `call_module` target or `fx.Node` via `gm.get_submodule(str(name))`. Returns `None` on `AttributeError`.
+Resolves a `call_module` target or `fx.Node` via `gm.get_submodule(str(name))` (works for flat names like `l1` and qualified paths like `layer1.0.conv1`). Returns `None` on `AttributeError`.
 
 Where: `AddResConvLayer`, `AddSeqConvLayer` (kernel_size, padding, channels). Not used by [[Del Layer Action]] for width checks anymore.
 
