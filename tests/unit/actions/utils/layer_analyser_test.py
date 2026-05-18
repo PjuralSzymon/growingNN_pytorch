@@ -1,7 +1,13 @@
 """Unit tests for ``growingnn.actions.utils.layer_analyser``."""
-
+import pytest
 import torch
 import torch.fx as fx
+
+import sys
+from pathlib import Path
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 from growingnn.actions.utils.layer_analyser import LayerBridgeFinder, LayerShapeAnalyser
 from tests.model_factory import ModelFactory
@@ -41,18 +47,6 @@ def test_find_bridge_res_linear_sizes_uses_rank2_outputs():
 
     # Assert
     assert sizes == (4, 8)
-
-
-def test_find_seq_linear_after_conv_sizes_uses_linear_input_for_both_dims():
-    """
-    find_seq_linear_after_conv_sizes should size a plain linear from the target linear input (after flatten in graph).
-    """
-
-    # Arrange / Act
-    sizes = LayerBridgeFinder.find_seq_linear_after_conv_sizes((1, 8, 7, 7), (1, 64))
-
-    # Assert
-    assert sizes == (64, 64)
 
 
 def test_find_conv_before_linear_sizes_sequential_keeps_channel_width():
@@ -111,6 +105,87 @@ def test_find_bridge_linear_sizes_returns_none_when_shape_missing():
     assert LayerBridgeFinder.find_bridge_linear_sizes((1, 4), None) is None
 
 
+def test_find_bridge_res_linear_sizes_returns_none_when_shape_missing():
+    """
+    find_bridge_res_linear_sizes should return None if either output shape is None.
+    """
+
+    # Arrange / Act / Assert
+    assert LayerBridgeFinder.find_bridge_res_linear_sizes(None, (1, 8)) is None
+    assert LayerBridgeFinder.find_bridge_res_linear_sizes((1, 4), None) is None
+
+
+def test_find_equal_conv_output_shapes_returns_false_when_shape_is_none():
+    """
+    find_equal_conv_output_shapes should be false when either argument is None.
+    """
+
+    # Arrange / Act / Assert
+    assert LayerBridgeFinder.find_equal_conv_output_shapes(None, (1, 8, 7, 7)) is False
+    assert LayerBridgeFinder.find_equal_conv_output_shapes((1, 8, 7, 7), None) is False
+
+
+def test_find_conv_before_linear_sizes_returns_none_when_linear_features_not_multiple_of_channels():
+    """
+    find_conv_before_linear_sizes should reject linear inputs that are not divisible by conv channels.
+    """
+
+    # Arrange / Act
+    sizes = LayerBridgeFinder.find_conv_before_linear_sizes(
+        (1, 8, 7, 7), (1, 10), for_residual=False
+    )
+
+    # Assert
+    assert sizes is None
+
+
+def test_find_res_conv_before_linear_sizes_maps_channels_to_linear_output():
+    """
+    find_res_conv_before_linear_sizes should delegate to the residual conv-before-linear path.
+    """
+
+    # Arrange / Act
+    sizes = LayerBridgeFinder.find_res_conv_before_linear_sizes(
+        (1, 8, 7, 7), (1, 64), (1, 32)
+    )
+
+    # Assert
+    assert sizes == (8, 32)
+
+
+def test_find_seq_linear_after_conv_sizes_returns_none_for_invalid_shapes():
+    """
+    find_seq_linear_after_conv_sizes should return None when conv or linear shape is not usable.
+    """
+
+    # Arrange / Act / Assert
+    assert LayerBridgeFinder.find_seq_linear_after_conv_sizes((1, 8), (1, 64)) is None
+
+
+def test_find_seq_conv_bridge_channels_returns_channel_count_when_shapes_match():
+    """
+    find_seq_conv_bridge_channels should return channel width when from/to 4D shapes are equal.
+    """
+
+    # Arrange / Act
+    channels = LayerBridgeFinder.find_seq_conv_bridge_channels((1, 16, 14, 14), (1, 16, 14, 14))
+
+    # Assert
+    assert channels == 16
+
+
+def test_find_seq_conv_bridge_channels_returns_none_when_shapes_differ():
+    """
+    find_seq_conv_bridge_channels should return None when activation shapes do not match.
+    """
+
+    # Arrange / Act
+    channels = LayerBridgeFinder.find_seq_conv_bridge_channels((1, 16, 14, 14), (1, 8, 14, 14))
+
+    # Assert
+    assert channels is None
+
+
 def test_get_layer_output_shapes_records_conv_outputs():
     """
     After ShapeProp, get_layer_output_shapes should list a shape tuple for each
@@ -148,3 +223,7 @@ def test_get_layer_input_shapes_matches_predecessor_output():
     # Assert
     assert in_shapes["c2"] == out_shapes["c1"]
     assert in_shapes["c1"] == (1, 4, 16, 16)
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

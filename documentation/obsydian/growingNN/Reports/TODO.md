@@ -14,3 +14,4 @@
 2. Actions need deeper research in terms of what configuration can be best for global use, for example how to configure weight initialization range for non-zero residual layers.
 3. I didn't use the growingNN orginal appraoch to delete layers I didn't use the Q identity because I thought it will be more benefitial to not use it so when we delet layer we delete only those for which the shapes will much so no additional reshaping is needed thsoe two aprpaoch with QI and more deletion can be reaserched some day. 
 4. Flow that will run the training loop and score current implmentation on few diffrent models so we won't merge anything which will make the alg works worst than before after general strucutre is completed 
+5. Reaserch how to work with unba;anced action sets is it worth to add some balancing so actions from smaller sets are also used ?

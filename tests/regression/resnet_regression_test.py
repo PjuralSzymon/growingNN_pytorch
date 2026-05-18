@@ -39,7 +39,7 @@ USE_DEL_LAYER = True
 
 BATCH_SIZE = 2
 INPUT_SHAPE = (3, 64, 64)
-ITERATIONS = 50
+ITERATIONS = 200
 
 
 def _load_pretrained_resnet18() -> torch.nn.Module:
@@ -104,7 +104,8 @@ if __name__ == "__main__":
         idx = rng.randrange(len(actions))
         chosen = actions[idx]
         used_action_types.append(type(chosen).__name__)
-        logger.info("action used [%s]: %s", used_action_types[-1], chosen)
+        logger.info("action type: %s", type(chosen).__name__)
+        logger.info("action used idx: %s [%s]: %s", idx, used_action_types[-1], chosen)
         try:
             chosen.execute(gm)
             with torch.no_grad():
@@ -125,8 +126,6 @@ if __name__ == "__main__":
         draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph" + str(id + 1), fmt="pdf")
         logger.info("diffrence norm: %s", dn)
 
-    plot_norms_and_parameter_count(norms, parameter_amounts)
-
     action_counts: dict[str, int] = {}
     for name in used_action_types:
         action_counts[name] = action_counts.get(name, 0) + 1
@@ -136,6 +135,8 @@ if __name__ == "__main__":
     logger.info("%s-+-%s", "-" * col, "-" * 5)
     for name in sorted(action_counts):
         logger.info("%-*s | %d", col, name, action_counts[name])
+
+    plot_norms_and_parameter_count(norms, parameter_amounts)
 
     if not args.save_output:
         clear_regression_folder()

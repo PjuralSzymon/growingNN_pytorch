@@ -8,11 +8,26 @@
 5. (06.05.2026) A lot of problems were fixed but there is a new more general one after removing layers we can be left with many intermidate modules that don't do anything like: ![[Pasted image 20260506222448.png]] Those were not added during the process of removing it is a effect of removing everyhting else 
 6. (09.05.2026) I planned how to remove neurns but to test it i used bigger module and then i had problems with types so I added "EDITABLE_MODULES" to config and I start to think this is going into wrong design way we need a bettern pattern there ut I continue to se if it will work 
 7. (10.05.2026) Po najnowszych tetach na modelach ktore maja duzo roznych ilosci neuronow zauważyłem że potrzebny jest Q identiti module do łączenia warstw o innych rozmaiarach przy usuwaniu warstw Jednak nie sorzystalem z Q inentity jest to coś do przebadania. Drugi problem na ktorym skonczylem to ze AddSeqConvLayer nie dziala dodawanie warstw pomiedzy nie dziala (Dodałem tez logowanie troche drobnych poprawek)
-8. (16.05.2026) Curosr created some kind of module that use fx to mock the output of the layer and that way get true in and out shape, I didn't know it can be used cursor use it in some weird nonlogical part but when i started to read about it that can be solution to generalization and types limitation wiht this i need to refactor modules that generate actions but it seems to be much better general way to not care about layer type during adding a layer only what shapes it returns ! This way we can even add linear layers between something unpredicted like batch norm and 1d conv if siuation will choose that way ! After those fixes the resnet model was changing suceafully: ![[Pasted image 20260516173559.png|669]] Progress of learning looked good:
-![[resnetallactions.png|428]]
-But the action counter shows some actions have problem with generating: 
-2026-05-16 17:35:03,926 | INFO     | action          | count
-2026-05-16 17:35:03,926 | INFO     | AddResConvLayer | 34
-2026-05-16 17:35:03,926 | INFO     | AddSeqConvLayer | 14
-2026-05-16 17:35:03,926 | INFO     | DelLayer        | 2
-Also i thjink the: Dotted Module Names should be removed that idea didn't worked 
+8. (16.05.2026) Curosr created some kind of module that use fx to mock the output of the layer and that way get true in and out shape, I didn't know it can be used cursor use it in some weird nonlogical part but when i started to read about it that can be solution to generalization and types limitation wiht this i need to refactor modules that generate actions but it seems to be much better general way to not care about layer type during adding a layer only what shapes it returns ! This way we can even add linear layers between something unpredicted like batch norm and 1d conv if siuation will choose that way ! After those fixes the resnet model was changing suceafully: ![[Pasted image 20260516173559.png|669]] Progress of learning looked good:![[resnetallactions.png|428]]
+   But the action counter shows some actions have problem with generating: 
+   2026-05-16 17:35:03,926 | INFO     | action          | count
+   2026-05-16 17:35:03,926 | INFO     | AddResConvLayer | 34
+   2026-05-16 17:35:03,926 | INFO     | AddSeqConvLayer | 14
+   2026-05-16 17:35:03,926 | INFO     | DelLayer        | 2
+   Also i thjink the: Dotted Module Names should be removed that idea didn't worked 
+9. (18.05.2026) I fixed unit tests and when i switched the conv actions off the seq were back again: 
+   action      | count
+   2026-05-18 08:36:19,706 | INFO     | ------------+------
+   2026-05-18 08:36:19,706 | INFO     | AddResLayer | 30
+   2026-05-18 08:36:19,706 | INFO     | AddSeqLayer | 12
+   2026-05-18 08:36:19,706 | INFO     | DelLayer    | 8
+   Because we got so many conv actions the seq actions are hard to use which seems like a new problem for reaserch After reruning it 200 times: ![[resnethistory200iters.png|248]]and we hit all of the actions: 
+   2026-05-18 08:57:44,266 | INFO     | action                    | count
+   2026-05-18 08:57:44,266 | INFO     | ---------------------+------
+   2026-05-18 08:57:44,267 | INFO     | AddResConvLayer   | 143
+   2026-05-18 08:57:44,267 | INFO     | AddResLayer           | 1
+   2026-05-18 08:57:44,267 | INFO     | AddSeqConvLayer  | 39
+   2026-05-18 08:57:44,267 | INFO     | AddSeqLayer          | 3
+   2026-05-18 08:57:44,267 | INFO     | DelLayer                 | 14
+
+

@@ -30,7 +30,6 @@ def test_add_res_layer_generate_all_actions_linear_chain():
 
 def test_add_seq_layer_execute():
     #Arrange
-    args = parse_regression_cli()
     model = ModelFactory.simple_chain_3()
     gm = fx.symbolic_trace(model)
     executed_actions = []
