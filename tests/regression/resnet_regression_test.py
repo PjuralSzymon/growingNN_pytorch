@@ -32,14 +32,14 @@ from tests.regression.regression_utils import (
 
 # Which growth actions to consider (delete is always available in the shrink phase).
 USE_ADD_RES_LAYER = True
-USE_ADD_RES_CONV_LAYER = False
-USE_ADD_SEQ_LAYER = False
-USE_ADD_SEQ_CONV_LAYER = False
-USE_DEL_LAYER = False
+USE_ADD_RES_CONV_LAYER = True
+USE_ADD_SEQ_LAYER = True
+USE_ADD_SEQ_CONV_LAYER = True
+USE_DEL_LAYER = True
 
 BATCH_SIZE = 2
 INPUT_SHAPE = (3, 64, 64)
-ITERATIONS = 50
+ITERATIONS = 200
 
 
 def _load_pretrained_resnet18() -> torch.nn.Module:
@@ -86,6 +86,7 @@ if __name__ == "__main__":
 
     norms: List[float] = []
     parameter_amounts: List[int] = [get_amount_of_parameters(gm)]
+    used_action_types: List[str] = []
 
 
     draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified0", fmt="pdf")
@@ -101,16 +102,19 @@ if __name__ == "__main__":
             break
 
         idx = rng.randrange(len(actions))
-        logger.info("action used: %s", actions[idx])
+        chosen = actions[idx]
+        used_action_types.append(type(chosen).__name__)
+        logger.info("action type: %s", type(chosen).__name__)
+        logger.info("action used idx: %s [%s]: %s", idx, used_action_types[-1], chosen)
         try:
-            actions[idx].execute(gm)
+            chosen.execute(gm)
             with torch.no_grad():
                 output_final = gm(x)
         except Exception:
             draw_filtered_fx_graph(
                 gm, FOLDER_NAME + "/" + "fx_graph_simplified_error" + str(id + 1), fmt="pdf"
             )
-            logger.exception("Error executing action %s", actions[idx])
+            logger.exception("Error executing action %s", chosen)
             break
 
         dn = float(torch.norm(output_initial - output_final))
@@ -121,6 +125,16 @@ if __name__ == "__main__":
         )
         draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph" + str(id + 1), fmt="pdf")
         logger.info("diffrence norm: %s", dn)
+
+    action_counts: dict[str, int] = {}
+    for name in used_action_types:
+        action_counts[name] = action_counts.get(name, 0) + 1
+    logger.info("action summary (%d total):", len(used_action_types))
+    col = max((len(name) for name in action_counts), default=6)
+    logger.info("%-*s | %s", col, "action", "count")
+    logger.info("%s-+-%s", "-" * col, "-" * 5)
+    for name in sorted(action_counts):
+        logger.info("%-*s | %d", col, name, action_counts[name])
 
     plot_norms_and_parameter_count(norms, parameter_amounts)
 

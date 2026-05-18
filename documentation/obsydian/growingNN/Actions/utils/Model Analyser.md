@@ -1,64 +1,57 @@
+File: `growingnn/actions/utils/model_analyser.py`. Reads an `nn.Module` or `fx.GraphModule`. Does not edit the graph.
 
-In this module we have functions used by actions to analyse the graph where to add or delete what node and what is the model strucuture but there is no funcitons tahta re cahning the graph
-
----
- For adding layers we have the following 2 functions:
-
-  
-### `module_dependency_pairs` 
-Returns all **reachable module pairs** `(ancestor, descendant)`.  
-Used in adding: [[Residual Linear Actions]]
-  
-- Captures **full dependency paths** (transitive connections)  
-- Includes indirect relationships  
-
-Example:
-l1 → l2 → l3
-returns (l1, l2), (l1, l3), (l2, l3)
-
-### `module_sequential_pairs`  
-Returns only **direct neighboring module pairs**.  
-Used in adding: [[Sequentail Linear Actions]]
-  
-- Captures **local / adjacent relationships**  
-- Skips indirect connections  
-  
-Example:
-l1 → l2 → l3
-Returns:
-(l1, l2), (l2, l3)
-Use this when you care about **immediate layer ordering** (e.g. inserting layers between two modules).
+Used by all growth actions and [[Del Layer Action]]. Shape guards use [[Layer Analyser]]. Tests: `tests/unit/actions/utils/model_analyser_test.py`.
 
 ---
- For deleting we have the following actions: 
 
-### `_has_module`
-Generic DFS traversal over an FX graph.  
-Given a starting node and a direction (via `next_nodes`), it checks whether **any `call_module` node exists** along that path.
+### `get_layer_module(target, gm)`
 
-### `_has_module_upstream(node)`
-Returns `True` if there is a module **before** the given node  
-(i.e. reachable via `.all_input_nodes`).
+Resolves a `call_module` target or `fx.Node` via `gm.get_submodule(str(name))` (works for flat names like `l1` and qualified paths like `layer1.0.conv1`). Returns `None` on `AttributeError`.
 
+Where: `AddResConvLayer`, `AddSeqConvLayer` (kernel_size, padding, channels). Not used by [[Del Layer Action]] for width checks anymore.
 
-### `_has_module_downstream(node)`
-Returns `True` if there is a module **after** the given node  
-(i.e. reachable via `.users`).
+---
+
+### `module_dependency_pairs(model)`
+
+All `(ancestor, descendant)` editable pairs where the descendant is reachable forward and at least one endpoint is hidden. Used by [[Residual Linear Actions]] and [[Residual Conv Action]].
+
+Deduped with `dict.fromkeys`. Logs only `number of dependency pairs` at DEBUG (per-pair spam removed).
+
+---
+
+### `module_sequential_pairs(model)`
+
+First editable module forward from each source along user edges (same hidden rule). Used by [[Sequentail Linear Actions]] and [[Sequential Conv Action]].
+
+Example `l1 → l2 → l3` yields `(l1,l2)`, `(l2,l3)` only.
+
+---
+
+### `get_all_hidden_modules(model)`
+
+Lists `call_module` targets that pass `_is_hidden_module`. Used by [[Del Layer Action]].
+
+---
 
 ### `_is_hidden_module(node)`
 
-^7a8eff
+Middle layer: has users and inputs, not placeholder-to-output only.
 
-Returns `True` if the node is a **hidden layer**, meaning:
-- it has a module upstream **and**
-- it has a module downstream
+---
 
-In practice, this excludes:
-- input layers (no upstream modules)
-- output layers (no downstream modules)
+### `get_input_layers` / `get_output_layers`
+
+Built from one `module_sequential_pairs` pass inside `_sequential_adj`. Immediate sequential preds or succs for one `layer_id`.
+
+---
+
+### `get_amount_of_parameters(model)`
+
+`sum(p.numel() for p in gm.parameters())`. Used in `tests/regression/resnet_regression_test.py` and regression plots.
 
 ---
 
 ### Related
 
-For how `torch.fx` names nested submodules (e.g. `layer1.0.conv1`), why `getattr` returns `None` for those names, and which API to use instead, see [[Dotted Module Names in torch.fx]].
+[[Layer Analyser]], [[Model Transformer]], [[Layer Factory]], [[Name factory]].

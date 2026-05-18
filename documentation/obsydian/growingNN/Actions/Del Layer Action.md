@@ -1,24 +1,43 @@
+Code: `growingnn/actions/delete_layer.py` (`DelLayer`). Uses [[Model Analyser]] `get_all_hidden_modules`, `get_input_layers`, `get_output_layers`. Uses [[Layer Analyser]] `LayerShapeAnalyser` and `LayerBridgeFinder.uniform_activation_shape`. Executes via `delete_layer` in [[Model Transformer]].
 
-## Overview
-
-`DelLayer` removes hidden layers from a torch.fx `GraphModule`. We list all hidden modules, filter to those that pass the rules below, and that list is the delete actions the search can choose for that model.
+---
 
 ## Generating actions
 
-Hidden ids come from `get_all_hidden_modules` (`module_analyser.py`). For each `layer_id` we use sequential neighbours only (`module_sequential_pairs`): immediate predecessors as inputs, immediate successors as outputs.
+For each hidden `layer_id` from `get_all_hidden_modules(gm)`:
 
-We emit `DelLayer([layer_id])` only if every input is `nn.Linear` with the same `out_features`, every output is `nn.Linear` with the same `in_features`, and those two widths match. Otherwise we skip that id so the bypass stays a same-width linear shortcut.
+1. Predecessors and successors come from sequential adjacency (`get_input_layers`, `get_output_layers`), not all transitive deps.
+2. `get_common_output_shape` needs every predecessor to share the same probed output tuple (`uniform_activation_shape` on `LayerShapeAnalyser.get_layer_output_shapes`).
+3. `get_common_input_shape` needs every successor to share the same probed input tuple.
+4. Emit `DelLayer([layer_id])` only when `in_shape == out_shape` as full shape tuples (lines 89 to 96).
+
+Helpers `has_same_output_shape`, `has_same_input_shape`, `get_common_output_shape`, `get_common_input_shape` live in the same file for tests (`tests/unit/actions/delete_layer_test.py`).
+
+Shape maps are built once per `generate_all_actions` call (lines 86 to 87).
+
+---
 
 ## Executing actions
 
-`DelLayer.execute` calls `delete_layer` (`model_transformations.py`). We find the `call_module` for `layer_id`, sum its `all_input_nodes` with `operator.add` if there are several, rewire every user to that sum, erase the node, drop the submodule, then `lint` and `recompile`. Non-module ops (activations, views) are not cleaned up automatically.
+`DelLayer.execute` calls `delete_layer(gm, layer_id)`. The FX node is removed, inputs are summed with `operator.add` when needed, users are rewired, submodule dropped, then `lint` and `recompile`. Orphan `call_function` nodes (ReLU, flatten) may remain.
+
+---
 
 ## Comparison with the original growingNN paper
 
-The paper can reconnect every predecessor to every successor in a structured way. Here we sum inputs into one tensor and feed it to every successor user: simpler in FX, but not the same as every pairwise skip unless the graph already fits that story. Eligibility follows sequential adjacency and the linear checks above; see [[Model Analyser#^7a8eff]]. Rewrites live in [[Model Transformer#^f4531d]].
+The paper allows rich reconnect patterns in theory. Here we only delete when sequential neighbours agree on activation shape from `ShapeProp`. That is stricter than old `nn.Linear` `out_features` / `in_features` checks but works for any module type that shows up in shape maps.
+
+---
 
 ## Known limitations
 
-1. Orphan-style noise: deleting only the `call_module` often leaves intermediate ops that are awkward to strip; the graph stays valid but messy. ![[Pasted image 20260506222841.png]]
-2. Behaviour drifts: many deletes still change what the network does; logged runs showed strong shifts after many steps (e.g. around iteration 25). ![[Pasted image 20260506223240.png]]
-3. Not everything is deletable: some hidden layers never get an action, so structure can look uneven late in a delete run (e.g. from iteration 24 in the capture). ![[Pasted image 20260510211911.png]]
+1. Only hidden modules in the sense of `_is_hidden_module` are candidates.
+2. Many valid deletes are skipped when shapes differ or probes fail.
+3. Graph clutter after delete (BN, ReLU between modules) — see images in older notes.
+4. Deleting can still change outputs a lot on ResNet runs.
+
+---
+
+## Related
+
+[[Model Analyser]], [[Layer Analyser]], [[Model Transformer]].

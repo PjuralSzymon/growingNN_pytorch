@@ -2,31 +2,75 @@ from typing import List
 
 from torch import fx, nn
 
-from growingnn.actions.utils.model_analyser import get_all_hidden_modules, get_input_layers, get_output_layers, module_sequential_pairs
+from growingnn.actions.utils.layer_analyser import LayerBridgeFinder, LayerShapeAnalyser
+from growingnn.actions.utils.model_analyser import get_all_hidden_modules, get_input_layers, get_output_layers
 from growingnn.actions.utils.model_transformations import delete_layer
 from .action import Action
 
 
-def has_same_output_shape(model: nn.Module | fx.GraphModule, input_layers: list[str]) -> bool:
-    mods = [getattr(model, i) for i in input_layers]
-    return bool(input_layers) and all(isinstance(m, nn.Linear) for m in mods) and len({m.out_features for m in mods}) == 1
+def _shapes_for_layers(
+    shape_map: dict[str, tuple[int, ...]],
+    layer_ids: list[str],
+) -> list[tuple[int, ...] | None]:
+    return [shape_map.get(layer_id) for layer_id in layer_ids]
 
 
-def has_same_input_shape(model: nn.Module | fx.GraphModule, output_layers: list[str]) -> bool:
-    mods = [getattr(model, i) for i in output_layers]
-    return bool(output_layers) and all(isinstance(m, nn.Linear) for m in mods) and len({m.in_features for m in mods}) == 1
+def has_same_output_shape(
+    model: nn.Module | fx.GraphModule,
+    input_layers: list[str],
+    output_shapes: dict[str, tuple[int, ...]] | None = None,
+) -> bool:
+    if not input_layers:
+        return False
+    if output_shapes is None:
+        if not isinstance(model, fx.GraphModule):
+            return False
+        output_shapes = LayerShapeAnalyser.get_layer_output_shapes(model)
+    return (
+        LayerBridgeFinder.uniform_activation_shape(_shapes_for_layers(output_shapes, input_layers))
+        is not None
+    )
 
 
-def get_common_output_shape(model: nn.Module | fx.GraphModule, input_layers: list[str]) -> int | None:
-    if not has_same_output_shape(model, input_layers):
-        return None
-    return getattr(model, input_layers[0]).out_features
+def has_same_input_shape(
+    model: nn.Module | fx.GraphModule,
+    output_layers: list[str],
+    input_shapes: dict[str, tuple[int, ...]] | None = None,
+) -> bool:
+    if not output_layers:
+        return False
+    if input_shapes is None:
+        if not isinstance(model, fx.GraphModule):
+            return False
+        input_shapes = LayerShapeAnalyser.get_layer_input_shapes(model)
+    return (
+        LayerBridgeFinder.uniform_activation_shape(_shapes_for_layers(input_shapes, output_layers))
+        is not None
+    )
 
 
-def get_common_input_shape(model: nn.Module | fx.GraphModule, output_layers: list[str]) -> int | None:
-    if not has_same_input_shape(model, output_layers):
-        return None
-    return getattr(model, output_layers[0]).in_features
+def get_common_output_shape(
+    model: nn.Module | fx.GraphModule,
+    input_layers: list[str],
+    output_shapes: dict[str, tuple[int, ...]] | None = None,
+) -> tuple[int, ...] | None:
+    if output_shapes is None:
+        if not isinstance(model, fx.GraphModule):
+            return None
+        output_shapes = LayerShapeAnalyser.get_layer_output_shapes(model)
+    return LayerBridgeFinder.uniform_activation_shape(_shapes_for_layers(output_shapes, input_layers))
+
+
+def get_common_input_shape(
+    model: nn.Module | fx.GraphModule,
+    output_layers: list[str],
+    input_shapes: dict[str, tuple[int, ...]] | None = None,
+) -> tuple[int, ...] | None:
+    if input_shapes is None:
+        if not isinstance(model, fx.GraphModule):
+            return None
+        input_shapes = LayerShapeAnalyser.get_layer_input_shapes(model)
+    return LayerBridgeFinder.uniform_activation_shape(_shapes_for_layers(input_shapes, output_layers))
 
 
 class DelLayer(Action):
@@ -38,16 +82,19 @@ class DelLayer(Action):
 
     @staticmethod
     def generate_all_actions(model: nn.Module | fx.GraphModule) -> List[Action]:
+        gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
+        output_shapes = LayerShapeAnalyser.get_layer_output_shapes(gm)
+        input_shapes = LayerShapeAnalyser.get_layer_input_shapes(gm)
         actions: List[Action] = []
-        for layer_id in get_all_hidden_modules(model):
-            input_layers = get_input_layers(layer_id, model)
-            output_layers = get_output_layers(layer_id, model)
-            in_w = get_common_output_shape(model, input_layers)
-            out_w = get_common_input_shape(model, output_layers)
-            if in_w is None or out_w is None or in_w != out_w:
+        for layer_id in get_all_hidden_modules(gm):
+            input_layers = get_input_layers(layer_id, gm)
+            output_layers = get_output_layers(layer_id, gm)
+            in_shape = get_common_output_shape(gm, input_layers, output_shapes)
+            out_shape = get_common_input_shape(gm, output_layers, input_shapes)
+            if in_shape is None or out_shape is None or in_shape != out_shape:
                 continue
             actions.append(DelLayer([layer_id]))
-        return actions 
+        return actions
 
     def __str__(self):
         return " ( Delete Layer Action: " + str(self.params) + " ) "

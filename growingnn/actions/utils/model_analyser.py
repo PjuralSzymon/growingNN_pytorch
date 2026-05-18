@@ -29,17 +29,28 @@ def _is_hidden_module(node: fx.Node) -> bool:
             return False
     return True
 
+def get_layer_module(target: fx.Node | str, gm: nn.Module | fx.GraphModule) -> nn.Module | None:
+    """Resolve a submodule by FX node or by dotted module path (e.g. ``layer1.0.conv1``).
+
+    Returns ``None`` if the path does not exist on ``gm``.
+    Uses ``nn.Module.get_submodule`` so dotted paths are walked segment by segment,
+    unlike ``getattr`` which treats the whole string as a single attribute name.
+    """
+    name = target.target if isinstance(target, fx.Node) else target
+    try:
+        return gm.get_submodule(str(name))
+    except AttributeError:
+        return None
+
 def _is_editable_module(node: fx.Node, gm: fx.GraphModule) -> bool:
     if node.op != "call_module":
         logger.debug("node.target: %s is not an editable module", node.target)
         return False
-    
-    layer_module = getattr(gm, str(node.target), None)
-    if layer_module is None:
-        logger.debug("layer_module: %s is not an editable module", layer_module)
-        return False
 
-    module = gm.get_submodule(str(node.target))
+    module = get_layer_module(node, gm)
+    if module is None:
+        logger.debug("node.target: %s could not be resolved on gm", node.target)
+        return False
 
     for editable_module_type in EDITABLE_MODULES:
         if isinstance(module, editable_module_type):
@@ -49,12 +60,7 @@ def _is_editable_module(node: fx.Node, gm: fx.GraphModule) -> bool:
                 editable_module_type,
             )
             return True
-        else:
-            logger.debug(
-                "node.target: %s is not an editable module; actual type: %s",
-                node.target,
-                type(module),
-            )
+
     return False
 
 def _is_at_least_one_hidden_module(n1: fx.Node, n2: fx.Node) -> bool:
@@ -90,10 +96,7 @@ def module_dependency_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
                 continue
             seen.add(cur)
             if _is_editable_module(cur, gm) and _is_at_least_one_hidden_module(n, cur):
-                logger.debug("adding dependency pair: %s -> %s", src, cur.target)
                 edges.append((src, str(cur.target)))
-            else:
-                logger.debug("pair: %s -> %s not added becouse: editable: %s, hidden: %s", src, cur.target, _is_editable_module(cur, gm), _is_at_least_one_hidden_module(n, cur))
             stack.extend(cur.users)
     logger.debug("number of dependency pairs: %s", len(edges))
     return list(dict.fromkeys(edges))
@@ -117,11 +120,8 @@ def module_sequential_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
                 continue
             seen.add(cur)
             if _is_editable_module(cur, gm) and _is_at_least_one_hidden_module(n, cur):
-                logger.debug("adding sequential pair: %s -> %s", src, cur.target)
                 edges.append((src, str(cur.target)))
                 continue
-            else:
-                logger.debug("pair: %s -> %s not added becouse: editable: %s, hidden: %s", src, cur.target, _is_editable_module(cur, gm), _is_at_least_one_hidden_module(n, cur))
             stack.extend(cur.users)
     logger.debug("number of sequential pairs: %s", len(edges))
     return list(dict.fromkeys(edges))

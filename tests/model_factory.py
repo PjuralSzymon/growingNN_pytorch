@@ -304,3 +304,58 @@ class ModelFactory:
                 return c + d
 
         return ModelWithResidualSkip()
+
+    @staticmethod
+    def deeply_nested_submodules() -> nn.Module:
+        class InnerBlock(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.l1 = nn.Linear(4, 4)
+                self.act = nn.ReLU()
+                self.l2 = nn.Linear(4, 4)
+
+            def forward(self, x):
+                x = self.l1(x)
+                x = self.act(x)
+                x = self.l2(x)
+                return x
+
+        class MiddleBlock(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.inner = InnerBlock()
+                self.l1 = nn.Linear(4, 4)
+                self.act = nn.ReLU()
+
+            def forward(self, x):
+                x = self.inner(x)
+                x = self.l1(x)
+                x = self.act(x)
+                return x
+
+        class OuterBlock(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.middle = MiddleBlock()
+                self.l1 = nn.Linear(4, 4)
+                self.act = nn.ReLU()
+
+            def forward(self, x):
+                x = self.middle(x)
+                x = self.l1(x)
+                x = self.act(x)
+                return x
+
+        class ModelDeeplyNested(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.stem = nn.Linear(4, 4)
+                self.outer = OuterBlock()
+                self.head = nn.Linear(4, 4)
+
+            def forward(self, x):
+                x = self.stem(x)
+                x = self.outer(x)
+                x = self.head(x)
+                return x
+        return ModelDeeplyNested()

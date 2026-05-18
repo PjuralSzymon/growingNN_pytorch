@@ -13,3 +13,9 @@ The framework is based on dynamic neural network architecture growth/shrinking d
 https://link.springer.com/chapter/10.1007/978-3-031-63749-0_25
 
 Each function should have at least one unit test
+
+general pointers: 
+- log lines should in 1 line 
+- Most important is reusability 
+- Generalization 
+- Similcity the shorter code the better
