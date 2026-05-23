@@ -1,0 +1,1 @@
+Simulation cost a lot of computational power that's why we can't use the whole dataset, that's why in our first paper we were analyzing different types of simulation sets, this research was stopped in the early phase because all method used like PCA were much worst than just taking random sample form train set, which is used until now. 

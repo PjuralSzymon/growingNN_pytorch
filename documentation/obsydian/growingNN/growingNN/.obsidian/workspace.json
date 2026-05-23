@@ -1,0 +1,301 @@
+{
+  "main": {
+    "id": "caf3bfef00e9af22",
+    "type": "split",
+    "children": [
+      {
+        "id": "e6705233c01f2f7c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "0e413edd0cafb8f0",
+            "type": "leaf",
+            "state": {
+              "type": "image",
+              "state": {
+                "file": "references/Pasted image 20260404172754.png"
+              },
+              "icon": "lucide-image",
+              "title": "Pasted image 20260404172754"
+            }
+          },
+          {
+            "id": "e69b302a42ff9fe1",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "General.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "General"
+            }
+          },
+          {
+            "id": "3d1f21176d1f52e5",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "General.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "General"
+            }
+          },
+          {
+            "id": "56b969af8666861b",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Simulation/Scoring function.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Scoring function"
+            }
+          },
+          {
+            "id": "762d6b637fa9ab67",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "General.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "General"
+            }
+          },
+          {
+            "id": "030881a981f2cac2",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Actions/Grow oriented actions/Sequential Linear Actions.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Sequential Linear Actions"
+            }
+          }
+        ],
+        "currentTab": 5
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "ab4c50fdce932471",
+    "type": "split",
+    "children": [
+      {
+        "id": "4cb78c7913f6cda5",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "774e756e1df43433",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "6ab2ff58affbb78f",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Wyszukiwarka"
+            }
+          },
+          {
+            "id": "54709036d20f62a0",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Ulubione"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "ac681f37fccf39af",
+    "type": "split",
+    "children": [
+      {
+        "id": "c59a402f1094122e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "412428cd929eb9e7",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Linki zwrotne"
+            }
+          },
+          {
+            "id": "36c843e63aba6760",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Łącza wychodzące"
+            }
+          },
+          {
+            "id": "3ef351a002bf23c6",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tagi"
+            }
+          },
+          {
+            "id": "91fd696c4b1fd29a",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Wszystkie atrybuty"
+            }
+          },
+          {
+            "id": "4c144ea5d7021fa7",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Konspekt"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "030881a981f2cac2",
+  "lastOpenFiles": [
+    "Actions/Actions.md",
+    "Actions/Shrink oriented actions/Del Layer Action.md",
+    "Untitled.md",
+    "Actions/Shrink oriented actions",
+    "Actions/Grow oriented actions/Residual Conv Action.md",
+    "Actions/Grow oriented actions",
+    "Actions/Base action and Layer Type.md",
+    "Actions/Grow oriented actions/Sequential Linear Actions.md",
+    "Actions/Shrink oriented actions/Delete Neurons action.md",
+    "Simulation/MCTS.md",
+    "General.md",
+    "Index.md",
+    "Training/Learning Rate Scheduler.md",
+    "Reports/TODO.md",
+    "Reports/PLAN.md",
+    "Training/Training loop.md",
+    "Training",
+    "Simulation/Simulation Set.md",
+    "Simulation/Scoring function.md",
+    "Simulation",
+    "references/Pasted image 20260404172754.png",
+    "references/Pasted image 20260404192219.png",
+    "references/Paper and references.md",
+    "Actions/utils/FX Shape Probe.md",
+    "references",
+    "Actions/utils/Conv to linear adapter.md",
+    "Actions/utils/Quasi identity.md",
+    "Actions/utils/Name factory.md",
+    "Actions/utils/Model Transformer.md",
+    "Actions/utils/Model Analyser.md",
+    "Actions/utils/Layer Factory.md",
+    "Actions/Grow oriented actions/Residual Linear Actions.md",
+    "Utils",
+    "Core",
+    "references/Pasted image 20260511225619.png",
+    "references/Pasted image 20260511225255.png",
+    "references/Pasted image 20260510215912.png",
+    "Pasted image 20260510214937.png",
+    "Pasted image 20260510212242.png",
+    "references/Pasted image 20260510211911.png",
+    "references/Pasted image 20260506223240.png",
+    "references/Pasted image 20260506222841.png",
+    "Actions/utils",
+    "re[prts",
+    "Actions",
+    "Bez nazwy.canvas"
+  ]
+}
