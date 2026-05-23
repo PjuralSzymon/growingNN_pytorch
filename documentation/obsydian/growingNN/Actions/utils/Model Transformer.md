@@ -34,7 +34,6 @@ Steps. Adds submodule at line 72. Finds `src` and `dst` at lines 74 to 75. Rejec
 
 Meaning. Inserts one new module on the path between two sequential endpoints even if non-module ops sit between them. See [[Sequential Linear Actions]].
 
----
 
 ### `delete_layer(gm, layer_id)`
 
