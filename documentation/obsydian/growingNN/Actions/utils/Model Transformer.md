@@ -1,6 +1,6 @@
 This page documents `growingnn/actions/utils/model_transformations.py`. These functions edit an `fx.GraphModule` in place: they change `gm.graph`, add submodules on `gm`, then call `gm.graph.lint()` and `gm.recompile()`.
 
-They are called from [[Residual Linear Actions]], [[Residual Conv Action]], [[Sequentail Linear Actions]], [[Sequential Conv Action]], and [[Del Layer Action]]. Names for new modules come from [[Name factory]]. New layer objects come from [[Layer Factory]]. Analysis that chooses endpoints lives in [[Model Analyser]].
+They are called from [[Residual Linear Actions]], [[Residual Conv Action]], [[Sequential Linear Actions]], [[Sequential Conv Action]], and [[Del Layer Action]]. Names for new modules come from [[Name factory]]. New layer objects come from [[Layer Factory]]. Analysis that chooses endpoints lives in [[Model Analyser]]. Dotted submodule names on `gm` use the same rules as [[Dotted Module Names in torch.fx]].
 
 ---
 
@@ -22,7 +22,7 @@ Lines 24 to 41.
 
 Steps. `gm.add_module(name, new_layer)` at line 27. Finds `src` and `dst` nodes by string name at lines 29 to 30. Inserts `new_out = call_module(name, args=(src,))` after `dst` at line 32. Builds `added = operator.add(dst, new_out)` at lines 34 to 35. Replaces every use of `dst` with `added`, then forces `added.args = (dst, new_out)` at lines 37 to 38 so the add keeps the original `dst` tensor and the skip branch.
 
-Meaning. Output tensor of `dst` becomes `dst + proj(src)` in forward order. Shapes of `dst` and `proj(src)` must broadcast. [[Layer Analyser]] filters some bad conv pairs at action generation time.
+Meaning. Output tensor of `dst` becomes `dst + proj(src)` in forward order. Shapes of `dst` and `proj(src)` must broadcast. [[FX Shape Probe]] filters some bad conv pairs at action generation time.
 
 ---
 
@@ -32,7 +32,7 @@ Lines 69 to 90.
 
 Steps. Adds submodule at line 72. Finds `src` and `dst` at lines 74 to 75. Rejects identical src and dst at lines 76 to 77. Calls `_path_dst_to_src(dst, src)` at lines 79 to 81. Takes `path[1]` as the node to insert after (line 83). Inserts `call_module(name, args=(src,))` after that node (line 85). Rewires `dst` so its input edge that used to come from `src` now comes from `new_out` via `_replace_node_input` at line 87.
 
-Meaning. Inserts one new module on the path between two sequential endpoints even if non-module ops sit between them. See [[Sequentail Linear Actions]].
+Meaning. Inserts one new module on the path between two sequential endpoints even if non-module ops sit between them. See [[Sequential Linear Actions]].
 
 ---
 
@@ -62,10 +62,6 @@ The paper describes dynamic graphs and mutations during training. This file is t
 
 1. `delete_layer` submodule removal with `hasattr` or `delattr` does not support dotted names (see above).
 
-2. `add_new_residual_layer` does not check shapes; callers must filter (see [[Layer Analyser]] for conv).
+2. `add_new_residual_layer` does not check shapes; callers must filter (see [[FX Shape Probe]] for conv).
 
 3. All functions assume `gm` is already a traced `GraphModule` with stable `call_module` targets.
-
-### Related
-
-[[Model Analyser]], [[Name factory]], [[Layer Factory]], [[Del Layer Action]].

@@ -14,7 +14,7 @@
 	    - {     **TODO**    } Akcja usuwania neuronow w danej wartswie 
 	    - {     **TODO**    } Propagacja zmian na cala siec
 	    - {     **TODO**    } Testy regresyjne
-	- {     **IN PROG**    } Dodać testy regresyjne na dużych modelach 
+	- {     **TODO**    } Dodać testy regresyjne na dużych modelach 
 - Czerwiec
     - {     **TODO**    } Alg symulacyjny
     - {     **TODO**    } Score Fun

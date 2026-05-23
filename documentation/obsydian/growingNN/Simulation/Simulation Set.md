@@ -1,0 +1,1 @@
+The simulation set is a small subset of the training data used only during simulation. In early work we tried other ways to build the set, including PCA-based reduction. Those methods scored worse in practice, so random sampling stayed the default.

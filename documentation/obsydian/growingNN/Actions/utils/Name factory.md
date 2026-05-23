@@ -17,7 +17,3 @@ It scans names equal to `base` or starting with `base + "_"` plus digits (lines 
 ### Known limitations
 
 The scan is string based. If a name exists only inside a nested submodule but not as a top-level attribute on `gm`, collision rules depend on what `_modules` and the FX graph list expose for your trace style.
-
-### Related
-
-[[Model Transformer]], [[Residual Linear Actions]], [[Residual Conv Action]].

@@ -10,7 +10,7 @@ Lines 13 to 17. Logs at debug level, deletes the folder if it exists with `shuti
 
 ### `plot_norms_and_parameter_count`
 
-Lines 20 to 38. Builds a twin-axis matplotlib figure: left axis plots `norms` sequence, right axis plots `parameter_amounts` slice aligned to steps. Calls `plt.show()` at line 38. Non-headless runs may open a window unless the caller sets a backend such as `Agg` (see `tests/run_all_test.py`, which sets `MPLBACKEND=Agg` for regression subprocesses).
+Lines 20 to 38. Builds a twin-axis matplotlib figure: left axis plots `norms` sequence, right axis plots `parameter_amounts` slice aligned to steps. Calls `plt.show()` at line 38. Non-headless runs may open a window unless the caller sets a backend such as `Agg`
 
 ### `parse_regression_cli`
 
@@ -19,7 +19,3 @@ Lines 41 to 52. `argparse` parser with `--save-output` or `--save_output` taking
 ### Known limitations
 
 Importing this module pulls in `matplotlib`. Unit tests that import action modules which transitively import regression helpers can accidentally parse pytest argv if `parse_regression_cli()` runs at import time without passing `argv=[]`; keep CLI parsing only inside `if __name__ == "__main__"` blocks.
-
-### Related
-
-`tests/regression/resnet_regression_test.py`, `tests/regression/utils_testing.py`, `tests/run_all_test.py`.

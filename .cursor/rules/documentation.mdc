@@ -19,6 +19,9 @@ When writing documentation:
 - Prefer many short .md files than one long .md file 
 - Create new files and folders 
 - There should not be anything like index, connections should see what relates to what index and list of all things is destroying it
-- Pages under `documentation/obsydian/growingNN/tests/` are outside the vault link graph: never use Obsidian wiki links `[[...]]` or embed tags `![[...]]` there; describe modules and code with plain names and repo paths. Other vault pages must not wiki-link to any page under `tests/`; cite `tests/...` paths instead.
+- No index page
+- Do not add a `### Related` section. Put cross-links only inside the body text where they fit naturally.
+- Pages under `documentation/obsydian/growingNN/tests/` are outside the vault link graph: never use Obsidian wiki links `[[...]]` or embed tags `![[...]]` there; describe modules and code with plain names and repo paths.
+- Nothing outside `documentation/obsydian/growingNN/tests/` may mention the repo `tests/` folder, test scripts, test drivers, or any page under `documentation/obsydian/growingNN/tests/`. Other vault pages must not wiki-link to test pages; cite product code paths instead.
 - Tests should not be linked by tag to any onter page
 - Any page should not link to test describeing pages 

@@ -1,60 +1,15 @@
-File: `tests/regression/resnet_regression_test.py`.
+This note is about `tests/regression/resnet_regression_test.py`.
+
+What it does. It loads a real pretrained ResNet-18 from `torchvision.models.resnet18` with `ResNet18_Weights.DEFAULT`, sets `eval()`, traces with `torch.fx.symbolic_trace` into `gm`, then loops up to `ITERATIONS = 50` steps. Each step builds a list of actions from `AddResLayer.generate_all_actions`, `AddResConvLayer.generate_all_actions`, and optional seq or delete flags, picks one action at random, calls `execute`, runs `gm(x)` with `BATCH_SIZE = 2` and `INPUT_SHAPE = (3, 64, 64)`, logs norms, draws FX graphs into `testResults/regression/` via FX graph drawer `draw_filtered_fx_graph` and `draw_torch_fx_graph`.
+
+Why. It stress-tests growth on a large real graph with dotted submodule names. Where. Run as a script from the `tests` folder; CLI uses `parse_regression_cli` from Regression utils.
 
 ---
 
-## What it does
+### Constants of interest
 
-Loads pretrained ResNet-18 (`ResNet18_Weights.DEFAULT`), `eval()`, traces with `fx.symbolic_trace` to `gm`.
+Lines 34 to 42: `USE_ADD_RES_LAYER`, `USE_ADD_RES_CONV_LAYER`, `USE_ADD_SEQ_LAYER`, `USE_ADD_SEQ_CONV_LAYER`, `USE_DEL_LAYER`. Line 41 sets input shape tuple `(3, 64, 64)`. Line 40 sets batch size `2`.
 
-Constants (lines 34 to 42): all five action flags on, `BATCH_SIZE = 2`, `INPUT_SHAPE = (3, 64, 64)`, `ITERATIONS = 50`.
+### Links to new safety logic
 
-Each iteration:
-
-1. `_generate_actions(gm)` merges actions from `AddResLayer` (EYE only), `AddResConvLayer`, `AddSeqLayer`, `AddSeqConvLayer`, `DelLayer`.
-2. If the list is empty, logs a warning and breaks (early stop before 50 steps).
-3. Picks one action at random (`random.Random(42)`).
-4. Appends `type(action).__name__` to `used_action_types`.
-5. `execute`, forward `gm(x)`, log output delta norm vs initial output.
-6. Writes PDF graphs via `growingnn/utils/fx_graph_drawer.py` into `testResults/regression/`.
-
-After the loop: `plot_norms_and_parameter_count`, then an action summary table in the log (`action` / `count` columns).
-
-CLI: `parse_regression_cli` from `tests/regression/regression_utils.py` (`--save-output`).
-
----
-
-## Why
-
-Stress test on a real torchvision model with dotted submodule names (`layer1.0.conv1`, etc.). Catches shape bugs from `growingnn/actions/utils/layer_analyser.py` on deep nets.
-
----
-
-## Early stop (not a crash)
-
-The loop exits before 50 only when:
-
-- `len(actions) == 0` — warning `No actions to execute for iteration N`
-- `execute` or forward raises — `logger.exception` then break
-- Uncaught error in graph export (outside the execute `try` today)
-
-If the run looks frozen, check DEBUG volume from `module_sequential_pairs` on a large mutated graph. Set `LOG_LEVEL` to `INFO` in `growingnn/core/config.py` to see `idx:` and `action used` lines.
-
----
-
-## Comparison with the original growingNN paper
-
-Same high-level idea as the paper’s architecture search loop: propose moves, apply one, keep training signal. This script is a manual random walk for debugging, not full MCTS.
-
----
-
-## Known limitations
-
-1. Forward at 64×64 but shape probe often uses 224×224 (see `documentation/obsydian/growingNN/Actions/utils/Layer Analyser.md`).
-2. Action generation cost grows as `seq_conv_*` and `res_conv__*` modules accumulate.
-3. PDF export every step is slow.
-
----
-
-## Related code
-
-Action modules: `growingnn/actions/add_res_layer.py`, `add_res_conv_layer.py`, `add_seq_layer.py`, `add_seq_conv_layer.py`, `delete_layer.py`. Helpers: `tests/regression/regression_utils.py`, `growingnn/utils/fx_graph_drawer.py`.
+`AddResConvLayer.generate_all_actions` uses FX Shape Probe so conv residual candidates that would break `torch.add` on different spatial sizes (for example a pair from `layer3` to `layer4` on ResNet-18) are skipped when shape metadata is present.

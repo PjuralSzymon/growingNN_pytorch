@@ -11,41 +11,55 @@
       "query": "path:Actions/utils  ",
       "color": {
         "a": 1,
-        "rgb": 12768814
+        "rgb": 16774912
       }
     },
     {
-      "query": "path:Actions ",
+      "query": "path:Actions  ",
       "color": {
         "a": 1,
-        "rgb": 1222899
+        "rgb": 65297
       }
     },
     {
-      "query": "path:tests  ",
+      "query": "path:Simulation  ",
       "color": {
         "a": 1,
-        "rgb": 65356
+        "rgb": 11657298
       }
     },
     {
-      "query": "path:Core  ",
+      "query": "path:Training  ",
       "color": {
         "a": 1,
-        "rgb": 14701145
+        "rgb": 43775
+      }
+    },
+    {
+      "query": "path:Utils  ",
+      "color": {
+        "a": 1,
+        "rgb": 14810880
+      }
+    },
+    {
+      "query": "file:General",
+      "color": {
+        "a": 1,
+        "rgb": 16711680
       }
     }
   ],
-  "collapse-display": false,
+  "collapse-display": true,
   "showArrow": false,
   "textFadeMultiplier": 0,
-  "nodeSizeMultiplier": 1,
+  "nodeSizeMultiplier": 1.3059293353188,
   "lineSizeMultiplier": 1,
   "collapse-forces": false,
-  "centerStrength": 0.518713248970312,
-  "repelStrength": 10,
+  "centerStrength": 0.276431568972519,
+  "repelStrength": 12.5463652362258,
   "linkStrength": 1,
-  "linkDistance": 250,
-  "scale": 1.9085338640380523,
+  "linkDistance": 168,
+  "scale": 0.7545958428437244,
   "close": true
 }

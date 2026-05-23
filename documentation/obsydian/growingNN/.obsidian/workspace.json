@@ -1,112 +1,37 @@
 {
   "main": {
-    "id": "caf3bfef00e9af22",
+    "id": "df6c1e03037eb2bb",
     "type": "split",
     "children": [
       {
-        "id": "e6705233c01f2f7c",
+        "id": "1dfb49f9f77fc2dd",
         "type": "tabs",
         "children": [
           {
-            "id": "e864d25c4304c105",
+            "id": "c394dc896ee68056",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Actions/Del Layer Action.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Del Layer Action"
-            }
-          },
-          {
-            "id": "0e413edd0cafb8f0",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Actions/Residual Linear Actions.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Residual Linear Actions"
-            }
-          },
-          {
-            "id": "c3c11eef4872f0e7",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Reports/PLAN.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "PLAN"
-            }
-          },
-          {
-            "id": "d90b89cbd7cd6794",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Reports/Part 1.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Part 1"
-            }
-          },
-          {
-            "id": "0a0d4bfbcc398b46",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Reports/Part 1.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Part 1"
-            }
-          },
-          {
-            "id": "c19a7405498d8a33",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Reports/Part 1.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Part 1"
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
             }
           }
-        ],
-        "currentTab": 5
+        ]
       }
     ],
     "direction": "vertical"
   },
   "left": {
-    "id": "ab4c50fdce932471",
+    "id": "d888d96a9188e6f9",
     "type": "split",
     "children": [
       {
-        "id": "4cb78c7913f6cda5",
+        "id": "786af4e6b4e3a6ef",
         "type": "tabs",
         "children": [
           {
-            "id": "774e756e1df43433",
+            "id": "a7f3df6669f9185c",
             "type": "leaf",
             "state": {
               "type": "file-explorer",
@@ -115,11 +40,11 @@
                 "autoReveal": false
               },
               "icon": "lucide-folder-closed",
-              "title": "Przeglądarka plików"
+              "title": "Files"
             }
           },
           {
-            "id": "6ab2ff58affbb78f",
+            "id": "39d1c5c8ec032674",
             "type": "leaf",
             "state": {
               "type": "search",
@@ -132,17 +57,17 @@
                 "sortOrder": "alphabetical"
               },
               "icon": "lucide-search",
-              "title": "Wyszukiwarka"
+              "title": "Search"
             }
           },
           {
-            "id": "54709036d20f62a0",
+            "id": "5aca18ad311ddcf1",
             "type": "leaf",
             "state": {
               "type": "bookmarks",
               "state": {},
               "icon": "lucide-bookmark",
-              "title": "Ulubione"
+              "title": "Bookmarks"
             }
           }
         ]
@@ -152,19 +77,20 @@
     "width": 300
   },
   "right": {
-    "id": "ac681f37fccf39af",
+    "id": "9bb490b9da50c0b1",
     "type": "split",
     "children": [
       {
-        "id": "c59a402f1094122e",
+        "id": "4e675a0eda97b0bb",
         "type": "tabs",
         "children": [
           {
-            "id": "412428cd929eb9e7",
+            "id": "e15ecd44b3315b5b",
             "type": "leaf",
             "state": {
               "type": "backlink",
               "state": {
+                "file": "Actions/utils/Layer Analyser.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -174,24 +100,25 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Linki zwrotne"
+              "title": "Backlinks for Layer Analyser"
             }
           },
           {
-            "id": "36c843e63aba6760",
+            "id": "9694efbd235e54a5",
             "type": "leaf",
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "Actions/utils/Layer Analyser.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Łącza wychodzące"
+              "title": "Outgoing links from Layer Analyser"
             }
           },
           {
-            "id": "3ef351a002bf23c6",
+            "id": "336747c95fb35e42",
             "type": "leaf",
             "state": {
               "type": "tag",
@@ -202,11 +129,11 @@
                 "searchQuery": ""
               },
               "icon": "lucide-tags",
-              "title": "Tagi"
+              "title": "Tags"
             }
           },
           {
-            "id": "91fd696c4b1fd29a",
+            "id": "97e19e199f852caa",
             "type": "leaf",
             "state": {
               "type": "all-properties",
@@ -216,21 +143,22 @@
                 "searchQuery": ""
               },
               "icon": "lucide-archive",
-              "title": "Wszystkie atrybuty"
+              "title": "All properties"
             }
           },
           {
-            "id": "4c144ea5d7021fa7",
+            "id": "addf9a5a508bda56",
             "type": "leaf",
             "state": {
               "type": "outline",
               "state": {
+                "file": "Actions/utils/Layer Analyser.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Konspekt"
+              "title": "Outline of Layer Analyser"
             }
           }
         ]
@@ -242,62 +170,22 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "switcher:Otwórz okno szybkiego wyboru": false,
-      "graph:Otwórz podgląd grafu": false,
-      "canvas:Stwórz nową tablicę": false,
-      "daily-notes:Otwórz dzisiejszy dziennik": false,
-      "templates:Wstaw szablon": false,
-      "command-palette:Otwórz listę poleceń": false,
-      "bases:Stwórz nową bazę danych": false
+      "switcher:Open quick switcher": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false,
+      "graph:Open graph view": false
     }
   },
-  "active": "774e756e1df43433",
+  "active": "c394dc896ee68056",
   "lastOpenFiles": [
-    "Reports/meeting notes/Note 18.05.2026.md",
-    "Reports/Part 1.md",
-    "Reports/PLAN.md",
-    "Actions/utils/Dotted Module Names in torch.fx.md",
-    "references/Pasted image 20260506222448.png",
-    "Pasted image 20260516173559.png",
-    "Reports/meeting notes",
-    "resnethistory200iters.png",
-    "Reports/TODO.md",
-    "resnetallactions.png",
+    "General.md",
+    "Simulation/MCTS.md",
     "Actions/utils/Layer Analyser.md",
-    "Package version.md",
-    "references/Paper and references.md",
-    "references/Pasted image 20260404192219.png",
-    "references",
-    "Actions/utils/FX Shape Probe.md",
-    "tests/regression/ResNet18 regression script.md",
-    "tests/regression/Regression utils.md",
-    "tests/regression/Adding Sequential Layers.md",
-    "tests/regression/Adding residual layers.md",
-    "tests/Model factory.md",
-    "tests/Unit tests.md",
-    "Index.md",
-    "Actions/utils/Layer Factory.md",
-    "Actions/utils/Model Transformer.md",
-    "Actions/utils/Name factory.md",
-    "Actions/Base action and Layer Type.md",
-    "Actions/Residual Linear Actions.md",
-    "Actions/Sequentail Linear Actions.md",
-    "Actions/Residual Conv Action.md",
-    "tests/Test runners.md",
-    "tests/Unit tests index.md",
-    "Utils",
-    "Core",
-    "references/Pasted image 20260511225619.png",
-    "references/Pasted image 20260511225255.png",
-    "references/Pasted image 20260510215912.png",
-    "Pasted image 20260510214937.png",
-    "Pasted image 20260510212242.png",
-    "Actions/utils",
-    "re[prts",
-    "Actions",
-    "Reports",
-    "Ideas",
-    "Bez nazwy.canvas",
-    "tests/regression"
+    "Training/Learning Rate Scheduler.md",
+    "growingNN/Actions/Actions.md",
+    "Actions/Actions.md"
   ]
 }
