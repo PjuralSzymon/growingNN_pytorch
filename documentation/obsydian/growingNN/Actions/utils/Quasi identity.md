@@ -26,4 +26,4 @@ Cache eviction calls `clear()` on the whole cache when memory pressure hits (lin
 
 ### Related
 
-[[Layer Factory]], [[Config]], [[Residual Linear Actions]], [[Index]].
+[[Layer Factory]], [[Config]], [[Residual Linear Actions]].

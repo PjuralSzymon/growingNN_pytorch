@@ -22,3 +22,4 @@ When writing documentation:
 - Pages under `documentation/obsydian/growingNN/tests/` are outside the vault link graph: never use Obsidian wiki links `[[...]]` or embed tags `![[...]]` there; describe modules and code with plain names and repo paths. Other vault pages must not wiki-link to any page under `tests/`; cite `tests/...` paths instead.
 - Tests should not be linked by tag to any onter page
 - Any page should not link to test describeing pages 
+- No index page

@@ -24,4 +24,4 @@ The file duplicates `from .action import Action, Layer_Type` twice (lines 5 and 
 
 ### Related
 
-[[Del Layer Action]], [[Model Analyser]], [[Part 1]] entry 09.05.2026, [[Index]].
+[[Del Layer Action]], [[Model Analyser]], [[Part 1]] entry 09.05.2026.

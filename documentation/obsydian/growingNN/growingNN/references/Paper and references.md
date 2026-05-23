@@ -12,4 +12,4 @@ Docs: `https://docs.pytorch.org/docs/stable/generated/torch.nn.Module.html#torch
 
 ### Related
 
-[[Index]], [[Part 1]].
+[[Part 1]].

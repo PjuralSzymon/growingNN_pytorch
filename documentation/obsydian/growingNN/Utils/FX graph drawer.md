@@ -22,4 +22,4 @@ Filtered view hides data flow through getters and placeholders; it is a sketch, 
 
 ### Related
 
-[[ResNet18 regression script]], [[Utils testing script]], [[Regression utils]], [[Dotted Module Names in torch.fx]], [[Test runners]], [[Index]].
+[[ResNet18 regression script]], [[Utils testing script]], [[Regression utils]], [[Dotted Module Names in torch.fx]], [[Test runners]].

@@ -20,4 +20,4 @@ The scan is string based. If a name exists only inside a nested submodule but no
 
 ### Related
 
-[[Model Transformer]], [[Residual Linear Actions]], [[Residual Conv Action]], [[Index]].
+[[Model Transformer]], [[Residual Linear Actions]], [[Residual Conv Action]].

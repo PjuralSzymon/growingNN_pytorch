@@ -26,4 +26,4 @@ Changing `LOG_TO_FILE` to `False` still keeps the stream handler when `ENABLE_LO
 
 ### Related
 
-[[Logger]], [[Model Analyser]], [[Layer Factory]], [[Quasi identity]], [[Index]].
+[[Logger]], [[Model Analyser]], [[Layer Factory]], [[Quasi identity]].

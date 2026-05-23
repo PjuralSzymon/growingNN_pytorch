@@ -251,8 +251,13 @@
       "bases:Create new base": false
     }
   },
-  "active": "774e756e1df43433",
+  "active": "c19a7405498d8a33",
   "lastOpenFiles": [
+    "Training/Training loop.md",
+    "General.md",
+    "Training/Learning Rate Scheduler.md",
+    "references/grafy.png",
+    "Index.md",
     "references/algGraph.png",
     "Reports/PLAN.md",
     "growingNN/Utils/FX graph drawer.md",
@@ -286,17 +291,12 @@
     "growingNN/references/Pasted image 20260506222841.png",
     "growingNN/references/Pasted image 20260506222839.png",
     "growingNN/references/Pasted image 20260506222448.png",
-    "growingNN/references/Pasted image 20260404192232.png",
-    "growingNN/references/Pasted image 20260404192219.png",
     "growingNN/references/Paper and references.md",
     "growingNN/references",
     "growingNN/Core/Logger.md",
     "growingNN/Core/Config.md",
     "growingNN/Core",
     "growingNN/Actions/utils/Quasi identity.md",
-    "growingNN/Actions/utils/Name factory.md",
-    "growingNN/Actions/utils/Model Transformer.md",
-    "growingNN/Actions/utils/Model Analyser.md",
     "growingNN/Actions/utils",
     "growingNN/Actions/Shrink oriented actions",
     "Bez nazwy.canvas"

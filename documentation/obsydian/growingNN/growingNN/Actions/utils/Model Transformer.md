@@ -68,4 +68,4 @@ The paper describes dynamic graphs and mutations during training. This file is t
 
 ### Related
 
-[[Model Analyser]], [[Name factory]], [[Layer Factory]], [[Del Layer Action]], [[Index]].
+[[Model Analyser]], [[Name factory]], [[Layer Factory]], [[Del Layer Action]].

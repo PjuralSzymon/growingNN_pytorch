@@ -1,7 +1,5 @@
 This note explains how `torch.fx` names submodules in an `fx.GraphModule`, how to read those names, why `getattr` returns `None` for them, and which API the framework should use.
 
-Hub: [[Index]].
-
 It is used by [[Model Analyser]], [[Model Transformer]], `get_layer_module` in `growingnn/actions/delete_layer.py`, and action generators in `growingnn/actions/add_res_layer.py`, `add_res_conv_layer.py`, `add_seq_layer.py`, and `add_seq_conv_layer.py` when they walk the graph and need the actual `nn.Module` object behind a `call_module` node. [[FX graph drawer]] uses `get_submodule` for labels. [[Name factory]] must pick names that stay unique next to every dotted `call_module` target.
 
 ---

@@ -22,4 +22,4 @@ Importing this module pulls in `matplotlib`. Unit tests that import action modul
 
 ### Related
 
-[[ResNet18 regression script]], [[Utils testing script]], [[Test runners]], [[Index]].
+[[ResNet18 regression script]], [[Utils testing script]], [[Test runners]].

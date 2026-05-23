@@ -1,6 +1,6 @@
-The GrowingNN algorithm is used to dynamically change the structure of the model during training. To achive that algrotihm is divided into generation. Each generation is divided into 2 stages: 
-1. Training stage which is typical SGD [[Training loop]] that updates the weights in the model and consists of some amount of epochs
-2. Simulation stage is using [[MCTS]] algorithm to find the best action, what is best is described by [[Scoring function]]
+The GrowingNN algorithm is used to dynamically change the structure of the model during training. To achieve that, the algorithm is divided into generations. Each generation has two stages:
+1. Training stage, which is a typical SGD [[Training loop]] that updates the weights in the model over a fixed number of epochs
+2. Simulation stage, which uses the [[MCTS]] algorithm to find the best action; what counts as best is described by the [[Scoring function]]!
 
 
-![[algGraph.png|278]]
+![[grafy.png]]

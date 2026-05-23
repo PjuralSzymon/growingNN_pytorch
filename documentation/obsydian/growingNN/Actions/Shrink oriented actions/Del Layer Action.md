@@ -1,7 +1,7 @@
 
 ## Overview
 
-`DelLayer` removes hidden layers from a torch.fx `GraphModule`. Hub: [[Index]]. We list all hidden modules, filter to those that pass the rules below, and that list is the delete actions the search can choose for that model.
+`DelLayer` removes hidden layers from a torch.fx `GraphModule`. We list all hidden modules, filter to those that pass the rules below, and that list is the delete actions the search can choose for that model.
 
 ## Generating actions
 

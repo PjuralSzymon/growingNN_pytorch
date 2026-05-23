@@ -1,6 +1,6 @@
 Unit tests live under `tests/unit/`. Pytest collects them when run from repo root or from `tests/`. Example command: `python -m pytest tests/unit/actions/utils/fx_shape_probe_test.py -q`.
 
-Hub: [[Index]]. For drivers see [[Test runners]].
+For drivers see [[Test runners]].
 
 ### Notable files
 
@@ -12,4 +12,4 @@ Other action tests may live under `tests/unit/actions/` as the tree grows.
 
 ### Related
 
-[[Model factory]], [[Index]], regression notes [[Adding residual layers]], [[Adding Sequential Layers]].
+[[Model factory]], regression notes [[Adding residual layers]], [[Adding Sequential Layers]].

@@ -14,4 +14,4 @@ Divisibility is necessary but not sufficient for every graph shape. Spatial size
 
 ### Related
 
-[[Residual Conv Action]], [[Layer Factory]], [[FX Shape Probe]], [[Index]].
+[[Residual Conv Action]], [[Layer Factory]], [[FX Shape Probe]].

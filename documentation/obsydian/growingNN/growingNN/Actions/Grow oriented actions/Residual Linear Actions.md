@@ -1,4 +1,4 @@
-This page is about `growingnn/actions/add_res_layer.py` and the class `AddResLayer`. It is tested by [[Adding residual layers]]. Hub: [[Index]].
+This page is about `growingnn/actions/add_res_layer.py` and the class `AddResLayer`. It is tested by [[Adding residual layers]].
 
 It uses [[Model Analyser]] (`module_dependency_pairs`, `get_layer_module`). It calls `add_new_residual_layer` in [[Model Transformer]] and `LinearFactory.create_linear` in [[Layer Factory]]. Names use [[Name factory]]. Related conv variant: [[Residual Conv Action]].
 

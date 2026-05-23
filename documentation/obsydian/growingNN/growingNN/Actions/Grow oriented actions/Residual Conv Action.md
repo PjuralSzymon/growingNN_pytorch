@@ -1,8 +1,6 @@
 
 This page is about `growingnn/actions/add_res_conv_layer.py` and the class `AddResConvLayer`. It adds a residual branch with a convolutional projection between two FX `call_module` targets, then recompiles the graph.
 
-Hub: [[Index]].
-
 It depends on [[Model Analyser]] for `module_dependency_pairs` and `get_layer_module`. It depends on [[FX Shape Probe]] for `call_module_output_shapes`. Execution calls `add_new_residual_layer` in [[Model Transformer]]. Factories live in [[Layer Factory]] (`ConvFactory.create_zero_conv`, `ConvFactory.create_zero_conv_before_linear`). Names come from [[Name factory]]. Width divisibility uses [[Conv to linear adapter]].
 
 ---
