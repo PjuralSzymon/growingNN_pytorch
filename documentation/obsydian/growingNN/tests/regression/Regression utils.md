@@ -10,7 +10,7 @@ Lines 13 to 17. Logs at debug level, deletes the folder if it exists with `shuti
 
 ### `plot_norms_and_parameter_count`
 
-Lines 20 to 38. Builds a twin-axis matplotlib figure: left axis plots `norms` sequence, right axis plots `parameter_amounts` slice aligned to steps. Calls `plt.show()` at line 38. Non-headless runs may open a window unless the caller sets a backend such as `Agg` (see [[Test runners]]).
+Lines 20 to 38. Builds a twin-axis matplotlib figure: left axis plots `norms` sequence, right axis plots `parameter_amounts` slice aligned to steps. Calls `plt.show()` at line 38. Non-headless runs may open a window unless the caller sets a backend such as `Agg`
 
 ### `parse_regression_cli`
 

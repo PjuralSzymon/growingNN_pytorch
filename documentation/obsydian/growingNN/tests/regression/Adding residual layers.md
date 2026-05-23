@@ -15,5 +15,5 @@ If the range for random initialization is set to 0, then the output has no chang
 ![[Pasted image 20260404173955.png]]
 
 When I set the value for the residual layers to EYE mode, which is residual layers where the initialization is set by quasi-identity, it did not make any sense, and the loss of learned information was huge.
-[[Part 1]]
+
 ![[Pasted image 20260404174521.png]]

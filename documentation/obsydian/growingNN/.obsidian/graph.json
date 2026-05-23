@@ -6,36 +6,7 @@
   "hideUnresolved": false,
   "showOrphans": false,
   "collapse-color-groups": false,
-  "colorGroups": [
-    {
-      "query": "path:Actions/utils  ",
-      "color": {
-        "a": 1,
-        "rgb": 12768814
-      }
-    },
-    {
-      "query": "path:Actions ",
-      "color": {
-        "a": 1,
-        "rgb": 1222899
-      }
-    },
-    {
-      "query": "path:tests  ",
-      "color": {
-        "a": 1,
-        "rgb": 65356
-      }
-    },
-    {
-      "query": "path:Core  ",
-      "color": {
-        "a": 1,
-        "rgb": 14701145
-      }
-    }
-  ],
+  "colorGroups": [],
   "collapse-display": false,
   "showArrow": false,
   "textFadeMultiplier": 0,
@@ -46,6 +17,6 @@
   "repelStrength": 10,
   "linkStrength": 1,
   "linkDistance": 250,
-  "scale": 0.7565339239886474,
+  "scale": 1.002568369761513,
   "close": true
 }

@@ -67,32 +67,14 @@
             "id": "0a0d4bfbcc398b46",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Reports/Part 1.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Part 1"
-            }
-          },
-          {
-            "id": "c19a7405498d8a33",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Simulation/MCTS.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "MCTS"
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
             }
           }
         ],
-        "currentTab": 5
+        "currentTab": 4
       }
     ],
     "direction": "vertical"
@@ -251,16 +233,38 @@
       "bases:Create new base": false
     }
   },
-  "active": "c19a7405498d8a33",
+  "active": "0a0d4bfbcc398b46",
   "lastOpenFiles": [
-    "Simulation/Simulation Set.md",
-    "Simulation/TreeNode.md",
+    "tests/regression/Adding residual layers.md",
     "Simulation/Scoring function.md",
+    "Simulation/Simulation Set.md",
     "Simulation/MCTS.md",
     "growingNN/Simulation/TreeNode.md",
-    "Pasted image 20260523093226.png",
-    "General.md",
+    "growingNN/Simulation/Simulation Set.md",
+    "growingNN/Simulation/MCTS.md",
+    "growingNN/tests/Unit tests index.md",
+    "growingNN/tests/Test runners.md",
+    "tests/regression/Utils testing script.md",
+    "tests/Test runners.md",
+    "tests/Model factory.md",
+    "tests/Unit tests index.md",
+    "tests/Unit tests.md",
+    "tests/regression/ResNet18 regression script.md",
+    "tests/regression/Regression utils.md",
+    "Actions/Residual Conv Action.md",
+    "tests/regression/Pasted image 20260404192146.png",
+    "tests/regression/Pasted image 20260404174521.png",
+    "tests/regression/Pasted image 20260404173518.png",
+    "tests/regression/Pasted image 20260404173508.png",
+    "tests/regression/Pasted image 20260404172754.png",
+    "tests/regression/Adding Sequential Layers.md",
+    "growingNN/Training/Training loop.md",
     "Training/Learning Rate Scheduler.md",
+    "Reports/TODO.md",
+    "growingNN/Reports/TODO.md",
+    "General.md",
+    "Simulation/TreeNode.md",
+    "Pasted image 20260523093226.png",
     "Pasted image 20260523092815.png",
     "Training/Training loop.md",
     "Pasted image 20260523092653.png",
@@ -269,34 +273,12 @@
     "Untitled",
     "references/evolving neural networks - Journal of Computational Science/grafy.png",
     "Index.md",
-    "Reports/PLAN.md",
-    "growingNN/Utils/FX graph drawer.md",
     "growingNN/Utils",
-    "growingNN/Training/Training loop.md",
-    "growingNN/Training/Learning Rate Scheduler.md",
     "growingNN/Training",
-    "growingNN/tests/regression/Utils testing script.md",
-    "growingNN/tests/regression/ResNet18 regression script.md",
-    "growingNN/tests/regression/Regression utils.md",
-    "growingNN/tests/regression/Adding Sequential Layers.md",
-    "growingNN/tests/regression/Adding residual layers.md",
-    "growingNN/tests/Unit tests index.md",
-    "growingNN/tests/Test runners.md",
     "growingNN/tests/regression",
-    "growingNN/tests/Model factory.md",
     "growingNN/tests",
-    "growingNN/Simulation/Scoring function.md",
-    "growingNN/Simulation/Simulation Set.md",
-    "growingNN/Simulation/MCTS.md",
     "growingNN/Simulation",
-    "growingNN/Reports/TODO.md",
-    "growingNN/Reports/PLAN.md",
     "growingNN/Reports",
-    "growingNN/references/Pasted image 20260511225619.png",
-    "growingNN/references/Pasted image 20260511225255.png",
-    "growingNN/references/Pasted image 20260510215912.png",
-    "growingNN/references/Pasted image 20260510211911.png",
-    "growingNN/references/Pasted image 20260506223240.png",
     "growingNN/references",
     "growingNN/Core",
     "Bez nazwy.canvas"
