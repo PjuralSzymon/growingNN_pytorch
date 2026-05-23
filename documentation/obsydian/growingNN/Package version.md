@@ -1,1 +1,0 @@
-The package `growingnn` exposes `__version__` in `growingnn/__init__.py`. Current value is `"0.1.0"` at line 3. The docstring on line 1 says `Growing neural networks — PyTorch.` Runtime defaults live in [[Config]].
