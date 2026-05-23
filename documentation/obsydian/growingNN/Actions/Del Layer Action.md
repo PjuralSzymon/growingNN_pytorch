@@ -11,7 +11,7 @@ For each hidden `layer_id` from `get_all_hidden_modules(gm)`:
 3. `get_common_input_shape` needs every successor to share the same probed input tuple.
 4. Emit `DelLayer([layer_id])` only when `in_shape == out_shape` as full shape tuples (lines 89 to 96).
 
-Helpers `has_same_output_shape`, `has_same_input_shape`, `get_common_output_shape`, `get_common_input_shape` live in the same file for tests (`tests/unit/actions/delete_layer_test.py`).
+Helpers `has_same_output_shape`, `has_same_input_shape`, `get_common_output_shape`, `get_common_input_shape` live in the same file.
 
 Shape maps are built once per `generate_all_actions` call (lines 86 to 87).
 

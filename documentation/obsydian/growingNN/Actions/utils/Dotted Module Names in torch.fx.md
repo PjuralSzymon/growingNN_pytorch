@@ -68,7 +68,7 @@ The pair was skipped when the editable check returned `False`. The hidden check 
 
 ### Known limitations
 
-- The bug only shows up on models whose submodules have dotted names. Flat factories in `tests/model_factory.py` (e.g. `simple_chain_3`, `complex_residual_many_widths`) have no dots and are not affected.
+- The bug only shows up on models whose submodules have dotted names. Flat models with single-segment submodule names (e.g. `simple_chain_3`) have no dots and are not affected.
 - After switching to `get_submodule` via `get_layer_module` in `growingnn/actions/utils/model_analyser.py` (see function `get_layer_module` near line 32), the analyser can mark nested modules as editable when their type is in `EDITABLE_MODULES` from `growingnn/core/config.py`. Downstream actions in [[Sequential Linear Actions]], [[Residual Linear Actions]], [[Sequential Conv Action]], [[Residual Conv Action]], and [[Del Layer Action]] must keep using `get_layer_module` or `get_submodule` for dotted string ids.
 
 ### Framework helper `get_layer_module`

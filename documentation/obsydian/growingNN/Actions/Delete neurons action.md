@@ -20,8 +20,4 @@ The paper discusses architecture search at several granularities. Neuron deletio
 
 ### Known limitations
 
-The file duplicates `from .action import Action, Layer_Type` twice (lines 5 and 11). The action never appears in `tests/regression/resnet_regression_test.py` CLI flags.
-
-### Related
-
-[[Del Layer Action]], [[Model Analyser]], [[Config]] (`EDITABLE_MODULES`).
+The file duplicates `from .action import Action, Layer_Type` twice (lines 5 and 11). The action is not wired into search drivers yet.

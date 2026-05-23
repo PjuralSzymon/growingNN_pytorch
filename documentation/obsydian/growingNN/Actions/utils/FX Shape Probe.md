@@ -4,7 +4,7 @@ Why it exists. `module_dependency_pairs` in `growingnn/actions/utils/model_analy
 
 Where it is used. `AddResConvLayer.generate_all_actions` in `growingnn/actions/add_res_conv_layer.py` calls `call_module_output_shapes(gm)` after `module_dependency_pairs(gm)`. For `isinstance(layer_to, nn.modules.conv._ConvNd)`, it requires `out_shapes[from] == out_shapes[to]` when `out_shapes` is non-empty. Conv to linear branch is not filtered by this equality in the same way (line 64 onward in `add_res_conv_layer.py`).
 
-It is linked from [[Model Analyser]], [[Residual Conv Action]], and [[ResNet18 regression script]]. Tests live in `tests/unit/actions/utils/fx_shape_probe_test.py` using `ModelFactory.simple_conv_chain_2` in `tests/model_factory.py` and `torch.fx.symbolic_trace`.
+It is linked from [[Model Analyser]] and [[Residual Conv Action]].
 
 ---
 
@@ -26,6 +26,6 @@ The Springer chapter 10.1007/978-3-031-63749-0_25 does not spell out FX `ShapePr
 
 1. Default probe `(1, 3, 224, 224)` may fail for models that need other channel counts or ranks; then `out_shapes` is `{}` and conv-conv filtering is off. Pass a custom `example` only if you extend the API; today `generate_all_actions` uses the default path only.
 
-2. Shapes depend on input resolution. A pair valid at `224×224` might be invalid at `64×64` or the reverse. Regression `tests/regression/resnet_regression_test.py` uses `INPUT_SHAPE = (3, 64, 64)` and `BATCH_SIZE = 2` for the forward pass; the probe for action listing still uses `1×3×224×224` unless you change `fx_shape_probe.py` line 30.
+2. Shapes depend on input resolution. A pair valid at `224×224` might be invalid at `64×64` or the reverse. The probe for action listing uses `1×3×224×224` unless you change `fx_shape_probe.py` line 30.
 
 3. Conv to linear residuals are not guarded by this file; bad pairs there could still fail at execute time.

@@ -23,9 +23,3 @@ Drivers: `tests/run_all_test.py` (see `documentation/obsydian/growingNN/tests/Te
 ### Factory
 
 `tests/model_factory.py` — `simple_chain_3`, `simple_conv_chain_2`, residual variants.
-
----
-
-### Related code (not vault links)
-
-Regression scripts under `tests/regression/`. Product docs under `documentation/obsydian/growingNN/Actions/` and `Actions/utils/`.

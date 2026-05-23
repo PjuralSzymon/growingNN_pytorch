@@ -1,7 +1,5 @@
 Code path: `growingnn/actions/add_seq_layer.py` (`AddSeqLayer`). It uses [[Model Analyser]] `module_sequential_pairs`. It uses [[Layer Analyser]] `LayerShapeAnalyser` and `LayerBridgeFinder`. Execution calls `add_new_seq_layer` in [[Model Transformer]]. Layers come from [[Layer Factory]] `LinearFactory.create_linear` with `Layer_Type.EYE`. Names use [[Name factory]].
 
-Regression driver: `tests/regression/adding_seq_layers.py`.
-
 ## What it does
 
 It inserts a new linear module on the path between two editable modules that are sequential in the FX graph.

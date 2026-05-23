@@ -23,7 +23,3 @@ Logging block: `ENABLE_LOGGING` `True` line 18. `LOG_LEVEL` `"DEBUG"` line 19. `
 `EDITABLE_MODULES` is a list, not a tuple. Do not pass it as the second argument to `isinstance` in other code; action classes use their own `SUPPORTED_MODULES` tuples. See [[Residual Linear Actions]] for the `isinstance` tuple rule.
 
 Changing `LOG_TO_FILE` to `False` still keeps the stream handler when `ENABLE_LOGGING` is `True`.
-
-### Related
-
-[[Logger]], [[Model Analyser]], [[Layer Factory]], [[Quasi identity]].

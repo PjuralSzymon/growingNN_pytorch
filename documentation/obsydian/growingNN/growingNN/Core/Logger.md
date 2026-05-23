@@ -15,7 +15,3 @@ If `ENABLE_LOGGING` is false, the logger gets `NullHandler` only (lines 38 to 39
 ### Known limitations
 
 Silencing `raiseExceptions` hides all handler bugs, not only the pytest case. Use `LOG_LEVEL` to reduce noise if debug volume is high.
-
-### Related
-
-[[Config]], regression scripts that call `logger.info` such as [[ResNet18 regression script]].

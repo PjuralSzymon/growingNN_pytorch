@@ -39,4 +39,4 @@ The paper (same DOI as in [[Residual Linear Actions]], 10.1007/978-3-031-63749-0
 
 2. When `call_module_output_shapes` returns `{}`, conv-conv filtering is disabled; rare models may still throw on add.
 
-3. `generate_all_actions` uses `torch.fx.symbolic_trace` for a plain `nn.Module` input while your project may elsewhere prefer `growingnn.core.fx_trace.trace`; submodule names should match if you always pass the same traced `gm` into both analyse and execute (as in `tests/regression/resnet_regression_test.py` line 78).
+3. `generate_all_actions` uses `torch.fx.symbolic_trace` for a plain `nn.Module` input while your project may elsewhere prefer `growingnn.core.fx_trace.trace`; submodule names should match if you always pass the same traced `gm` into both analyse and execute.

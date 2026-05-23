@@ -1,6 +1,6 @@
 File: `growingnn/actions/utils/layer_analyser.py`. Two static-only classes: `LayerShapeAnalyser` (run `ShapeProp`, read shapes) and `LayerBridgeFinder` (decide bridge sizes from shapes). Not the same as [[Model Analyser]] (graph reachability).
 
-Used by [[Sequentail Linear Actions]], [[Sequential Conv Action]], [[Residual Linear Actions]], [[Residual Conv Action]], and [[Del Layer Action]]. Tests: `tests/unit/actions/utils/layer_analyser_test.py`, `tests/unit/actions/add_seq_layer_shape_test.py`, `tests/unit/actions/delete_layer_test.py`.
+Used by [[Sequentail Linear Actions]], [[Sequential Conv Action]], [[Residual Linear Actions]], [[Residual Conv Action]], and [[Del Layer Action]].
 
 ---
 
@@ -73,13 +73,7 @@ DOI 10.1007/978-3-031-63749-0_25 does not name `ShapeProp`. The idea matches the
 
 ## Known limitations
 
-1. Default probe often uses 224×224 while `tests/regression/resnet_regression_test.py` forwards at 64×64; maps can be wrong or empty.
+1. Default probe often uses 224×224 while a forward pass may use a smaller spatial size; maps can be wrong or empty.
 2. `collect_layer_shapes` runs twice if you call both getters without sharing `collect_layer_shapes` once.
 3. Rank-3 or other ranks are not bridged.
 4. Empty maps after failed `ShapeProp` make some actions propose nothing (fail closed for that step).
-
----
-
-## Related
-
-[[Model Analyser]], [[Model Transformer]], [[Conv to linear adapter]], [[Layer Factory]].

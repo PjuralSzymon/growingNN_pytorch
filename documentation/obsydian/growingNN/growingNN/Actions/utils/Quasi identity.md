@@ -23,7 +23,3 @@ The file imports `cv2` as `cv`. The environment must have OpenCV Python bindings
 ### Known limitations
 
 Cache eviction calls `clear()` on the whole cache when memory pressure hits (line 43), not true LRU per key. Typo names (`RESHEPERS`, `get_reshsper`) are public API now.
-
-### Related
-
-[[Layer Factory]], [[Config]], [[Residual Linear Actions]].

@@ -13,7 +13,3 @@ Lines 34 to 42: `USE_ADD_RES_LAYER`, `USE_ADD_RES_CONV_LAYER`, `USE_ADD_SEQ_LAYE
 ### Links to new safety logic
 
 `AddResConvLayer.generate_all_actions` uses [[FX Shape Probe]] so conv residual candidates that would break `torch.add` on different spatial sizes (for example a pair from `layer3` to `layer4` on ResNet-18) are skipped when shape metadata is present. See [[Residual Conv Action]].
-
-### Related
-
-[[Residual Linear Actions]], [[Residual Conv Action]], [[Model Analyser]], [[Utils testing script]], [[Regression utils]], [[FX graph drawer]], [[Test runners]].

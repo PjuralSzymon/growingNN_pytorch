@@ -1,7 +1,2 @@
- Our training loop works very similar to every other, 
- 
+ Our training loop works very similar to every other it is simple SGD, important diffrence is that specifying amount of epochs it needs to be known that it will repeate amount of generation times.
   but specifying amount of training epochs it is important that the same training loop is executed in every generation. Imporant diffrence is that learning rate is controlled by custom [[Training/Learning Rate Scheduler|Learning Rate Scheduler]] which stabilized the process. 
- 
-   
-
-![[algGraph.png|278]]

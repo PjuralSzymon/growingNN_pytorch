@@ -65,7 +65,3 @@ The paper describes dynamic graphs and mutations during training. This file is t
 2. `add_new_residual_layer` does not check shapes; callers must filter (see [[FX Shape Probe]] for conv).
 
 3. All functions assume `gm` is already a traced `GraphModule` with stable `call_module` targets.
-
-### Related
-
-[[Model Analyser]], [[Name factory]], [[Layer Factory]], [[Del Layer Action]].

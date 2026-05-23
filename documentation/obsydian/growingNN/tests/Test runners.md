@@ -9,7 +9,3 @@ Usage from repo root: `python tests/run_all_test.py`.
 ### `tests/unit/run_all_unit_tests.py`
 
 Sets `growingnn.core.config.ENABLE_LOGGING` to `False` then calls `pytest.main(["."])` with current working directory expected to be the unit test tree. Used when you want a quick local run with logging off.
-
-### Related
-
-[[Unit tests index]], [[ResNet18 regression script]].

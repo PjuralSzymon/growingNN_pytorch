@@ -20,8 +20,4 @@ The paper discusses architecture search at several granularities. Neuron deletio
 
 ### Known limitations
 
-The file duplicates `from .action import Action, Layer_Type` twice (lines 5 and 11). The action never appears in [[ResNet18 regression script]] flags.
-
-### Related
-
-[[Del Layer Action]], [[Model Analyser]], [[Part 1]] entry 09.05.2026.
+The file duplicates `from .action import Action, Layer_Type` twice (lines 5 and 11). The action is not wired into search drivers yet.

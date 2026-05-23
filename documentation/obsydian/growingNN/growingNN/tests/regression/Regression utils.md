@@ -19,7 +19,3 @@ Lines 41 to 52. `argparse` parser with `--save-output` or `--save_output` taking
 ### Known limitations
 
 Importing this module pulls in `matplotlib`. Unit tests that import action modules which transitively import regression helpers can accidentally parse pytest argv if `parse_regression_cli()` runs at import time without passing `argv=[]`; keep CLI parsing only inside `if __name__ == "__main__"` blocks.
-
-### Related
-
-[[ResNet18 regression script]], [[Utils testing script]], [[Test runners]].

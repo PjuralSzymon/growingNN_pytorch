@@ -9,7 +9,3 @@ For drivers see [[Test runners]].
 `tests/unit/actions/utils/fx_shape_probe_test.py` exercises [[FX Shape Probe]] with [[Model factory]] `ModelFactory.simple_conv_chain_2`.
 
 Other action tests may live under `tests/unit/actions/` as the tree grows.
-
-### Related
-
-[[Model factory]], regression notes [[Adding residual layers]], [[Adding Sequential Layers]].

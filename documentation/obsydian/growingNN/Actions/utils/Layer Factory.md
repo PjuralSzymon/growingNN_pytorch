@@ -27,7 +27,3 @@ Enum at lines 16 to 19: `ZERO`, `RANDOM`, `EYE`. See [[Base action and Layer Typ
 ### Known limitations
 
 `create_conv` does not implement `Layer_Type.RANDOM` for conv. `create_zero_conv_before_linear` returns `nn.Sequential`, not a bare `Conv2d`; FX `call_module` for the inserted name must point at that submodule as a whole.
-
-### Related
-
-[[Residual Linear Actions]], [[Residual Conv Action]], [[Sequential Conv Action]], [[Config]], [[Quasi identity]].
