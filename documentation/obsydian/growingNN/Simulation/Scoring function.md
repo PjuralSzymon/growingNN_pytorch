@@ -1,7 +1,9 @@
+The scoring function judges how good a model is after a simulated action sequence. 
+### Score terms
 
-Scoring functions are design to judge how how a given action is, all scoring functions are based on weighted sum of diffrent scores define by user. Currently there are 2 main scores:
-1. Accuracy on simulation set [[Simulation Set]]
-2. Amount of parameters in the model after the action is executed
+The user defines a weighted sum of sub-scores. The original setup uses two terms:
 
-To judge the model on those parameters we proposed a very specific grading functions: 
-TODO: Add description of those function 
+1. Accuracy on the [[Simulation Set]] after the rollout training steps.
+2. Parameter count of the model after the action (smaller or larger models can be rewarded depending on weights).
+
+Each term has its own grading curve. Exact formulas are still to be written here (TODO).

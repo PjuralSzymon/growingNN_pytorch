@@ -1,3 +1,7 @@
-Learning rate play crucial role for structures that are changing that often, we know that each action chosen by simulation provides a risk of instability during training, that's why we proposed a scheduler that at the start of generation gives very slow increase of the learning rate until the maximum value and at the end it also goes down to allow smooth transition before changes. 
+The learning rate plays a crucial role when the network structure changes often. Each action chosen in simulation can make the next training stage unstable. That is why we use a custom scheduler in the [[Training loop]].
 
-In the first paper we did a research about few of those scheduler, and the best one choosen on that time was used until now but during our work we noticed a small risk that this scheudler in some cases also bring some instability. 
+At the start of a generation, the scheduler raises the learning rate slowly up to a maximum. At the end, it lowers the rate again. That gives a smooth transition before and after an architecture change.
+
+In the first paper we compared several schedulers. We kept the best one from that study for a long time. During later work we saw that this scheduler can still cause instability in some cases and definitly needs more reaserch.
+
+![[Pasted image 20260523092815.png]]
