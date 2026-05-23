@@ -16,10 +16,6 @@ Class `LRUCache` at lines 7 to 53. Global instance `RESHEPERS` at lines 56 to 59
 
 The file imports `cv2` as `cv`. The environment must have OpenCV Python bindings installed for import to succeed.
 
-### Comparison with the original growingNN paper
-
-[[Part 1]] entry 15.03.2026 says residual init moved away from heavy quasi-identity toward zero or small random for some paths. `eye_stretch` remains for `Layer_Type.EYE` linear factory.
-
 ### Known limitations
 
 Cache eviction calls `clear()` on the whole cache when memory pressure hits (line 43), not true LRU per key. Typo names (`RESHEPERS`, `get_reshsper`) are public API now.
