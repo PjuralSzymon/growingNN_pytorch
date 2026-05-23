@@ -171,16 +171,17 @@
   "left-ribbon": {
     "hiddenItems": {
       "switcher:Open quick switcher": false,
-      "graph:Open graph view": false,
       "canvas:Create new canvas": false,
       "daily-notes:Open today's daily note": false,
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
-      "bases:Create new base": false
+      "bases:Create new base": false,
+      "graph:Open graph view": false
     }
   },
   "active": "c394dc896ee68056",
   "lastOpenFiles": [
+    "General.md",
     "Simulation/MCTS.md",
     "Actions/utils/Layer Analyser.md",
     "Training/Learning Rate Scheduler.md",
