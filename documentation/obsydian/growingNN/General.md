@@ -2,7 +2,7 @@ The GrowingNN algorithm is used to dynamically change the structure of the model
 1. Training stage, which is a typical SGD [[Training loop]] that updates the weights in the model over a fixed number of epochs
 2. Simulation stage, which uses the [[MCTS]] algorithm to find the best action; what counts as best is described by the [[Scoring function]]!
 
-General Algorithm schema:![[algGraph.png|189]]
+General Algorithm schema:![[references/evolving neural networks - Journal of Computational Science/algGraph.png|189]]
 
-![[grafy.png|619]]
+![[references/evolving neural networks - Journal of Computational Science/grafy.png|619]]
 

@@ -1,98 +1,37 @@
 {
   "main": {
-    "id": "caf3bfef00e9af22",
+    "id": "df6c1e03037eb2bb",
     "type": "split",
     "children": [
       {
-        "id": "e6705233c01f2f7c",
+        "id": "1dfb49f9f77fc2dd",
         "type": "tabs",
         "children": [
           {
-            "id": "e864d25c4304c105",
+            "id": "c394dc896ee68056",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Actions/Del Layer Action.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Del Layer Action"
-            }
-          },
-          {
-            "id": "0e413edd0cafb8f0",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Actions/Residual Linear Actions.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Residual Linear Actions"
-            }
-          },
-          {
-            "id": "c3c11eef4872f0e7",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Reports/PLAN.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "PLAN"
-            }
-          },
-          {
-            "id": "d90b89cbd7cd6794",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Reports/Part 1.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "Part 1"
-            }
-          },
-          {
-            "id": "0a0d4bfbcc398b46",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "Actions/All Actions.md",
-                "mode": "source",
-                "source": false
-              },
-              "icon": "lucide-file",
-              "title": "All Actions"
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
             }
           }
-        ],
-        "currentTab": 4
+        ]
       }
     ],
     "direction": "vertical"
   },
   "left": {
-    "id": "ab4c50fdce932471",
+    "id": "d888d96a9188e6f9",
     "type": "split",
     "children": [
       {
-        "id": "4cb78c7913f6cda5",
+        "id": "786af4e6b4e3a6ef",
         "type": "tabs",
         "children": [
           {
-            "id": "774e756e1df43433",
+            "id": "a7f3df6669f9185c",
             "type": "leaf",
             "state": {
               "type": "file-explorer",
@@ -105,7 +44,7 @@
             }
           },
           {
-            "id": "6ab2ff58affbb78f",
+            "id": "39d1c5c8ec032674",
             "type": "leaf",
             "state": {
               "type": "search",
@@ -118,17 +57,17 @@
                 "sortOrder": "alphabetical"
               },
               "icon": "lucide-search",
-              "title": "Wyszukiwarka"
+              "title": "Search"
             }
           },
           {
-            "id": "54709036d20f62a0",
+            "id": "5aca18ad311ddcf1",
             "type": "leaf",
             "state": {
               "type": "bookmarks",
               "state": {},
               "icon": "lucide-bookmark",
-              "title": "Ulubione"
+              "title": "Bookmarks"
             }
           }
         ]
@@ -138,19 +77,20 @@
     "width": 300
   },
   "right": {
-    "id": "ac681f37fccf39af",
+    "id": "9bb490b9da50c0b1",
     "type": "split",
     "children": [
       {
-        "id": "c59a402f1094122e",
+        "id": "4e675a0eda97b0bb",
         "type": "tabs",
         "children": [
           {
-            "id": "412428cd929eb9e7",
+            "id": "e15ecd44b3315b5b",
             "type": "leaf",
             "state": {
               "type": "backlink",
               "state": {
+                "file": "Actions/utils/Layer Analyser.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -160,24 +100,25 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Linki zwrotne"
+              "title": "Backlinks for Layer Analyser"
             }
           },
           {
-            "id": "36c843e63aba6760",
+            "id": "9694efbd235e54a5",
             "type": "leaf",
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "Actions/utils/Layer Analyser.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Łącza wychodzące"
+              "title": "Outgoing links from Layer Analyser"
             }
           },
           {
-            "id": "3ef351a002bf23c6",
+            "id": "336747c95fb35e42",
             "type": "leaf",
             "state": {
               "type": "tag",
@@ -188,11 +129,11 @@
                 "searchQuery": ""
               },
               "icon": "lucide-tags",
-              "title": "Tagi"
+              "title": "Tags"
             }
           },
           {
-            "id": "91fd696c4b1fd29a",
+            "id": "97e19e199f852caa",
             "type": "leaf",
             "state": {
               "type": "all-properties",
@@ -202,21 +143,22 @@
                 "searchQuery": ""
               },
               "icon": "lucide-archive",
-              "title": "Wszystkie atrybuty"
+              "title": "All properties"
             }
           },
           {
-            "id": "4c144ea5d7021fa7",
+            "id": "addf9a5a508bda56",
             "type": "leaf",
             "state": {
               "type": "outline",
               "state": {
+                "file": "Actions/utils/Layer Analyser.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Konspekt"
+              "title": "Outline of Layer Analyser"
             }
           }
         ]
@@ -237,54 +179,12 @@
       "bases:Create new base": false
     }
   },
-  "active": "0a0d4bfbcc398b46",
+  "active": "c394dc896ee68056",
   "lastOpenFiles": [
-    "growingNN/Actions/Actions.md",
-    "Actions/All Actions.md",
-    "Actions/Base action and Layer Type.md",
-    "Actions/Grow oriented actions/Sequential Linear Actions.md",
-    "Actions/Shrink oriented actions/Del Layer Action.md",
     "Simulation/MCTS.md",
-    "General.md",
-    "Sequentail Linear Actions.md",
-    "growingNN/Actions",
-    "growingNN",
-    "references/resnethistory200iters.png",
-    "references/resnetallactions.png",
-    "references/Pasted image 20260523093226.png",
-    "Package version.md",
-    "Actions/Delete neurons action.md",
-    "Actions/Del Layer Action.md",
-    "Actions/Residual Conv Action.md",
-    "tests/regression/Adding residual layers.md",
-    "Simulation/Scoring function.md",
-    "Simulation/Simulation Set.md",
-    "growingNN/Simulation/TreeNode.md",
-    "growingNN/Simulation/Simulation Set.md",
-    "growingNN/Simulation/MCTS.md",
-    "growingNN/tests/Unit tests index.md",
-    "growingNN/tests/Test runners.md",
-    "tests/regression/Utils testing script.md",
-    "tests/Test runners.md",
-    "tests/Model factory.md",
-    "tests/Unit tests index.md",
-    "tests/Unit tests.md",
-    "tests/regression/ResNet18 regression script.md",
-    "tests/regression/Pasted image 20260404192146.png",
-    "tests/regression/Pasted image 20260404174521.png",
-    "tests/regression/Pasted image 20260404173518.png",
-    "tests/regression/Pasted image 20260404173508.png",
-    "tests/regression/Pasted image 20260404172754.png",
-    "references/Pasted image 20260523092815.png",
-    "references/Pasted image 20260523092653.png",
-    "references/evolving neural networks - Journal of Computational Science",
-    "Untitled",
-    "growingNN/Utils",
-    "growingNN/Training",
-    "growingNN/tests/regression",
-    "growingNN/tests",
-    "growingNN/Simulation",
-    "growingNN/Reports",
-    "Bez nazwy.canvas"
+    "Actions/utils/Layer Analyser.md",
+    "Training/Learning Rate Scheduler.md",
+    "growingNN/Actions/Actions.md",
+    "Actions/Actions.md"
   ]
 }

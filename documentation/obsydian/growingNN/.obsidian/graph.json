@@ -3,57 +3,43 @@
   "search": "",
   "showTags": false,
   "showAttachments": false,
-  "hideUnresolved": true,
+  "hideUnresolved": false,
   "showOrphans": false,
   "collapse-color-groups": false,
   "colorGroups": [
     {
-      "query": "path:\"Actions/Grow oriented actions\"  ",
-      "color": {
-        "a": 1,
-        "rgb": 2286146
-      }
-    },
-    {
-      "query": "path:\"Actions/Shrink oriented actions\"  ",
-      "color": {
-        "a": 1,
-        "rgb": 65306
-      }
-    },
-    {
       "query": "path:Actions/utils  ",
       "color": {
         "a": 1,
-        "rgb": 14147666
-      }
-    },
-    {
-      "query": "path:Simulation  ",
-      "color": {
-        "a": 1,
-        "rgb": 14570208
-      }
-    },
-    {
-      "query": "path:Utils  ",
-      "color": {
-        "a": 1,
-        "rgb": 14477371
+        "rgb": 16774912
       }
     },
     {
       "query": "path:Actions  ",
       "color": {
         "a": 1,
-        "rgb": 3210568
+        "rgb": 65297
+      }
+    },
+    {
+      "query": "path:Simulation  ",
+      "color": {
+        "a": 1,
+        "rgb": 11657298
       }
     },
     {
       "query": "path:Training  ",
       "color": {
         "a": 1,
-        "rgb": 3591916
+        "rgb": 43775
+      }
+    },
+    {
+      "query": "path:Utils  ",
+      "color": {
+        "a": 1,
+        "rgb": 14810880
       }
     },
     {
@@ -64,16 +50,16 @@
       }
     }
   ],
-  "collapse-display": false,
-  "showArrow": true,
-  "textFadeMultiplier": -0.4,
-  "nodeSizeMultiplier": 1.62432651956139,
-  "lineSizeMultiplier": 1.26347637741979,
+  "collapse-display": true,
+  "showArrow": false,
+  "textFadeMultiplier": 0,
+  "nodeSizeMultiplier": 1.3059293353188,
+  "lineSizeMultiplier": 1,
   "collapse-forces": false,
-  "centerStrength": 0.436713144713686,
-  "repelStrength": 9.60064979017192,
+  "centerStrength": 0.276431568972519,
+  "repelStrength": 12.5463652362258,
   "linkStrength": 1,
-  "linkDistance": 231,
-  "scale": 1.002568369761513,
+  "linkDistance": 168,
+  "scale": 0.2446651096791003,
   "close": false
 }

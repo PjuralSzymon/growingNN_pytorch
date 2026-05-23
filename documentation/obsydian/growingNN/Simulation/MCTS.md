@@ -1,4 +1,4 @@
-We use Monte Carlo Tree Search with our own changes. It runs in the simulation stage of each generation. Simulations are based on all possiblie generated in given generation . Each rollout is scored by the [[Scoring function]] on the [[Simulation Set]].
+We use Monte Carlo Tree Search with our own changes. It runs in the simulation stage of each generation. Simulations are based on all possiblie generated [[Actions]] in given generation . Each rollout is scored by the [[Scoring function]] on the [[Simulation Set]].
 
 There are two main modifications.
 
