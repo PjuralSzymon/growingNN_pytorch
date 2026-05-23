@@ -1,8 +1,7 @@
 ---
 description: Documentation writing style
-alwaysApply: true
+alwaysApply: false
 ---
-
 When writing documentation:
 - Explan everything with scientific tone but only very simple language
 - Do not use complicated long words
