@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Actions/utils/Model Transformer.md",
+                "file": "Actions/Actions.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Model Transformer"
+              "title": "Actions"
             }
           }
         ]
@@ -185,6 +185,12 @@
   },
   "active": "c394dc896ee68056",
   "lastOpenFiles": [
+    "Actions/Base action and Layer Type.md",
+    "Actions/utils/FX Shape Probe.md",
+    "Actions/utils/Dotted Module Names in torch.fx.md",
+    "Actions/utils/Conv to linear adapter.md",
+    "Actions/Actions.md",
+    "Actions/utils/Model Transformer.md",
     "Actions/utils/Quasi identity.md",
     "Reports/Part 1.md",
     "Utils/FX graph drawer.md",
@@ -219,15 +225,9 @@
     "Actions/utils/Name factory.md",
     "Actions/utils/Layer Factory.md",
     "Actions/utils/Layer Analyser.md",
-    "Actions/utils/FX Shape Probe.md",
-    "Actions/utils/Conv to linear adapter.md",
     "Actions/Shrink oriented actions/Delete Neurons action.md",
     "Actions/Shrink oriented actions/Del Layer Action.md",
     "Actions/Shrink oriented actions",
-    "Actions/Grow oriented actions/Sequential Linear Actions.md",
-    "Actions/Grow oriented actions/Sequential Conv Action.md",
-    "Actions/Grow oriented actions/Residual Linear Actions.md",
-    "Actions/Grow oriented actions/Residual Conv Action.md",
     "Actions/Grow oriented actions"
   ]
 }
