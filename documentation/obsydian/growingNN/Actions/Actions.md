@@ -11,7 +11,7 @@ Currently in our algorithm we have 4 action types used to grow the network and 2
 - [[Residual Conv Action]]
 ### Shrink oriented actions:
 - [[Del Layer Action]]
-- [[Delete Neurons action]]
+- [[Del neurons Action]]
 
 
 
