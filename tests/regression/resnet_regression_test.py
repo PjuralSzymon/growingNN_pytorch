@@ -22,6 +22,7 @@ from growingnn.actions.delete_layer import DelLayer
 from growingnn.actions.utils.model_analyser import get_amount_of_parameters
 from growingnn.core.logger import logger
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
+from growingnn.actions.delete_neurons import DelNeurons
 from tests.regression.regression_utils import (
     FOLDER_NAME,
     clear_regression_folder,
@@ -32,14 +33,15 @@ from tests.regression.regression_utils import (
 
 # Which growth actions to consider (delete is always available in the shrink phase).
 USE_ADD_RES_LAYER = True
-USE_ADD_RES_CONV_LAYER = True
+USE_ADD_RES_CONV_LAYER = False
 USE_ADD_SEQ_LAYER = True
-USE_ADD_SEQ_CONV_LAYER = True
-USE_DEL_LAYER = True
+USE_ADD_SEQ_CONV_LAYER = False
+USE_DEL_LAYER = False
+USE_DEL_NEURONS = True
 
 BATCH_SIZE = 2
 INPUT_SHAPE = (3, 64, 64)
-ITERATIONS = 200
+ITERATIONS = 100
 
 
 def _load_pretrained_resnet18() -> torch.nn.Module:
@@ -69,6 +71,8 @@ def _generate_actions(gm: fx.GraphModule) -> List[Action]:
         actions += AddSeqConvLayer.generate_all_actions(gm)
     if USE_DEL_LAYER:
         actions += DelLayer.generate_all_actions(gm)
+    if USE_DEL_NEURONS:
+        actions += DelNeurons.generate_all_actions(gm)
     return actions
 
 if __name__ == "__main__":
