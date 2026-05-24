@@ -66,6 +66,12 @@ def _is_editable_module(node: fx.Node, gm: fx.GraphModule) -> bool:
 def _is_at_least_one_hidden_module(n1: fx.Node, n2: fx.Node) -> bool:
     return _is_hidden_module(n1) or _is_hidden_module(n2)
 
+def _is_edge_into_hidden_module(src: fx.Node, dst: fx.Node) -> bool:
+    """True for visible→hidden and hidden→hidden edges; false otherwise."""
+    src_hidden = _is_hidden_module(src)
+    dst_hidden = _is_hidden_module(dst)
+    return (not src_hidden and dst_hidden) or (src_hidden and dst_hidden)
+
 def get_all_hidden_modules(model: nn.Module | fx.GraphModule) -> list[str]:
     gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
     nodes: list[str] = []
@@ -95,7 +101,7 @@ def module_dependency_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str
             if cur in seen:
                 continue
             seen.add(cur)
-            if _is_editable_module(cur, gm) and _is_at_least_one_hidden_module(n, cur):
+            if _is_editable_module(cur, gm) and _is_edge_into_hidden_module(n, cur):
                 edges.append((src, str(cur.target)))
             stack.extend(cur.users)
     logger.debug("number of dependency pairs: %s", len(edges))

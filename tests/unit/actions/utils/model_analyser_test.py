@@ -12,6 +12,7 @@ if str(_REPO_ROOT) not in sys.path:
 import pytest
 
 from growingnn.actions.utils.model_analyser import (
+    _is_edge_into_hidden_module,
     _is_hidden_module,
     get_all_hidden_modules,
     module_dependency_pairs,
@@ -124,6 +125,24 @@ def test_is_hidden_module_true_for_middle_module():
 
     # Assert
     assert result is True
+
+
+def test_is_edge_into_hidden_module_accepts_visible_or_hidden_to_hidden():
+    """
+    _is_edge_into_hidden_module is true for visible→hidden and hidden→hidden only.
+    """
+
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
+    l1 = next(n for n in gm.graph.nodes if n.op == "call_module" and n.target == "l1")
+    l2 = next(n for n in gm.graph.nodes if n.op == "call_module" and n.target == "l2")
+    l3 = next(n for n in gm.graph.nodes if n.op == "call_module" and n.target == "l3")
+
+    # Act & Assert
+    assert _is_edge_into_hidden_module(l1, l2) is True
+    assert _is_edge_into_hidden_module(l2, l3) is True
+    assert _is_edge_into_hidden_module(l2, l1) is False
+    assert _is_edge_into_hidden_module(l1, l3) is False
 
 
 "get_all_modules should return only hidden modules for a linear chain."
