@@ -73,5 +73,60 @@ def test_shrink_residual_skip_keeps_add_inputs_aligned():
     assert y.shape == (2, 4)
 
 
+def test_repeated_shrink_sequence_does_not_corrupt_stem_input():
+    """
+    A long random shrink sequence (regression-like) must keep stem.in_features at 4.
+    """
+
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.complex_residual_many_widths())
+    x = torch.randn(2, 4)
+    sequence = [
+        "r4_b",
+        "r1_down",
+        "r1_up",
+        "r2_b",
+        "r2_a",
+        "r2_a",
+        "expand",
+        "r1_down",
+        "r4_b",
+        "merge",
+        "r1_down",
+        "r3_b",
+        "r1_up",
+        "r1_up",
+        "expand",
+    ]
+
+    # Act
+    for layer_id in sequence:
+        DelNeurons([layer_id, 0.5]).execute(gm)
+        gm(x)
+
+    # Assert
+    assert gm.stem.in_features == 4
+    assert x.shape == gm(x).shape
+
+
+def test_shrink_upstream_fork_updates_parallel_residual_branch():
+    """
+    Shrinking expand after r2_b should keep fork and branch widths equal at add_1.
+    """
+
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.complex_residual_many_widths())
+    x = torch.randn(2, 4)
+    DelNeurons(["r2_b", 0.5]).execute(gm)
+
+    # Act
+    DelNeurons(["expand", 0.5]).execute(gm)
+    y = gm(x)
+
+    # Assert
+    assert gm.expand.out_features == gm.r2_b.out_features
+    assert y.shape == (2, 4)
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

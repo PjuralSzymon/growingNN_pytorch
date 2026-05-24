@@ -79,14 +79,19 @@ def _shrink_out(gm, layer_id, mod, new_out):
         raise TypeError(layer_id)
 
 
-def _branch_out(gm, node, old_w, new_w, seen):
+def _is_fork(node):
+    return len(node.users) > 1
+
+
+def _branch_out(gm, node, old_w, new_w, seen, *, nested_add_root=False):
     key = (node.name, old_w, new_w, "out")
     if key in seen:
         return
     seen.add(key)
     if node.op == "call_function" and node.target == operator.add:
-        for inp in node.all_input_nodes:
-            _branch_out(gm, inp, old_w, new_w, seen)
+        if nested_add_root:
+            for inp in node.all_input_nodes:
+                _branch_out(gm, inp, old_w, new_w, seen, nested_add_root=False)
         return
     if node.op == "call_module":
         mod = get_layer_module(node.target, gm)
@@ -95,7 +100,7 @@ def _branch_out(gm, node, old_w, new_w, seen):
             return
     if _passthrough(gm, node):
         for pred in node.all_input_nodes:
-            _branch_out(gm, pred, old_w, new_w, seen)
+            _branch_out(gm, pred, old_w, new_w, seen, nested_add_root=False)
         return
     raise NotImplementedError(f"unsupported branch node {node.op} {node.target}")
 
@@ -135,9 +140,11 @@ def _propagate(gm, node, old_w, new_w, seen):
             continue
         if user.op == "call_function" and user.target == operator.add:
             for inp in user.all_input_nodes:
-                if inp is not node and not _feeds(inp, node):
-                    _branch_out(gm, inp, old_w, new_w, seen)
-            _branch_in_to_fork(gm, node, user, old_w, new_w, seen)
+                if inp is not node:
+                    nested = inp.op == "call_function" and inp.target == operator.add
+                    _branch_out(gm, inp, old_w, new_w, seen, nested_add_root=nested)
+            if not _is_fork(node):
+                _branch_in_to_fork(gm, node, user, old_w, new_w, seen)
             _propagate(gm, user, old_w, new_w, seen)
             continue
         if _passthrough(gm, user):
@@ -154,19 +161,6 @@ def _propagate(gm, node, old_w, new_w, seen):
             _propagate(gm, user, old_w, new_w, seen)
         else:
             raise NotImplementedError(f"unsupported module {type(mod)}")
-
-
-def _feeds(from_node, to_node):
-    stack, seen = [from_node], set()
-    while stack:
-        n = stack.pop()
-        if n is to_node:
-            return True
-        if n in seen:
-            continue
-        seen.add(n)
-        stack.extend(n.all_input_nodes)
-    return False
 
 
 def shrink_layer_output(gm, layer_id: str, ratio: float) -> fx.GraphModule:
