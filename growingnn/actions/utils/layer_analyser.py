@@ -6,21 +6,11 @@ import operator
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.fx as fx
 from torch.fx.passes.shape_prop import ShapeProp
 
 from growingnn.actions.utils.model_analyser import get_layer_module
-
-PASSTHROUGH_MODULES = (nn.Dropout, nn.Identity, nn.ReLU, nn.LeakyReLU,
-                       nn.GELU, nn.SiLU, nn.Tanh, nn.ELU, nn.Sigmoid,
-                       nn.BatchNorm1d, nn.BatchNorm2d,
-                       nn.MaxPool2d, nn.AvgPool2d,
-                       nn.AdaptiveAvgPool2d, nn.AdaptiveMaxPool2d)
-PASSTHROUGH_FUNCTIONS = frozenset({
-    F.relu, F.gelu, F.silu, F.tanh, F.elu, F.sigmoid,
-    torch.relu, torch.sigmoid, torch.tanh,
-})
+from growingnn.core.config import PASSTHROUGH_MODULES, PASSTHROUGH_FUNCTIONS
 
 
 def is_passthrough(gm: fx.GraphModule, n: fx.Node) -> bool:

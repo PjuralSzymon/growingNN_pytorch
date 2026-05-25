@@ -1,6 +1,8 @@
 """Project-wide defaults for growingnn."""
 
 import numpy as np
+import torch
+import torch.nn.functional as F
 from torch import nn
 
 FLOAT_TYPE = np.float32
@@ -13,6 +15,16 @@ ADDING_RES_LAYERS_WEIGHT_INITIALIZATION_RANGE = (0.0, 0.01)
 RES_CONV_TO_LINEAR_GLOBAL_POOL_TYPE = "max"  # "avg" | "max"
 
 EDITABLE_MODULES = [nn.Linear, nn.Conv2d, nn.Conv1d, nn.Conv3d]
+
+PASSTHROUGH_MODULES = (nn.Dropout, nn.Identity, nn.ReLU, nn.LeakyReLU,
+                       nn.GELU, nn.SiLU, nn.Tanh, nn.ELU, nn.Sigmoid,
+                       nn.BatchNorm1d, nn.BatchNorm2d,
+                       nn.MaxPool2d, nn.AvgPool2d,
+                       nn.AdaptiveAvgPool2d, nn.AdaptiveMaxPool2d)
+PASSTHROUGH_FUNCTIONS = frozenset({
+    F.relu, F.gelu, F.silu, F.tanh, F.elu, F.sigmoid,
+    torch.relu, torch.sigmoid, torch.tanh,
+})
 
 MINIMUM_MATRIX_SIZE_FOR_NEURONS_REMOVAL = 5
 DEFAULT_NEURONS_SHRINK_RATIO = 0.5
