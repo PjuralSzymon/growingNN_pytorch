@@ -26,6 +26,8 @@ PASSTHROUGH_FUNCTIONS = frozenset({
     torch.relu, torch.sigmoid, torch.tanh,
 })
 
+RESIZE_SAFE_MODULES = (nn.Linear,)
+
 MINIMUM_MATRIX_SIZE_FOR_NEURONS_REMOVAL = 5
 DEFAULT_NEURONS_SHRINK_RATIO = 0.5
 

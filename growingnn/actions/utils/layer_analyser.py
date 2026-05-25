@@ -10,7 +10,7 @@ import torch.fx as fx
 from torch.fx.passes.shape_prop import ShapeProp
 
 from growingnn.actions.utils.model_analyser import get_layer_module
-from growingnn.core.config import PASSTHROUGH_MODULES, PASSTHROUGH_FUNCTIONS
+from growingnn.core.config import PASSTHROUGH_MODULES, PASSTHROUGH_FUNCTIONS, RESIZE_SAFE_MODULES
 
 
 def is_passthrough(gm: fx.GraphModule, n: fx.Node) -> bool:
@@ -50,9 +50,6 @@ def all_sites_match_width(gm: fx.GraphModule, module_name: str, w: int) -> bool:
                for n in gm.graph.nodes if n.op == "call_module" and n.target == module_name)
 
 
-_RESIZE_SAFE = (nn.Linear,)
-
-
 def propagation_hits_unsizable(gm: fx.GraphModule, start_node: fx.Node) -> bool:
     """True if forward propagation from start_node would reach an add whose
     sibling branch contains a non-resizable call_module (e.g. Conv2d)."""
@@ -67,7 +64,7 @@ def propagation_hits_unsizable(gm: fx.GraphModule, start_node: fx.Node) -> bool:
             return any(_check_sibling(inp) for inp in node.all_input_nodes)
         if node.op == "call_module":
             mod = get_layer_module(node.target, gm)
-            if mod is not None and not isinstance(mod, _RESIZE_SAFE):
+            if mod is not None and not isinstance(mod, RESIZE_SAFE_MODULES):
                 return True
             return False
         if node.op == "placeholder":
