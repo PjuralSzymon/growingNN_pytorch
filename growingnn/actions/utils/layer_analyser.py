@@ -13,81 +13,91 @@ from growingnn.actions.utils.model_analyser import get_layer_module
 from growingnn.core.config import PASSTHROUGH_MODULES, PASSTHROUGH_FUNCTIONS, RESIZE_SAFE_MODULES
 
 
-def is_passthrough(gm: fx.GraphModule, n: fx.Node) -> bool:
-    """True for nodes that forward tensors without changing their shape."""
-    return (n.op == "call_function" and n.target in PASSTHROUGH_FUNCTIONS) or \
-           (n.op == "call_module" and isinstance(get_layer_module(n.target, gm), PASSTHROUGH_MODULES))
+class NodeTypeChecker:
+    """Simple boolean queries about a single FX node's role in the graph."""
+
+    @staticmethod
+    def is_passthrough(gm: fx.GraphModule, n: fx.Node) -> bool:
+        """True for nodes that forward tensors without changing their shape."""
+        return (n.op == "call_function" and n.target in PASSTHROUGH_FUNCTIONS) or \
+               (n.op == "call_module" and isinstance(get_layer_module(n.target, gm), PASSTHROUGH_MODULES))
+
+    @staticmethod
+    def is_fork(n: fx.Node) -> bool:
+        """True when the node has more than one user."""
+        return len(n.users) > 1
+
+    @staticmethod
+    def is_add(n: fx.Node) -> bool:
+        """True for operator.add call_function nodes."""
+        return n.op == "call_function" and n.target == operator.add
 
 
-def is_fork(n: fx.Node) -> bool:
-    return len(n.users) > 1
+class NodeWidthAnalyser:
+    """Feature-width queries and propagation safety checks on FX graph nodes."""
 
+    @staticmethod
+    def node_output_width(gm: fx.GraphModule, n: fx.Node) -> int | None:
+        """Output channel width reading live module attributes, walking through passthroughs and adds."""
+        if n.op == "call_module":
+            m = get_layer_module(n.target, gm)
+            if isinstance(m, nn.Linear): return m.out_features
+            if isinstance(m, nn.Conv2d): return m.out_channels
+            if isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d)): return m.num_features
+        if (NodeTypeChecker.is_passthrough(gm, n) or NodeTypeChecker.is_add(n)) and n.all_input_nodes:
+            return NodeWidthAnalyser.node_output_width(gm, n.all_input_nodes[0])
+        return None
 
-def is_add(n: fx.Node) -> bool:
-    return n.op == "call_function" and n.target == operator.add
+    @staticmethod
+    def inputs_match_width(gm: fx.GraphModule, n: fx.Node, w: int) -> bool:
+        """True when every input to node n has output width w."""
+        return bool(n.all_input_nodes) and all(
+            NodeWidthAnalyser.node_output_width(gm, i) == w for i in n.all_input_nodes
+        )
 
+    @staticmethod
+    def all_sites_match_width(gm: fx.GraphModule, module_name: str, w: int) -> bool:
+        """True when every call_module site for module_name has all inputs at width w."""
+        return all(NodeWidthAnalyser.inputs_match_width(gm, n, w)
+                   for n in gm.graph.nodes if n.op == "call_module" and n.target == module_name)
 
-def node_output_width(gm: fx.GraphModule, n: fx.Node) -> int | None:
-    """Output channel width reading live module attributes, walking through passthroughs and adds."""
-    if n.op == "call_module":
-        m = get_layer_module(n.target, gm)
-        if isinstance(m, nn.Linear): return m.out_features
-        if isinstance(m, nn.Conv2d): return m.out_channels
-        if isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d)): return m.num_features
-    if (is_passthrough(gm, n) or is_add(n)) and n.all_input_nodes:
-        return node_output_width(gm, n.all_input_nodes[0])
-    return None
+    @staticmethod
+    def propagation_hits_unsizable(gm: fx.GraphModule, start_node: fx.Node) -> bool:
+        """True if forward propagation from start_node would reach an add whose
+        sibling branch contains a non-resizable call_module (e.g. Conv2d)."""
+        seen: set[str] = set()
 
-
-def inputs_match_width(gm: fx.GraphModule, n: fx.Node, w: int) -> bool:
-    """True when every input to node n has output width w."""
-    return bool(n.all_input_nodes) and all(node_output_width(gm, i) == w for i in n.all_input_nodes)
-
-
-def all_sites_match_width(gm: fx.GraphModule, module_name: str, w: int) -> bool:
-    """True when every call_module site for module_name has all inputs at width w."""
-    return all(inputs_match_width(gm, n, w)
-               for n in gm.graph.nodes if n.op == "call_module" and n.target == module_name)
-
-
-def propagation_hits_unsizable(gm: fx.GraphModule, start_node: fx.Node) -> bool:
-    """True if forward propagation from start_node would reach an add whose
-    sibling branch contains a non-resizable call_module (e.g. Conv2d)."""
-    seen: set[str] = set()
-
-    def _check_sibling(node: fx.Node) -> bool:
-        """Walk backward into a sibling branch looking for non-sizable call_modules."""
-        if node.name in seen:
-            return False
-        seen.add(node.name)
-        if is_passthrough(gm, node):
+        def _check_sibling(node: fx.Node) -> bool:
+            if node.name in seen:
+                return False
+            seen.add(node.name)
+            if NodeTypeChecker.is_passthrough(gm, node):
+                return any(_check_sibling(inp) for inp in node.all_input_nodes)
+            if node.op == "call_module":
+                mod = get_layer_module(node.target, gm)
+                if mod is not None and not isinstance(mod, RESIZE_SAFE_MODULES):
+                    return True
+                return False
+            if node.op == "placeholder":
+                return False
             return any(_check_sibling(inp) for inp in node.all_input_nodes)
-        if node.op == "call_module":
-            mod = get_layer_module(node.target, gm)
-            if mod is not None and not isinstance(mod, RESIZE_SAFE_MODULES):
-                return True
-            return False
-        if node.op == "placeholder":
-            return False
-        return any(_check_sibling(inp) for inp in node.all_input_nodes)
 
-    def _walk(node: fx.Node) -> bool:
-        """Walk forward checking every add node's sibling branches."""
-        if node.name in seen:
+        def _walk(node: fx.Node) -> bool:
+            if node.name in seen:
+                return False
+            seen.add(node.name)
+            for user in node.users:
+                if user.op == "output":
+                    continue
+                if NodeTypeChecker.is_add(user):
+                    for inp in user.all_input_nodes:
+                        if inp is not node and _check_sibling(inp):
+                            return True
+                if _walk(user):
+                    return True
             return False
-        seen.add(node.name)
-        for user in node.users:
-            if user.op == "output":
-                continue
-            if is_add(user):
-                for inp in user.all_input_nodes:
-                    if inp is not node and _check_sibling(inp):
-                        return True
-            if _walk(user):
-                return True
-        return False
 
-    return _walk(start_node)
+        return _walk(start_node)
 
 
 class LayerShapeAnalyser:
