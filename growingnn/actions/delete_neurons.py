@@ -3,6 +3,8 @@ from typing import List
 from torch import fx, nn
 
 from growingnn.actions.utils.model_analyser import get_all_hidden_modules, get_layer_module
+from growingnn.actions.utils.model_transformations import _find_call_module
+from growingnn.actions.utils.layer_analyser import propagation_hits_unsizable
 from growingnn.actions.utils.layer_resize import resize_layer_output
 from growingnn.core import config
 from .action import Action
@@ -40,6 +42,9 @@ class DelNeurons(Action):
                 continue
             new_out = max(1, int(mod.out_features * ratio))
             if new_out >= mod.out_features or new_out < config.MINIMUM_MATRIX_SIZE_FOR_NEURONS_REMOVAL:
+                continue
+            node = _find_call_module(gm.graph.nodes, layer_id)
+            if propagation_hits_unsizable(gm, node):
                 continue
             actions.append(DelNeurons([layer_id, ratio]))
         return actions
