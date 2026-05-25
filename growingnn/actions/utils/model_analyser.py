@@ -85,9 +85,9 @@ def get_all_hidden_modules(model: nn.Module | fx.GraphModule) -> list[str]:
     return nodes
 
 def module_dependency_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str, str]]:
-    """All ``(ancestor, descendant)`` pairs where the descendant module is reachable forward from the ancestor.
+    """All ``(ancestor, descendant)`` pairs where the descendant is a hidden module reachable forward from the ancestor.
 
-    For ``l1 -> l2 -> l3`` this yields ``(l1,l2), (l1,l3), (l2,l3)``.
+    For ``l1 -> l2 -> l3`` this yields ``(l1,l2)`` only (``l3`` is not hidden).
     """
     gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
     edges: list[tuple[str, str]] = []

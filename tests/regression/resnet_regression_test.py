@@ -41,7 +41,7 @@ USE_DEL_NEURONS = True
 
 BATCH_SIZE = 2
 INPUT_SHAPE = (3, 64, 64)
-ITERATIONS = 100
+ITERATIONS = 1000
 
 
 def _load_pretrained_resnet18() -> torch.nn.Module:
@@ -118,6 +118,13 @@ if __name__ == "__main__":
             draw_filtered_fx_graph(
                 gm, FOLDER_NAME + "/" + "fx_graph_simplified_error" + str(id + 1), fmt="pdf"
             )
+            logger.info("gm.graph: %s", gm.graph)
+            logger.info("actions: %s", actions)
+            logger.info("idx: %s", idx)
+            logger.info("actions[idx]: %s", actions[idx])
+            logger.info("norms: %s", norms)
+            logger.info("parameter_amounts: %s", parameter_amounts)
+            logger.exception("Error executing action %s", actions[idx])
             logger.exception("Error executing action %s", chosen)
             break
 

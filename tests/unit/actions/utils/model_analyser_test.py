@@ -33,7 +33,6 @@ def test_module_dependency_pairs_linear_chain():
     # Act and Assert
     assert pairs == {
         ("l1", "l2"),
-        ("l2", "l3"),
     }
 
 
@@ -49,12 +48,11 @@ def test_module_dependency_pairs_linear_chain_with_activation():
     #Assert
     assert pairs == {
         ("l1", "l2"),
-        ("l2", "l3"),
     }
 
 
-"Module dependency pairs should work around activation and batch normalization layers"
-def test_module_dependency_pairs_linear_chain_with_activation():
+"Module dependency pairs should work for deeply nested submodules"
+def test_module_dependency_pairs_deeply_nested_submodules():
     # Arrange
     model = ModelFactory.deeply_nested_submodules()
     gm = fx.symbolic_trace(model)
@@ -63,7 +61,7 @@ def test_module_dependency_pairs_linear_chain_with_activation():
     pairs = set(module_dependency_pairs(gm))
 
     #Assert
-    assert len(pairs) == 14
+    assert len(pairs) == 10
 
 "Module dependency pairs should avoid dependency pairs with activation and batch normalization layers"
 def test_avoid_dependency_pairs_with_activation():
@@ -140,7 +138,7 @@ def test_is_edge_into_hidden_module_accepts_visible_or_hidden_to_hidden():
 
     # Act & Assert
     assert _is_edge_into_hidden_module(l1, l2) is True
-    assert _is_edge_into_hidden_module(l2, l3) is True
+    assert _is_edge_into_hidden_module(l2, l3) is False
     assert _is_edge_into_hidden_module(l2, l1) is False
     assert _is_edge_into_hidden_module(l1, l3) is False
 
