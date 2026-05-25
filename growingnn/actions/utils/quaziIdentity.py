@@ -1,5 +1,6 @@
 import numpy as np
 import cv2 as cv
+import torch
 
 import growingnn.core.config as config
 
@@ -66,18 +67,18 @@ def eye_stretch(a, b):
     return cv.resize(A, (a, b)).T
 
 
-def get_reshsper(size_from, size_to):
+def get_reshsper(size_from, size_to, *, dtype=None, device=None):
+    """Return a rescaling matrix as a torch.Tensor (cached on CPU, then cast)."""
     key = (size_from, size_to)
-    
-    # Try to get from cache first
     cached_value = RESHEPERS.get(key)
-    if cached_value is not None:
-        return cached_value
-    
-    # Create new resheper if not in cache
-    new_resheper = np.ascontiguousarray(eye_stretch(size_from, size_to), dtype=config.FLOAT_TYPE)
-    RESHEPERS.put(key, new_resheper)
-    return new_resheper
+    if cached_value is None:
+        np_matrix = eye_stretch(size_from, size_to)
+        cached_value = torch.from_numpy(np.ascontiguousarray(np_matrix, dtype=config.FLOAT_TYPE))
+        RESHEPERS.put(key, cached_value)
+    if dtype is not None or device is not None:
+        return cached_value.to(dtype=dtype, device=device)
+    return cached_value
+
 
 def clear_reshepers_cache():
     """Clear the RESHEPERS cache to free memory"""

@@ -29,7 +29,7 @@ def test_resheper_down_project_preserves_mean_and_variance():
     x = rng.standard_normal((VECTOR_SHAPE_TEST,1))
 
     # Act
-    R = quaziIdentity.get_reshsper(n_from, n_to)
+    R = quaziIdentity.get_reshsper(n_from, n_to).numpy()
     y = R.T @ x
 
     # Assert
@@ -51,9 +51,9 @@ def test_resheper_round_trip_small_change_matches_original():
     x = rng.standard_normal((VECTOR_SHAPE_TEST, 1))
 
     # Act
-    R_shrink = quaziIdentity.get_reshsper(n_from, n_to)
+    R_shrink = quaziIdentity.get_reshsper(n_from, n_to).numpy()
     x_shrinked = R_shrink.T @ x
-    R_expand = quaziIdentity.get_reshsper(n_to, n_from)
+    R_expand = quaziIdentity.get_reshsper(n_to, n_from).numpy()
     y = R_expand.T @ x_shrinked
 
     # Assert
@@ -72,7 +72,7 @@ def test_get_reshsper_vs_truncated_identity_max_abs_entrywise_diff_at_most_one()
     identity_block = np.eye(n, n_small, dtype=np.float32)
 
     # Act
-    R = quaziIdentity.get_reshsper(n, n_small)
+    R = quaziIdentity.get_reshsper(n, n_small).numpy()
     max_abs = float(np.max(np.abs(R - identity_block)))
 
     # Assert

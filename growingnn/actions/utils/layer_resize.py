@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 import torch.fx as fx
 
@@ -8,45 +7,17 @@ from growingnn.actions.utils.layer_analyser import (
 )
 from growingnn.actions.utils.model_analyser import get_layer_module
 from growingnn.actions.utils.model_transformations import _find_call_module, replace_submodule
-from growingnn.actions.utils.quaziIdentity import get_reshsper
-
-
-def _r(old, new, ref):
-    return torch.tensor(get_reshsper(old, new), dtype=ref.dtype, device=ref.device)
-
-
-def _vec(v, old, new):
-    return (_r(old, new, v).T @ v).contiguous()
-
-
-def reproject_linear_out(mod, n):
-    """New Linear with out_features=n, weights re-projected from mod."""
-    lin = nn.Linear(mod.in_features, n, bias=mod.bias is not None)
-    with torch.no_grad():
-        lin.weight.copy_((_r(mod.out_features, n, mod.weight).T @ mod.weight).contiguous())
-        if mod.bias is not None:
-            lin.bias.copy_(_vec(mod.bias, mod.out_features, n))
-    return lin
-
-
-def reproject_linear_in(mod, n):
-    """New Linear with in_features=n, weights re-projected from mod."""
-    lin = nn.Linear(n, mod.out_features, bias=mod.bias is not None)
-    with torch.no_grad():
-        lin.weight.copy_((mod.weight @ _r(mod.in_features, n, mod.weight)).contiguous())
-        if mod.bias is not None:
-            lin.bias.copy_(mod.bias)
-    return lin
+from growingnn.actions.utils.layer_Factory import LinearFactory
 
 
 def _shrink_out(gm, name, mod, w):
     if isinstance(mod, nn.Linear) and mod.out_features > w:
-        replace_submodule(gm, name, reproject_linear_out(mod, w))
+        replace_submodule(gm, name, LinearFactory.create_linear_with_rescaled_neurons(mod, w))
 
 
 def _narrow_in(gm, name, mod, w):
     if isinstance(mod, nn.Linear) and mod.in_features != w and all_sites_match_width(gm, name, w):
-        replace_submodule(gm, name, reproject_linear_in(mod, w))
+        replace_submodule(gm, name, LinearFactory.create_linear_with_rescaled_connections(mod, w))
 
 
 # --------------- graph traversal ---------------
@@ -128,7 +99,7 @@ def resize_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, new_width
     mod = get_layer_module(layer_id, gm)
     if not isinstance(mod, nn.Linear):
         raise TypeError(f"{layer_id} is {type(mod).__name__}, not nn.Linear")
-    replace_submodule(gm, layer_id, reproject_linear_out(mod, new_width))
+    replace_submodule(gm, layer_id, LinearFactory.create_linear_with_rescaled_neurons(mod, new_width))
     _propagate(gm, _find_call_module(gm.graph.nodes, layer_id), new_width, set())
     gm.recompile()
     return gm
