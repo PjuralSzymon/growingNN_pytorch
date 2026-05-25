@@ -41,7 +41,7 @@ USE_DEL_NEURONS = True
 
 BATCH_SIZE = 2
 INPUT_SHAPE = (3, 64, 64)
-ITERATIONS = 1000
+ITERATIONS = 100
 
 
 def _load_pretrained_resnet18() -> torch.nn.Module:
@@ -75,6 +75,12 @@ def _generate_actions(gm: fx.GraphModule) -> List[Action]:
         actions += DelNeurons.generate_all_actions(gm)
     return actions
 
+def _generate_only_shrink_actions(gm: fx.GraphModule) -> List[Action]:
+    actions: List[Action] = []
+    if USE_DEL_NEURONS:
+        actions += DelNeurons.generate_all_actions(gm)
+    return actions
+
 if __name__ == "__main__":
     args = parse_regression_cli()
 
@@ -92,15 +98,19 @@ if __name__ == "__main__":
     parameter_amounts: List[int] = [get_amount_of_parameters(gm)]
     used_action_types: List[str] = []
 
-
     draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified0", fmt="pdf")
     draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph0", fmt="pdf")
     logger.info("Initial ResNet-18 Graph loaded and saved")
 
-    for id in range(ITERATIONS):
+    id = 0
+    while True:
         logger.info("idx: %s --------------------------------", id)
-        actions = _generate_actions(gm)
-
+        if id >= ITERATIONS:
+            actions = _generate_only_shrink_actions(gm)
+        else:
+            actions = _generate_actions(gm)
+        id += 1
+        
         if len(actions) == 0:
             logger.warning("No actions to execute for iteration %s", id)
             break
