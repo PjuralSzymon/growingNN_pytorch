@@ -14,6 +14,7 @@ from growingnn.actions.utils.model_analyser import get_layer_module
 
 PASSTHROUGH_MODULES = (nn.Dropout, nn.Identity, nn.ReLU, nn.LeakyReLU,
                        nn.GELU, nn.SiLU, nn.Tanh, nn.ELU, nn.Sigmoid,
+                       nn.BatchNorm1d, nn.BatchNorm2d,
                        nn.MaxPool2d, nn.AvgPool2d,
                        nn.AdaptiveAvgPool2d, nn.AdaptiveMaxPool2d)
 PASSTHROUGH_FUNCTIONS = frozenset({
@@ -59,7 +60,7 @@ def all_sites_match_width(gm: fx.GraphModule, module_name: str, w: int) -> bool:
                for n in gm.graph.nodes if n.op == "call_module" and n.target == module_name)
 
 
-_RESIZE_SAFE = (nn.Linear, nn.BatchNorm1d, nn.BatchNorm2d)
+_RESIZE_SAFE = (nn.Linear,)
 
 
 def propagation_hits_unsizable(gm: fx.GraphModule, start_node: fx.Node) -> bool:
@@ -72,12 +73,12 @@ def propagation_hits_unsizable(gm: fx.GraphModule, start_node: fx.Node) -> bool:
         if node.name in seen:
             return False
         seen.add(node.name)
+        if is_passthrough(gm, node):
+            return any(_check_sibling(inp) for inp in node.all_input_nodes)
         if node.op == "call_module":
             mod = get_layer_module(node.target, gm)
             if mod is not None and not isinstance(mod, _RESIZE_SAFE):
                 return True
-            if is_passthrough(gm, node):
-                return any(_check_sibling(inp) for inp in node.all_input_nodes)
             return False
         if node.op == "placeholder":
             return False

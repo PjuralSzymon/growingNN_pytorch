@@ -10,8 +10,6 @@ from growingnn.actions.utils.model_analyser import get_layer_module
 from growingnn.actions.utils.model_transformations import _find_call_module, replace_submodule
 from growingnn.actions.utils.quaziIdentity import get_reshsper
 
-_SIZABLE = (nn.Linear, nn.BatchNorm1d, nn.BatchNorm2d)
-
 
 def _r(old, new, ref):
     return torch.tensor(get_reshsper(old, new), dtype=ref.dtype, device=ref.device)
@@ -41,38 +39,14 @@ def reproject_linear_in(mod, n):
     return lin
 
 
-def reproject_bn(mod, n):
-    """New BatchNorm with num_features=n, preserving BN1d vs BN2d type."""
-    BN = type(mod)
-    bn = BN(n, eps=mod.eps, momentum=mod.momentum,
-            affine=mod.affine, track_running_stats=mod.track_running_stats)
-    with torch.no_grad():
-        for f in ("weight", "bias", "running_mean", "running_var"):
-            t = getattr(mod, f, None)
-            if t is not None:
-                getattr(bn, f).copy_(_vec(t, mod.num_features, n))
-    return bn
-
-
-def _reproject_out(mod, w):
-    if isinstance(mod, nn.Linear): return reproject_linear_out(mod, w)
-    return reproject_bn(mod, w)
-
-
 def _shrink_out(gm, name, mod, w):
     if isinstance(mod, nn.Linear) and mod.out_features > w:
         replace_submodule(gm, name, reproject_linear_out(mod, w))
-    elif isinstance(mod, (nn.BatchNorm1d, nn.BatchNorm2d)) and mod.num_features > w:
-        replace_submodule(gm, name, reproject_bn(mod, w))
 
 
 def _narrow_in(gm, name, mod, w):
-    if isinstance(mod, nn.Linear):
-        if mod.in_features != w and all_sites_match_width(gm, name, w):
-            replace_submodule(gm, name, reproject_linear_in(mod, w))
-    elif isinstance(mod, (nn.BatchNorm1d, nn.BatchNorm2d)):
-        if mod.num_features != w:
-            replace_submodule(gm, name, reproject_bn(mod, w))
+    if isinstance(mod, nn.Linear) and mod.in_features != w and all_sites_match_width(gm, name, w):
+        replace_submodule(gm, name, reproject_linear_in(mod, w))
 
 
 # --------------- graph traversal ---------------
@@ -88,7 +62,7 @@ def _sync(gm, node, w, seen, *, via_pass=False, at_add=None):
         return
     if node.op == "call_module":
         mod = get_layer_module(node.target, gm)
-        if mod is not None and isinstance(mod, _SIZABLE):
+        if isinstance(mod, nn.Linear):
             if is_fork(node) and (at_add is None or node not in at_add.all_input_nodes):
                 return
             _shrink_out(gm, str(node.target), mod, w)
@@ -144,20 +118,17 @@ def _propagate(gm, node, w, seen):
             if not inputs_match_width(gm, user, w): continue
             _narrow_in(gm, name, mod, w)
             _propagate(gm, user, get_layer_module(name, gm).out_features, seen)
-        elif isinstance(mod, (nn.BatchNorm1d, nn.BatchNorm2d)):
-            if mod.num_features != w: replace_submodule(gm, name, reproject_bn(mod, w))
-            _propagate(gm, user, w, seen)
 
 
 # --------------- public API ---------------
 
 def resize_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, new_width: int) -> fx.GraphModule:
-    """Resize a layer's output to new_width and propagate the change through the graph."""
+    """Resize a Linear layer's output to new_width and propagate the change through the graph."""
     gm = gm if isinstance(gm, fx.GraphModule) else fx.symbolic_trace(gm)
     mod = get_layer_module(layer_id, gm)
-    if not isinstance(mod, _SIZABLE):
-        raise TypeError(f"{layer_id} is {type(mod).__name__}, not a sizable module")
-    replace_submodule(gm, layer_id, _reproject_out(mod, new_width))
+    if not isinstance(mod, nn.Linear):
+        raise TypeError(f"{layer_id} is {type(mod).__name__}, not nn.Linear")
+    replace_submodule(gm, layer_id, reproject_linear_out(mod, new_width))
     _propagate(gm, _find_call_module(gm.graph.nodes, layer_id), new_width, set())
     gm.recompile()
     return gm
