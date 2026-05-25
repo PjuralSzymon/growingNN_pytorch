@@ -35,13 +35,13 @@ from tests.regression.regression_utils import (
 USE_ADD_RES_LAYER = True
 USE_ADD_RES_CONV_LAYER = False
 USE_ADD_SEQ_LAYER = True
-USE_ADD_SEQ_CONV_LAYER = False
+USE_ADD_SEQ_CONV_LAYER = True
 USE_DEL_LAYER = False
 USE_DEL_NEURONS = True
 
 BATCH_SIZE = 2
 INPUT_SHAPE = (3, 64, 64)
-ITERATIONS = 100
+ITERATIONS = 200
 
 
 def _load_pretrained_resnet18() -> torch.nn.Module:
