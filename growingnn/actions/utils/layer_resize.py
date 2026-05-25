@@ -59,11 +59,6 @@ def _reproject_out(mod, w):
     return reproject_bn(mod, w)
 
 
-def _reproject_in(mod, w):
-    if isinstance(mod, nn.Linear): return reproject_linear_in(mod, w)
-    return reproject_bn(mod, w)
-
-
 def _shrink_out(gm, name, mod, w):
     if isinstance(mod, nn.Linear) and mod.out_features > w:
         replace_submodule(gm, name, reproject_linear_out(mod, w))
