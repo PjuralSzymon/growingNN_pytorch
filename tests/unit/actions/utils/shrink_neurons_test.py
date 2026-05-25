@@ -319,5 +319,237 @@ def test_shrink_nested_add_tree_syncs_fork_linear_at_distant_add():
     assert y.shape == (2, 10)
 
 
+def test_shrink_propagates_through_long_add_chain_to_downstream_linear():
+    """
+    Shrinking a linear whose output passes through 10+ chained add nodes
+    (each with an independent linear sibling) must update the downstream
+    linear's in_features at the end of the chain.
+    """
+
+    # Arrange
+    N_ADDS = 12
+
+    class LongAddChain(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.start = nn.Linear(10, 20)
+            self.end = nn.Linear(20, 5)
+            for i in range(N_ADDS):
+                setattr(self, f"side_{i}", nn.Linear(10, 20))
+
+        def forward(self, x):
+            out = self.start(x)
+            for i in range(N_ADDS):
+                out = out + getattr(self, f"side_{i}")(x)
+            return self.end(out)
+
+    gm = fx.symbolic_trace(LongAddChain())
+    x = torch.randn(2, 10)
+
+    # Act
+    shrink_layer_output(gm, "start", 0.5)
+    y = gm(x)
+
+    # Assert
+    assert gm.start.out_features == 10
+    assert gm.end.in_features == 10
+    for i in range(N_ADDS):
+        assert getattr(gm, f"side_{i}").out_features == 10
+    assert y.shape == (2, 5)
+
+
+def test_shrink_propagates_through_add_chain_with_forked_siblings():
+    """
+    Same long-add-chain pattern but sibling layers draw from a shared fork
+    source (like res_conv layers fed by a shared conv). The fork source must
+    NOT be resized, but each sibling's output must be shrunk.
+    """
+
+    # Arrange
+    N_ADDS = 8
+
+    class ForkSiblingChain(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.start = nn.Linear(10, 20)
+            self.source = nn.Linear(10, 20)
+            self.end = nn.Linear(20, 5)
+            for i in range(N_ADDS):
+                setattr(self, f"side_{i}", nn.Linear(20, 20))
+
+        def forward(self, x):
+            out = self.start(x)
+            s = self.source(x)
+            for i in range(N_ADDS):
+                out = out + getattr(self, f"side_{i}")(s)
+            return self.end(out)
+
+    gm = fx.symbolic_trace(ForkSiblingChain())
+    x = torch.randn(2, 10)
+
+    # Act
+    shrink_layer_output(gm, "start", 0.5)
+    y = gm(x)
+
+    # Assert
+    assert gm.start.out_features == 10
+    assert gm.end.in_features == 10
+    assert gm.source.out_features == 20, "fork source must stay unchanged"
+    for i in range(N_ADDS):
+        side = getattr(gm, f"side_{i}")
+        assert side.out_features == 10
+        assert side.in_features == 20, "input from fork source stays unchanged"
+    assert y.shape == (2, 5)
+
+
+def test_generate_actions_skips_linear_with_conv_sibling_at_add():
+    """
+    DelNeurons.generate_all_actions must NOT produce an action for a Linear
+    whose forward propagation reaches an add node where the sibling branch
+    is a Conv2d (non-sizable). This prevents runtime shape mismatches.
+    """
+
+    # Arrange
+    class LinearConvAdd(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.conv = nn.Conv2d(3, 10, 3, padding=1)
+            self.pool = nn.AdaptiveAvgPool2d(1)
+            self.linear_hidden = nn.Linear(10, 10)
+            self.fc = nn.Linear(10, 5)
+
+        def forward(self, x):
+            conv_out = self.pool(self.conv(x)).flatten(1)
+            lin_out = self.linear_hidden(conv_out)
+            return self.fc(lin_out + conv_out)
+
+    gm = fx.symbolic_trace(LinearConvAdd())
+
+    # Act
+    actions = DelNeurons.generate_all_actions(gm)
+
+    # Assert
+    layer_ids = [a.params[0] for a in actions]
+    print("test_generate_actions_skips_linear_with_conv_sibling_at_add: layer_ids: %s", layer_ids)
+    assert "linear_hidden" not in layer_ids, (
+        "linear_hidden feeds an add with a conv sibling — must be filtered out"
+    )
+
+
+def test_generate_actions_keeps_linear_without_conv_sibling():
+    """
+    DelNeurons.generate_all_actions must still produce actions for Linears
+    whose propagation path only touches other sizable (Linear/BN) siblings.
+    """
+
+    # Arrange — stem makes l1/l2 hidden (not directly fed by placeholder)
+    class PureLinearAdd(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.stem = nn.Linear(10, 20)
+            self.l1 = nn.Linear(20, 20)
+            self.l2 = nn.Linear(20, 20)
+            self.fc = nn.Linear(20, 5)
+
+        def forward(self, x):
+            h = self.stem(x)
+            return self.fc(self.l1(h) + self.l2(h))
+
+    gm = fx.symbolic_trace(PureLinearAdd())
+
+    # Act
+    actions = DelNeurons.generate_all_actions(gm)
+
+    # Assert
+    layer_ids = [a.params[0] for a in actions]
+    assert "l1" in layer_ids
+    assert "l2" in layer_ids
+
+
+def test_generate_actions_allows_linear_after_conv_when_add_sibling_is_linear():
+    """
+    conv -> pool -> flatten -> linear_a -> add -> fc
+                                  linear_b --/
+
+    The add sibling (linear_b) is sizable so linear_a is safe to shrink.
+    Conv is upstream of linear_a (not a sibling at the add).
+    """
+
+    # Arrange
+    class ConvThenLinearAdd(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.conv = nn.Conv2d(3, 16, 3, padding=1)
+            self.pool = nn.AdaptiveAvgPool2d(1)
+            self.linear_a = nn.Linear(16, 20)
+            self.linear_b = nn.Linear(16, 20)
+            self.fc = nn.Linear(20, 5)
+
+        def forward(self, x):
+            h = self.pool(self.conv(x)).flatten(1)
+            return self.fc(self.linear_a(h) + self.linear_b(h))
+
+    gm = fx.symbolic_trace(ConvThenLinearAdd())
+
+    # Act
+    actions = DelNeurons.generate_all_actions(gm)
+
+    # Assert
+    layer_ids = [a.params[0] for a in actions]
+    assert "linear_a" in layer_ids
+    assert "linear_b" in layer_ids
+
+
+def test_generate_actions_allows_nested_linear_chain_after_conv():
+    """
+    Deeply nested case: conv backbone feeds into a long chain of
+    linear layers with multiple add nodes, all siblings are linear.
+    All hidden linears should be shrinkable.
+
+    conv -> pool -> flatten -> stem -> l1 -> add -> l3 -> add -> l5 -> fc
+                                       l2 --/             l4 --/
+    """
+
+    # Arrange
+    class NestedLinearAfterConv(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.conv = nn.Conv2d(3, 16, 3, padding=1)
+            self.pool = nn.AdaptiveAvgPool2d(1)
+            self.stem = nn.Linear(16, 32)
+            self.l1 = nn.Linear(32, 32)
+            self.l2 = nn.Linear(32, 32)
+            self.l3 = nn.Linear(32, 32)
+            self.l4 = nn.Linear(32, 32)
+            self.l5 = nn.Linear(32, 32)
+            self.fc = nn.Linear(32, 5)
+
+        def forward(self, x):
+            h = self.pool(self.conv(x)).flatten(1)
+            h = self.stem(h)
+            h = self.l1(h) + self.l2(h)
+            h = self.l3(h) + self.l4(h)
+            return self.fc(self.l5(h))
+
+    gm = fx.symbolic_trace(NestedLinearAfterConv())
+    x = torch.randn(2, 3, 8, 8)
+
+    # Act
+    actions = DelNeurons.generate_all_actions(gm)
+    layer_ids = [a.params[0] for a in actions]
+
+    # Assert — all hidden linears are safe (conv is upstream, not a sibling)
+    for name in ("l1", "l2", "l3", "l4", "l5"):
+        assert name in layer_ids, f"{name} should be shrinkable"
+
+    # Verify shrinking actually works end-to-end
+    shrink_layer_output(gm, "l1", 0.5)
+    y = gm(x)
+    assert gm.l1.out_features == 16
+    assert gm.l2.out_features == 16
+    assert gm.l3.in_features == 16
+    assert y.shape == (2, 5)
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
