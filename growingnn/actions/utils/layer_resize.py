@@ -7,7 +7,7 @@ from growingnn.actions.utils.layer_analyser import (
     node_output_width, inputs_match_width, all_sites_match_width,
 )
 from growingnn.actions.utils.model_analyser import get_layer_module
-from growingnn.actions.utils.model_transformations import _find_call_module
+from growingnn.actions.utils.model_transformations import _find_call_module, replace_submodule
 from growingnn.actions.utils.quaziIdentity import get_reshsper
 
 _SIZABLE = (nn.Linear, nn.BatchNorm1d, nn.BatchNorm2d)
@@ -19,11 +19,6 @@ def _r(old, new, ref):
 
 def _vec(v, old, new):
     return (_r(old, new, v).T @ v).contiguous()
-
-
-def _set(gm, name, mod):
-    parent, _, leaf = name.rpartition(".")
-    (getattr(gm, parent) if parent else gm).add_module(leaf, mod)
 
 
 def reproject_linear_out(mod, n):
@@ -71,18 +66,18 @@ def _reproject_in(mod, w):
 
 def _shrink_out(gm, name, mod, w):
     if isinstance(mod, nn.Linear) and mod.out_features > w:
-        _set(gm, name, reproject_linear_out(mod, w))
+        replace_submodule(gm, name, reproject_linear_out(mod, w))
     elif isinstance(mod, (nn.BatchNorm1d, nn.BatchNorm2d)) and mod.num_features > w:
-        _set(gm, name, reproject_bn(mod, w))
+        replace_submodule(gm, name, reproject_bn(mod, w))
 
 
 def _narrow_in(gm, name, mod, w):
     if isinstance(mod, nn.Linear):
         if mod.in_features != w and all_sites_match_width(gm, name, w):
-            _set(gm, name, reproject_linear_in(mod, w))
+            replace_submodule(gm, name, reproject_linear_in(mod, w))
     elif isinstance(mod, (nn.BatchNorm1d, nn.BatchNorm2d)):
         if mod.num_features != w:
-            _set(gm, name, reproject_bn(mod, w))
+            replace_submodule(gm, name, reproject_bn(mod, w))
 
 
 # --------------- graph traversal ---------------
@@ -155,7 +150,7 @@ def _propagate(gm, node, w, seen):
             _narrow_in(gm, name, mod, w)
             _propagate(gm, user, get_layer_module(name, gm).out_features, seen)
         elif isinstance(mod, (nn.BatchNorm1d, nn.BatchNorm2d)):
-            if mod.num_features != w: _set(gm, name, reproject_bn(mod, w))
+            if mod.num_features != w: replace_submodule(gm, name, reproject_bn(mod, w))
             _propagate(gm, user, w, seen)
 
 
@@ -167,7 +162,7 @@ def resize_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, new_width
     mod = get_layer_module(layer_id, gm)
     if not isinstance(mod, _SIZABLE):
         raise TypeError(f"{layer_id} is {type(mod).__name__}, not a sizable module")
-    _set(gm, layer_id, _reproject_out(mod, new_width))
+    replace_submodule(gm, layer_id, _reproject_out(mod, new_width))
     _propagate(gm, _find_call_module(gm.graph.nodes, layer_id), new_width, set())
     gm.recompile()
     return gm

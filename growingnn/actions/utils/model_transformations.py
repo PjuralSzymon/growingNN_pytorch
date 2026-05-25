@@ -2,7 +2,13 @@ import operator
 
 from torch import fx
 
-# Common functions: 
+# Common functions:
+
+def replace_submodule(gm, module_path: str, new_module):
+    """Replace the submodule at *module_path* (e.g. ``'layer1.0.conv1'``) with *new_module*."""
+    parent, _, leaf = module_path.rpartition(".")
+    (getattr(gm, parent) if parent else gm).add_module(leaf, new_module)
+
 
 def _insert_call_module_after(gm, insert_after, module_name, module_input):
     with gm.graph.inserting_after(insert_after):
