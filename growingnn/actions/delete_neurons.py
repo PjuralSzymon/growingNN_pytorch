@@ -3,9 +3,21 @@ from typing import List
 from torch import fx, nn
 
 from growingnn.actions.utils.model_analyser import get_all_hidden_modules, get_layer_module
-from growingnn.actions.utils.shrink_neurons import shrink_layer_output
+from growingnn.actions.utils.layer_resize import resize_layer_output
 from growingnn.core import config
 from .action import Action
+
+
+def shrink_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, ratio: float) -> fx.GraphModule:
+    """Shrink a Linear layer's output by ratio and propagate shapes."""
+    gm = gm if isinstance(gm, fx.GraphModule) else fx.symbolic_trace(gm)
+    mod = get_layer_module(layer_id, gm)
+    if not isinstance(mod, nn.Linear):
+        raise TypeError(f"{layer_id} is not nn.Linear")
+    new = max(1, int(mod.out_features * ratio))
+    if new >= mod.out_features:
+        return gm
+    return resize_layer_output(gm, layer_id, new)
 
 
 class DelNeurons(Action):

@@ -26,7 +26,8 @@ def _set(gm, name, mod):
     (getattr(gm, parent) if parent else gm).add_module(leaf, mod)
 
 
-def _linear_out(mod, n):
+def reproject_linear_out(mod, n):
+    """New Linear with out_features=n, weights re-projected from mod."""
     lin = nn.Linear(mod.in_features, n, bias=mod.bias is not None)
     with torch.no_grad():
         lin.weight.copy_((_r(mod.out_features, n, mod.weight).T @ mod.weight).contiguous())
@@ -35,7 +36,8 @@ def _linear_out(mod, n):
     return lin
 
 
-def _linear_in(mod, n):
+def reproject_linear_in(mod, n):
+    """New Linear with in_features=n, weights re-projected from mod."""
     lin = nn.Linear(n, mod.out_features, bias=mod.bias is not None)
     with torch.no_grad():
         lin.weight.copy_((mod.weight @ _r(mod.in_features, n, mod.weight)).contiguous())
@@ -44,7 +46,8 @@ def _linear_in(mod, n):
     return lin
 
 
-def _bn(mod, n):
+def reproject_bn(mod, n):
+    """New BatchNorm1d with num_features=n, stats re-projected from mod."""
     bn = nn.BatchNorm1d(n, eps=mod.eps, momentum=mod.momentum,
                         affine=mod.affine, track_running_stats=mod.track_running_stats)
     with torch.no_grad():
@@ -86,20 +89,19 @@ def _all_sites_at(gm, name, w):
 
 def _shrink_out(gm, name, mod, w):
     if isinstance(mod, nn.Linear) and mod.out_features > w:
-        _set(gm, name, _linear_out(mod, w))
+        _set(gm, name, reproject_linear_out(mod, w))
     elif isinstance(mod, nn.BatchNorm1d) and mod.num_features > w:
-        _set(gm, name, _bn(mod, w))
+        _set(gm, name, reproject_bn(mod, w))
 
 
 def _narrow_in(gm, name, mod, w):
     if isinstance(mod, nn.Linear) and mod.in_features != w and _all_sites_at(gm, name, w):
-        _set(gm, name, _linear_in(mod, w))
+        _set(gm, name, reproject_linear_in(mod, w))
     elif isinstance(mod, nn.BatchNorm1d) and mod.num_features != w:
-        _set(gm, name, _bn(mod, w))
+        _set(gm, name, reproject_bn(mod, w))
 
 
 def _sync(gm, node, w, seen, *, via_pass=False, at_add=None):
-    """Shrink a sibling branch output to width w."""
     key = ("s", node.name, w)
     if key in seen: return
     seen.add(key)
@@ -126,7 +128,6 @@ def _sync(gm, node, w, seen, *, via_pass=False, at_add=None):
 
 
 def _backward_in(gm, node, add_node, w, seen):
-    """Walk backward from branch tip, narrowing in_features toward the add."""
     if node in add_node.all_input_nodes or _is_fork(node): return
     key = ("b", node.name, w)
     if key in seen: return
@@ -138,7 +139,6 @@ def _backward_in(gm, node, add_node, w, seen):
 
 
 def _propagate(gm, node, w, seen):
-    """Propagate channel width downstream from node."""
     key = ("p", node.name, w)
     if key in seen: return
     seen.add(key)
@@ -166,20 +166,22 @@ def _propagate(gm, node, w, seen):
             _narrow_in(gm, name, mod, w)
             _propagate(gm, user, get_layer_module(name, gm).out_features, seen)
         elif isinstance(mod, nn.BatchNorm1d):
-            if mod.num_features != w: _set(gm, name, _bn(mod, w))
+            if mod.num_features != w: _set(gm, name, reproject_bn(mod, w))
             _propagate(gm, user, w, seen)
         else:
             raise NotImplementedError(f"unsupported module {type(mod)}")
 
 
-def shrink_layer_output(gm, layer_id: str, ratio: float) -> fx.GraphModule:
+def resize_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, new_width: int) -> fx.GraphModule:
+    """Resize a layer's output to new_width and propagate the change through the graph."""
     gm = gm if isinstance(gm, fx.GraphModule) else fx.symbolic_trace(gm)
     mod = get_layer_module(layer_id, gm)
-    if not isinstance(mod, nn.Linear):
-        raise TypeError(f"{layer_id} is not nn.Linear")
-    new = max(1, int(mod.out_features * ratio))
-    if new >= mod.out_features: return gm
-    _set(gm, layer_id, _linear_out(mod, new))
-    _propagate(gm, _find_call_module(gm.graph.nodes, layer_id), new, set())
+    if not isinstance(mod, (nn.Linear, nn.BatchNorm1d)):
+        raise TypeError(f"{layer_id} is not nn.Linear or nn.BatchNorm1d")
+    if isinstance(mod, nn.Linear):
+        _set(gm, layer_id, reproject_linear_out(mod, new_width))
+    else:
+        _set(gm, layer_id, reproject_bn(mod, new_width))
+    _propagate(gm, _find_call_module(gm.graph.nodes, layer_id), new_width, set())
     gm.recompile()
     return gm

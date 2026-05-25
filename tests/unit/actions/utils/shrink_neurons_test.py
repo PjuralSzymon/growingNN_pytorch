@@ -11,8 +11,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[4]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from growingnn.actions.delete_neurons import DelNeurons
-from growingnn.actions.utils.shrink_neurons import shrink_layer_output
+from growingnn.actions.delete_neurons import DelNeurons, shrink_layer_output
 from tests.model_factory import ModelFactory
 
 
