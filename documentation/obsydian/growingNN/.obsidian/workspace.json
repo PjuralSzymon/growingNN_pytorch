@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Actions/Grow oriented actions/Residual Conv Action.md",
+                "file": "Reports/Part 1.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Residual Conv Action"
+              "title": "Part 1"
             }
           }
         ]
@@ -112,6 +112,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "Reports/Part 1.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -121,7 +122,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks"
+              "title": "Backlinks for Part 1"
             }
           },
           {
@@ -200,7 +201,7 @@
       "graph:Open graph view": false
     }
   },
-  "active": "7c9c7d5673f234b6",
+  "active": "b72e270d2b0f453e",
   "lastOpenFiles": [
     "Actions/Grow oriented actions/Residual Conv Action.md",
     "Actions/Grow oriented actions/Residual Linear Actions.md",
