@@ -14,8 +14,25 @@ if str(_REPO_ROOT) not in sys.path:
 
 from growingnn.actions.action import Layer_Type
 from growingnn.actions.add_res_layer import AddResLayer
+from growingnn.core import config
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph
 from tests.model_factory import ModelFactory
+
+
+def test_generate_all_actions_skips_when_weight_matrix_exceeds_config_limit(monkeypatch):
+    """
+    AddResLayer should skip pairs whose Linear weight matrix in*out exceeds config limit.
+    """
+
+    # Arrange
+    monkeypatch.setattr(config, "MAX_ADD_SEQ_LAYER_WEIGHT_MATRIX_SIZE", 1)
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
+
+    # Act
+    actions = AddResLayer.generate_all_actions(gm)
+
+    # Assert
+    assert actions == []
 
 
 "Generate AddResLayer actions for a simple linear chain"

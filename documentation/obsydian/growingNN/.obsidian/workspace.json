@@ -112,7 +112,6 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Reports/PLAN.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -122,7 +121,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for PLAN"
+              "title": "Backlinks"
             }
           },
           {
@@ -201,8 +200,9 @@
       "graph:Open graph view": false
     }
   },
-  "active": "b72e270d2b0f453e",
+  "active": "7c9c7d5673f234b6",
   "lastOpenFiles": [
+    "Reports/PLAN.md",
     "Reports/Part 1.md",
     "Pasted image 20260529182440.png",
     "Pasted image 20260529182429.png",
@@ -226,7 +226,6 @@
     "Untitled.md",
     "Utils/torchFx",
     "Untitled",
-    "Reports/PLAN.md",
     "General.md",
     "Actions/Actions.md",
     "Actions/utils/FX Shape Probe.md",
