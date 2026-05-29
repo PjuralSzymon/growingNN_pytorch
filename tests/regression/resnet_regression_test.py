@@ -26,6 +26,7 @@ from growingnn.actions.delete_neurons import DelNeurons
 from tests.regression.regression_utils import (
     FOLDER_NAME,
     clear_regression_folder,
+    log_regression_action_error,
     parse_regression_cli,
     plot_norms_and_parameter_count,
 )
@@ -128,14 +129,14 @@ if __name__ == "__main__":
             draw_filtered_fx_graph(
                 gm, FOLDER_NAME + "/" + "fx_graph_simplified_error" + str(id + 1), fmt="pdf"
             )
-            logger.info("gm.graph: %s", gm.graph)
-            logger.info("actions: %s", actions)
-            logger.info("idx: %s", idx)
-            logger.info("actions[idx]: %s", actions[idx])
-            logger.info("norms: %s", norms)
-            logger.info("parameter_amounts: %s", parameter_amounts)
-            logger.exception("Error executing action %s", actions[idx])
-            logger.exception("Error executing action %s", chosen)
+            log_regression_action_error(
+                gm,
+                chosen,
+                actions=actions,
+                idx=idx,
+                norms=norms,
+                parameter_amounts=parameter_amounts,
+            )
             break
 
         dn = float(torch.norm(output_initial - output_final))

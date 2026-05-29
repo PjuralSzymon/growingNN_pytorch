@@ -1,13 +1,47 @@
 import argparse
 import os
 import shutil
-from typing import Optional, Sequence
+from typing import Any, Optional, Sequence
 
 import matplotlib.pyplot as plt
 
 from growingnn.core.logger import logger
 
 FOLDER_NAME = "testResults/regression"
+
+
+def log_regression_action_error(
+    gm,
+    chosen,
+    *,
+    actions=None,
+    idx: Optional[int] = None,
+    action_type: Optional[str] = None,
+    norms=None,
+    parameter_amounts=None,
+    **extra: Any,
+) -> None:
+    """Log FX graph and action context after a failed regression action execute."""
+    logger.info("gm.graph: %s", gm.graph)
+    if action_type is not None:
+        logger.info("action type: %s", action_type)
+    if actions is not None:
+        logger.info("actions: %s", actions)
+    if idx is not None:
+        logger.info("idx: %s", idx)
+        if actions is not None:
+            logger.info("actions[idx]: %s", actions[idx])
+    logger.info("chosen: %s", chosen)
+    if norms is not None:
+        logger.info("norms: %s", norms)
+    if parameter_amounts is not None:
+        logger.info("parameter_amounts: %s", parameter_amounts)
+    for key, value in extra.items():
+        logger.info("%s: %s", key, value)
+    if action_type is not None:
+        logger.exception("Error executing %s action %s", action_type, chosen)
+    else:
+        logger.exception("Error executing action %s", chosen)
 
 
 def clear_regression_folder():

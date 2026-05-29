@@ -24,6 +24,7 @@ from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_f
 from tests.regression.regression_utils import (
     FOLDER_NAME,
     clear_regression_folder,
+    log_regression_action_error,
     parse_regression_cli,
     plot_norms_and_parameter_count,
 )
@@ -125,14 +126,15 @@ if __name__ == "__main__":
                     FOLDER_NAME + "/" + f"fx_graph_simplified_error_iter{iteration}_{action_name}",
                     fmt="pdf",
                 )
-                logger.info("gm.graph: %s", gm.graph)
-                logger.info("action type: %s", action_name)
-                logger.info("actions: %s", actions)
-                logger.info("chosen: %s", chosen)
-                logger.info("norms: %s", norms)
-                logger.info("parameter_amounts: %s", parameter_amounts)
-                logger.info("action_counts: %s", action_counts)
-                logger.exception("Error executing %s action %s", action_name, chosen)
+                log_regression_action_error(
+                    gm,
+                    chosen,
+                    actions=actions,
+                    action_type=action_name,
+                    norms=norms,
+                    parameter_amounts=parameter_amounts,
+                    action_counts=action_counts,
+                )
                 _log_action_summary(action_counts)
                 plot_norms_and_parameter_count(norms, parameter_amounts)
                 if not args.save_output:
