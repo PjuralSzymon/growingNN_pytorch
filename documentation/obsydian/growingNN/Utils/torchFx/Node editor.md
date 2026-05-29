@@ -4,7 +4,7 @@ File: `growingnn/utils/fx/node_editor.py`. Class `NodeEditor`. Small in-place ed
 
 ## `replace_submodule(gm, module_path, new_module)`
 
-Splits `module_path` on the last `.`, walks to the parent with `getattr`, calls `add_module(leaf, new_module)`. Used when shrinking neurons: swap a smaller `nn.Linear` without rebuilding the whole graph.
+Splits `module_path` on the last `.`, resolves the parent with `gm.get_submodule(parent)` (or `gm` when there is no dot), then calls `add_module(leaf, new_module)`. Used when shrinking neurons: swap a smaller `nn.Linear` without rebuilding the whole graph.
 
 ---
 

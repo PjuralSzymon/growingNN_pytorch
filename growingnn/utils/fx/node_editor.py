@@ -12,7 +12,8 @@ class NodeEditor:
     def replace_submodule(gm, module_path: str, new_module):
         """Replace the submodule at *module_path* (e.g. ``'layer1.0.conv1'``) with *new_module*."""
         parent, _, leaf = module_path.rpartition(".")
-        (getattr(gm, parent) if parent else gm).add_module(leaf, new_module)
+        parent_mod = gm if not parent else gm.get_submodule(parent)
+        parent_mod.add_module(leaf, new_module)
 
     @staticmethod
     def swap_node_input(node: fx.Node, old: fx.Node, new: fx.Node):
