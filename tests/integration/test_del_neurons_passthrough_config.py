@@ -20,11 +20,13 @@ if str(_REPO_ROOT) not in sys.path:
 from growingnn.actions.delete_neurons import DelNeurons
 from growingnn.utils.fx import ModuleResolver, NodeWidthAnalyser
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
+from tests.regression.regression_utils import FOLDER_NAME, clear_regression_folder, parse_regression_cli
 
 BATCH_SIZE = 2
 INPUT_FEATURES = 4
-HIDDEN_WIDTH = 12
+HIDDEN_WIDTH = 100
 OUTPUT_FEATURES = 4
+FILE_PATH = "testResults/integration/del_neurons_passthrough"
 
 
 class _PassthroughForkResidual(nn.Module):
@@ -107,29 +109,31 @@ class _PassthroughForkResidual(nn.Module):
 def _passthrough_fork_residual_model() -> nn.Module:
     return _PassthroughForkResidual()
 
-def test_del_neurons_generate_then_execute_aligns_widths_on_residual_model():
+def test_del_neurons_generate_then_execute_aligns_widths_on_residual_model(save_output: bool = False):
     """
     For each DelNeurons action from generate_all_actions on the passthrough-fork residual
     model, execute must keep module widths consistent and forward must succeed.
     """
     # Arrange
     probe = _passthrough_fork_residual_model()
-    gm0 = fx.symbolic_trace(probe)
+    gm = fx.symbolic_trace(probe)
     x = torch.randn(BATCH_SIZE, INPUT_FEATURES)
-    actions = DelNeurons.generate_all_actions(gm0)
-    output_1 = gm0(x)
-    print(output_1 is None)
+    actions = DelNeurons.generate_all_actions(gm)
+    output_1 = gm(x)
+    if output_1 is None:
+        raise ValueError("output is None")
     
-    draw_filtered_fx_graph(gm0, "testResults/del_neurons_passthrough", fmt="pdf")
+    if save_output:
+        draw_filtered_fx_graph(gm, FILE_PATH, fmt="pdf")
 
     # Act / Assert
     i = 0
     for action in actions:
-        gm = fx.symbolic_trace(_passthrough_fork_residual_model())
         action.execute(gm)
         print(action)
-        draw_filtered_fx_graph(gm, "testResults/del_neurons_passthrough" + str(i), fmt="pdf")
-        draw_torch_fx_graph(gm, "testResults/del_neurons_passthrough_complex" + str(i), fmt="pdf")
+        if save_output:
+            draw_filtered_fx_graph(gm, FILE_PATH + str(i), fmt="pdf")
+            draw_torch_fx_graph(gm, FILE_PATH + "_complex" + str(i), fmt="pdf")
         out = gm(x)
         action_used = action.params[0]
         output_layer = gm.output
@@ -139,6 +143,8 @@ def test_del_neurons_generate_then_execute_aligns_widths_on_residual_model():
         )
         i = i + 1
 
-
 if __name__ == "__main__":
-    test_del_neurons_generate_then_execute_aligns_widths_on_residual_model()
+    args = parse_regression_cli()
+    test_del_neurons_generate_then_execute_aligns_widths_on_residual_model(save_output=args.save_output)
+    if not args.save_output:
+        clear_regression_folder()
