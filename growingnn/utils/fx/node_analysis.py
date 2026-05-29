@@ -62,7 +62,8 @@ class NodeTypeChecker:
     def is_passthrough(gm: fx.GraphModule, n: fx.Node) -> bool:
         """True for nodes that forward tensors without changing their shape."""
         return (n.op == "call_function" and n.target in PASSTHROUGH_FUNCTIONS) or \
-               (n.op == "call_module" and isinstance(ModuleResolver.get_layer_module(n.target, gm), PASSTHROUGH_MODULES))
+               (n.op == "call_module" and isinstance(ModuleResolver.get_layer_module(n.target, gm), PASSTHROUGH_MODULES)) or \
+                (n.op == "call_method" and n.target in PASSTHROUGH_FUNCTIONS)
 
     @staticmethod
     def is_fork(n: fx.Node) -> bool:

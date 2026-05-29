@@ -18,12 +18,16 @@ EDITABLE_MODULES = [nn.Linear, nn.Conv2d, nn.Conv1d, nn.Conv3d]
 
 PASSTHROUGH_MODULES = (nn.Dropout, nn.Identity, nn.ReLU, nn.LeakyReLU,
                        nn.GELU, nn.SiLU, nn.Tanh, nn.ELU, nn.Sigmoid,
-                       nn.BatchNorm1d, nn.BatchNorm2d,
                        nn.MaxPool2d, nn.AvgPool2d,
-                       nn.AdaptiveAvgPool2d, nn.AdaptiveMaxPool2d)
+                       nn.AdaptiveAvgPool2d, nn.AdaptiveMaxPool2d,
+                       nn.MaxPool1d, nn.AvgPool1d,
+                       nn.AdaptiveAvgPool1d, nn.AdaptiveMaxPool1d)
+
 PASSTHROUGH_FUNCTIONS = frozenset({
     F.relu, F.gelu, F.silu, F.tanh, F.elu, F.sigmoid,
     torch.relu, torch.sigmoid, torch.tanh,
+    torch.squeeze, torch.unsqueeze,
+    "squeeze", "unsqueeze",
 })
 
 RESIZE_SAFE_MODULES = (nn.Linear,)
