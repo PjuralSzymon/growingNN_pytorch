@@ -1,17 +1,18 @@
-"""Unit tests for ``growingnn.actions.utils.layer_analyser``."""
+"""Unit tests for ``growingnn.utils.fx.graph_analysis``."""
+
+import sys
+from pathlib import Path
+
 import pytest
 import torch
 import torch.fx as fx
 
-import sys
-from pathlib import Path
 _REPO_ROOT = Path(__file__).resolve().parents[4]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from growingnn.utils.fx import LayerBridgeFinder, LayerShapeAnalyser  # from graph_analysis
+from growingnn.utils.fx import LayerBridgeFinder, LayerShapeAnalyser, ModuleClassifier, GraphStructureQuery
 from tests.model_factory import ModelFactory
-
 
 def test_uniform_activation_shape_returns_shared_shape_when_all_match():
     """
@@ -223,6 +224,169 @@ def test_get_layer_input_shapes_matches_predecessor_output():
     # Assert
     assert in_shapes["c2"] == out_shapes["c1"]
     assert in_shapes["c1"] == (1, 4, 16, 16)
+
+
+def test_module_dependency_pairs_linear_chain():
+    """
+    module_dependency_pairs on a 3-layer chain should list dependency into the first hidden pair.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
+
+    # Act
+    pairs = set(GraphStructureQuery.module_dependency_pairs(gm))
+
+    # Assert
+    assert pairs == {("l1", "l2")}
+
+
+def test_module_dependency_pairs_linear_chain_with_activation():
+    """
+    Activations between linears should not create spurious dependency pairs.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_3_with_activation())
+
+    # Act
+    pairs = set(GraphStructureQuery.module_dependency_pairs(gm))
+
+    # Assert
+    assert pairs == {("l1", "l2")}
+
+
+def test_module_dependency_pairs_deeply_nested_submodules():
+    """
+    Deeply nested submodule graphs should still yield dependency pairs.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.deeply_nested_submodules())
+
+    # Act
+    pairs = set(GraphStructureQuery.module_dependency_pairs(gm))
+
+    # Assert
+    assert len(pairs) == 10
+
+
+def test_avoid_dependency_pairs_with_activation():
+    """
+    Adding activations should not change the count of dependency pairs on the residual model.
+    """
+    # Arrange
+    gm_normal = fx.symbolic_trace(ModelFactory.complex_residual_many_widths())
+    gm_activations = fx.symbolic_trace(ModelFactory.complex_residual_many_widths_with_activation())
+
+    # Act
+    pairs_normal = set(GraphStructureQuery.module_dependency_pairs(gm_normal))
+    pairs_activations = set(GraphStructureQuery.module_dependency_pairs(gm_activations))
+
+    # Assert
+    assert len(pairs_normal) == len(pairs_activations)
+
+
+def test_module_dependency_pairs_with_residual_skip():
+    """
+    Residual topology should expose transitive pairs including skip (l1, l4).
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.residual_skip())
+
+    # Act
+    pairs = set(GraphStructureQuery.module_dependency_pairs(gm))
+
+    # Assert
+    assert pairs == {
+        ("l1", "l2"),
+        ("l1", "l3"),
+        ("l1", "l4"),
+        ("l2", "l3"),
+    }
+
+
+def test_module_sequential_pairs_linear_chain():
+    """
+    module_sequential_pairs should list only immediate editable successors.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
+
+    # Act / Assert
+    assert set(GraphStructureQuery.module_sequential_pairs(gm)) == {("l1", "l2"), ("l2", "l3")}
+
+
+def test_module_sequential_pairs_with_residual_skip():
+    """
+    Sequential pairs on a residual graph follow the main path and branch merge.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.residual_skip())
+
+    # Act / Assert
+    assert set(GraphStructureQuery.module_sequential_pairs(gm)) == {
+        ("l1", "l2"),
+        ("l1", "l4"),
+        ("l2", "l3"),
+    }
+
+
+def test_is_hidden_module_true_for_middle_module():
+    """
+    is_hidden_module should be true for a middle call_module in a chain.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
+    l2_node = next(n for n in gm.graph.nodes if n.op == "call_module" and n.target == "l2")
+
+    # Act
+    result = ModuleClassifier.is_hidden_module(l2_node)
+
+    # Assert
+    assert result is True
+
+
+def test_is_edge_into_hidden_module_accepts_visible_or_hidden_to_hidden():
+    """
+    is_edge_into_hidden_module is true for visible→hidden and hidden→hidden only.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
+    l1 = next(n for n in gm.graph.nodes if n.op == "call_module" and n.target == "l1")
+    l2 = next(n for n in gm.graph.nodes if n.op == "call_module" and n.target == "l2")
+    l3 = next(n for n in gm.graph.nodes if n.op == "call_module" and n.target == "l3")
+
+    # Act / Assert
+    assert ModuleClassifier.is_edge_into_hidden_module(l1, l2) is True
+    assert ModuleClassifier.is_edge_into_hidden_module(l2, l3) is False
+    assert ModuleClassifier.is_edge_into_hidden_module(l2, l1) is False
+    assert ModuleClassifier.is_edge_into_hidden_module(l1, l3) is False
+
+
+def test_get_all_hidden_modules_returns_only_hidden_linear_chain_modules():
+    """
+    get_all_hidden_modules on a 3-layer chain should list only the middle layer.
+    """
+    # Arrange
+    model = ModelFactory.simple_chain_3()
+
+    # Act
+    result = GraphStructureQuery.get_all_hidden_modules(model)
+
+    # Assert
+    assert result == ["l2"]
+
+
+def test_get_all_hidden_modules_returns_only_hidden_conv_chain_modules():
+    """
+    get_all_hidden_modules on a conv pipeline should list middle conv/pool/linear ids.
+    """
+    # Arrange
+    model = ModelFactory.simple_conv_chain_2()
+
+    # Act
+    result = GraphStructureQuery.get_all_hidden_modules(model)
+
+    # Assert
+    assert result == ["c2", "pool", "l1"]
 
 
 if __name__ == "__main__":
