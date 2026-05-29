@@ -33,7 +33,7 @@ def test_shrink_linear_chain_updates_downstream_input():
     """
 
     # Arrange
-    gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_3(neurons=10))
     x = torch.randn(2, 4)
 
     # Act
@@ -41,9 +41,9 @@ def test_shrink_linear_chain_updates_downstream_input():
     y = gm(x)
 
     # Assert
-    assert gm.l2.out_features == 2
-    assert gm.l3.in_features == 2
-    assert y.shape == (2, 4)
+    assert gm.l2.out_features == 5
+    assert gm.l3.in_features == 5
+    assert y.shape == (2, 10)
 
 
 def test_shrink_residual_branch_updates_fork_linear_input():
@@ -72,7 +72,7 @@ def test_shrink_residual_skip_keeps_add_inputs_aligned():
     """
 
     # Arrange
-    gm = fx.symbolic_trace(ModelFactory.residual_skip())
+    gm = fx.symbolic_trace(ModelFactory.residual_skip(neurons=10))
     x = torch.randn(2, 4)
 
     # Act
@@ -80,9 +80,9 @@ def test_shrink_residual_skip_keeps_add_inputs_aligned():
     y = gm(x)
 
     # Assert
-    assert gm.l2.out_features == 2
+    assert gm.l2.out_features == 5
     assert gm.l4.out_features == gm.l3.out_features
-    assert y.shape == (2, 4)
+    assert y.shape == (2, 10)
 
 
 def test_repeated_shrink_sequence_does_not_corrupt_stem_input():
