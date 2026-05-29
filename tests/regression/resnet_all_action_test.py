@@ -29,9 +29,9 @@ from tests.regression.regression_utils import (
     plot_norms_and_parameter_count,
 )
 
-BATCH_SIZE = 2
+BATCH_SIZE = 100
 INPUT_SHAPE = (3, 64, 64)
-ITERATIONS = 1000
+ITERATIONS = 20
 SEED = 42
 
 ActionGenerator = Tuple[str, Callable[[fx.GraphModule], List[Action]]]
