@@ -7,7 +7,7 @@ import operator
 import torch.nn as nn
 import torch.fx as fx
 
-from growingnn.core.config import PASSTHROUGH_MODULES, PASSTHROUGH_FUNCTIONS, RESIZE_SAFE_MODULES
+from growingnn.core.config import PASSTHROUGH_MODULES, PASSTHROUGH_MODULES_TO_UPDATE, PASSTHROUGH_FUNCTIONS, RESIZE_SAFE_MODULES
 
 
 class ModuleResolver:
@@ -86,7 +86,7 @@ class NodeWidthAnalyser:
             m = ModuleResolver.get_layer_module(n.target, gm)
             if isinstance(m, nn.Linear): return m.out_features
             if isinstance(m, nn.Conv2d): return m.out_channels
-            if isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d)): return m.num_features
+            if isinstance(m, PASSTHROUGH_MODULES_TO_UPDATE): return m.num_features
         if (NodeTypeChecker.is_passthrough(gm, n) or NodeTypeChecker.is_add(n)) and n.all_input_nodes:
             return NodeWidthAnalyser.node_output_width(gm, n.all_input_nodes[0])
         return None
@@ -114,7 +114,9 @@ class NodeWidthAnalyser:
             if node.name in seen:
                 return False
             seen.add(node.name)
-            if NodeTypeChecker.is_passthrough(gm, node):
+            if NodeTypeChecker.is_passthrough(gm, node) or (
+                node.op == "call_module" and isinstance(ModuleResolver.get_layer_module(node.target, gm), PASSTHROUGH_MODULES_TO_UPDATE)
+            ):
                 return any(_check_sibling(inp) for inp in node.all_input_nodes)
             if node.op == "call_module":
                 mod = ModuleResolver.get_layer_module(node.target, gm)

@@ -22,7 +22,7 @@ PASSTHROUGH_MODULES = (nn.Dropout, nn.Identity, nn.ReLU, nn.LeakyReLU,
                        nn.AdaptiveAvgPool2d, nn.AdaptiveMaxPool2d,
                        nn.MaxPool1d, nn.AvgPool1d,
                        nn.AdaptiveAvgPool1d, nn.AdaptiveMaxPool1d)
-
+PASSTHROUGH_MODULES_TO_UPDATE = (nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d)
 PASSTHROUGH_FUNCTIONS = frozenset({
     F.relu, F.gelu, F.silu, F.tanh, F.elu, F.sigmoid,
     torch.relu, torch.sigmoid, torch.tanh,
