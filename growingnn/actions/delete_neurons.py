@@ -8,7 +8,6 @@ from growingnn.actions.utils.layer_Factory import LinearFactory
 from growingnn.core import config
 from .action import Action
 
-
 def resize_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, new_width: int) -> fx.GraphModule:
     """Resize a Linear layer's output to new_width and propagate the change through the graph."""
     gm = gm if isinstance(gm, fx.GraphModule) else fx.symbolic_trace(gm)
@@ -28,7 +27,7 @@ def shrink_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, ratio: fl
     if not isinstance(mod, nn.Linear):
         raise TypeError(f"{layer_id} is not nn.Linear")
     new = max(1, int(mod.out_features * ratio))
-    if new >= mod.out_features:
+    if new >= mod.out_features or new < config.MINIMUM_MATRIX_SIZE_FOR_NEURONS_REMOVAL:
         return gm
     return resize_layer_output(gm, layer_id, new)
 
