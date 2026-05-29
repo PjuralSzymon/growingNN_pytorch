@@ -11,10 +11,14 @@
             "id": "c394dc896ee68056",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Graph view"
+              "type": "markdown",
+              "state": {
+                "file": "Reports/Part 1.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Part 1"
             }
           }
         ]
@@ -179,8 +183,9 @@
       "graph:Open graph view": false
     }
   },
-  "active": "c394dc896ee68056",
+  "active": "a7f3df6669f9185c",
   "lastOpenFiles": [
+    "Reports/PLAN.md",
     "General.md",
     "Actions/utils/Name factory.md",
     "Actions/Shrink oriented actions/Del neurons Action.md",
@@ -222,7 +227,6 @@
     "Core",
     "Actions/utils/Layer Factory.md",
     "Actions/utils/Layer Analyser.md",
-    "Actions/Shrink oriented actions/Delete Neurons action.md",
     "Actions/Shrink oriented actions",
     "Actions/Grow oriented actions"
   ]

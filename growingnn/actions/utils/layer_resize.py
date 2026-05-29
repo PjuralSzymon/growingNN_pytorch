@@ -1,21 +1,19 @@
 import torch.nn as nn
 
-from growingnn.actions.utils.layer_analyser import NodeTypeChecker, NodeWidthAnalyser
-from growingnn.actions.utils.model_analyser import get_layer_module
-from growingnn.actions.utils.model_transformations import replace_submodule
+from growingnn.utils.fx import ModuleResolver, NodeEditor, NodeTypeChecker, NodeWidthAnalyser
 from growingnn.actions.utils.layer_Factory import LinearFactory
 
 
 def _rescale_output_neurons(gm, name, mod, width):
     """Replace a Linear module with one that has fewer output neurons."""
     if isinstance(mod, nn.Linear) and mod.out_features > width:
-        replace_submodule(gm, name, LinearFactory.create_linear_with_rescaled_neurons(mod, width))
+        NodeEditor.replace_submodule(gm, name, LinearFactory.create_linear_with_rescaled_neurons(mod, width))
 
 
 def _rescale_input_connections(gm, name, mod, width):
     """Replace a Linear module with one whose in_features matches the new width."""
     if isinstance(mod, nn.Linear) and mod.in_features != width and NodeWidthAnalyser.all_sites_match_width(gm, name, width):
-        replace_submodule(gm, name, LinearFactory.create_linear_with_rescaled_connections(mod, width))
+        NodeEditor.replace_submodule(gm, name, LinearFactory.create_linear_with_rescaled_connections(mod, width))
 
 
 # --------------- graph traversal ---------------
@@ -31,7 +29,7 @@ def _sync_add_siblings_backward(gm, node, width, seen, *, via_pass=False, at_add
                 _sync_add_siblings_backward(gm, inp, width, seen, at_add=node)
         return
     if node.op == "call_module":
-        mod = get_layer_module(node.target, gm)
+        mod = ModuleResolver.get_layer_module(node.target, gm)
         if isinstance(mod, nn.Linear):
             if NodeTypeChecker.is_fork(node) and (at_add is None or node not in at_add.all_input_nodes):
                 return
@@ -57,7 +55,7 @@ def _align_inputs_backward(gm, node, add_node, width, seen):
     for pred in node.all_input_nodes:
         _align_inputs_backward(gm, pred, add_node, width, seen)
     if node.op == "call_module" and NodeWidthAnalyser.inputs_match_width(gm, node, width):
-        _rescale_input_connections(gm, str(node.target), get_layer_module(node.target, gm), width)
+        _rescale_input_connections(gm, str(node.target), ModuleResolver.get_layer_module(node.target, gm), width)
 
 
 def propagate_neuron_change(gm, node, width, seen):
@@ -82,11 +80,11 @@ def propagate_neuron_change(gm, node, width, seen):
             continue
         if user.op != "call_module":
             continue
-        mod = get_layer_module(user.target, gm)
+        mod = ModuleResolver.get_layer_module(user.target, gm)
         if mod is None:
             continue
         name = str(user.target)
         if isinstance(mod, nn.Linear):
             if not NodeWidthAnalyser.inputs_match_width(gm, user, width): continue
             _rescale_input_connections(gm, name, mod, width)
-            propagate_neuron_change(gm, user, get_layer_module(name, gm).out_features, seen)
+            propagate_neuron_change(gm, user, ModuleResolver.get_layer_module(name, gm).out_features, seen)

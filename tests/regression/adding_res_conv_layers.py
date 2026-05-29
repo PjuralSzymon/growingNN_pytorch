@@ -16,7 +16,7 @@ from torch.fx.passes.graph_drawer import FxGraphDrawer
 from growingnn.actions.action import Layer_Type
 from growingnn.actions.add_res_conv_layer import AddResConvLayer
 from growingnn.actions.add_res_layer import AddResLayer
-from growingnn.actions.utils.model_analyser import get_amount_of_parameters
+from growingnn.utils.fx import GraphStructureQuery
 from growingnn.core.logger import logger
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from tests.model_factory import ModelFactory
@@ -39,7 +39,7 @@ if __name__ == "__main__":
     y = gm(x)
     norms = []
     parameter_amounts = []
-    parameter_amounts.append(get_amount_of_parameters(gm))
+    parameter_amounts.append(GraphStructureQuery.get_amount_of_parameters(gm))
 
     # Act
     draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified0", fmt="pdf")
@@ -60,7 +60,7 @@ if __name__ == "__main__":
         logger.info("diffrence norm: %s", dn)
 
         norms.append(dn)
-        parameter_amounts.append(get_amount_of_parameters(gm))
+        parameter_amounts.append(GraphStructureQuery.get_amount_of_parameters(gm))
 
     plot_norms_and_parameter_count(norms, parameter_amounts)
 

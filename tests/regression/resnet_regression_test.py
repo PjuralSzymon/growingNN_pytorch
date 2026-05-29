@@ -19,7 +19,7 @@ from growingnn.actions.add_res_layer import AddResLayer
 from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
 from growingnn.actions.add_seq_layer import AddSeqLayer
 from growingnn.actions.delete_layer import DelLayer
-from growingnn.actions.utils.model_analyser import get_amount_of_parameters
+from growingnn.utils.fx import GraphStructureQuery
 from growingnn.core.logger import logger
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from growingnn.actions.delete_neurons import DelNeurons
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         output_initial = gm(x)
 
     norms: List[float] = []
-    parameter_amounts: List[int] = [get_amount_of_parameters(gm)]
+    parameter_amounts: List[int] = [GraphStructureQuery.get_amount_of_parameters(gm)]
     used_action_types: List[str] = []
 
     draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified0", fmt="pdf")
@@ -140,7 +140,7 @@ if __name__ == "__main__":
 
         dn = float(torch.norm(output_initial - output_final))
         norms.append(dn)
-        parameter_amounts.append(get_amount_of_parameters(gm))
+        parameter_amounts.append(GraphStructureQuery.get_amount_of_parameters(gm))
         draw_filtered_fx_graph(
             gm, FOLDER_NAME + "/" + "fx_graph_simplified" + str(id + 1), fmt="pdf"
         )

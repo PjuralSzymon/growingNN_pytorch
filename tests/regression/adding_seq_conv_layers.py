@@ -14,7 +14,7 @@ import torch
 import torch.fx as fx
 from torch.fx.passes.graph_drawer import FxGraphDrawer
 from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
-from growingnn.actions.utils.model_analyser import get_amount_of_parameters
+from growingnn.utils.fx import GraphStructureQuery
 
 from growingnn.actions.action import Layer_Type
 from growingnn.actions.add_res_conv_layer import AddResConvLayer
@@ -40,7 +40,7 @@ if __name__ == "__main__":
     y = gm(x)
     norms = []
     parameter_amounts = []
-    parameter_amounts.append(get_amount_of_parameters(gm))
+    parameter_amounts.append(GraphStructureQuery.get_amount_of_parameters(gm))
 
     # Act
     for id in range(30):
@@ -65,7 +65,7 @@ if __name__ == "__main__":
 
         dn = float(torch.norm(y - output_final))
         norms.append(dn)
-        parameter_amounts.append(get_amount_of_parameters(gm))
+        parameter_amounts.append(GraphStructureQuery.get_amount_of_parameters(gm))
         logger.info("diffrence norm: %s", dn)
 
     plot_norms_and_parameter_count(norms, parameter_amounts)

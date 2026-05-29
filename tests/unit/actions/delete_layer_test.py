@@ -9,7 +9,7 @@ from growingnn.actions.delete_layer import (
     has_same_input_shape,
     has_same_output_shape,
 )
-from growingnn.actions.utils.layer_analyser import LayerBridgeFinder, LayerShapeAnalyser
+from growingnn.utils.fx import LayerBridgeFinder, LayerShapeAnalyser
 from tests.model_factory import ModelFactory
 
 

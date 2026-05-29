@@ -10,8 +10,8 @@ import torch.nn as nn
 from torch.nn.modules.utils import _pair
 
 import growingnn.core.config as config
-from growingnn.actions.utils import quaziIdentity
-from growingnn.actions.utils.quaziIdentity import get_reshsper
+from growingnn.utils import rescale_matrix
+from growingnn.utils.rescale_matrix import get_reshsper
 
 
 class Layer_Type(Enum):
@@ -50,7 +50,7 @@ class LinearFactory:
     @staticmethod
     def create_eye_linear(in_features: int, out_features: int) -> nn.Linear:
         layer = nn.Linear(in_features, out_features)
-        w = quaziIdentity.eye_stretch(in_features, out_features)
+        w = rescale_matrix.eye_stretch(in_features, out_features)
         # Linear.weight is (out_features, in_features); eye_stretch returns (in_features, out_features)
         layer.weight.data = torch.as_tensor(w, dtype=layer.weight.dtype).T.contiguous()
         layer.bias.data.zero_()

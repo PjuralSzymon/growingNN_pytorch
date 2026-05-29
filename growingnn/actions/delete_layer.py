@@ -2,9 +2,10 @@ from typing import List
 
 from torch import fx, nn
 
-from growingnn.actions.utils.layer_analyser import LayerBridgeFinder, LayerShapeAnalyser
-from growingnn.actions.utils.model_analyser import get_all_hidden_modules, get_input_layers, get_output_layers
-from growingnn.actions.utils.model_transformations import delete_layer
+from growingnn.utils.fx import (
+    LayerBridgeFinder, LayerShapeAnalyser,
+    GraphStructureQuery, ModelStructureEditor,
+)
 from .action import Action
 
 
@@ -75,7 +76,7 @@ def get_common_input_shape(
 
 class DelLayer(Action):
     def execute(self, model: nn.Module | fx.GraphModule):
-        delete_layer(model, self.params[0])
+        ModelStructureEditor.delete_layer(model, self.params[0])
 
     def can_be_infulenced(self, by_action):
         return False
@@ -86,9 +87,9 @@ class DelLayer(Action):
         output_shapes = LayerShapeAnalyser.get_layer_output_shapes(gm)
         input_shapes = LayerShapeAnalyser.get_layer_input_shapes(gm)
         actions: List[Action] = []
-        for layer_id in get_all_hidden_modules(gm):
-            input_layers = get_input_layers(layer_id, gm)
-            output_layers = get_output_layers(layer_id, gm)
+        for layer_id in GraphStructureQuery.get_all_hidden_modules(gm):
+            input_layers = GraphStructureQuery.get_input_layers(layer_id, gm)
+            output_layers = GraphStructureQuery.get_output_layers(layer_id, gm)
             in_shape = get_common_output_shape(gm, input_layers, output_shapes)
             out_shape = get_common_input_shape(gm, output_layers, input_shapes)
             if in_shape is None or out_shape is None or in_shape != out_shape:
