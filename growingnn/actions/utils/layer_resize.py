@@ -84,8 +84,6 @@ def _sync_add_siblings_backward(gm, node, width, seen, *, via_pass=False, at_add
                 or (pred.op == "call_module" and isinstance(ModuleResolver.get_layer_module(pred.target, gm), PASSTHROUGH_MODULES_TO_UPDATE))
             ): continue
             _sync_add_siblings_backward(gm, pred, width, seen, via_pass=True)
-        return
-
 
 def _align_inputs_backward(gm, node, add_node, width, seen):
     """Walk backward through predecessors to rescale their input features."""
