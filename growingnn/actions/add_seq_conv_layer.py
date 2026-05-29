@@ -3,10 +3,10 @@ from typing import List
 from torch import fx, nn
 
 from growingnn.actions.utils.layer_Factory import ConvFactory
-from growingnn.actions.utils.layer_analyser import LayerBridgeFinder, LayerShapeAnalyser
-from growingnn.actions.utils.model_analyser import get_layer_module, module_sequential_pairs
-from growingnn.actions.utils.name_factory import unique_call_module_name
-from growingnn.actions.utils.model_transformations import add_new_seq_layer
+from growingnn.utils.fx import (
+    LayerBridgeFinder, LayerShapeAnalyser,
+    ModuleResolver, GraphStructureQuery, ModelStructureEditor,
+)
 from growingnn.core.logger import logger
 from .action import Action
 
@@ -14,7 +14,7 @@ from .action import Action
 class AddSeqConvLayer(Action):
 
     def execute(self, model: nn.Module | fx.GraphModule):
-        add_new_seq_layer(model, self.params[0], self.params[1], self.params[2], self.params[3])
+        ModelStructureEditor.add_new_seq_layer(model, self.params[0], self.params[1], self.params[2], self.params[3])
 
     def can_be_infulenced(self, by_action):
         return False
@@ -25,13 +25,13 @@ class AddSeqConvLayer(Action):
         out_shapes = LayerShapeAnalyser.get_layer_output_shapes(gm)
         in_shapes = LayerShapeAnalyser.get_layer_input_shapes(gm)
         actions: List[Action] = []
-        for layer_from_id, layer_to_id in module_sequential_pairs(gm):
+        for layer_from_id, layer_to_id in GraphStructureQuery.module_sequential_pairs(gm):
             s_out = out_shapes.get(layer_from_id)
             s_in = in_shapes.get(layer_to_id)
-            layer_from = get_layer_module(layer_from_id, model)
+            layer_from = ModuleResolver.get_layer_module(layer_from_id, model)
             channels = LayerBridgeFinder.find_seq_conv_bridge_channels(s_out, s_in)
             if channels is not None:
-                name = unique_call_module_name("seq_conv", gm)
+                name = ModuleResolver.unique_call_module_name("seq_conv", gm)
                 layer = ConvFactory.create_eye_conv(
                     channels,
                     channels,

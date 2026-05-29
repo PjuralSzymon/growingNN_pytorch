@@ -1,4 +1,4 @@
-Code path: `growingnn/actions/add_seq_conv_layer.py` (`AddSeqConvLayer`). It uses [[Model Analyser]]: `module_sequential_pairs` and `get_layer_module`. It shares dotted submodule ids with [[Residual Conv Action]] and [[Del Layer Action]]. Execution calls `add_new_seq_layer` in [[Model Transformer]]. New convs use [[Layer Factory]] `ConvFactory.create_eye_conv`. Names use [[Name factory]].
+Code path: `growingnn/actions/add_seq_conv_layer.py` (`AddSeqConvLayer`). It uses [[Torch.fx]]: `GraphStructureQuery.module_sequential_pairs`, `ModuleResolver.get_layer_module`, `LayerShapeAnalyser`, `LayerBridgeFinder`, `ModelStructureEditor.add_new_seq_layer`, `ModuleResolver.unique_call_module_name`. Dotted submodule ids match [[Residual Conv Action]] and [[Del Layer Action]]. New convs from [[Layer Factory]] `ConvFactory.create_eye_conv`.
 
 ## Generating actions
 

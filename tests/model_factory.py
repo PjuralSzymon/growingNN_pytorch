@@ -54,13 +54,13 @@ class ModelFactory:
         return ModelSimpleTest()
 
     @staticmethod
-    def simple_chain_3() -> nn.Module:
+    def simple_chain_3(neurons: int = 4) -> nn.Module:
         class ModelSimpleTest(nn.Module):
             def __init__(self):
                 super().__init__()
-                self.l1 = nn.Linear(4, 4)
-                self.l2 = nn.Linear(4, 4)
-                self.l3 = nn.Linear(4, 4)
+                self.l1 = nn.Linear(4, neurons)
+                self.l2 = nn.Linear(neurons, neurons)
+                self.l3 = nn.Linear(neurons, neurons)
 
             def forward(self, x):
                 x = self.l1(x)
@@ -287,14 +287,14 @@ class ModelFactory:
         return ComplexResidualConvManyWidths()
 
     @staticmethod
-    def residual_skip() -> nn.Module:
+    def residual_skip(neurons: int = 4) -> nn.Module:
         class ModelWithResidualSkip(nn.Module):
             def __init__(self):
                 super().__init__()
-                self.l1 = nn.Linear(4, 4)
-                self.l2 = nn.Linear(4, 4)
-                self.l3 = nn.Linear(4, 4)
-                self.l4 = nn.Linear(4, 4)
+                self.l1 = nn.Linear(4, neurons)
+                self.l2 = nn.Linear(neurons, neurons)
+                self.l3 = nn.Linear(neurons, neurons)
+                self.l4 = nn.Linear(neurons, neurons)
 
             def forward(self, x):
                 a = self.l1(x)

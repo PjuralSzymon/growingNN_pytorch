@@ -19,12 +19,14 @@ from growingnn.actions.add_res_layer import AddResLayer
 from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
 from growingnn.actions.add_seq_layer import AddSeqLayer
 from growingnn.actions.delete_layer import DelLayer
-from growingnn.actions.utils.model_analyser import get_amount_of_parameters
+from growingnn.utils.fx import GraphStructureQuery
 from growingnn.core.logger import logger
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
+from growingnn.actions.delete_neurons import DelNeurons
 from tests.regression.regression_utils import (
     FOLDER_NAME,
     clear_regression_folder,
+    log_regression_action_error,
     parse_regression_cli,
     plot_norms_and_parameter_count,
 )
@@ -32,10 +34,11 @@ from tests.regression.regression_utils import (
 
 # Which growth actions to consider (delete is always available in the shrink phase).
 USE_ADD_RES_LAYER = True
-USE_ADD_RES_CONV_LAYER = True
+USE_ADD_RES_CONV_LAYER = False
 USE_ADD_SEQ_LAYER = True
 USE_ADD_SEQ_CONV_LAYER = True
-USE_DEL_LAYER = True
+USE_DEL_LAYER = False
+USE_DEL_NEURONS = True
 
 BATCH_SIZE = 2
 INPUT_SHAPE = (3, 64, 64)
@@ -69,6 +72,14 @@ def _generate_actions(gm: fx.GraphModule) -> List[Action]:
         actions += AddSeqConvLayer.generate_all_actions(gm)
     if USE_DEL_LAYER:
         actions += DelLayer.generate_all_actions(gm)
+    if USE_DEL_NEURONS:
+        actions += DelNeurons.generate_all_actions(gm)
+    return actions
+
+def _generate_only_shrink_actions(gm: fx.GraphModule) -> List[Action]:
+    actions: List[Action] = []
+    if USE_DEL_NEURONS:
+        actions += DelNeurons.generate_all_actions(gm)
     return actions
 
 if __name__ == "__main__":
@@ -85,18 +96,22 @@ if __name__ == "__main__":
         output_initial = gm(x)
 
     norms: List[float] = []
-    parameter_amounts: List[int] = [get_amount_of_parameters(gm)]
+    parameter_amounts: List[int] = [GraphStructureQuery.get_amount_of_parameters(gm)]
     used_action_types: List[str] = []
-
 
     draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified0", fmt="pdf")
     draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph0", fmt="pdf")
     logger.info("Initial ResNet-18 Graph loaded and saved")
 
-    for id in range(ITERATIONS):
+    id = 0
+    while True:
         logger.info("idx: %s --------------------------------", id)
-        actions = _generate_actions(gm)
-
+        if id >= ITERATIONS:
+            actions = _generate_only_shrink_actions(gm)
+        else:
+            actions = _generate_actions(gm)
+        id += 1
+        
         if len(actions) == 0:
             logger.warning("No actions to execute for iteration %s", id)
             break
@@ -114,12 +129,19 @@ if __name__ == "__main__":
             draw_filtered_fx_graph(
                 gm, FOLDER_NAME + "/" + "fx_graph_simplified_error" + str(id + 1), fmt="pdf"
             )
-            logger.exception("Error executing action %s", chosen)
+            log_regression_action_error(
+                gm,
+                chosen,
+                actions=actions,
+                idx=idx,
+                norms=norms,
+                parameter_amounts=parameter_amounts,
+            )
             break
 
         dn = float(torch.norm(output_initial - output_final))
         norms.append(dn)
-        parameter_amounts.append(get_amount_of_parameters(gm))
+        parameter_amounts.append(GraphStructureQuery.get_amount_of_parameters(gm))
         draw_filtered_fx_graph(
             gm, FOLDER_NAME + "/" + "fx_graph_simplified" + str(id + 1), fmt="pdf"
         )

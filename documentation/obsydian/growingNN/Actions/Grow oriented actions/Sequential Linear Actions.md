@@ -7,7 +7,7 @@ This action is responsible for adding layers sequentially between other layers f
 Code lives in `growingnn/actions/add_seq_layer.py`
 
 
-It uses [[Model Analyser]]: `module_sequential_pairs
+It uses [[Torch.fx]]: `GraphStructureQuery.module_sequential_pairs`, `ModuleResolver.get_layer_module`, `LayerShapeAnalyser`, `LayerBridgeFinder`, `ModelStructureEditor.add_new_seq_layer`, `ModuleResolver.unique_call_module_name`.
 
 In the original paper for growingNN, adding sequential layers is very simple because a layer is always connected with an activation function and nodes are pretty standalone tools, but in PyTorch everything can be a module and it is hard to predict what it will be in every use case. So even if a function that goes over layers is called:
 module_sequential_pairs(...)

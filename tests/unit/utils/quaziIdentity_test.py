@@ -1,14 +1,16 @@
+"""Unit tests for ``growingnn.utils.quaziIdentity``."""
+
 import sys
 from pathlib import Path
 
 import numpy as np
 import pytest
 
-_REPO_ROOT = Path(__file__).resolve().parents[4]
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from growingnn.actions.utils import quaziIdentity
+from growingnn.utils import quaziIdentity
 
 VECTOR_SHAPE_TEST = 30
 
@@ -29,7 +31,7 @@ def test_resheper_down_project_preserves_mean_and_variance():
     x = rng.standard_normal((VECTOR_SHAPE_TEST,1))
 
     # Act
-    R = quaziIdentity.get_reshsper(n_from, n_to)
+    R = quaziIdentity.get_reshsper(n_from, n_to).numpy()
     y = R.T @ x
 
     # Assert
@@ -51,9 +53,9 @@ def test_resheper_round_trip_small_change_matches_original():
     x = rng.standard_normal((VECTOR_SHAPE_TEST, 1))
 
     # Act
-    R_shrink = quaziIdentity.get_reshsper(n_from, n_to)
+    R_shrink = quaziIdentity.get_reshsper(n_from, n_to).numpy()
     x_shrinked = R_shrink.T @ x
-    R_expand = quaziIdentity.get_reshsper(n_to, n_from)
+    R_expand = quaziIdentity.get_reshsper(n_to, n_from).numpy()
     y = R_expand.T @ x_shrinked
 
     # Assert
@@ -72,12 +74,29 @@ def test_get_reshsper_vs_truncated_identity_max_abs_entrywise_diff_at_most_one()
     identity_block = np.eye(n, n_small, dtype=np.float32)
 
     # Act
-    R = quaziIdentity.get_reshsper(n, n_small)
+    R = quaziIdentity.get_reshsper(n, n_small).numpy()
     max_abs = float(np.max(np.abs(R - identity_block)))
 
     # Assert
     assert R.shape == (n, n_small)
     assert max_abs <= 1.0
+
+
+def test_clear_reshepers_cache_allows_fresh_matrix_after_clear():
+    """
+    clear_reshepers_cache should empty RESHEPERS so the next get_reshsper rebuilds.
+    """
+    # Arrange
+    quaziIdentity.clear_reshepers_cache()
+    first = quaziIdentity.get_reshsper(4, 3)
+    quaziIdentity.clear_reshepers_cache()
+
+    # Act
+    second = quaziIdentity.get_reshsper(4, 3)
+
+    # Assert
+    assert first.shape == second.shape == (4, 3)
+    assert quaziIdentity.RESHEPERS.get((4, 3)) is not None
 
 
 if __name__ == "__main__":

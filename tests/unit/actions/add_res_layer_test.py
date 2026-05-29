@@ -25,8 +25,8 @@ def test_add_res_layer_generate_all_actions_linear_chain():
 
     actions = AddResLayer.generate_all_actions(gm)
 
-    # For l1->l2->l3, module_dependency_pairs yields 3 pairs; we create one action per Layer_Type.
-    assert len(actions) == 2 * len(list(Layer_Type))
+    # For l1->l2->l3, only l1->l2 is an edge into a hidden module; one action per Layer_Type.
+    assert len(actions) == len(list(Layer_Type))
 
 def test_add_res_layer_execute():
     #Arrange
