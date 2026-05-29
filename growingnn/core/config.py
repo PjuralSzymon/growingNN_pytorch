@@ -14,8 +14,8 @@ RESHEPERS_CACHE_ENABLE_MONITORING = True
 ADDING_RES_LAYERS_WEIGHT_INITIALIZATION_RANGE = (0.0, 0.01)
 RES_CONV_TO_LINEAR_GLOBAL_POOL_TYPE = "max"  # "avg" | "max"
 
+# Properties for neuron deletion action
 EDITABLE_MODULES = [nn.Linear, nn.Conv2d, nn.Conv1d, nn.Conv3d]
-
 PASSTHROUGH_MODULES = (nn.Dropout, nn.Identity, nn.ReLU, nn.LeakyReLU,
                        nn.GELU, nn.SiLU, nn.Tanh, nn.ELU, nn.Sigmoid,
                        nn.MaxPool2d, nn.AvgPool2d,
@@ -29,7 +29,6 @@ PASSTHROUGH_FUNCTIONS = frozenset({
     torch.squeeze, torch.unsqueeze,
     "squeeze", "unsqueeze",
 })
-
 RESIZE_SAFE_MODULES = (nn.Linear,)
 
 MINIMUM_MATRIX_SIZE_FOR_NEURONS_REMOVAL = 5
