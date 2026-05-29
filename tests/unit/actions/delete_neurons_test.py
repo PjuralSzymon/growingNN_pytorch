@@ -11,8 +11,20 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from growingnn.actions.delete_neurons import DelNeurons, shrink_layer_output
+from growingnn.actions.delete_neurons import DelNeurons, resize_layer_output, shrink_layer_output
 from tests.model_factory import ModelFactory
+
+
+def test_resize_layer_output_raises_for_non_linear_module():
+    """
+    resize_layer_output should raise TypeError when the target is not nn.Linear.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_conv_chain_2())
+
+    # Act / Assert
+    with pytest.raises(TypeError, match="not nn.Linear"):
+        resize_layer_output(gm, "c1", 2)
 
 
 def test_shrink_linear_chain_updates_downstream_input():

@@ -118,5 +118,19 @@ def test_delete_layer_removes_branch_layer_from_residual_graph():
     assert not hasattr(gm, "l2")
 
 
+def test_add_new_seq_layer_raises_when_src_equals_dst():
+    """
+    add_new_seq_layer should reject identical src and dst endpoints.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_2())
+
+    # Act / Assert
+    with pytest.raises(ValueError, match="src and dst must differ"):
+        ModelStructureEditor.add_new_seq_layer(
+            gm, "l1", "l1", nn.Linear(4, 4), name="seq_bad",
+        )
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

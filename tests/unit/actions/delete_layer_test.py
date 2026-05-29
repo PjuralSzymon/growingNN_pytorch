@@ -76,6 +76,36 @@ def test_del_layer_generate_finds_removable_middle_layer():
     assert any(action.params == ["l2"] for action in actions)
 
 
+def test_has_same_input_shape_true_when_successors_share_input_shape():
+    """
+    has_same_input_shape should be true when all successor inputs share one probed shape.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
+    input_shapes = LayerShapeAnalyser.get_layer_input_shapes(gm)
+
+    # Act
+    result = has_same_input_shape(gm, ["l3"], input_shapes)
+
+    # Assert
+    assert result is True
+
+
+def test_get_common_output_shape_returns_shape_for_matching_predecessors():
+    """
+    get_common_output_shape should return the shared tuple when all inputs agree.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
+    output_shapes = LayerShapeAnalyser.get_layer_output_shapes(gm)
+
+    # Act
+    shape = get_common_output_shape(gm, ["l1"], output_shapes)
+
+    # Assert
+    assert shape == output_shapes["l1"]
+
+
 def test_get_common_input_shape_returns_none_for_empty_layers():
     """
     get_common_input_shape should return None when no successor layers are given.

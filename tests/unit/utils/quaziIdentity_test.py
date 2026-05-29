@@ -82,5 +82,22 @@ def test_get_reshsper_vs_truncated_identity_max_abs_entrywise_diff_at_most_one()
     assert max_abs <= 1.0
 
 
+def test_clear_reshepers_cache_allows_fresh_matrix_after_clear():
+    """
+    clear_reshepers_cache should empty RESHEPERS so the next get_reshsper rebuilds.
+    """
+    # Arrange
+    quaziIdentity.clear_reshepers_cache()
+    first = quaziIdentity.get_reshsper(4, 3)
+    quaziIdentity.clear_reshepers_cache()
+
+    # Act
+    second = quaziIdentity.get_reshsper(4, 3)
+
+    # Assert
+    assert first.shape == second.shape == (4, 3)
+    assert quaziIdentity.RESHEPERS.get((4, 3)) is not None
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

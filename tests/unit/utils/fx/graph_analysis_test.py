@@ -389,5 +389,170 @@ def test_get_all_hidden_modules_returns_only_hidden_conv_chain_modules():
     assert result == ["c2", "pool", "l1"]
 
 
+def test_is_editable_module_true_for_linear_call_module():
+    """
+    is_editable_module should accept nn.Linear call_module nodes on a traced graph.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_2())
+    l1 = next(n for n in gm.graph.nodes if n.op == "call_module" and n.target == "l1")
+
+    # Act / Assert
+    assert ModuleClassifier.is_editable_module(l1, gm) is True
+
+
+def test_is_at_least_one_hidden_module_when_one_endpoint_is_hidden():
+    """
+    is_at_least_one_hidden_module should be true when either node is hidden.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
+    l1 = next(n for n in gm.graph.nodes if n.target == "l1")
+    l2 = next(n for n in gm.graph.nodes if n.target == "l2")
+
+    # Act / Assert
+    assert ModuleClassifier.is_at_least_one_hidden_module(l1, l2) is True
+
+
+def test_get_amount_of_parameters_matches_parameter_count():
+    """
+    get_amount_of_parameters should equal the sum of parameter numels on the graph module.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_2())
+    expected = sum(p.numel() for p in gm.parameters())
+
+    # Act
+    count = GraphStructureQuery.get_amount_of_parameters(gm)
+
+    # Assert
+    assert count == expected
+
+
+def test_get_input_layers_and_output_layers_for_middle_layer():
+    """
+    get_input_layers / get_output_layers should return sequential neighbours of a hidden layer.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
+
+    # Act
+    inputs = GraphStructureQuery.get_input_layers("l2", gm)
+    outputs = GraphStructureQuery.get_output_layers("l2", gm)
+
+    # Assert
+    assert inputs == ["l1"]
+    assert outputs == ["l3"]
+
+
+def test_node_shape_reads_shape_from_shapeprop_metadata():
+    """
+    node_shape should return a tuple after ShapeProp has populated node.meta.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_2())
+    x = torch.randn(1, 4)
+    LayerShapeAnalyser.collect_layer_shapes(gm, x)
+    l1 = next(n for n in gm.graph.nodes if n.target == "l1")
+
+    # Act
+    shape = LayerShapeAnalyser.node_shape(l1)
+
+    # Assert
+    assert shape == (1, 4)
+
+
+def test_default_example_input_uses_first_linear_in_features():
+    """
+    default_example_input should build a probe tensor from the first Linear in_features.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_2())
+
+    # Act
+    probe = LayerShapeAnalyser.default_example_input(gm)
+
+    # Assert
+    assert probe is not None
+    assert tuple(probe.shape) == (1, 4)
+
+
+def test_input_shape_for_layer_reads_first_arg_node_shape():
+    """
+    input_shape_for_layer should mirror the output shape of the layer's first fx input.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_2())
+    x = torch.randn(1, 4)
+    LayerShapeAnalyser.collect_layer_shapes(gm, x)
+    l2 = next(n for n in gm.graph.nodes if n.target == "l2")
+
+    # Act
+    in_shape = LayerShapeAnalyser.input_shape_for_layer(l2)
+
+    # Assert
+    assert in_shape == (1, 4)
+
+
+def test_collect_layer_shapes_returns_output_and_input_maps():
+    """
+    collect_layer_shapes should return two dicts keyed by call_module target.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_2())
+    x = torch.randn(1, 4)
+
+    # Act
+    outputs, inputs = LayerShapeAnalyser.collect_layer_shapes(gm, x)
+
+    # Assert
+    assert "l1" in outputs and "l2" in outputs
+    assert "l2" in inputs
+
+
+def test_linear_feature_dim_and_conv_channels():
+    """
+    linear_feature_dim and conv_channels should read the feature/channel axis only.
+    """
+    # Arrange / Act / Assert
+    assert LayerBridgeFinder.linear_feature_dim((1, 8)) == 8
+    assert LayerBridgeFinder.linear_feature_dim((1, 8, 7, 7)) is None
+    assert LayerBridgeFinder.conv_channels((1, 8, 7, 7)) == 8
+    assert LayerBridgeFinder.conv_channels((1, 8)) is None
+
+
+def test_find_seq_conv_before_linear_sizes_matches_sequential_path():
+    """
+    find_seq_conv_before_linear_sizes should return equal channel width for valid 4D→2D pair.
+    """
+    # Arrange / Act
+    sizes = LayerBridgeFinder.find_seq_conv_before_linear_sizes((1, 8, 7, 7), (1, 64))
+
+    # Assert
+    assert sizes == (8, 8)
+
+
+def test_find_seq_linear_after_conv_sizes_returns_feature_dims():
+    """
+    find_seq_linear_after_conv_sizes should return (F, F) when conv 4D and linear 2D are valid.
+    """
+    # Arrange / Act
+    sizes = LayerBridgeFinder.find_seq_linear_after_conv_sizes((1, 8, 4, 4), (1, 64))
+
+    # Assert
+    assert sizes == (64, 64)
+
+
+def test_uniform_activation_shape_returns_none_when_shapes_differ():
+    """
+    uniform_activation_shape should return None when any shape in the list differs.
+    """
+    # Arrange / Act
+    shape = LayerBridgeFinder.uniform_activation_shape([(1, 8), (1, 16)])
+
+    # Assert
+    assert shape is None
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

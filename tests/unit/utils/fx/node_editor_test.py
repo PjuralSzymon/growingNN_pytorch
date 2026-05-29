@@ -11,7 +11,9 @@ _REPO_ROOT = Path(__file__).resolve().parents[4]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from growingnn.utils.fx import NodeEditor
+import torch
+
+from growingnn.utils.fx import NodeEditor, ModuleResolver
 
 
 class _NestedBlock(nn.Module):
@@ -113,6 +115,33 @@ def test_replace_submodule_on_top_level_path():
 
     # Assert
     assert gm.get_submodule("l1") is replacement
+
+
+def test_swap_node_input_replaces_tensor_arg():
+    """
+    swap_node_input should replace old with new in node.args.
+    """
+    # Arrange
+    class TwoLinear(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.a = nn.Linear(4, 4)
+            self.b = nn.Linear(4, 4)
+
+        def forward(self, x):
+            return self.b(self.a(x))
+
+    gm = fx.symbolic_trace(TwoLinear())
+    a_node = ModuleResolver.find_call_module(list(gm.graph.nodes), "a")
+    b_node = ModuleResolver.find_call_module(list(gm.graph.nodes), "b")
+    with gm.graph.inserting_after(a_node):
+        relu_node = gm.graph.call_function(torch.relu, args=(a_node,))
+
+    # Act
+    NodeEditor.swap_node_input(b_node, a_node, relu_node)
+
+    # Assert
+    assert b_node.args[0] is relu_node
 
 
 if __name__ == "__main__":
