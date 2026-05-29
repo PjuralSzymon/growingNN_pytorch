@@ -85,9 +85,6 @@ def _sync_add_siblings_backward(gm, node, width, seen, *, via_pass=False, at_add
             ): continue
             _sync_add_siblings_backward(gm, pred, width, seen, via_pass=True)
         return
-    if NodeTypeChecker.is_fork(node): return
-    if node.op == "call_module":
-        return
 
 
 def _align_inputs_backward(gm, node, add_node, width, seen):
