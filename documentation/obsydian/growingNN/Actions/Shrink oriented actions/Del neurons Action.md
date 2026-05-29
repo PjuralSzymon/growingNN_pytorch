@@ -69,7 +69,7 @@ R5 placeholder (not implemented yet):
 
 ```
 function generate_all_actions(gm):
-  # TODO: hidden/input call_module ids from Model Analyser
+  # TODO: hidden/input call_module ids from Torch.fx GraphStructureQuery
   # TODO: nn.Linear only, same minimum width rule from Config
   return []
 
@@ -82,7 +82,7 @@ function execute(gm, params):
 
 In the old code, `generate_all_actions(model, scale_neurons_ratio=0.5)` walked `model.hidden_layers` and `model.input_layers`. For each layer id it skipped `Conv` layers. It computed `new_neurons = floor(neurons * scale_neurons_ratio)`. It emitted `Del_neurons([layer_id, scale_neurons_ratio])` only when `new_neurons >= config.MINIMUM_MATRIX_SIZE_FOR_NEURONS_REMOVAL`.
 
-In R5, `DelNeurons.generate_all_actions` at lines 20 to 22 in `delete_neurons.py` is empty. A future version should list candidate `call_module` targets from [[Model Analyser]] (similar to [[Del Layer Action]]) and filter by minimum width from [[Config]].
+In R5, `DelNeurons.generate_all_actions` at lines 20 to 22 in `delete_neurons.py` is empty. A future version should list candidate `call_module` targets from [[Torch.fx]] `GraphStructureQuery` (similar to [[Del Layer Action]]) and filter by minimum width from [[Config]].
 
 ## Executing actions
 
@@ -90,7 +90,7 @@ Old `execute` called `model.forward_blank()` then `model.get_layer(params[0]).sc
 
 `scale_neurons(reduce_ratio)` on one layer did three things. First it set `neurons_reduced_amount = max(1, int(self.neurons * reduce_ratio))`. Second it reshaped `self.W` and `self.B` with `Reshape` and `get_reshsper` from [[Quasi identity]]. Third it walked `self.output_layers_ids`, sliced each successor weight matrix at columns for this layer, reshaped that slice to the new width, wrote it back with `np.hstack`, and updated `output_layer.input_size`.
 
-R5 `DelNeurons.execute` is `pass` at lines 14 to 15. FX work must replace direct `W` / `B` arrays with in-place edits on `nn.Linear.weight` and `nn.Linear.bias`, or graph surgery via [[Model Transformer]].
+R5 `DelNeurons.execute` is `pass` at lines 14 to 15. FX work must replace direct `W` / `B` arrays with in-place edits on `nn.Linear.weight` and `nn.Linear.bias`, or graph surgery via [[Torch.fx]] `ModelStructureEditor` / `NodeEditor`.
 
 ## Comparison with the original growingNN paper
 

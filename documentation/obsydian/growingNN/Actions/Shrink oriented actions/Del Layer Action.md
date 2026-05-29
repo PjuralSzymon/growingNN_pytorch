@@ -5,19 +5,19 @@
 
 ## Generating actions
 
-Hidden ids come from `get_all_hidden_modules` in `growingnn/actions/utils/model_analyser.py`. For each `layer_id` we use sequential neighbours only from `module_sequential_pairs`: immediate predecessors as inputs, immediate successors as outputs.
+Hidden ids come from `GraphStructureQuery.get_all_hidden_modules` ([[Torch.fx]]). For each `layer_id` we use sequential neighbours from `GraphStructureQuery.module_sequential_pairs`: immediate predecessors as inputs, immediate successors as outputs.
 
-Width checks use `get_layer_module` in `growingnn/actions/delete_layer.py` so dotted ids resolve with `nn.Module.get_submodule` instead of `getattr(model, dotted_string)`. See [[Dotted Module Names in torch.fx]].
+Width checks use `ModuleResolver.get_layer_module` in `growingnn/actions/delete_layer.py` so dotted ids resolve with `nn.Module.get_submodule` instead of `getattr(model, dotted_string)`.
 
 We emit `DelLayer([layer_id])` only if every input is `nn.Linear` with the same `out_features`, every output is `nn.Linear` with the same `in_features`, and those two widths match. Otherwise we skip that id so the bypass stays a same-width linear shortcut.
 
 ## Executing actions
 
-`DelLayer.execute` calls `delete_layer` in [[Model Transformer]]. We find the `call_module` for `layer_id`, sum its `all_input_nodes` with `operator.add` if there are several, rewire every user to that sum, erase the node, drop the submodule, then `lint` and `recompile`. Non-module ops (activations, views) are not cleaned up automatically.
+`DelLayer.execute` calls `ModelStructureEditor.delete_layer` ([[Torch.fx]]). We find the `call_module` for `layer_id`, sum its `all_input_nodes` with `operator.add` if there are several, rewire every user to that sum, erase the node, drop the submodule, then `lint` and `recompile`. Non-module ops (activations, views) are not cleaned up automatically.
 
 ## Comparison with the original growingNN paper
 
-The paper can reconnect every predecessor to every successor in a structured way. Here we sum inputs into one tensor and feed it to every successor user: simpler in FX, but not the same as every pairwise skip unless the graph already fits that story. Eligibility follows sequential adjacency and the linear checks above; see [[Model Analyser#^7a8eff]]. Rewrites live in [[Model Transformer#^f4531d]].
+The paper can reconnect every predecessor to every successor in a structured way. Here we sum inputs into one tensor and feed it to every successor user: simpler in FX, but not the same as every pairwise skip unless the graph already fits that story. Eligibility follows sequential adjacency and the linear checks above; hidden-module rules and delete rewrite details are in [[Torch.fx]] (`ModuleClassifier.is_hidden_module`, `ModelStructureEditor.delete_layer`).
 
 ## Known limitations
 

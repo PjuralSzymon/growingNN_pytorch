@@ -1,7 +1,7 @@
 
 This page is about `growingnn/actions/add_res_conv_layer.py` and the class `AddResConvLayer`. It adds a residual branch with a convolutional projection between two FX `call_module` targets, then recompiles the graph.
 
-It depends on [[Model Analyser]] for `module_dependency_pairs` and `get_layer_module`. It depends on [[FX Shape Probe]] for `call_module_output_shapes`. Execution calls `add_new_residual_layer` in [[Model Transformer]]. Factories live in [[Layer Factory]] (`ConvFactory.create_zero_conv`, `ConvFactory.create_zero_conv_before_linear`). Names come from [[Name factory]]. Width divisibility uses [[Conv to linear adapter]].
+It depends on [[Torch.fx]]: `GraphStructureQuery.module_dependency_pairs`, `ModuleResolver.get_layer_module`, `LayerShapeAnalyser.get_layer_output_shapes`, `LayerBridgeFinder`, `ModelStructureEditor.add_new_residual_layer`, `ModuleResolver.unique_call_module_name`. Factories in [[Layer Factory]] (`ConvFactory.create_zero_conv`, `ConvFactory.create_zero_conv_before_linear`). Width divisibility uses [[Conv to linear adapter]].
 
 ---
 
@@ -9,7 +9,7 @@ It depends on [[Model Analyser]] for `module_dependency_pairs` and `get_layer_mo
 
 `generate_all_actions` builds one `GraphModule` reference `gm` with `model if isinstance(model, fx.GraphModule) else torch.fx.symbolic_trace(model)` so pairs and shape keys match the same graph (see lines 37 to 38 in `add_res_conv_layer.py`).
 
-It reads pairs from `module_dependency_pairs(gm)`. It reads shapes from `call_module_output_shapes(gm)`. For each `(layer_from_id, layer_to_id)` it loads modules with `get_layer_module(layer_from_id, model)` and `get_layer_module(layer_to_id, model)`.
+It reads pairs from `module_dependency_pairs(gm)`. It reads shapes from `LayerShapeAnalyser.get_layer_output_shapes(gm)`. For each `(layer_from_id, layer_to_id)` it loads modules with `ModuleResolver.get_layer_module(layer_from_id, model)` and `ModuleResolver.get_layer_module(layer_to_id, model)`.
 
 Class constants: `SUPPORTED_MODULES_FROM_LAYER = (nn.modules.conv._ConvNd,)`. `SUPPORTED_MODULES_TO_LAYER = (nn.modules.conv._ConvNd, nn.modules.Linear)`.
 

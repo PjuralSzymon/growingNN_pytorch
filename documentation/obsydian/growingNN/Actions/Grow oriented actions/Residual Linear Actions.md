@@ -1,12 +1,12 @@
 This page is about `growingnn/actions/add_res_layer.py` and the class `AddResLayer`.
 
-It uses [[Model Analyser]] (`module_dependency_pairs`, `get_layer_module`). It calls `add_new_residual_layer` in [[Model Transformer]] and `LinearFactory.create_linear` in [[Layer Factory]]. Names use [[Name factory]]. Related conv variant: [[Residual Conv Action]].
+It uses [[Torch.fx]]: `GraphStructureQuery.module_dependency_pairs`, `ModuleResolver.get_layer_module`, `ModelStructureEditor.add_new_residual_layer`, `ModuleResolver.unique_call_module_name`. New layers from [[Layer Factory]]. Related conv variant: [[Residual Conv Action]].
 
 ---
 
 ## Generating actions
 
-`AddResLayer.generate_all_actions(model, layer_types=...)` reads pairs from `module_dependency_pairs(model)` at line 30 in `add_res_layer.py`. For each `(layer_from_id, layer_to_id)` it resolves modules with `get_layer_module(layer_from_id, model)` and `get_layer_module(layer_to_id, model)`.
+`AddResLayer.generate_all_actions(model, layer_types=...)` reads pairs from `module_dependency_pairs(model)` from  [[Torch.fx]]  at line 30 in `add_res_layer.py`. For each `(layer_from_id, layer_to_id)` it resolves modules with `get_layer_module(layer_from_id, model)` and `get_layer_module(layer_to_id, model)`.
 
 It keeps only pairs where both ends pass `isinstance(..., AddResLayer.SUPPORTED_MODULES)`. Today `SUPPORTED_MODULES = (nn.Linear,)` at line 15. The second argument to `isinstance` must be a tuple, not a list, so Python accepts it (see `TypeError` fix in recent work on `isinstance` arg 2).
 
@@ -31,10 +31,6 @@ The original paper doesn't focus on conv layer initialization; it is using globa
 ## Known limitations
 
 1. Only `nn.Linear` subclasses pass `SUPPORTED_MODULES`; lazy or quantized linears need review if you add them to the tuple.
-
-2. `module_dependency_pairs` can list many skips; cost grows with graph size.
-
-3. Residual linear moves do not use [[FX Shape Probe]]; width checks come from `out_features` / `in_features` on the two linears only.
 
 ### Plot from regression
 

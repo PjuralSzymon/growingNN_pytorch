@@ -1,19 +1,13 @@
-This page is about `growingnn/actions/utils/name_factory.py` and the function `unique_call_module_name`.
+Naming for new FX submodules lives in [[Torch.fx]]: `ModuleResolver.unique_call_module_name` in `growingnn/utils/fx/node_analysis.py` (lines 38 to 55).
 
 ### What it does
 
-It picks a string name for a new submodule on an `nn.Module` or `fx.GraphModule` so `gm.add_module(name, layer)` does not collide with existing names or existing `call_module` targets in the FX graph.
+Picks a string for `gm.add_module(name, layer)` that does not collide with `model._modules` or existing `call_module` targets on the graph.
 
 ### Algorithm
 
-Lines 22 to 26 collect `model._modules.keys()`. If `model` is `fx.GraphModule`, it also unions the set of all `str(n.target)` for nodes with `n.op == "call_module"` (lines 23 to 26).
-
-It scans names equal to `base` or starting with `base + "_"` plus digits (lines 28 to 35). It returns `base + "_0"` if no hit (lines 37 to 38). Otherwise it returns `base + "_" + str(max(suffixes) + 1)` (line 39).
+Collects `model._modules.keys()` and, for `GraphModule`, all `str(n.target)` for `call_module` nodes. Scans `base`, `base_0`, `base_1`, … and returns the next free suffix.
 
 ### Where it is used
 
-`AddResLayer.generate_all_actions` in `add_res_layer.py` line 45. `AddResConvLayer` line 48 in `add_res_conv_layer.py`. `AddSeqLayer` and `AddSeqConvLayer` use the same helper for new layer names.
-
-### Known limitations
-
-The scan is string based. If a name exists only inside a nested submodule but not as a top-level attribute on `gm`, collision rules depend on what `_modules` and the FX graph list expose for your trace style.
+`AddResLayer`, `AddResConvLayer`, `AddSeqLayer`, `AddSeqConvLayer` during `generate_all_actions`.
