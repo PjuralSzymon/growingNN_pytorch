@@ -17,7 +17,6 @@ def resize_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, new_width
     NodeEditor.replace_submodule(gm, layer_id, LinearFactory.create_linear_with_rescaled_neurons(mod, new_width))
     propagate_neuron_change(gm, ModuleResolver.find_call_module(gm.graph.nodes, layer_id), new_width, set())
     gm.recompile()
-    return gm
 
 
 def shrink_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, ratio: float) -> fx.GraphModule:
@@ -29,7 +28,7 @@ def shrink_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, ratio: fl
     new = max(1, int(mod.out_features * ratio))
     if new >= mod.out_features or new < config.MINIMUM_MATRIX_SIZE_FOR_NEURONS_REMOVAL:
         return gm
-    return resize_layer_output(gm, layer_id, new)
+    resize_layer_output(gm, layer_id, new)
 
 
 class DelNeurons(Action):
