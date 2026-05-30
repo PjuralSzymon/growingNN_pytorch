@@ -2,7 +2,7 @@
 Run every test category under ``tests/`` and print how many passed vs failed.
 
 - **unit**: ``pytest tests/unit`` (single run; summary line shows pass/fail counts).
-- **regression**: each ``tests/regression/*.py`` harness (except helpers) as a subprocess
+- **regression**: each runnable ``tests/regression/**/*.py`` harness (except helpers) as a subprocess
   with ``MPLBACKEND=Agg`` and ``--save-output false`` so plots never block and PDFs are not kept.
 - **integration**: ``pytest tests/integration`` if that directory exists; otherwise skipped.
 
@@ -92,7 +92,7 @@ def discover_regression_scripts() -> list[Path]:
     scripts: list[Path] = []
     if not REGRESSION_DIR.is_dir():
         return scripts
-    for p in sorted(REGRESSION_DIR.glob("*.py")):
+    for p in sorted(REGRESSION_DIR.rglob("*.py")):
         if p.name in REGRESSION_SKIP:
             continue
         text = p.read_text(encoding="utf-8", errors="replace")

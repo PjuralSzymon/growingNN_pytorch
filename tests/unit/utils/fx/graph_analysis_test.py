@@ -429,6 +429,31 @@ def test_get_amount_of_parameters_matches_parameter_count():
     assert count == expected
 
 
+def test_get_amount_of_parameters_includes_conv_layers():
+    """
+    get_amount_of_parameters should count Conv2d weights from call_module nodes in the graph.
+    """
+    # Arrange
+    import torch.nn as nn
+
+    gm = fx.symbolic_trace(ModelFactory.simple_conv_chain_2())
+    conv_params = sum(
+        p.numel()
+        for node in gm.graph.nodes
+        if node.op == "call_module"
+        for module in [gm.get_submodule(node.target)]
+        if isinstance(module, nn.Conv2d)
+        for p in module.parameters()
+    )
+
+    # Act
+    count = GraphStructureQuery.get_amount_of_parameters(gm)
+
+    # Assert
+    assert conv_params > 0
+    assert count >= conv_params
+
+
 def test_get_input_layers_and_output_layers_for_middle_layer():
     """
     get_input_layers / get_output_layers should return sequential neighbours of a hidden layer.
