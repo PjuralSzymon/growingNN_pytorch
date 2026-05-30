@@ -50,6 +50,8 @@ class AddSeqLayer(Action):
             if conv_linear_sizes is None:
                 logger.debug("AddSeqLayer skip %s -> %s", layer_from_id, layer_to_id)
                 continue
+            if conv_linear_sizes[0] * conv_linear_sizes[1] > config.MAX_ADD_SEQ_LAYER_WEIGHT_MATRIX_SIZE:
+                continue
             name = ModuleResolver.unique_call_module_name("seq_linear", gm)
             layer = LinearFactory.create_linear(
                 conv_linear_sizes[0],
