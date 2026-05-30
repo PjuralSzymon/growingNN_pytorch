@@ -163,13 +163,6 @@ def _log_action_summary(model_name: str, action_counts: dict[str, int]) -> None:
         logger.info("%-*s | %d", col, name, action_counts[name])
 
 
-def _trace_or_none(model: nn.Module, sample: torch.Tensor, name: str) -> fx.GraphModule | None:
-    gm = fx.symbolic_trace(model)
-    with torch.no_grad():
-        gm(sample)
-    return gm
-
-
 def _run_model(name: str, gm: fx.GraphModule, x: torch.Tensor, args, rng: random.Random) -> None:
     with torch.no_grad():
         output_initial = gm(x)
@@ -245,18 +238,14 @@ if __name__ == "__main__":
     rng = random.Random(SEED)
     data_rng = torch.Generator().manual_seed(SEED)
 
-    ran = 0
     for name, load_model, make_x in MODEL_SPECS:
         logger.info("======== model: %s ========", name)
         model = load_model()
-        gm = _trace_or_none(model, make_x(data_rng), name)
-        if gm is None:
-            continue
-        _run_model(name, gm, make_x(data_rng), args, rng)
-        ran += 1
-
-    if ran == 0:
-        raise RuntimeError("No models were traced successfully")
+        x = make_x(data_rng)
+        gm = fx.symbolic_trace(model)
+        with torch.no_grad():
+            gm(x)
+        _run_model(name, gm, x, args, rng)
 
     if not args.save_output:
         clear_regression_folder()
