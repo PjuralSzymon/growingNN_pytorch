@@ -9,7 +9,7 @@ import torch.fx as fx
 from torchvision.models import resnet18, ResNet18_Weights
 from torchvision.models.maxvit import F
 
-_REPO_ROOT = Path(__file__).resolve().parents[2]
+_REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
