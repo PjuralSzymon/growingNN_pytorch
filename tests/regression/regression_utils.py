@@ -54,8 +54,13 @@ def clear_regression_folder():
 def plot_norms_and_parameter_count(
     norms: Sequence[float],
     parameter_amounts: Sequence[int],
+    *,
+    save_path: Optional[str] = None,
+    show: bool = True,
 ) -> None:
-    """Twin-axis plot: ``norms`` vs step, and param count (``parameter_amounts[1:]`` aligned to norms)."""
+    """Twin-axis plot: ``norms`` vs step and param count (``parameter_amounts[1:]`` aligned to norms)."""
+    if not norms:
+        return
     steps = range(len(norms))
     fig, ax1 = plt.subplots()
     ax1.plot(steps, norms, color="C0")
@@ -69,7 +74,15 @@ def plot_norms_and_parameter_count(
     ax2.tick_params(axis="y", labelcolor="C1")
 
     fig.tight_layout()
-    plt.show()
+    if save_path is not None:
+        os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
+        fig.savefig(save_path, dpi=150)
+        plt.close(fig)
+        logger.info("Saved norms/params plot: %s", save_path)
+    elif show:
+        plt.show()
+    else:
+        plt.close(fig)
 
 
 def parse_regression_cli(argv: Optional[Sequence[str]] = None) -> argparse.Namespace:

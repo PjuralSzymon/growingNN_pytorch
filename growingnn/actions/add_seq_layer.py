@@ -3,6 +3,7 @@ from typing import List
 from torch import fx, nn
 
 from growingnn.actions.utils.layer_Factory import LinearFactory
+from growingnn.core import config
 from growingnn.utils.fx import (
     LayerBridgeFinder, LayerShapeAnalyser,
     ModuleResolver, GraphStructureQuery, ModelStructureEditor,
@@ -30,6 +31,8 @@ class AddSeqLayer(Action):
             s_in = in_shapes.get(layer_to_id)
             sizes = LayerBridgeFinder.find_bridge_linear_sizes(s_out, s_in)
             if sizes is not None:
+                if sizes[0] * sizes[1] > config.MAX_ADD_SEQ_LAYER_WEIGHT_MATRIX_SIZE:
+                    continue
                 name = ModuleResolver.unique_call_module_name("seq_linear", gm)
                 layer = LinearFactory.create_linear(sizes[0], sizes[1], Layer_Type.EYE)
                 logger.debug(
@@ -46,6 +49,8 @@ class AddSeqLayer(Action):
             conv_linear_sizes = LayerBridgeFinder.find_seq_linear_after_conv_sizes(s_out, s_in)
             if conv_linear_sizes is None:
                 logger.debug("AddSeqLayer skip %s -> %s", layer_from_id, layer_to_id)
+                continue
+            if conv_linear_sizes[0] * conv_linear_sizes[1] > config.MAX_ADD_SEQ_LAYER_WEIGHT_MATRIX_SIZE:
                 continue
             name = ModuleResolver.unique_call_module_name("seq_linear", gm)
             layer = LinearFactory.create_linear(

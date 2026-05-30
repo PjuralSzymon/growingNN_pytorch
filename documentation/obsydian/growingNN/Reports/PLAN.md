@@ -6,15 +6,15 @@
     - {     **DONE**    } Akcja warstw rezydualnych
     - {     **DONE**    } Akcja warstw Conv
 - Maj
-    - {  **IN PROG**  } Akcja usuwania warstw
-    - {     **TODO**    } Akcja zmian ilosci neuronow
-	    - {     **TODO**    } Update do wizualizacji żeby pokazywał shape
-	    - {     **TODO**    } Unit test z bardzo skomplikowana siecia 
-		    - {     **TODO**    } Unit test dla is editable module
-	    - {     **TODO**    } Akcja usuwania neuronow w danej wartswie 
-	    - {     **TODO**    } Propagacja zmian na cala siec
-	    - {     **TODO**    } Testy regresyjne
-	- {     **TODO**    } Dodać testy regresyjne na dużych modelach 
+    - {  **DONE**  } Akcja usuwania warstw
+    - {     **DONE**    } Akcja zmian ilosci neuronow
+	    - {     **DONE**    } Update do wizualizacji żeby pokazywał shape
+	    - {     **DONE**    } Unit test z bardzo skomplikowana siecia 
+		    - {     **DONE**    } Unit test dla is editable module
+	    - {     **DONE**    } Akcja usuwania neuronow w danej wartswie 
+	    - {     **DONE**    } Propagacja zmian na cala siec
+	    - {     **DONE**    } Testy regresyjne
+	- {     **DONE**    } Dodać testy regresyjne na dużych modelach 
 - Czerwiec
     - {     **TODO**    } Alg symulacyjny
     - {     **TODO**    } Score Fun

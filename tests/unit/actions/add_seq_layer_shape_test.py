@@ -4,6 +4,7 @@ import torch
 import torch.fx as fx
 
 from growingnn.actions.add_seq_layer import AddSeqLayer
+from growingnn.core import config
 from tests.model_factory import ModelFactory
 
 
@@ -27,6 +28,22 @@ def test_generate_all_actions_uses_shape_bridge_for_linear_chain():
         if isinstance(layer, torch.nn.Linear):
             assert layer.in_features > 0
             assert layer.out_features > 0
+
+
+def test_generate_all_actions_skips_when_weight_matrix_exceeds_config_limit(monkeypatch):
+    """
+    AddSeqLayer should skip pairs whose Linear weight matrix in*out exceeds config limit.
+    """
+
+    # Arrange
+    monkeypatch.setattr(config, "MAX_ADD_SEQ_LAYER_WEIGHT_MATRIX_SIZE", 1)
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
+
+    # Act
+    actions = AddSeqLayer.generate_all_actions(gm)
+
+    # Assert
+    assert actions == []
 
 
 def test_generate_all_actions_proposes_plain_linear_between_conv_and_linear():

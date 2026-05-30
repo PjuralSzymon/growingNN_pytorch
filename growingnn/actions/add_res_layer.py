@@ -3,6 +3,7 @@ from typing import Iterable, List
 from torch import fx, nn
 
 from growingnn.actions.utils.layer_Factory import LinearFactory
+from growingnn.core import config
 from growingnn.utils.fx import (
     LayerBridgeFinder, LayerShapeAnalyser,
     ModuleResolver, GraphStructureQuery, ModelStructureEditor,
@@ -34,6 +35,8 @@ class AddResLayer(Action):
             )
             if sizes is None:
                 logger.debug("AddResLayer skip %s -> %s", layer_from_id, layer_to_id)
+                continue
+            if sizes[0] * sizes[1] > config.MAX_ADD_SEQ_LAYER_WEIGHT_MATRIX_SIZE:
                 continue
             for layer_type in layer_types:
                 name = ModuleResolver.unique_call_module_name(f"res_linear_{layer_type.name}", gm)
