@@ -17,6 +17,7 @@ def score_acc(
     _, history = gradient_descent(
         model,
         cfg.simulation_scheduler.simulation_epochs,
+        #TODO: is this a simualtion dataset ? or a training dataset ?
         ctx.train_loader,
         ctx.val_loader,
         ctx.criterion,
@@ -34,6 +35,7 @@ def score_loss(
     _, history = gradient_descent(
         model,
         cfg.simulation_scheduler.simulation_epochs,
+        #TODO: is this a simualtion dataset ? or a training dataset ?
         ctx.train_loader,
         ctx.val_loader,
         ctx.criterion,

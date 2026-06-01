@@ -22,6 +22,7 @@ def score_time(
     gradient_descent(
         model,
         cfg.simulation_scheduler.simulation_epochs,
+        #TODO: is this a simualtion dataset ? or a training dataset ?
         ctx.train_loader,
         ctx.val_loader,
         ctx.criterion,
