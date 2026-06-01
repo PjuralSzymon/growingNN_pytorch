@@ -39,4 +39,4 @@ def score_loss(
         quiet=True,
     )
     loss = float(history["val_loss"][-1])
-    return min(1.0 / max(loss, 1e-8), 1.0)  # TODO: originally train loss
+    return min(1.0 / (max(loss, 1e-8) + 1), 1.0)  # TODO: originally train loss
