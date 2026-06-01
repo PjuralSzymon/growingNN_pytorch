@@ -17,14 +17,15 @@ def score_time(
     model: nn.Module | fx.GraphModule,
     ctx: SimulationContext,
 ) -> float:
+    cfg = ctx.running_config
     start = time.time()
     gradient_descent(
         model,
-        ctx.epochs,
+        cfg.simulation_scheduler.simulation_epochs,
         ctx.train_loader,
         ctx.val_loader,
         ctx.criterion,
-        ctx.lr_scheduler,
+        cfg.lr_scheduler,
         quiet=True,
     )
     elapsed = time.time() - start

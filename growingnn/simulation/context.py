@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from growingnn.training.lr_scheduler import LearningRateScheduler
+from growingnn.core.config import RunningConfig
 
 
 @dataclass
@@ -15,5 +15,4 @@ class SimulationContext:
     train_loader: DataLoader
     val_loader: DataLoader
     criterion: nn.Module
-    lr_scheduler: LearningRateScheduler
-    epochs: int
+    running_config: RunningConfig

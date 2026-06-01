@@ -11,6 +11,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[4]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from growingnn.core.config import RunningConfig
 from growingnn.simulation.context import SimulationContext
 from growingnn.simulation.score_functions.score_efficiency import score_count_weights
 from growingnn.simulation.score_functions.simulation_score import SimulationScore
@@ -22,13 +23,13 @@ def _ctx(epochs: int = 1):
     y = torch.randint(0, 2, (16,))
     train = DataLoader(TensorDataset(x[:12], y[:12]), batch_size=4)
     val = DataLoader(TensorDataset(x[12:], y[12:]), batch_size=4)
-    return SimulationContext(
-        train_loader=train,
-        val_loader=val,
-        criterion=nn.CrossEntropyLoss(),
+    cfg = RunningConfig(
+        generations=1,
+        epochs=1,
         lr_scheduler=LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.05),
-        epochs=epochs,
     )
+    cfg.simulation_scheduler.simulation_epochs = epochs
+    return SimulationContext(train, val, nn.CrossEntropyLoss(), cfg)
 
 
 def test_score_count_weights_prefers_smaller_models():

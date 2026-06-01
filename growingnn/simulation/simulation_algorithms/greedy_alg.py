@@ -11,21 +11,18 @@ import torch.nn as nn
 
 from growingnn.actions.registry import generate_all_actions
 from growingnn.simulation.context import SimulationContext
-from growingnn.simulation.score_functions.simulation_score import SimulationScore
 from growingnn.utils.quaziIdentity import clear_reshepers_cache
 
 
 async def get_action(
     model: nn.Module | fx.GraphModule,
-    max_time_for_dec: float,
     ctx: SimulationContext,
-    simulation_score: SimulationScore,
 ) -> tuple[object | None, int, int]:
-    all_actions = generate_all_actions(model)
+    all_actions = generate_all_actions(model, ctx.running_config)
     if not all_actions:
         return None, 0, 0
 
-    deadline = time.time() + max_time_for_dec
+    deadline = time.time() + ctx.running_config.simulation_scheduler.simulation_time
     best_action = None
     best_score = float("-inf")
     rollouts = 0
@@ -36,7 +33,7 @@ async def get_action(
         remaining.remove(action)
         candidate = copy.deepcopy(model)
         action.execute(candidate)
-        score = simulation_score.score(candidate, ctx)
+        score = ctx.running_config.simulation_score.score(candidate, ctx)
         rollouts += 1
         if score > best_score:
             best_score = score

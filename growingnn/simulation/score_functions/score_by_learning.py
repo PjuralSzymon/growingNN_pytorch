@@ -13,13 +13,14 @@ def score_acc(
     model: nn.Module | fx.GraphModule,
     ctx: SimulationContext,
 ) -> float:
+    cfg = ctx.running_config
     _, history = gradient_descent(
         model,
-        ctx.epochs,
+        cfg.simulation_scheduler.simulation_epochs,
         ctx.train_loader,
         ctx.val_loader,
         ctx.criterion,
-        ctx.lr_scheduler,
+        cfg.lr_scheduler,
         quiet=True,
     )
     return float(history["val_acc"][-1]) # TODO: Orginally it was by train acc 
@@ -29,13 +30,14 @@ def score_loss(
     model: nn.Module | fx.GraphModule,
     ctx: SimulationContext,
 ) -> float:
+    cfg = ctx.running_config
     _, history = gradient_descent(
         model,
-        ctx.epochs,
+        cfg.simulation_scheduler.simulation_epochs,
         ctx.train_loader,
         ctx.val_loader,
         ctx.criterion,
-        ctx.lr_scheduler,
+        cfg.lr_scheduler,
         quiet=True,
     )
     loss = float(history["val_loss"][-1])

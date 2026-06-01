@@ -1,11 +1,16 @@
 """Project-wide defaults for growingnn."""
 
+from __future__ import annotations
+from typing import Any
+
 import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn
-
 FLOAT_TYPE = np.float32
+from growingnn.simulation.simulation_scheduler import SchedulerMode, SimulationScheduler
+from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.training.stoppers import StopperMode, TrainingStopper
 
 RESHEPERS_CACHE_MAX_SIZE = 10
 RESHEPERS_CACHE_MAX_MEMORY_MB = 100
@@ -38,6 +43,12 @@ DEFAULT_NEURONS_SHRINK_RATIO = 0.5
 TIME_EFFICIENCY_WEIGHT = 1.0
 WEIGHT_COUNT_WEIGHT = 1e-6
 
+# Monte Carlo tree search (architecture simulation)
+MCTS_UCB1_C = 2
+MCTS_ROLLOUT_DEPTH = 2
+MCTS_ROLLOUT_EPOCHS = 1
+MCTS_ROLLOUT_LR = LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.0001)
+
 # LOGGING
 ENABLE_LOGGING = True
 LOG_LEVEL = "INFO"  # str: NOTSET | DEBUG | INFO | WARNING | WARN | ERROR | CRITICAL; or int
@@ -48,7 +59,28 @@ LOG_FILE_BACKUP_COUNT = 9  # 1 active + 9 backups => ~1 GB on disk total
 
 
 class RunningConfig:
-    def __init__(self):
+    def __init__(self, 
+        generations: int,
+        epochs: int,
+        lr_scheduler: LearningRateScheduler = LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
+        stopper: TrainingStopper = TrainingStopper(StopperMode.EMPTY),
+        #TODO: simualtion algs should also have parent type
+        simulation_alg: Any | None = None,
+        simulation_scheduler: SimulationScheduler = SimulationScheduler(SchedulerMode.NEVER),
+        simulation_score: Any | None = None,
+        simulation_set_size: int = 32,
+        quiet: bool = False,
+        print_every: int = 1):
+        self.generations = generations
+        self.epochs = epochs
+        self.lr_scheduler = lr_scheduler
+        self.stopper = stopper
+        self.simulation_alg = simulation_alg
+        self.simulation_scheduler = simulation_scheduler
+        self.simulation_score = simulation_score
+        self.simulation_set_size = simulation_set_size
+        self.quiet = quiet
+        self.print_every = print_every
         self.ACTIONS_ENABLE_ADD_SEQ_LAYER = True
         self.ACTIONS_ENABLE_ADD_RES_LAYER = True
         self.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER = True
