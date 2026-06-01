@@ -17,6 +17,7 @@ import growingnn.core.config
 
 growingnn.core.config.ENABLE_LOGGING = False
 
+from growingnn.core.config import RunningConfig
 from growingnn.simulation.score_functions.simulation_score import SimulationScore
 import growingnn.simulation.simulation_algorithms.random_alg as random_alg
 from growingnn.simulation.simulation_scheduler import SchedulerMode, SimulationScheduler
@@ -43,10 +44,20 @@ def test_train_generations_runs_simulation_between_generations():
     gm = fx.symbolic_trace(resnet18(weights=None, num_classes=2))
     train_loader, val_loader = _loaders()
     params_before = GraphStructureQuery.get_amount_of_parameters(gm)
-    scheduler = SimulationScheduler(
-        SchedulerMode.ALWAYS,
-        simulation_time=1.0,
-        simulation_epochs=1,
+    cfg = RunningConfig(
+        generations=2,
+        epochs=1,
+        lr_scheduler=LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
+        stopper=TrainingStopper(StopperMode.EMPTY),
+        simulation_alg=random_alg,
+        simulation_scheduler=SimulationScheduler(
+            SchedulerMode.ALWAYS,
+            simulation_time=1.0,
+            simulation_epochs=1,
+        ),
+        simulation_score=SimulationScore(weight_acc=0.0, weight_countW=1.0),
+        simulation_set_size=16,
+        quiet=True,
     )
 
     # Act
@@ -55,15 +66,7 @@ def test_train_generations_runs_simulation_between_generations():
         train_loader,
         val_loader,
         nn.CrossEntropyLoss(),
-        LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
-        generations=2,
-        epochs=1,
-        stopper=TrainingStopper(StopperMode.EMPTY),
-        simulation_alg=random_alg,
-        simulation_scheduler=scheduler,
-        simulation_score=SimulationScore(weight_acc=0.0, weight_countW=1.0),
-        simulation_set_size=16,
-        quiet=True,
+        cfg,
     )
 
     # Assert

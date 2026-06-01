@@ -14,6 +14,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from growingnn.core.config import RunningConfig
 from growingnn.simulation.score_functions.simulation_score import SimulationScore
 import growingnn.simulation.simulation_algorithms.montecarlo_alg as montecarlo_alg
 from growingnn.simulation.simulation_scheduler import SchedulerMode, SimulationScheduler
@@ -93,19 +94,24 @@ if __name__ == "__main__":
     gm = fx.symbolic_trace(_load_cifar10_resnet18())
     params_before = GraphStructureQuery.get_amount_of_parameters(gm)
     _draw_generation_graphs(0, gm)
+    cfg = RunningConfig(
+        generations=10,
+        epochs=10,
+        lr_scheduler=LearningRateScheduler(ScheduleMode.PROGRESSIVE, alpha=0.01, steepness=0.5),
+        print_every=1,
+        simulation_alg=montecarlo_alg,
+        simulation_scheduler=SimulationScheduler(
+            SchedulerMode.ALWAYS, simulation_time=120.0, simulation_epochs=10
+        ),
+        simulation_score=SimulationScore(weight_acc=0.0, weight_countW=1.0),
+        simulation_set_size=100,
+        quiet=False,
+    )
     gm, summary = train_generations(
         gm,
         *_loaders(),
         nn.CrossEntropyLoss(),
-        LearningRateScheduler(ScheduleMode.PROGRESSIVE, alpha=0.01, steepness=0.5),
-        generations=10,
-        epochs=10,
-        print_every=1,
-        simulation_alg=montecarlo_alg,
-        simulation_scheduler=SimulationScheduler(SchedulerMode.ALWAYS, simulation_time=120.0, simulation_epochs=10),
-        simulation_score=SimulationScore(weight_acc=0.0, weight_countW=1.0),
-        simulation_set_size=100,
-        quiet=False,
+        cfg,
     )
     _draw_generation_graphs(summary["generation"][-1], gm)
     assert GraphStructureQuery.get_amount_of_parameters(gm) != params_before
