@@ -8,6 +8,7 @@ import torch.fx as fx
 import torch.nn as nn
 
 from growingnn.core.config import RunningConfig
+from growingnn.core.logger import logger
 from growingnn.simulation.score_functions.score_by_learning import score_acc, score_loss
 from growingnn.simulation.score_functions.score_efficiency import score_count_weights, score_time
 
@@ -47,4 +48,8 @@ class SimulationScore:
             weight = self.weights[key]
             if weight > 0.0:
                 total += weight * fn(copy.deepcopy(model), running_config)
-        return total / self.weight_sum()
+        divisor = self.weight_sum()
+        if divisor == 0.0:
+            logger.error("SimulationScore.score: all weights are 0, returning 0 instead of NaN")
+            return 0.0
+        return total / divisor

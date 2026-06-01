@@ -64,3 +64,22 @@ def test_simulation_score_returns_weighted_value():
 
     # Assert
     assert 0.0 < result <= 1.0
+
+
+def test_simulation_score_all_zero_weights_returns_zero_not_nan():
+    """
+    SimulationScore.score should log an error and return 0.0 when every weight is 0.
+    """
+
+    # Arrange
+    model = nn.Linear(4, 2)
+    score_fn = SimulationScore(
+        weight_acc=0.0, weight_loss=0.0, weight_time=0.0, weight_countW=0.0
+    )
+    cfg = _running_config()
+
+    # Act
+    result = score_fn.score(model, cfg)
+
+    # Assert
+    assert result == 0.0
