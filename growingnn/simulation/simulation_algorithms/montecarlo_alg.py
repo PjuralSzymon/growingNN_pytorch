@@ -121,10 +121,13 @@ def _simulate(node: TreeNode, depth: int = 0, rollouts: int = 0) -> tuple[float,
         node.expand()
     child = node.get_best_child()
     if child is None:
-        return node.value, depth, rollouts
+        backprop = 0.0 if project_config.MCTS_PROPAGATE_ROLLOUT_VALUE else node.value
+        return backprop, depth, rollouts
     value, depth, rollouts = _simulate(child, depth + 1, rollouts)
     node.value += value
     node.visit_counter += 1
+    if project_config.MCTS_PROPAGATE_ROLLOUT_VALUE:
+        return value, depth, rollouts
     return node.value, depth, rollouts
 
 
