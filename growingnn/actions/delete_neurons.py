@@ -41,9 +41,11 @@ class DelNeurons(Action):
         return False
 
     @staticmethod
-    def generate_all_actions(model: nn.Module | fx.GraphModule) -> List[Action]:
+    def generate_all_actions(
+        model: nn.Module | fx.GraphModule,
+        ratio: float = config.DEFAULT_NEURONS_SHRINK_RATIO,
+    ) -> List[Action]:
         gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
-        ratio = config.DEFAULT_NEURONS_SHRINK_RATIO
         actions: List[Action] = []
         for layer_id in GraphStructureQuery.get_all_hidden_modules(gm):
             mod = ModuleResolver.get_layer_module(layer_id, gm)

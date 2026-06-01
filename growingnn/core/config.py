@@ -45,3 +45,27 @@ LOG_TO_FILE = True
 LOG_FILE_NAME = "growingnn.log"
 LOG_FILE_MAX_BYTES = 100 * 1024 * 1024  # 100 MB per rotated file
 LOG_FILE_BACKUP_COUNT = 9  # 1 active + 9 backups => ~1 GB on disk total
+
+
+class RunningConfig:
+    def __init__(self):
+        self.ACTIONS_ENABLE_ADD_SEQ_LAYER = True
+        self.ACTIONS_ENABLE_ADD_RES_LAYER = True
+        self.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER = True
+        self.ACTIONS_ENABLE_ADD_RES_CONV_LAYER = True
+        self.ACTIONS_ENABLE_DEL_LAYER = True
+        self.ACTIONS_ENABLE_DEL_NEURONS_01 = True
+        self.ACTIONS_ENABLE_DEL_NEURONS_05 = True
+        self.ACTIONS_ENABLE_DEL_NEURONS_09 = True
+
+    def update_grow_actions(self, is_enabled: bool):
+        self.ACTIONS_ENABLE_ADD_SEQ_LAYER = is_enabled
+        self.ACTIONS_ENABLE_ADD_RES_LAYER = is_enabled
+        self.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER = is_enabled
+        self.ACTIONS_ENABLE_ADD_RES_CONV_LAYER = is_enabled
+
+    def update_shrink_actions(self, is_enabled: bool):
+        self.ACTIONS_ENABLE_DEL_LAYER = is_enabled
+        self.ACTIONS_ENABLE_DEL_NEURONS_01 = is_enabled
+        self.ACTIONS_ENABLE_DEL_NEURONS_05 = is_enabled
+        self.ACTIONS_ENABLE_DEL_NEURONS_09 = is_enabled
