@@ -18,7 +18,8 @@ from growingnn.core.config import RunningConfig
 
 
 def generate_all_actions(
-    model: nn.Module | fx.GraphModule, config: RunningConfig) -> list[Action]:
+    model: nn.Module | fx.GraphModule, config: RunningConfig
+) -> list[Action]:
     actions: list[Action] = []
     if config.ACTIONS_ENABLE_ADD_RES_LAYER:
         actions.extend(AddResLayer.generate_all_actions(model, layer_types=(Layer_Type.EYE, Layer_Type.ZERO)))
