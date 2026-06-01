@@ -10,9 +10,9 @@ import time
 import torch.fx as fx
 import torch.nn as nn
 
-import growingnn.core.config as config
+import growingnn.core.config as project_config
 from growingnn.actions.registry import generate_all_actions
-from growingnn.simulation.context import SimulationContext
+from growingnn.core.config import RunningConfig
 from growingnn.training.gradient_descent import gradient_descent
 from growingnn.utils.quaziIdentity import clear_reshepers_cache
 
@@ -29,54 +29,56 @@ class TreeNode:
         parent: TreeNode | None,
         action,
         model: nn.Module | fx.GraphModule,
-        ctx: SimulationContext,
+        running_config: RunningConfig,
     ):
         self.parent = parent
         self.action = action
         self.model = model
-        self.ctx = ctx
+        self.running_config = running_config
         self.child_nodes: list[TreeNode] = []
         self.value = 0.0
         self.visit_counter = 0
         self._cleaned = False
 
     def expand(self) -> None:
-        for action in generate_all_actions(self.model, self.ctx.running_config):
+        cfg = self.running_config
+        for action in generate_all_actions(self.model, cfg):
             model_copy = copy.deepcopy(self.model)
             action.execute(model_copy)
             gradient_descent(
                 model_copy,
-                config.MCTS_ROLLOUT_EPOCHS,
-                self.ctx.train_loader,
-                self.ctx.val_loader,
-                self.ctx.criterion,
-                config.MCTS_ROLLOUT_LR,
+                project_config.MCTS_ROLLOUT_EPOCHS,
+                cfg.sim_train_loader,
+                cfg.sim_val_loader,
+                cfg.criterion,
+                project_config.MCTS_ROLLOUT_LR,
                 quiet=True,
             )
             self.child_nodes.append(
-                TreeNode(self, action, model_copy, self.ctx)
+                TreeNode(self, action, model_copy, cfg)
             )
 
     def rollout(self) -> float:
+        cfg = self.running_config
         model_copy = copy.deepcopy(self.model)
-        depth = config.MCTS_ROLLOUT_DEPTH
+        depth = project_config.MCTS_ROLLOUT_DEPTH
         while depth > 0:
-            actions = generate_all_actions(model_copy, self.ctx.running_config)
+            actions = generate_all_actions(model_copy, cfg)
             if not actions:
                 break
             chosen = random.choice(actions)
             chosen.execute(model_copy)
             gradient_descent(
                 model_copy,
-                config.MCTS_ROLLOUT_EPOCHS,
-                self.ctx.train_loader,
-                self.ctx.val_loader,
-                self.ctx.criterion,
-                config.MCTS_ROLLOUT_LR,
+                project_config.MCTS_ROLLOUT_EPOCHS,
+                cfg.sim_train_loader,
+                cfg.sim_val_loader,
+                cfg.criterion,
+                project_config.MCTS_ROLLOUT_LR,
                 quiet=True,
             )
             depth -= 1
-        return self.ctx.running_config.simulation_score.score(model_copy, self.ctx)
+        return cfg.simulation_score.score(model_copy, cfg)
 
     def get_best_child(self) -> TreeNode | None:
         if not self.child_nodes:
@@ -85,7 +87,7 @@ class TreeNode:
         def ucb1(node: TreeNode) -> float:
             if node.visit_counter == 0:
                 return float("inf")
-            return node.value + config.MCTS_UCB1_C * _protected_divide(
+            return node.value + project_config.MCTS_UCB1_C * _protected_divide(
                 math.log(max(self.visit_counter, 1)),
                 node.visit_counter,
             )
@@ -125,14 +127,14 @@ def _simulate(node: TreeNode, depth: int = 0, rollouts: int = 0) -> tuple[float,
 
 async def get_action(
     model: nn.Module | fx.GraphModule,
-    ctx: SimulationContext,
+    running_config: RunningConfig,
 ) -> tuple[object | None, int, int]:
-    actions = generate_all_actions(model, ctx.running_config)
+    actions = generate_all_actions(model, running_config)
     if not actions:
         return None, 0, 0
 
-    root = TreeNode(None, None, model, ctx)
-    deadline = time.time() + ctx.running_config.simulation_scheduler.simulation_time
+    root = TreeNode(None, None, model, running_config)
+    deadline = time.time() + running_config.simulation_scheduler.simulation_time
     max_depth = 0
     rollouts = 0
     while time.time() < deadline or rollouts <= len(actions):

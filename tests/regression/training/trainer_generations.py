@@ -105,14 +105,10 @@ if __name__ == "__main__":
         ),
         simulation_score=SimulationScore(weight_acc=0.0, weight_countW=1.0),
         simulation_set_size=100,
+        criterion=nn.CrossEntropyLoss(),
         quiet=False,
     )
-    gm, summary = train_generations(
-        gm,
-        *_loaders(),
-        nn.CrossEntropyLoss(),
-        cfg,
-    )
+    gm, summary = train_generations(gm, *_loaders(), cfg)
     _draw_generation_graphs(summary["generation"][-1], gm)
     assert GraphStructureQuery.get_amount_of_parameters(gm) != params_before
 

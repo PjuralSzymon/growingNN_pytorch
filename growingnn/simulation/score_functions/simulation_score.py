@@ -5,7 +5,7 @@ from __future__ import annotations
 import torch.fx as fx
 import torch.nn as nn
 
-from growingnn.simulation.context import SimulationContext
+from growingnn.core.config import RunningConfig
 from growingnn.simulation.score_functions.score_by_learning import score_acc, score_loss
 from growingnn.simulation.score_functions.score_efficiency import score_count_weights, score_time
 
@@ -38,11 +38,11 @@ class SimulationScore:
     def score(
         self,
         model: nn.Module | fx.GraphModule,
-        ctx: SimulationContext,
+        running_config: RunningConfig,
     ) -> float:
         total = 0.0
         for key, fn in self._SCORE_FUNCTIONS.items():
             weight = self.weights[key]
             if weight > 0.0:
-                total += weight * fn(model, ctx)
+                total += weight * fn(model, running_config)
         return total / self.weight_sum()

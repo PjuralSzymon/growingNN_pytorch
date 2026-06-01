@@ -12,7 +12,6 @@ from torch.utils.data import DataLoader
 
 from growingnn.core.config import RunningConfig
 from growingnn.core.logger import logger
-from growingnn.simulation.context import SimulationContext
 from growingnn.simulation.simulation_set import sample_loaders
 from growingnn.training.gradient_descent import gradient_descent
 from growingnn.utils.fx import GraphStructureQuery
@@ -23,19 +22,14 @@ def train_generations(
     model: nn.Module | fx.GraphModule,
     train_loader: DataLoader,
     val_loader: DataLoader,
-    criterion: nn.Module,
     config: RunningConfig,
 ) -> tuple[nn.Module | fx.GraphModule, dict[str, list[Any]]]:
     logger.info("Training generations started")
-    if config.generations <= 0:
-        raise ValueError("generations must be positive")
 
     sim_train_loader, sim_val_loader = sample_loaders(
         train_loader, val_loader, config.simulation_set_size
     )
-    sim_ctx = SimulationContext(
-        sim_train_loader, sim_val_loader, criterion, config
-    )
+    config.set_simulation_loaders(sim_train_loader, sim_val_loader)
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
@@ -57,7 +51,7 @@ def train_generations(
             config.epochs,
             train_loader,
             val_loader,
-            criterion,
+            config.criterion,
             config.lr_scheduler,
             stopper=config.stopper,
             quiet=config.quiet,
@@ -79,7 +73,9 @@ def train_generations(
             break
 
         if config.simulation_scheduler.can_simulate(generation, generation_val_acc, quiet=config.quiet):
-            action, _, _ = loop.run_until_complete(config.simulation_alg.get_action(copy.deepcopy(model), sim_ctx))
+            action, _, _ = loop.run_until_complete(
+                config.simulation_alg.get_action(copy.deepcopy(model), config)
+            )
             if action is None:
                 continue
             action.execute(model)

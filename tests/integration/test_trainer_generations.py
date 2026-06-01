@@ -57,17 +57,12 @@ def test_train_generations_runs_simulation_between_generations():
         ),
         simulation_score=SimulationScore(weight_acc=0.0, weight_countW=1.0),
         simulation_set_size=16,
+        criterion=nn.CrossEntropyLoss(),
         quiet=True,
     )
 
     # Act
-    model, summary = train_generations(
-        gm,
-        train_loader,
-        val_loader,
-        nn.CrossEntropyLoss(),
-        cfg,
-    )
+    model, summary = train_generations(gm, train_loader, val_loader, cfg)
 
     # Assert
     assert len(summary["generation"]) == 2

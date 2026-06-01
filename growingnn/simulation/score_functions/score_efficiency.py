@@ -8,25 +8,23 @@ import torch.fx as fx
 import torch.nn as nn
 
 import growingnn.core.config as config
-from growingnn.simulation.context import SimulationContext
+from growingnn.core.config import RunningConfig
 from growingnn.training.gradient_descent import gradient_descent
 from growingnn.utils.fx import GraphStructureQuery
 
 
 def score_time(
     model: nn.Module | fx.GraphModule,
-    ctx: SimulationContext,
+    running_config: RunningConfig,
 ) -> float:
-    cfg = ctx.running_config
     start = time.time()
     gradient_descent(
         model,
-        cfg.simulation_scheduler.simulation_epochs,
-        #TODO: is this a simualtion dataset ? or a training dataset ?
-        ctx.train_loader,
-        ctx.val_loader,
-        ctx.criterion,
-        cfg.lr_scheduler,
+        running_config.simulation_scheduler.simulation_epochs,
+        running_config.sim_train_loader,
+        running_config.sim_val_loader,
+        running_config.criterion,
+        running_config.lr_scheduler,
         quiet=True,
     )
     elapsed = time.time() - start
@@ -35,7 +33,7 @@ def score_time(
 
 def score_count_weights(
     model: nn.Module | fx.GraphModule,
-    ctx: SimulationContext,
+    running_config: RunningConfig,
 ) -> float:
     counter = GraphStructureQuery.get_amount_of_parameters(model)
     return 1.0 / (float(counter) * config.WEIGHT_COUNT_WEIGHT + 1.0)

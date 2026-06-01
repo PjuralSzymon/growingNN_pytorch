@@ -7,6 +7,8 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn
+from torch.utils.data import DataLoader
+
 FLOAT_TYPE = np.float32
 from growingnn.simulation.simulation_scheduler import SchedulerMode, SimulationScheduler
 from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
@@ -69,6 +71,7 @@ class RunningConfig:
         simulation_scheduler: SimulationScheduler = SimulationScheduler(SchedulerMode.NEVER),
         simulation_score: Any | None = None,
         simulation_set_size: int = 32,
+        criterion: nn.Module | None = None,
         quiet: bool = False,
         print_every: int = 1):
         self.generations = generations
@@ -79,6 +82,7 @@ class RunningConfig:
         self.simulation_scheduler = simulation_scheduler
         self.simulation_score = simulation_score
         self.simulation_set_size = simulation_set_size
+        self.criterion = criterion
         self.quiet = quiet
         self.print_every = print_every
         self.ACTIONS_ENABLE_ADD_SEQ_LAYER = True
@@ -89,6 +93,10 @@ class RunningConfig:
         self.ACTIONS_ENABLE_DEL_NEURONS_01 = True
         self.ACTIONS_ENABLE_DEL_NEURONS_05 = True
         self.ACTIONS_ENABLE_DEL_NEURONS_09 = True
+
+    def set_simulation_loaders(self, sim_train_loader: DataLoader, sim_val_loader: DataLoader):
+        self.sim_train_loader = sim_train_loader
+        self.sim_val_loader = sim_val_loader
 
     def update_grow_actions(self, is_enabled: bool):
         self.ACTIONS_ENABLE_ADD_SEQ_LAYER = is_enabled
