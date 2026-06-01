@@ -12,7 +12,7 @@ The simulation works as follows.
 1. For a given model state in the current generation:
    1. Generate all possible actions.
    2. Grade moves with the [[Scoring function]] inside rollouts 
-   3. Choose which branch to explore next with MCTS and the UCB1 rule (`UCB1_CONTS = 2` in `get_best_child`).
+   3. Choose which branch to explore next with MCTS and the UCB1 rule (`MCTS_UCB1_C`, optional `MCTS_UCB1_USE_SQRT` in [[Config]]).
 2. Repeat selection, expansion, and rollout until the time rule in point 2 above is satisfied.
 3. Return one best action at the first level of the tree only (`root.get_best_child().action`). The search does not return a long action sequence.
 

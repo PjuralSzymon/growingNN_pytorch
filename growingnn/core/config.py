@@ -47,6 +47,7 @@ WEIGHT_COUNT_WEIGHT = 1e-6
 
 # Monte Carlo tree search (architecture simulation)
 MCTS_UCB1_C = 2
+MCTS_UCB1_USE_SQRT = False  # False: legacy sum + log(N)/n; True: mean + sqrt(log(N)/n)
 MCTS_ROLLOUT_DEPTH = 2
 MCTS_ROLLOUT_EPOCHS = 1
 MCTS_ROLLOUT_LR = LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.0001)

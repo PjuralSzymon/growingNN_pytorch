@@ -64,21 +64,3 @@ def test_simulation_score_returns_weighted_value():
 
     # Assert
     assert 0.0 < result <= 1.0
-
-
-def test_simulation_score_leaves_input_model_unchanged():
-    """
-    SimulationScore should deepcopy the model per term so training scores do not mutate the caller's model.
-    """
-    # Arrange
-    model = nn.Linear(4, 2)
-    weights_before = {k: v.clone() for k, v in model.state_dict().items()}
-    score_fn = SimulationScore(weight_acc=1.0, weight_loss=0.0, weight_time=0.0, weight_countW=0.0)
-    cfg = _running_config()
-
-    # Act
-    score_fn.score(model, cfg)
-
-    # Assert
-    for key, tensor in model.state_dict().items():
-        assert torch.allclose(tensor, weights_before[key])

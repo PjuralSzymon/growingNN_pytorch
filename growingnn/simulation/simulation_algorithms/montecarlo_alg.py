@@ -22,7 +22,6 @@ def _protected_divide(a: float, b: float) -> float:
         return float("inf")
     return a / b
 
-
 class TreeNode:
     def __init__(
         self,
@@ -87,6 +86,10 @@ class TreeNode:
         def ucb1(node: TreeNode) -> float:
             if node.visit_counter == 0:
                 return float("inf")
+            if project_config.MCTS_UCB1_USE_SQRT:
+                n = node.visit_counter
+                explore = math.sqrt(math.log(max(self.visit_counter, 1)) / n)
+                return node.value / n + project_config.MCTS_UCB1_C * explore
             return node.value + project_config.MCTS_UCB1_C * _protected_divide(
                 math.log(max(self.visit_counter, 1)),
                 node.visit_counter,
