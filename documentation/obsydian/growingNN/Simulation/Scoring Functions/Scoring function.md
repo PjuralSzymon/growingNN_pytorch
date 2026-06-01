@@ -4,4 +4,4 @@ The user picks non-negative weights. The final grade is a weighted mean of activ
 
 Sub-scores live in [[Score by learning]] and [[Score by effitiency]]. All of them read `RunningConfig` for epochs, LR, `criterion`, and simulation loaders (`set_simulation_loaders` in `train_generations` from [[Simulation Set]] sampling).
 
-Known limitations: each term with weight greater than 0 runs its own work (for example `score_acc` and `score_loss` each run full `gradient_descent` if both are enabled). There is no shared cache between terms.
+Known limitations: each enabled term runs on its own `copy.deepcopy(model)` and may run full `gradient_descent` separately. There is no shared cache between terms.
