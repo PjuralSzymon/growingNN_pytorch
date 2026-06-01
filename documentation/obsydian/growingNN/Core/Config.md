@@ -17,3 +17,7 @@ One file keeps numbers for init ranges, cache limits, which module types count a
 `EDITABLE_MODULES` is a list `[nn.Linear, nn.Conv2d, nn.Conv1d, nn.Conv3d]` at line 17. [[Torch.fx]] uses it in `ModuleClassifier.is_editable_module` to decide which `call_module` nodes count as editable, it's only sued by neuron delete action. `PASSTHROUGH_MODULES`, `PASSTHROUGH_FUNCTIONS`, and `RESIZE_SAFE_MODULES` (lines 19 to 29) feed `NodeTypeChecker` and `NodeWidthAnalyser` in the same package.
 
 Logging block: `ENABLE_LOGGING` `True` line 18. `LOG_LEVEL` `"DEBUG"` line 19. `LOG_TO_FILE` `True` line 20. `LOG_FILE_NAME` `"growingnn.log"` line 21. `LOG_FILE_MAX_BYTES` `100 * 1024 * 1024` line 22. `LOG_FILE_BACKUP_COUNT` `9` line 23. Rough cap near 1 GB total with one active file plus backups.
+
+### Running config
+
+Running config holds parameters you may want to change at run time, even when they are nested deep inside the training or search algorithms.

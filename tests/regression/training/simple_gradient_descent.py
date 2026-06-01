@@ -31,6 +31,7 @@ OUT_DIR = FOLDER_NAME + "/training"
 DATA_DIR = OUT_DIR + "/data"
 HISTORY_PATH = OUT_DIR + "/simple_gradient_descent_history.pt"
 NUM_CLASSES = 10
+METRIC_KEYS = ("train_loss", "train_acc", "val_loss", "val_acc", "lr")
 
 
 def _loaders(seed: int = 0, train_n: int = 128, val_n: int = 32, batch_size: int = 8):
@@ -56,30 +57,22 @@ def _combine_histories(histories: list[dict[str, list[float]]]) -> dict[str, lis
     return combined
 
 
-def _plot_combined_training_histories(
-    histories: list[dict[str, list[float]]],
-    save_path: str,
-) -> None:
-    combined = _combine_histories(histories)
-    steps = range(1, len(combined["train_loss"]) + 1)
-    fig, (ax_loss, ax_acc) = plt.subplots(1, 2, figsize=(10, 4))
-
-    ax_loss.plot(steps, combined["train_loss"], label="train")
-    ax_loss.plot(steps, combined["val_loss"], label="val")
-    ax_loss.set_xlabel("step")
-    ax_loss.set_ylabel("loss")
-    ax_loss.legend()
-
-    ax_acc.plot(steps, combined["train_acc"], label="train")
-    ax_acc.plot(steps, combined["val_acc"], label="val")
-    ax_acc.set_xlabel("step")
-    ax_acc.set_ylabel("accuracy")
-    ax_acc.legend()
-
+def _plot_metric(values: list[float], name: str, save_path: str) -> None:
+    steps = range(1, len(values) + 1)
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.plot(steps, values)
+    ax.set_xlabel("step")
+    ax.set_ylabel(name)
     fig.tight_layout()
     os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
     fig.savefig(save_path, dpi=150)
     plt.close(fig)
+
+
+def _plot_training_histories(combined: dict[str, list[float]], out_dir: str) -> None:
+    os.makedirs(out_dir, exist_ok=True)
+    for key in METRIC_KEYS:
+        _plot_metric(combined[key], key, out_dir + f"/{key}.png")
 
 
 if __name__ == "__main__":
@@ -114,8 +107,8 @@ if __name__ == "__main__":
         assert history["train_acc"][-1] > 0.5
         previous_acc = history["train_acc"][-1]
 
-    _plot_combined_training_histories(all_histories, FOLDER_NAME + "/training_history.png")
     combined_history = _combine_histories(all_histories)
+    _plot_training_histories(combined_history, OUT_DIR)
 
     if args.save_output or not os.path.exists(HISTORY_PATH):
         os.makedirs(OUT_DIR, exist_ok=True)

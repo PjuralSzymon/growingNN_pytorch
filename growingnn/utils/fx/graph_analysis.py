@@ -114,10 +114,29 @@ class GraphStructureQuery:
         return list(dict.fromkeys(edges))
 
     @staticmethod
+    def _sum_graph_module_parameters(gm: fx.GraphModule) -> int:
+        """Sum unique parameters reachable from call_module nodes in the FX graph."""
+        seen: set[int] = set()
+        total = 0
+        for node in gm.graph.nodes:
+            if node.op != "call_module":
+                continue
+            module = ModuleResolver.get_layer_module(node, gm)
+            if module is None:
+                continue
+            for param in module.parameters(recurse=True):
+                param_id = id(param)
+                if param_id in seen:
+                    continue
+                seen.add(param_id)
+                total += param.numel()
+        return total
+
+    @staticmethod
     def get_amount_of_parameters(model: nn.Module | fx.GraphModule) -> int:
-        """Total number of trainable parameters."""
+        """Total number of parameters in FX graph call_module nodes (conv, linear, etc.)."""
         gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
-        return sum(p.numel() for p in gm.parameters())
+        return GraphStructureQuery._sum_graph_module_parameters(gm)
 
     @staticmethod
     def get_input_layers(layer_id: str, model: nn.Module | fx.GraphModule) -> list[str]:
