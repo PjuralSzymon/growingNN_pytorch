@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import copy
+
 import torch.fx as fx
 import torch.nn as nn
 
@@ -44,5 +46,5 @@ class SimulationScore:
         for key, fn in self._SCORE_FUNCTIONS.items():
             weight = self.weights[key]
             if weight > 0.0:
-                total += weight * fn(model, running_config)
+                total += weight * fn(copy.deepcopy(model), running_config)
         return total / self.weight_sum()
