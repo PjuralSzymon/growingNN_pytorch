@@ -3,6 +3,7 @@
 3.  [  ] Adding linear layers have no check to edit only LInear layers it only cahnges not convolutional but there can be others in bigger modules 
 4.  [  ] Action generation is not general enought we are specifying very specific types of conenction and cahnges beetwen very specific types what about more general types or very specific types like dropout , norms and so on ( Remove EDITABLE_MODULES)
 5. [  ] Detecting if a layer is hidden is badly written
+6. [  ] Generating seimualiton dataset is depracated and need more reaserch 
 
 
 

@@ -57,6 +57,7 @@ def train_generations(
             quiet=config.quiet,
             print_every=config.print_every,
         )
+        #TODO: history tracking needs a better solution:
         val_acc = history["val_acc"][-1]
         generation_val_acc.append(val_acc)
         combined["generation"].append(generation)

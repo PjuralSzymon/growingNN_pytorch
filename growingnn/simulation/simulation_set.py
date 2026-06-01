@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset, Subset
 
+#TODO: Very old code, research for better way to create simualtion set 
 
 def _dataset_labels(dataset: Dataset) -> torch.Tensor:
     if hasattr(dataset, "targets"):
