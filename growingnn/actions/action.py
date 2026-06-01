@@ -15,6 +15,7 @@ class Action:
         pass
 
     @staticmethod
-    def generate_all_actions(model):
-        result = []
-        return result
+    def generate_all_actions(model, grow: bool = True, shrink: bool = True):
+        from growingnn.actions.registry import generate_all_actions as registry_generate
+
+        return registry_generate(model, grow=grow, shrink=shrink)
