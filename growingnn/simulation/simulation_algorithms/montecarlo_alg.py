@@ -13,7 +13,9 @@ import torch.nn as nn
 import growingnn.core.config as project_config
 from growingnn.actions.registry import generate_all_actions
 from growingnn.core.config import RunningConfig
+from growingnn.core.logger import logger
 from growingnn.training.gradient_descent import gradient_descent
+from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph
 from growingnn.utils.quaziIdentity import clear_reshepers_cache
 
 
@@ -44,15 +46,20 @@ class TreeNode:
         for action in generate_all_actions(self.model, cfg):
             model_copy = copy.deepcopy(self.model)
             action.execute(model_copy)
-            gradient_descent(
-                model_copy,
-                project_config.MCTS_ROLLOUT_EPOCHS,
-                cfg.sim_train_loader,
-                cfg.sim_val_loader,
-                cfg.criterion,
-                project_config.MCTS_ROLLOUT_LR,
-                quiet=True,
-            )
+            try:
+                gradient_descent(
+                    model_copy,
+                    project_config.MCTS_ROLLOUT_EPOCHS,
+                    cfg.sim_train_loader,
+                    cfg.sim_val_loader,
+                    cfg.criterion,
+                    project_config.MCTS_ROLLOUT_LR,
+                    quiet=True,
+                )
+            except Exception as e:
+                logger.error("Error in gradient_descent: %s", e)
+                draw_filtered_fx_graph(model_copy, str("." / f"fx_graph_error_simulation_simplified"), fmt="pdf")
+                exit(1)
             self.child_nodes.append(
                 TreeNode(self, action, model_copy, cfg)
             )
