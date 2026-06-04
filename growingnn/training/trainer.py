@@ -66,6 +66,7 @@ def train_generations(
             print_every=config.print_every,
             experiment_board=board,
             generation=generation,
+            device=config.device,
         )
         val_acc = history["val_acc"][-1]
         generation_val_acc.append(val_acc)

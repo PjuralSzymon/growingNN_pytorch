@@ -26,6 +26,7 @@ def score_time(
         running_config.criterion,
         running_config.lr_scheduler,
         quiet=True,
+        device=running_config.device,
     )
     elapsed = time.time() - start
     return 1.0 / (config.TIME_EFFICIENCY_WEIGHT * elapsed + 1.0)

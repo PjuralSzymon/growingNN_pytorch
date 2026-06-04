@@ -58,6 +58,7 @@ class TreeNode:
                     cfg.criterion,
                     project_config.MCTS_ROLLOUT_LR,
                     quiet=True,
+                    device=cfg.device,
                 )
             except Exception as e:
                 logger.error("Error in gradient_descent: %s", e)
@@ -85,6 +86,7 @@ class TreeNode:
                 cfg.criterion,
                 project_config.MCTS_ROLLOUT_LR,
                 quiet=True,
+                device=cfg.device,
             )
             depth -= 1
         composite = cfg.simulation_score.score(model_copy, cfg)

@@ -131,6 +131,32 @@ def _plot_metric(values: list[float], name: str, save_path: Path) -> None:
 if __name__ == "__main__":
     args = _parse_cli()
     torch.manual_seed(0)
+    if not torch.cuda.is_available():
+        raise RuntimeError("train_cifar10 requires CUDA; torch.cuda.is_available() is False")
+    train_device = torch.device("cuda")
+    cap = torch.cuda.get_device_capability(0)
+    logger.info(
+        "Training device: %s (%s, sm_%d%d, torch %s)",
+        train_device,
+        torch.cuda.get_device_name(0),
+        cap[0],
+        cap[1],
+        torch.__version__,
+    )
+    try:
+        torch.nn.Conv2d(3, 8, 3).to(train_device)(
+            torch.zeros(1, 3, 32, 32, device=train_device)
+        )
+    except RuntimeError as exc:
+        if "no kernel image" in str(exc).lower():
+            arch = getattr(torch.cuda, "get_arch_list", lambda: [])()
+            raise RuntimeError(
+                f"PyTorch {torch.__version__} has no CUDA kernels for {torch.cuda.get_device_name(0)} "
+                f"(sm_{cap[0]}{cap[1]}). Supported arches: {arch or 'unknown'}. "
+                "RTX 50-series often needs cu128 wheels: "
+                "pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128"
+            ) from exc
+        raise
 
     gm = fx.symbolic_trace(_build_model())
     params_before = GraphStructureQuery.get_amount_of_parameters(gm)
@@ -142,7 +168,7 @@ if __name__ == "__main__":
             board_dir,
             experiment_name="CIFAR-10 minimal",
             dataset="CIFAR-10",
-            device=str(torch.device("cuda" if torch.cuda.is_available() else "cpu")),
+            device=str(train_device),
         )
         if args.board
         else None
@@ -151,15 +177,16 @@ if __name__ == "__main__":
     cfg = RunningConfig(
         generations=20,
         epochs=5,
+        device=train_device,
         lr_scheduler=LearningRateScheduler(ScheduleMode.PROGRESSIVE_PARABOLIC, alpha=0.01),
         print_every=1,
         simulation_alg=montecarlo_alg,
         simulation_scheduler=SimulationScheduler(
-            SchedulerMode.ALWAYS, simulation_time=60.0, simulation_epochs=20
+            SchedulerMode.ALWAYS, simulation_time=600.0, simulation_epochs=100
         ),
         stopper=AccuracyStopper(target_accuracy=0.9),
         simulation_score=SimulationScore(weight_acc=1.0, weight_countW=0.25),
-        simulation_set_size=600,
+        simulation_set_size=1000,
         criterion=nn.CrossEntropyLoss(),
         quiet=False,
         enable_experiment_board=args.board,

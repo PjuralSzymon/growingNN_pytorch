@@ -63,6 +63,11 @@ LOG_FILE_MAX_BYTES = 100 * 1024 * 1024  # 100 MB per rotated file
 LOG_FILE_BACKUP_COUNT = 9  # 1 active + 9 backups => ~1 GB on disk total
 
 
+def default_training_device() -> str:
+    """Pick CUDA when available, otherwise CPU."""
+    return "cuda" if torch.cuda.is_available() else "cpu"
+
+
 class RunningConfig:
     def __init__(self, 
         generations: int,
@@ -79,6 +84,7 @@ class RunningConfig:
         print_every: int = 1,
         enable_experiment_board: bool = False,
         experiment_board: Any | None = None,
+        device: str | torch.device | None = None,
     ):
         self.generations = generations
         self.epochs = epochs
@@ -93,6 +99,7 @@ class RunningConfig:
         self.print_every = print_every
         self.enable_experiment_board = enable_experiment_board
         self.experiment_board = experiment_board if enable_experiment_board else None
+        self.device = str(device) if device is not None else default_training_device()
         self.ACTIONS_ENABLE_ADD_SEQ_LAYER = True
         self.ACTIONS_ENABLE_ADD_RES_LAYER = True
         self.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER = True

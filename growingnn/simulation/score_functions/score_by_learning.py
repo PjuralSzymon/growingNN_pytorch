@@ -21,6 +21,7 @@ def score_acc(
         running_config.criterion,
         running_config.lr_scheduler,
         quiet=True,
+        device=running_config.device,
     )
     return float(history["val_acc"][-1])  # TODO: originally train acc
 
@@ -37,6 +38,7 @@ def score_loss(
         running_config.criterion,
         running_config.lr_scheduler,
         quiet=True,
+        device=running_config.device,
     )
     loss = float(history["val_loss"][-1])
     return min(1.0 / (max(loss, 1e-8) + 1), 1.0)  # TODO: originally train loss
