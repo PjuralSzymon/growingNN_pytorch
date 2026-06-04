@@ -87,6 +87,11 @@ def get_generation(generation_number: int):
     return data
 
 
+@router.get("/simulations")
+def list_simulations():
+    return {"generations": sorted(_cache.simulations.keys())}
+
+
 @router.get("/simulation/{generation_number}")
 def get_simulation(generation_number: int):
     data = _cache.simulations.get(generation_number)

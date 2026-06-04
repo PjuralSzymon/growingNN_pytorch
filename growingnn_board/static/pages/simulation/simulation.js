@@ -7,6 +7,7 @@ import {
   dlRows,
   fmtNum,
   formatScoreWeights,
+  listSimulationGenerations,
   scoreBreakdownHtml,
   shortActionLabel,
   structureHtml,
@@ -124,13 +125,14 @@ function renderGenerationPicker(gens, selected) {
 }
 
 export async function refreshSimulationBoard() {
-  let gens;
-  try {
-    gens = (await api("/api/generations")).generations || [];
-  } catch {
+  const gens = await listSimulationGenerations();
+  const box = $("generation-buttons");
+  if (!gens.length) {
+    if (box) box.innerHTML = "";
+    $("candidates")?.replaceChildren();
+    $("sim-pdf-title").textContent = "Simulation board";
     return;
   }
-  if (!gens.length) return;
   if (Board.selectedSimGen == null || !gens.includes(Board.selectedSimGen)) {
     Board.selectedSimGen = gens.at(-1);
   }
@@ -185,6 +187,7 @@ export async function loadSimulation(gen, updatePicker = true) {
 
 export function initSimulation() {
   Board.refreshHandlers.push(async () => {
+    if ($("view-simulation")?.classList.contains("hidden")) return;
     await refreshSimulationBoard();
   });
   bindPdfToolbar("sim-pdf-toolbar", "simulation");

@@ -144,34 +144,39 @@ function getTimelineRows(main, training) {
     ? main.generationTimeline
     : buildTimelineFallback(tp, training);
   const totalEpochs =
-    tp.totalEpochs ||
-    timeline.at(-1)?.endEpoch ||
+    timeline.at(-1)?.endEpoch ??
+    tp.totalEpochs ??
     (tp.totalGenerations || 1) * (tp.epochsPerGeneration || 1);
   return { tp, timeline, totalEpochs };
 }
 
-function resolveGlobalEpoch(tp, timeline) {
-  if (tp.completedGlobalEpochs != null) return tp.completedGlobalEpochs;
+/** Marker + badge share one position: global = generation start + epoch in generation. */
+function resolveCurrentPosition(tp, timeline, training) {
   const curGen = tp.currentGeneration ?? 0;
   const epg = tp.epochsPerGeneration || 1;
-  const curEp = tp.currentEpoch ?? 0;
   const row = timeline.find((g) => g.generation === curGen);
   const start = row?.startEpoch ?? curGen * epg;
-  return start + curEp;
+  const end = row?.endEpoch ?? start + epg;
+
+  let epochInGen = row?.currentEpoch ?? row?.currentEpochIndex ?? tp.currentEpoch;
+  let globalEpoch = start + (epochInGen ?? 0);
+
+  const lastMetric = training?.epochs?.at(-1);
+  if (lastMetric?.generation === curGen) {
+    if (lastMetric.globalEpoch != null) globalEpoch = lastMetric.globalEpoch;
+    if (lastMetric.epochInGeneration != null) epochInGen = lastMetric.epochInGeneration;
+  }
+
+  if (epochInGen == null) epochInGen = Math.max(0, globalEpoch - start);
+  globalEpoch = Math.min(end, Math.max(start, start + epochInGen));
+  epochInGen = Math.max(0, Math.min(epg, globalEpoch - start));
+
+  return { globalEpoch, epochInGen };
 }
 
-function resolveEpochInGeneration(tp, timeline) {
-  if (tp.currentEpoch != null) return tp.currentEpoch;
-  const curGen = tp.currentGeneration ?? 0;
-  const global = resolveGlobalEpoch(tp, timeline);
-  const row = timeline.find((g) => g.generation === curGen);
-  const start = row?.startEpoch ?? 0;
-  return Math.max(0, global - start);
-}
-
-function epochLeftPct(epoch, totalEpochs) {
+function epochLeftPct(globalEpoch, totalEpochs) {
   if (totalEpochs <= 0) return 0;
-  return Math.min(100, Math.max(0, (epoch / totalEpochs) * 100));
+  return Math.min(100, Math.max(0, (globalEpoch / totalEpochs) * 100));
 }
 
 let timelineMain = null;
@@ -244,8 +249,7 @@ function renderTrainingTimeline(main, training) {
   const curGen = tp.currentGeneration ?? 0;
   if (Board.selectedTrainingGen == null) Board.selectedTrainingGen = curGen;
   const selectedGen = Board.selectedTrainingGen;
-  const globalEpoch = resolveGlobalEpoch(tp, timeline);
-  const epochInGen = resolveEpochInGeneration(tp, timeline);
+  const { globalEpoch, epochInGen } = resolveCurrentPosition(tp, timeline, training);
 
   const minWidth = Math.max(totalEpochs * TIMELINE_PX_PER_EPOCH, 720);
   root.style.width = `${minWidth}px`;

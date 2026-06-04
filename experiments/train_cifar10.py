@@ -155,11 +155,11 @@ if __name__ == "__main__":
         print_every=1,
         simulation_alg=montecarlo_alg,
         simulation_scheduler=SimulationScheduler(
-            SchedulerMode.ALWAYS, simulation_time=10.0, simulation_epochs=10
+            SchedulerMode.ALWAYS, simulation_time=60.0, simulation_epochs=20
         ),
         stopper=AccuracyStopper(target_accuracy=0.9),
         simulation_score=SimulationScore(weight_acc=1.0, weight_countW=0.25),
-        simulation_set_size=64,
+        simulation_set_size=600,
         criterion=nn.CrossEntropyLoss(),
         quiet=False,
         enable_experiment_board=args.board,

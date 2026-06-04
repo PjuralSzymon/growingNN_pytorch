@@ -111,24 +111,30 @@ export function stopPoll() {
   Board.pollTimer = null;
 }
 
+export async function listSimulationGenerations() {
+  try {
+    const { generations } = await api("/api/simulations");
+    return generations || [];
+  } catch (_) {
+    return [];
+  }
+}
+
 export async function enrichTimelineWithActions(timeline) {
   if (!timeline?.length) return timeline;
-  try {
-    const { generations } = await api("/api/generations");
-    for (const g of generations || []) {
-      if (!timeline[g]) continue;
-      if (timeline[g].actionExecuted) continue;
-      try {
-        const sim = await api(`/api/simulation/${g}`);
-        if (sim.actionChosen) {
-          timeline[g].actionExecuted = {
-            action: sim.actionChosen,
-            shortLabel: shortActionLabel(sim.actionChosen),
-          };
-        }
-      } catch (_) { /* no sim yet */ }
-    }
-  } catch (_) { /* */ }
+  const simGens = await listSimulationGenerations();
+  for (const g of simGens) {
+    if (!timeline[g] || timeline[g].actionExecuted) continue;
+    try {
+      const sim = await api(`/api/simulation/${g}`);
+      if (sim.actionChosen) {
+        timeline[g].actionExecuted = {
+          action: sim.actionChosen,
+          shortLabel: shortActionLabel(sim.actionChosen),
+        };
+      }
+    } catch (_) { /* */ }
+  }
   return timeline;
 }
 
