@@ -1,0 +1,33 @@
+<div class="board-shell has-footer">
+  <aside class="sidebar-card" id="simulation-sidebar"></aside>
+  <div class="board-main">
+    <div class="content-card">
+      <div class="sim-top-row">
+        <div class="start-structure-card" id="start-structure"></div>
+        <div class="candidates-scroll" id="candidates"></div>
+      </div>
+    </div>
+    <div class="content-card pdf-card simulation-pdf">
+      <h2 id="sim-pdf-title">Simulation Graph (PDF)</h2>
+      <p class="pdf-meta" id="sim-pdf-path"></p>
+      <div class="pdf-toolbar" id="sim-pdf-toolbar">
+        <button type="button" data-action="zoom-out">−</button>
+        <button type="button" data-action="zoom-in">+</button>
+        <span id="sim-pdf-scale">100%</span>
+        <button type="button" data-action="prev">◀</button>
+        <button type="button" data-action="next">▶</button>
+        <span id="sim-pdf-page-info">Page 1 / 1</span>
+        <button type="button" data-action="download" title="Download">⬇</button>
+        <button type="button" data-action="print" title="Print">🖨</button>
+        <button type="button" data-action="fullscreen" title="Fullscreen">⛶</button>
+      </div>
+      <div class="pdf-viewport" id="sim-pdf-viewport">
+        <canvas id="sim-pdf-canvas"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+<footer class="generation-picker">
+  <strong>Pick generation number:</strong>
+  <div id="generation-buttons" class="generation-scroll-row"></div>
+</footer>
