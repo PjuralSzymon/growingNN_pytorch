@@ -18,6 +18,7 @@ _EXPERIMENT_DIR = Path(__file__).resolve().parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from growingnn.board import ExperimentBoard
 from growingnn.core.config import RunningConfig
 from growingnn.core.logger import logger
 import growingnn.simulation.simulation_algorithms.montecarlo_alg as montecarlo_alg
@@ -66,8 +67,15 @@ def _parse_cli(argv: list[str] | None = None) -> argparse.Namespace:
         default="false",
         help="Keep experiments/output/train_cifar10 and refresh baseline (default: false)",
     )
+    parser.add_argument(
+        "--board",
+        choices=("true", "false"),
+        default="true",
+        help="Write GrowingNN Board artifacts under experiments/output/train_cifar10/board (default: true)",
+    )
     ns = parser.parse_args(argv)
     ns.save_output = ns.save_output == "true"
+    ns.board = ns.board == "true"
     return ns
 
 
@@ -128,20 +136,34 @@ if __name__ == "__main__":
     params_before = GraphStructureQuery.get_amount_of_parameters(gm)
     _draw_generation_graphs(0, gm)
 
+    board_dir = OUT_DIR / "board"
+    board = (
+        ExperimentBoard(
+            board_dir,
+            experiment_name="CIFAR-10 minimal",
+            dataset="CIFAR-10",
+            device=str(torch.device("cuda" if torch.cuda.is_available() else "cpu")),
+        )
+        if args.board
+        else None
+    )
+
     cfg = RunningConfig(
         generations=20,
-        epochs=20,
+        epochs=5,
         lr_scheduler=LearningRateScheduler(ScheduleMode.PROGRESSIVE_PARABOLIC, alpha=0.01),
         print_every=1,
         simulation_alg=montecarlo_alg,
         simulation_scheduler=SimulationScheduler(
-            SchedulerMode.ALWAYS, simulation_time=600.0, simulation_epochs=10
+            SchedulerMode.ALWAYS, simulation_time=10.0, simulation_epochs=10
         ),
-        stopper = AccuracyStopper(target_accuracy=0.9),
+        stopper=AccuracyStopper(target_accuracy=0.9),
         simulation_score=SimulationScore(weight_acc=1.0, weight_countW=0.25),
         simulation_set_size=64,
         criterion=nn.CrossEntropyLoss(),
         quiet=False,
+        enable_experiment_board=args.board,
+        experiment_board=board,
     )
     try:
         gm, summary = train_generations(gm, *_loaders(), cfg)   

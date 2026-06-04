@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import torch
 import torch.fx as fx
@@ -11,6 +11,9 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from growingnn.training.lr_scheduler import LearningRateScheduler
+
+if TYPE_CHECKING:
+    from growingnn.board.experiment_board import ExperimentBoard
 from growingnn.training.stoppers import StopperMode, TrainingStopper
 
 PROGRESS_PRINT_FREQUENCY = 10
@@ -74,6 +77,8 @@ def gradient_descent(
     device: str | torch.device = "cpu",
     quiet: bool = False,
     print_every: int = PROGRESS_PRINT_FREQUENCY,
+    experiment_board: ExperimentBoard | None = None,
+    generation: int = 0,
 ) -> tuple[nn.Module | fx.GraphModule, dict[str, list[float]]]:
     if epochs <= 0:
         raise ValueError("Number of epochs must be positive")
@@ -129,6 +134,18 @@ def gradient_descent(
         history["val_loss"].append(val_loss)
         history["val_acc"].append(val_acc)
         history["lr"].append(applied_lr)
+
+        if experiment_board is not None:
+            experiment_board.on_epoch_end(
+                generation=generation,
+                epoch_in_generation=epoch,
+                train_loss=train_loss,
+                train_acc=train_acc,
+                val_loss=val_loss,
+                val_acc=val_acc,
+                lr=applied_lr,
+                param_count=sum(p.numel() for p in model.parameters()),
+            )
 
         if not quiet and (epoch % print_every == 0 or epoch == epochs):
             param_count = sum(p.numel() for p in model.parameters())

@@ -44,12 +44,25 @@ class SimulationScore:
         running_config: RunningConfig,
     ) -> float:
         total = 0.0
+        board = running_config.experiment_board
+        board_metrics = board.simulation_metrics if board is not None else None
+        if board_metrics is not None:
+            board_metrics.clear()
         for key, fn in self._SCORE_FUNCTIONS.items():
             weight = self.weights[key]
-            if weight > 0.0:
-                total += weight * fn(copy.deepcopy(model), running_config)
+            if weight <= 0.0:
+                continue
+            term_score = fn(copy.deepcopy(model), running_config)
+            if board_metrics is not None:
+                board_metrics[f"{key}_score"] = term_score
+                board_metrics[f"{key}_weight"] = weight
+                board_metrics[f"{key}_weighted"] = weight * term_score
+            total += weight * term_score
         divisor = self.weight_sum()
         if divisor == 0.0:
             logger.error("SimulationScore.score: all weights are 0, returning 0 instead of NaN")
             return 0.0
-        return total / divisor
+        composite = total / divisor
+        if board_metrics is not None:
+            board_metrics["composite_score"] = composite
+        return composite

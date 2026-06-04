@@ -76,7 +76,10 @@ class RunningConfig:
         simulation_set_size: int = 32,
         criterion: nn.Module | None = None,
         quiet: bool = False,
-        print_every: int = 1):
+        print_every: int = 1,
+        enable_experiment_board: bool = False,
+        experiment_board: Any | None = None,
+    ):
         self.generations = generations
         self.epochs = epochs
         self.lr_scheduler = lr_scheduler
@@ -88,6 +91,8 @@ class RunningConfig:
         self.criterion = criterion
         self.quiet = quiet
         self.print_every = print_every
+        self.enable_experiment_board = enable_experiment_board
+        self.experiment_board = experiment_board if enable_experiment_board else None
         self.ACTIONS_ENABLE_ADD_SEQ_LAYER = True
         self.ACTIONS_ENABLE_ADD_RES_LAYER = True
         self.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER = True
