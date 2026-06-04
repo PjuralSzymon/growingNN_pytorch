@@ -82,6 +82,24 @@ export async function renderPdfViewer(name, relativePath, fallbacks = []) {
   showPdfError(v.viewportId, relativePath);
 }
 
+export function clearPdfViewer(name, message = "Not available") {
+  const v = pdfViewers[name];
+  if (!v) return;
+  v.doc = null;
+  v.path = "";
+  v.page = 1;
+  const canvas = $(v.canvasId);
+  if (canvas) {
+    const ctx = canvas.getContext("2d");
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  const pageInfo = $(v.pageInfoId);
+  if (pageInfo) pageInfo.textContent = "—";
+  const scaleInfo = $(v.scaleInfoId);
+  if (scaleInfo) scaleInfo.textContent = "—";
+  showPdfError(v.viewportId, message);
+}
+
 async function drawPdfPage(name) {
   const v = pdfViewers[name];
   if (!v.doc) return;

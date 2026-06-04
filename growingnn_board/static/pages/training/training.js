@@ -4,7 +4,6 @@ import {
   Board,
   $,
   dlRows,
-  fmtNum,
   formatElapsed,
   refreshAll,
   shortActionLabel,
@@ -13,6 +12,8 @@ import {
 } from "../../shared/core.js";
 import { bindPdfToolbar, renderPdfViewer } from "../../shared/pdf.js";
 import { loadRecent } from "../home/home.js";
+
+let gotoSimulationHandler = null;
 
 function renderTrainingSidebar(main) {
   const tp = main.trainingParameters || {};
@@ -45,34 +46,24 @@ function renderTrainingSidebar(main) {
         ["Gradient clip", tp.gradientClip ?? "—"],
         ["Random seed", tp.randomSeed ?? "—"],
       ])}</dl>
-    </div>`;
+    </div>
+    <button type="button" class="nav-link-btn" id="goto-simulation">Check more simulation board →</button>`;
   $("goto-home").onclick = () => {
     stopPoll();
     Board.experimentPath = "";
     showView("home");
     loadRecent();
   };
+  const gotoSim = $("goto-simulation");
+  if (gotoSim && gotoSimulationHandler) gotoSim.onclick = gotoSimulationHandler;
 }
 
-function renderLastSimulation(sim) {
-  const box = $("last-sim");
-  if (!sim) {
-    box.innerHTML = "<dd>No simulation yet</dd>";
-    return;
-  }
-  box.innerHTML = dlRows([
-    ["Amount of actions analyzed", sim.actionsAnalyzed],
-    ["Depth of simulation tree reached", sim.treeDepth],
-    ["Time of execution", sim.executionTimeSec != null ? `${sim.executionTimeSec}s` : "—"],
-    ["Action chosen", sim.actionShortLabel || shortActionLabel(sim.actionChosen)],
-    ["Score of that action", sim.scoreChosen != null ? `${fmtNum(sim.scoreChosen)} (UCB1)` : "—"],
-  ]);
-}
-
-function plotChart(canvasId, key, rows, xKey, yKey, color) {
+function plotChart(canvasId, key, rows, xKey, yKey, color, yScale) {
   const canvas = $(canvasId);
   if (!canvas || !rows.length) return;
   if (Board.charts[key]) Board.charts[key].destroy();
+  const scales = { x: { ticks: { maxTicksLimit: 10 } } };
+  if (yScale) scales.y = yScale;
   Board.charts[key] = new Chart(canvas, {
     type: "line",
     data: {
@@ -83,18 +74,19 @@ function plotChart(canvasId, key, rows, xKey, yKey, color) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: { legend: { display: false } },
-      scales: { x: { ticks: { maxTicksLimit: 8 } } },
+      scales,
     },
   });
 }
 
-function renderTrainingCharts(training, tp) {
+function renderTrainingCharts(training) {
   if (!training?.epochs?.length) return;
   const epochs = training.epochs;
-  const curGen = tp?.currentGeneration ?? epochs.at(-1)?.generation ?? 0;
-  const genRows = epochs.filter((e) => e.generation === curGen);
-  plotChart("chart-gen", "gen", genRows, "epochInGeneration", "valLoss", "#2563eb");
-  plotChart("chart-global", "global", epochs, "globalEpoch", "valLoss", "#0ea5e9");
+  const accScale = { min: 0, max: 1 };
+  plotChart("chart-train-acc", "trainAcc", epochs, "globalEpoch", "trainAcc", "#16a34a", accScale);
+  plotChart("chart-train-loss", "trainLoss", epochs, "globalEpoch", "trainLoss", "#2563eb");
+  plotChart("chart-val-acc", "valAcc", epochs, "globalEpoch", "valAcc", "#7c3aed", accScale);
+  plotChart("chart-val-loss", "valLoss", epochs, "globalEpoch", "valLoss", "#0ea5e9");
 }
 
 const TIMELINE_PX_PER_EPOCH = 6;
@@ -366,8 +358,7 @@ function architectureGraphCandidates(main) {
 
 export function renderTrainingBoard(main, training) {
   renderTrainingSidebar(main);
-  renderLastSimulation(main.lastSimulation);
-  renderTrainingCharts(training, main.trainingParameters);
+  renderTrainingCharts(training);
   renderTrainingTimeline(main, training);
 
   const tp = main.trainingParameters || {};
@@ -384,6 +375,7 @@ export function renderTrainingBoard(main, training) {
 }
 
 export function initTraining(onGotoSimulation) {
+  gotoSimulationHandler = onGotoSimulation;
   Board.refreshHandlers.push(async (main, training) => {
     renderTrainingBoard(main, training);
   });
@@ -396,7 +388,5 @@ export function initTraining(onGotoSimulation) {
     };
   }
 
-  const gotoSim = $("goto-simulation");
-  if (gotoSim) gotoSim.onclick = onGotoSimulation;
   bindPdfToolbar("training-pdf-toolbar", "training");
 }

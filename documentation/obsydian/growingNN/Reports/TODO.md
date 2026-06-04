@@ -14,3 +14,5 @@
 2. [ ] Actions need deeper research in terms of what configuration can be best for global use, for example how to configure weight initialization range for non-zero residual layers.
 3. [ ] I didn't use the growingNN orginal appraoch to delete layers I didn't use the Q identity because I thought it will be more benefitial to not use it so when we delet layer we delete only those for which the shapes will much so no additional reshaping is needed thsoe two aprpaoch with QI and more deletion can be reaserched some day. 
 4. [ ] Analyze the Learning Rate Scheduler there is a risk that the current config is not stable 
+5. [ ] Add supportr for adding droput / avg pool maybe generalization of seq and res actions to be parameterized with layer type 
+6. [ ] 

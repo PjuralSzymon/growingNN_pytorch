@@ -13,7 +13,40 @@ import {
   structureHtml,
   showView,
 } from "../../shared/core.js";
-import { bindPdfToolbar, renderPdfViewer } from "../../shared/pdf.js";
+import { bindPdfToolbar, clearPdfViewer, renderPdfViewer } from "../../shared/pdf.js";
+
+function escapeHtml(text) {
+  return String(text ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function renderSimulationEmptyState(
+  message = "No simulation has run yet. Complete at least one generation with simulation enabled, then return here.",
+) {
+  const text = escapeHtml(message);
+  const sidebar = $("simulation-sidebar");
+  if (sidebar) {
+    sidebar.innerHTML = `
+      <button type="button" class="nav-link-btn" id="goto-training">← Go to the overview board</button>
+      <h2>Simulation</h2>
+      <p class="helper-text">${text}</p>`;
+    $("goto-training").onclick = () => showView("training");
+  }
+  const candidates = $("candidates");
+  if (candidates) candidates.innerHTML = `<p class="helper-text">${text}</p>`;
+  const title = $("sim-pdf-title");
+  if (title) title.textContent = "Simulation board";
+  const pathEl = $("sim-pdf-path");
+  if (pathEl) pathEl.textContent = "";
+  clearPdfViewer("simulation", message);
+  const picker = $("generation-buttons");
+  if (picker) picker.innerHTML = "";
+  Board.selectedSimGen = null;
+  Board.selectedCandidateIndex = null;
+}
 
 function renderSimulationSidebar(main, sim) {
   const tp = main?.trainingParameters || {};
@@ -69,16 +102,6 @@ function normalizeCandidates(sim) {
   }));
 }
 
-function renderStartingStructure(sim) {
-  const start = sim.startingStructure || {};
-  $("start-structure").innerHTML = `
-    <h4>Starting structure</h4>
-    <dl>${dlRows([
-      ["Total params", start.totalParams ?? sim.paramCountBefore ?? "—"],
-      ["Initial accuracy", start.accuracy ?? sim.valAccBefore ?? "—"],
-    ])}</dl>`;
-}
-
 function renderCandidateActions(candidates, onSelect) {
   const box = $("candidates");
   box.innerHTML = "";
@@ -125,19 +148,21 @@ function renderGenerationPicker(gens, selected) {
 }
 
 export async function refreshSimulationBoard() {
-  const gens = await listSimulationGenerations();
-  const box = $("generation-buttons");
-  if (!gens.length) {
-    if (box) box.innerHTML = "";
-    $("candidates")?.replaceChildren();
-    $("sim-pdf-title").textContent = "Simulation board";
-    return;
+  try {
+    const gens = await listSimulationGenerations();
+    if (!gens.length) {
+      renderSimulationEmptyState();
+      return;
+    }
+    if (Board.selectedSimGen == null || !gens.includes(Board.selectedSimGen)) {
+      Board.selectedSimGen = gens.at(-1);
+    }
+    renderGenerationPicker(gens, Board.selectedSimGen);
+    await loadSimulation(Board.selectedSimGen, false);
+  } catch (err) {
+    console.error("Simulation board refresh failed:", err);
+    renderSimulationEmptyState("Could not load simulation data. Try reloading the experiment.");
   }
-  if (Board.selectedSimGen == null || !gens.includes(Board.selectedSimGen)) {
-    Board.selectedSimGen = gens.at(-1);
-  }
-  renderGenerationPicker(gens, Board.selectedSimGen);
-  await loadSimulation(Board.selectedSimGen, false);
 }
 
 export async function loadSimulation(gen, updatePicker = true) {
@@ -154,12 +179,14 @@ export async function loadSimulation(gen, updatePicker = true) {
     sim = await api(`/api/simulation/${gen}`);
     main = await api("/api/experiment/main");
   } catch {
-    $("sim-pdf-title").textContent = `Simulation Graph for Generation: ${gen} (PDF)`;
-    $("candidates").innerHTML = `<p class="helper-text">No simulation data for generation ${gen + 1} yet.</p>`;
+    const msg = `No simulation data for generation ${gen + 1} yet.`;
+    $("candidates").innerHTML = `<p class="helper-text">${escapeHtml(msg)}</p>`;
+    if ($("sim-pdf-title")) $("sim-pdf-title").textContent = `Simulation — generation ${gen + 1}`;
+    if ($("sim-pdf-path")) $("sim-pdf-path").textContent = "";
+    clearPdfViewer("simulation", msg);
     return;
   }
   renderSimulationSidebar(main, sim);
-  renderStartingStructure(sim);
   const candidates = normalizeCandidates(sim);
   const defaultPdf = sim.files?.simulationGraphPdf || `graphs/gen_${gen}_simulation_simplified.pdf`;
   const fallbackPdfs = [

@@ -45,3 +45,14 @@ def test_enable_experiment_board_true_keeps_board_instance():
     # Assert
     assert cfg.enable_experiment_board is True
     assert cfg.experiment_board is sentinel
+
+
+def test_running_config_device_defaults_to_cpu_or_cuda():
+    """
+    RunningConfig.device should resolve to cuda when available, else cpu.
+    """
+    # Arrange / Act
+    cfg = RunningConfig(generations=1, epochs=1)
+
+    # Assert
+    assert cfg.device in ("cpu", "cuda")

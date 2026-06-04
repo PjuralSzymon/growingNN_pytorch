@@ -24,21 +24,22 @@
       </div>
     </div>
 
-    <div class="metrics-row">
+    <div class="metrics-charts">
       <div class="metric-card">
-        <h3>Loss in generation</h3>
-        <div class="chart-wrap"><canvas id="chart-gen"></canvas></div>
+        <h3>Global train accuracy</h3>
+        <div class="chart-wrap"><canvas id="chart-train-acc"></canvas></div>
       </div>
       <div class="metric-card">
-        <h3>Global loss</h3>
-        <div class="chart-wrap"><canvas id="chart-global"></canvas></div>
+        <h3>Global train loss</h3>
+        <div class="chart-wrap"><canvas id="chart-train-loss"></canvas></div>
       </div>
-      <div class="metric-card last-sim-card">
-        <h3>Last simulation details</h3>
-        <dl id="last-sim"></dl>
-        <div class="sim-link-row">
-          <button type="button" class="link-btn" id="goto-simulation">Check more simulation board →</button>
-        </div>
+      <div class="metric-card">
+        <h3>Global val accuracy</h3>
+        <div class="chart-wrap"><canvas id="chart-val-acc"></canvas></div>
+      </div>
+      <div class="metric-card">
+        <h3>Global val loss</h3>
+        <div class="chart-wrap"><canvas id="chart-val-loss"></canvas></div>
       </div>
     </div>
 

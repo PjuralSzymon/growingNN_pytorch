@@ -9,7 +9,7 @@ export const Board = {
   selectedTrainingGen: null,
   selectedCandidateIndex: null,
   experimentPath: "",
-  charts: { gen: null, global: null },
+  charts: {},
   useSimplifiedGraph: true,
   refreshHandlers: [],
 };

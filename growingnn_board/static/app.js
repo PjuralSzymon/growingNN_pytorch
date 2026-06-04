@@ -15,7 +15,11 @@ async function boot() {
   initHome();
   initTraining(async () => {
     showView("simulation");
-    await refreshSimulationBoard();
+    try {
+      await refreshSimulationBoard();
+    } catch (err) {
+      console.error("Failed to open simulation board:", err);
+    }
   });
   initSimulation();
 
