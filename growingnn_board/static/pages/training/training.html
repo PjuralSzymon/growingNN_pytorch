@@ -44,13 +44,16 @@
 
     <div class="content-card timeline-card">
       <h3 class="timeline-heading">Training timeline</h3>
-      <div class="timeline-legend">
+      <div class="timeline-legend" aria-label="Timeline legend">
         <span><span class="legend-line epoch"></span> Epoch</span>
         <span><span class="legend-line generation"></span> Generation division</span>
         <span><span class="legend-dot current"></span> Current position</span>
         <span><span class="legend-action"></span> Action executed</span>
       </div>
-      <div id="generation-timeline" class="generation-timeline-scroll"></div>
+      <div class="timeline-viewport">
+        <div id="training-timeline" class="training-timeline"></div>
+      </div>
+      <div id="timeline-action-popover" class="timeline-action-popover hidden" role="dialog" aria-label="Action details"></div>
     </div>
   </div>
 </div>
