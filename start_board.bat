@@ -6,6 +6,8 @@ if exist ".venv\Scripts\activate.bat" (
     call ".venv\Scripts\activate.bat"
 )
 
+python -m pip install -r "%~dp0growingnn_board\requirements.txt" -q
+
 echo Starting GrowingNN Board at http://127.0.0.1:8765
 echo Press Ctrl+C to stop.
 echo.

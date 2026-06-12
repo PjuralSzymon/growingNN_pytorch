@@ -3,15 +3,17 @@
 import {
   Board,
   $,
+  api,
   dlRows,
   formatElapsed,
   refreshAll,
   shortActionLabel,
-  showView,
+  snapshotChanged,
   stopPoll,
-} from "../../shared/core.js";
-import { bindPdfToolbar, renderPdfViewer } from "../../shared/pdf.js";
-import { loadRecent } from "../home/home.js";
+} from "../../shared/lib.js?v=5";
+import { navigateTo } from "../../shared/navigation.js?v=5";
+import { bindPdfToolbar, renderPdfViewer } from "../../shared/pdf.js?v=5";
+import { loadRecent } from "../home/home.js?v=5";
 
 let gotoSimulationHandler = null;
 
@@ -24,7 +26,7 @@ function renderTrainingSidebar(main) {
     <div class="sidebar-section">
       <dl>${dlRows([
         ["Experiment started on", main.experimentStartedOn],
-        ["Training time elapsed", formatElapsed(main.trainingTimeElapsedSec)],
+        ["Training time elapsed", `<span id="training-time-elapsed">${formatElapsed(main.trainingTimeElapsedSec)}</span>`],
         ["Model", main.model?.name || main.experimentName],
         ["Dataset", main.dataset],
         ["Device", main.device],
@@ -51,7 +53,7 @@ function renderTrainingSidebar(main) {
   $("goto-home").onclick = () => {
     stopPoll();
     Board.experimentPath = "";
-    showView("home");
+    navigateTo("home");
     loadRecent();
   };
   const gotoSim = $("goto-simulation");
@@ -61,22 +63,107 @@ function renderTrainingSidebar(main) {
 function plotChart(canvasId, key, rows, xKey, yKey, color, yScale) {
   const canvas = $(canvasId);
   if (!canvas || !rows.length) return;
-  if (Board.charts[key]) Board.charts[key].destroy();
+  const labels = rows.map((r) => r[xKey]);
+  const values = rows.map((r) => r[yKey]);
+  const chartKey = `chart:${key}`;
+  if (Board.charts[key]) {
+    if (!snapshotChanged(chartKey, { labels, values })) return;
+    const chart = Board.charts[key];
+    chart.data.labels = labels;
+    chart.data.datasets[0].data = values;
+    chart.update("none");
+    return;
+  }
   const scales = { x: { ticks: { maxTicksLimit: 10 } } };
   if (yScale) scales.y = yScale;
   Board.charts[key] = new Chart(canvas, {
     type: "line",
     data: {
-      labels: rows.map((r) => r[xKey]),
-      datasets: [{ data: rows.map((r) => r[yKey]), borderColor: color, tension: 0.25, pointRadius: 2 }],
+      labels,
+      datasets: [{ data: values, borderColor: color, tension: 0.25, pointRadius: 2 }],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: false,
       plugins: { legend: { display: false } },
       scales,
     },
   });
+  snapshotChanged(chartKey, { labels, values });
+}
+
+function trainingSidebarSnapshot(main) {
+  const tp = main.trainingParameters || {};
+  return {
+    started: main.experimentStartedOn,
+    model: main.model?.name || main.experimentName,
+    dataset: main.dataset,
+    device: main.device,
+    status: main.status,
+    tp: {
+      totalGenerations: tp.totalGenerations,
+      currentGeneration: tp.currentGeneration,
+      currentEpoch: tp.currentEpoch,
+      epochsPerGeneration: tp.epochsPerGeneration,
+      totalEpochs: tp.totalEpochs,
+      batchSize: tp.batchSize,
+      optimizer: tp.optimizer,
+      learningRateUsed: tp.learningRateUsed ?? tp.learningRateAlpha,
+      learningRateMode: tp.learningRateMode,
+      weightDecay: tp.weightDecay,
+      gradientClip: tp.gradientClip,
+      randomSeed: tp.randomSeed,
+    },
+  };
+}
+
+function updateTrainingElapsed(main) {
+  const el = $("training-time-elapsed");
+  if (el) el.textContent = formatElapsed(main.trainingTimeElapsedSec);
+}
+
+function trainingMetricsSnapshot(training) {
+  const epochs = training?.epochs || [];
+  if (!epochs.length) return { len: 0 };
+  const last = epochs[epochs.length - 1];
+  return {
+    len: epochs.length,
+    lastGlobal: last.globalEpoch,
+    lastTrainAcc: last.trainAcc,
+    lastTrainLoss: last.trainLoss,
+    lastValAcc: last.valAcc,
+    lastValLoss: last.valLoss,
+  };
+}
+
+function timelineSnapshot(main, training) {
+  const { tp, timeline, totalEpochs } = getTimelineRows(main, training);
+  const { globalEpoch, epochInGen } = resolveCurrentPosition(tp, timeline, training);
+  return {
+    selectedGen: Board.selectedTrainingGen,
+    globalEpoch,
+    epochInGen,
+    totalEpochs,
+    timeline: timeline.map((g) => ({
+      generation: g.generation,
+      startEpoch: g.startEpoch,
+      endEpoch: g.endEpoch,
+      currentEpoch: g.currentEpoch,
+      action: g.actionExecuted?.action ?? null,
+    })),
+  };
+}
+
+function trainingPdfSnapshot(main) {
+  const tp = main.trainingParameters || {};
+  const curGen = tp.currentGeneration ?? 0;
+  const viewGen = Board.selectedTrainingGen ?? curGen;
+  const candidates = architectureGraphCandidates(main);
+  const pdfPath = viewGen === curGen ? candidates[0] : (
+    Board.useSimplifiedGraph ? `graphs/gen_${viewGen}_simplified.pdf` : `graphs/gen_${viewGen}_full.pdf`
+  );
+  return { viewGen, pdfPath, simplified: Board.useSimplifiedGraph };
 }
 
 function renderTrainingCharts(training) {
@@ -216,7 +303,9 @@ function bindTimelineEvents(root) {
     const g = Number(label.dataset.generation);
     if (Number.isNaN(g)) return;
     Board.selectedTrainingGen = g;
-    renderTrainingTimeline(timelineMain, timelineTraining);
+    delete Board.snapshots["training:timeline"];
+    delete Board.snapshots["training:pdf"];
+    renderTrainingTimeline(timelineMain, timelineTraining, { autoScroll: false });
     loadTrainingGeneration(g, timelineMain);
   });
   if (!timelinePopoverBound) {
@@ -229,8 +318,9 @@ function bindTimelineEvents(root) {
 }
 
 let timelineTraining = null;
+let lastTimelineScrollKey = "";
 
-function renderTrainingTimeline(main, training) {
+function renderTrainingTimeline(main, training, { autoScroll = false } = {}) {
   const root = $("training-timeline");
   if (!root) return;
   timelineMain = main;
@@ -307,7 +397,8 @@ function renderTrainingTimeline(main, training) {
 
   bindTimelineEvents(root);
   const viewport = root.closest(".timeline-viewport");
-  if (viewport) {
+  const scrollKey = `${selectedGen}:${globalEpoch}`;
+  if (autoScroll && viewport) {
     requestAnimationFrame(() => {
       const marker = root.querySelector(".timeline-current");
       if (marker) {
@@ -315,6 +406,7 @@ function renderTrainingTimeline(main, training) {
         viewport.scrollLeft = Math.max(0, left - viewport.clientWidth * 0.4);
       }
     });
+    lastTimelineScrollKey = scrollKey;
   }
 }
 
@@ -357,21 +449,34 @@ function architectureGraphCandidates(main) {
 }
 
 export function renderTrainingBoard(main, training) {
-  renderTrainingSidebar(main);
-  renderTrainingCharts(training);
-  renderTrainingTimeline(main, training);
-
   const tp = main.trainingParameters || {};
   const curGen = tp.currentGeneration ?? 0;
   if (Board.selectedTrainingGen == null) Board.selectedTrainingGen = curGen;
-  const viewGen = Board.selectedTrainingGen;
-  const candidates = architectureGraphCandidates(main);
-  const pdfPath = viewGen === curGen ? candidates[0] : (
-    Board.useSimplifiedGraph ? `graphs/gen_${viewGen}_simplified.pdf` : `graphs/gen_${viewGen}_full.pdf`
-  );
-  $("training-pdf-title").textContent = `Architecture Graph for Generation: ${viewGen} (PDF)`;
-  $("training-pdf-path").textContent = `File path: ${Board.experimentPath}/${pdfPath}`;
-  renderPdfViewer("training", pdfPath, candidates.slice(1));
+
+  if (snapshotChanged("training:sidebar", trainingSidebarSnapshot(main))) {
+    renderTrainingSidebar(main);
+  } else {
+    updateTrainingElapsed(main);
+  }
+
+  if (training?.epochs?.length && snapshotChanged("training:metrics", trainingMetricsSnapshot(training))) {
+    renderTrainingCharts(training);
+  }
+
+  if (snapshotChanged("training:timeline", timelineSnapshot(main, training))) {
+    const { tp: timelineTp, timeline } = getTimelineRows(main, training);
+    const { globalEpoch } = resolveCurrentPosition(timelineTp, timeline, training);
+    const shouldScroll = `${Board.selectedTrainingGen}:${globalEpoch}` !== lastTimelineScrollKey;
+    renderTrainingTimeline(main, training, { autoScroll: shouldScroll });
+  }
+
+  const pdfSnap = trainingPdfSnapshot(main);
+  if (snapshotChanged("training:pdf", pdfSnap)) {
+    $("training-pdf-title").textContent = `Architecture Graph for Generation: ${pdfSnap.viewGen} (PDF)`;
+    $("training-pdf-path").textContent = `File path: ${Board.experimentPath}/${pdfSnap.pdfPath}`;
+    const candidates = architectureGraphCandidates(main);
+    renderPdfViewer("training", pdfSnap.pdfPath, candidates.slice(1));
+  }
 }
 
 export function initTraining(onGotoSimulation) {
@@ -384,6 +489,7 @@ export function initTraining(onGotoSimulation) {
   if (simplifiedToggle) {
     simplifiedToggle.onchange = (e) => {
       Board.useSimplifiedGraph = e.target.checked;
+      delete Board.snapshots["training:pdf"];
       refreshAll();
     };
   }

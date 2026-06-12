@@ -1,6 +1,6 @@
 /** PDF.js viewer shared by training and simulation pages. */
 
-import { API, Board, $ } from "./core.js";
+import { API, Board, $ } from "./lib.js?v=5";
 
 export const pdfViewers = {
   training: {
@@ -58,7 +58,6 @@ export async function renderPdfViewer(name, relativePath, fallbacks = []) {
   const paths = [relativePath, ...fallbacks];
   for (const path of paths) {
     if (v.path === path && v.doc) {
-      await drawPdfPage(name);
       return;
     }
     const url = `${API}/api/files/pdf?path=${encodeURIComponent(path)}`;

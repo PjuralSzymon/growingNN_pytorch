@@ -29,14 +29,27 @@ async def get_action(
     clear_reshepers_cache()
 
     if board is not None and params_before is not None:
+        action_str = str(action)
+        candidates = [
+            {
+                "action": action_str,
+                "name": board.action_short_label(action_str),
+                "visits": 1,
+                "score": None,
+                "ucbScore": None,
+                "compositeScore": None,
+                "chosen": True,
+            }
+        ]
         board.on_simulation_finished(
             getattr(board, "_current_generation", 0),
             action=action,
             max_depth=0,
-            rollouts=0,
+            rollouts=1,
             duration_sec=time.time() - t0,
             param_count_before=params_before,
-            candidates=None,
+            candidates=candidates,
+            search_tree=board.search_tree_from_candidates(candidates, rollouts=1),
         )
 
     return action, 0, 0

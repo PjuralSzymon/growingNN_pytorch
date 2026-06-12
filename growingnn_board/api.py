@@ -5,11 +5,12 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 
 from growingnn_board.cache import ExperimentCache
 from growingnn_board.config import settings
 from growingnn_board.file_reader import directory_status
+from growingnn_board.search_tree_viz import render_search_tree_html, resolve_search_tree
 
 router = APIRouter(prefix="/api")
 _cache = ExperimentCache()
@@ -98,6 +99,47 @@ def get_simulation(generation_number: int):
     if data is None:
         raise HTTPException(status_code=404, detail="Simulation not found")
     return data
+
+
+@router.get("/simulation/{generation_number}/search-tree", response_class=HTMLResponse)
+def get_simulation_search_tree(generation_number: int):
+    if _cache.path is None:
+        raise HTTPException(status_code=404, detail="No experiment loaded")
+    data = _cache.simulations.get(generation_number)
+    if data is None:
+        raise HTTPException(status_code=404, detail="Simulation not found")
+    tree = resolve_search_tree(data)
+    if tree is None:
+        raise HTTPException(status_code=404, detail="Search tree data not available")
+    try:
+        html = render_search_tree_html(
+            tree,
+            rollouts=data.get("rollouts"),
+            max_depth=data.get("maxDepth"),
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Search tree render failed: {exc}") from exc
+    return HTMLResponse(html)
+
+
+@router.get("/files/html")
+def get_html(path: str = Query(..., description="Experiment-relative HTML path")):
+    if _cache.path is None:
+        raise HTTPException(status_code=404, detail="No experiment loaded")
+    experiment_root = _cache.path.resolve()
+    file_path = Path(path)
+    if not file_path.is_file():
+        file_path = experiment_root / path
+    file_path = file_path.resolve()
+    if file_path.suffix.lower() not in {".html", ".htm"}:
+        raise HTTPException(status_code=404, detail="HTML not found")
+    try:
+        file_path.relative_to(experiment_root)
+    except ValueError as exc:
+        raise HTTPException(status_code=403, detail="HTML path outside experiment directory") from exc
+    if not file_path.is_file():
+        raise HTTPException(status_code=404, detail="HTML not found")
+    return FileResponse(file_path, media_type="text/html")
 
 
 @router.get("/files/pdf")

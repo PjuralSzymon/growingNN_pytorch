@@ -19,7 +19,7 @@
     - {     **TODO**    } Alg treningowy
     - {     **TODO**    } Alg symulacyjny
     - {     **TODO**    } Score Fun
-    - {     **TODO**    } Nowa akcja optymalizacyjna SLWD (Bilski)
+    - {     **TODO**    } Nowa akcja optymalizacyjna SLWD (Bilski) LORA
 - Lipiec
     - {     **TODO**    } Scheduler symulacji
     - {     **TODO**    } Eksperymenty wstepne

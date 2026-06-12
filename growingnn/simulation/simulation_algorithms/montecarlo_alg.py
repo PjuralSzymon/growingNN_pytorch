@@ -61,9 +61,9 @@ class TreeNode:
                     device=cfg.device,
                 )
             except Exception as e:
-                logger.error("Error in gradient_descent: %s", e)
-                draw_filtered_fx_graph(model_copy, str("." / f"fx_graph_error_simulation_simplified"), fmt="pdf")
-                exit(1)
+                logger.error("Error in gradient_descent: %s after executing action %s", e, action)
+                draw_filtered_fx_graph(model_copy, "fx_graph_error_simulation_simplified", fmt="pdf")
+                raise
             self.child_nodes.append(
                 TreeNode(self, action, model_copy, cfg)
             )
@@ -78,16 +78,21 @@ class TreeNode:
                 break
             chosen = random.choice(actions)
             chosen.execute(model_copy)
-            gradient_descent(
-                model_copy,
-                project_config.MCTS_ROLLOUT_EPOCHS,
-                cfg.sim_train_loader,
-                cfg.sim_val_loader,
-                cfg.criterion,
-                project_config.MCTS_ROLLOUT_LR,
-                quiet=True,
-                device=cfg.device,
-            )
+            try:
+                gradient_descent(
+                    model_copy,
+                    project_config.MCTS_ROLLOUT_EPOCHS,
+                    cfg.sim_train_loader,
+                    cfg.sim_val_loader,
+                    cfg.criterion,
+                    project_config.MCTS_ROLLOUT_LR,
+                    quiet=True,
+                    device=cfg.device,
+                )
+            except Exception as e:
+                logger.error("Error in gradient_descent: %s after executing action %s", e, chosen)
+                draw_filtered_fx_graph(model_copy, "fx_graph_error_simulation_simplified", fmt="pdf")
+                raise
             depth -= 1
         composite = cfg.simulation_score.score(model_copy, cfg)
         if cfg.experiment_board is not None:
@@ -170,9 +175,13 @@ async def get_action(
     best_child = root.get_best_child()
     best_action = best_child.action if best_child is not None else None
     candidates = None
+    search_tree = None
     generation = getattr(board, "_current_generation", 0) if board is not None else 0
     if board is not None:
         candidates = board.mcts_candidates_from_root(root, running_config)
+        search_tree = board.mcts_search_tree_from_root(
+            root, running_config, chosen_node=best_child, max_depth=max_depth
+        )
     root.kill()
     clear_reshepers_cache()
 
@@ -185,6 +194,7 @@ async def get_action(
             duration_sec=time.time() - t0,
             param_count_before=params_before,
             candidates=candidates,
+            search_tree=search_tree,
         )
 
     return best_action, max_depth, rollouts

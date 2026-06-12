@@ -10,10 +10,11 @@ import {
   listSimulationGenerations,
   scoreBreakdownHtml,
   shortActionLabel,
+  snapshotChanged,
   structureHtml,
-  showView,
-} from "../../shared/core.js";
-import { bindPdfToolbar, clearPdfViewer, renderPdfViewer } from "../../shared/pdf.js";
+} from "../../shared/lib.js?v=5";
+import { navigateTo } from "../../shared/navigation.js?v=5";
+import { bindPdfToolbar, clearPdfViewer, renderPdfViewer } from "../../shared/pdf.js?v=5";
 
 function escapeHtml(text) {
   return String(text ?? "")
@@ -21,6 +22,91 @@ function escapeHtml(text) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function clearSearchTreeFrame(message = "") {
+  const frame = $("search-tree-frame");
+  const box = $("search-tree-viewport");
+  if (frame) {
+    frame.removeAttribute("src");
+    frame.classList.add("hidden");
+  }
+  if (box && message) {
+    const note = box.querySelector(".search-tree-placeholder");
+    if (note) note.textContent = message;
+    else {
+      const p = document.createElement("p");
+      p.className = "helper-text search-tree-placeholder";
+      p.textContent = message;
+      box.appendChild(p);
+    }
+  } else if (box) {
+    box.querySelectorAll(".search-tree-placeholder").forEach((el) => el.remove());
+  }
+}
+
+function renderSearchTree(gen, sim) {
+  const frame = $("search-tree-frame");
+  const box = $("search-tree-viewport");
+  if (!frame || !box) return;
+  box.querySelectorAll(".search-tree-placeholder").forEach((el) => el.remove());
+  const hasTree = Boolean(sim?.searchTree?.children?.length || sim?.candidates?.length || sim?.candidateActions?.length);
+  if (!hasTree) {
+    if (Board.lastSearchTreeGen != null) {
+      Board.lastSearchTreeGen = null;
+      clearSearchTreeFrame("No search tree data for this generation yet.");
+    }
+    return;
+  }
+  if (Board.lastSearchTreeGen === gen) return;
+  Board.lastSearchTreeGen = gen;
+  frame.classList.remove("hidden");
+  frame.src = `/api/simulation/${gen}/search-tree`;
+}
+
+function simulationSidebarSnapshot(main, sim) {
+  const tp = main?.trainingParameters || {};
+  const settings = sim?.settings || {};
+  const results = sim?.results || {};
+  return {
+    simMaxTime: settings.simulationMaxTimeSec ?? tp.simulationTimeSec,
+    simMaxDepth: settings.simulationMaxDepth ?? tp.simulationEpochs,
+    ucb1: settings.ucb1Enabled,
+    algorithm: settings.algorithm ?? tp.simulationAlgorithm,
+    exploration: settings.explorationConstant,
+    rolloutPolicy: settings.rolloutPolicy,
+    branching: settings.maxBranchingFactor,
+    scoreWeights: sim?.scoreWeights || tp.scoreWeights,
+    duration: results.meanSimulationRunTimeSec ?? sim?.durationSec,
+    avgScore: results.averageChosenActionScore ?? sim?.scoreChosen,
+    chosenTime: results.timeOfChosenSimulationSec ?? sim?.durationSec,
+    depth: results.depthReached ?? sim?.maxDepth,
+    action: results.chosenAction ?? sim?.actionChosen,
+    actionScore: results.chosenActionScore ?? sim?.scoreChosen,
+  };
+}
+
+function simulationContentSnapshot(sim, gen, candidates) {
+  return {
+    gen,
+    lastUpdate: sim?.lastUpdate,
+    candidateCount: candidates.length,
+    chosenPdf: sim?.files?.simulationGraphPdf,
+    hasSearchTree: Boolean(sim?.searchTree?.children?.length || sim?.candidates?.length),
+    actionChosen: sim?.actionChosen,
+    candidates: candidates.map((c) => ({
+      name: c.name,
+      score: c.score,
+      accuracyAfter: c.accuracyAfter,
+      visits: c.visits,
+      isChosen: c.isChosen,
+      graphPdf: c.graphPdf,
+    })),
+  };
+}
+
+function simulationGensSnapshot(gens, selected) {
+  return { gens, selected };
 }
 
 function renderSimulationEmptyState(
@@ -33,7 +119,7 @@ function renderSimulationEmptyState(
       <button type="button" class="nav-link-btn" id="goto-training">← Go to the overview board</button>
       <h2>Simulation</h2>
       <p class="helper-text">${text}</p>`;
-    $("goto-training").onclick = () => showView("training");
+    $("goto-training").onclick = () => navigateTo("training");
   }
   const candidates = $("candidates");
   if (candidates) candidates.innerHTML = `<p class="helper-text">${text}</p>`;
@@ -46,6 +132,9 @@ function renderSimulationEmptyState(
   if (picker) picker.innerHTML = "";
   Board.selectedSimGen = null;
   Board.selectedCandidateIndex = null;
+  Board.lastSearchTreeGen = null;
+  Board.lastSimulationPdfPath = "";
+  clearSearchTreeFrame(message);
 }
 
 function renderSimulationSidebar(main, sim) {
@@ -79,7 +168,7 @@ function renderSimulationSidebar(main, sim) {
         ["Score of action chosen", results.chosenActionScore ?? sim?.scoreChosen ?? "—"],
       ])}</dl>
     </div>`;
-  $("goto-training").onclick = () => showView("training");
+  $("goto-training").onclick = () => navigateTo("training");
 }
 
 function normalizeCandidates(sim) {
@@ -157,21 +246,31 @@ export async function refreshSimulationBoard() {
     if (Board.selectedSimGen == null || !gens.includes(Board.selectedSimGen)) {
       Board.selectedSimGen = gens.at(-1);
     }
-    renderGenerationPicker(gens, Board.selectedSimGen);
-    await loadSimulation(Board.selectedSimGen, false);
+    const selected = Board.selectedSimGen;
+    if (snapshotChanged("simulation:gens", simulationGensSnapshot(gens, selected))) {
+      renderGenerationPicker(gens, selected);
+    }
+    await loadSimulation(selected, { updatePicker: false, fromPoll: true });
   } catch (err) {
     console.error("Simulation board refresh failed:", err);
     renderSimulationEmptyState("Could not load simulation data. Try reloading the experiment.");
   }
 }
 
-export async function loadSimulation(gen, updatePicker = true) {
+export async function loadSimulation(gen, { updatePicker = true, fromPoll = false } = {}) {
+  const prevGen = Board.selectedSimGen;
   Board.selectedSimGen = gen;
-  Board.selectedCandidateIndex = null;
+  if (!fromPoll) Board.selectedCandidateIndex = null;
   if (updatePicker) {
     document.querySelectorAll(".generation-button").forEach((btn) => {
       btn.classList.toggle("active", Number(btn.textContent) === gen + 1);
     });
+  }
+  if (prevGen !== gen) {
+    Board.lastSearchTreeGen = null;
+    Board.lastSimulationPdfPath = "";
+    delete Board.snapshots[`simulation:content:${prevGen}`];
+    delete Board.snapshots[`simulation:sidebar:${prevGen}`];
   }
   let sim;
   let main;
@@ -184,9 +283,9 @@ export async function loadSimulation(gen, updatePicker = true) {
     if ($("sim-pdf-title")) $("sim-pdf-title").textContent = `Simulation — generation ${gen + 1}`;
     if ($("sim-pdf-path")) $("sim-pdf-path").textContent = "";
     clearPdfViewer("simulation", msg);
+    clearSearchTreeFrame(msg);
     return;
   }
-  renderSimulationSidebar(main, sim);
   const candidates = normalizeCandidates(sim);
   const defaultPdf = sim.files?.simulationGraphPdf || `graphs/gen_${gen}_simulation_simplified.pdf`;
   const fallbackPdfs = [
@@ -199,17 +298,31 @@ export async function loadSimulation(gen, updatePicker = true) {
     const label = c.isChosen ? " (chosen)" : " (alternative)";
     $("sim-pdf-title").textContent = `Candidate: ${c.name}${label}`;
     $("sim-pdf-path").textContent = `File path: ${Board.experimentPath}/${c.graphPdf}`;
+    Board.lastSimulationPdfPath = c.graphPdf;
     renderPdfViewer("simulation", c.graphPdf, [defaultPdf, ...fallbackPdfs]);
   };
 
-  renderCandidateActions(candidates, showCandidatePdf);
+  const contentKey = `simulation:content:${gen}`;
+  const sidebarKey = `simulation:sidebar:${gen}`;
+  const contentSnap = simulationContentSnapshot(sim, gen, candidates);
+  const contentChanged = snapshotChanged(contentKey, contentSnap);
+  const sidebarChanged = snapshotChanged(sidebarKey, simulationSidebarSnapshot(main, sim));
+
+  if (sidebarChanged) renderSimulationSidebar(main, sim);
+  if (contentChanged) renderCandidateActions(candidates, showCandidatePdf);
+  renderSearchTree(gen, sim);
 
   const chosen = candidates.find((c) => c.isChosen);
-  $("sim-pdf-title").textContent = chosen
+  const defaultTitle = chosen
     ? `Simulation Graph for Generation: ${gen} — ${chosen.name} (chosen)`
     : `Simulation Graph for Generation: ${gen} (PDF)`;
-  $("sim-pdf-path").textContent = `File path: ${Board.experimentPath}/${defaultPdf}`;
-  renderPdfViewer("simulation", defaultPdf, fallbackPdfs);
+
+  if (!Board.selectedCandidateIndex && Board.lastSimulationPdfPath !== defaultPdf) {
+    $("sim-pdf-title").textContent = defaultTitle;
+    $("sim-pdf-path").textContent = `File path: ${Board.experimentPath}/${defaultPdf}`;
+    Board.lastSimulationPdfPath = defaultPdf;
+    renderPdfViewer("simulation", defaultPdf, fallbackPdfs);
+  }
 }
 
 export function initSimulation() {

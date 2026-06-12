@@ -7,10 +7,11 @@ import {
   api,
   formatRelativeTime,
   refreshAll,
-  showView,
+  resetSnapshots,
   startPoll,
   statusClass,
-} from "../../shared/core.js";
+} from "../../shared/lib.js?v=5";
+import { navigateTo } from "../../shared/navigation.js?v=5";
 
 function renderRecentExperiments(experiments) {
   const list = $("recent-list");
@@ -56,12 +57,13 @@ async function loadExperiment() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || "Load failed");
     Board.experimentPath = path;
+    resetSnapshots();
     $("load-status").textContent = data.warnings?.length
       ? `Loaded (${data.warnings.join("; ")}) — refreshing every 5s`
       : "Loaded. Refreshing every 5s.";
     startPoll();
     await refreshAll();
-    showView("training");
+    navigateTo("training", { replace: true });
   } catch (e) {
     $("load-status").textContent = e.message;
     $("load-status").classList.add("warn");

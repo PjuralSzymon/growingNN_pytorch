@@ -1,9 +1,26 @@
 /** Application bootstrap: mount pages and wire navigation. */
 
-import { mountPageHtml, showView } from "./shared/core.js";
-import { initHome, loadRecent } from "./pages/home/home.js";
-import { initTraining } from "./pages/training/training.js";
-import { initSimulation, refreshSimulationBoard } from "./pages/simulation/simulation.js";
+import { api, mountPageHtml, resetSnapshots, startPoll } from "./shared/lib.js?v=5";
+import {
+  initNavigation,
+  navigateTo,
+  showView,
+  viewFromLocation,
+} from "./shared/navigation.js?v=5";
+import { initHome, loadRecent } from "./pages/home/home.js?v=5";
+import { initTraining, renderTrainingBoard } from "./pages/training/training.js?v=5";
+import { initSimulation, refreshSimulationBoard } from "./pages/simulation/simulation.js?v=5";
+
+async function restoreTrainingView() {
+  try {
+    const main = await api("/api/experiment/main");
+    let training = null;
+    try {
+      training = await api("/api/experiment/training");
+    } catch (_) { /* */ }
+    renderTrainingBoard(main, training);
+  } catch (_) { /* keep last UI */ }
+}
 
 async function boot() {
   await Promise.all([
@@ -14,7 +31,7 @@ async function boot() {
 
   initHome();
   initTraining(async () => {
-    showView("simulation");
+    navigateTo("simulation");
     try {
       await refreshSimulationBoard();
     } catch (err) {
@@ -23,7 +40,22 @@ async function boot() {
   });
   initSimulation();
 
-  showView("home");
+  initNavigation({
+    onHome: loadRecent,
+    onTraining: restoreTrainingView,
+    onSimulation: refreshSimulationBoard,
+  });
+
+  const initialView = viewFromLocation();
+  if (initialView === "home") {
+    showView("home");
+    history.replaceState({ view: "home" }, "", "/");
+    await loadRecent();
+    return;
+  }
+
+  showView(initialView);
+  history.replaceState({ view: initialView }, "", initialView === "home" ? "/" : `/#/${initialView}`);
   await loadRecent();
 }
 

@@ -170,6 +170,7 @@ class ExperimentBoard:
         param_count_after: int | None = None,
         val_acc_before: float | None = None,
         candidates: list[dict[str, Any]] | None = None,
+        search_tree: dict[str, Any] | None = None,
     ) -> None:
         chosen = str(action) if action is not None else None
         chosen_entry = next((c for c in (candidates or []) if c.get("chosen")), None)
@@ -179,6 +180,8 @@ class ExperimentBoard:
                 "shortLabel": self.action_short_label(chosen),
                 "atGlobalEpoch": self._global_epoch,
             }
+        if search_tree is None and candidates:
+            search_tree = self.search_tree_from_candidates(candidates, rollouts)
         payload = {
             "generation": generation,
             "lastUpdate": _utc_now(),
@@ -197,6 +200,7 @@ class ExperimentBoard:
                 "accuracy": val_acc_before,
             },
             "candidates": candidates or [],
+            "searchTree": search_tree,
         }
         _safe_write_json(self.root / "simulations" / f"simulation_gen_{generation}.json", payload)
         self._last_simulation = {
@@ -215,10 +219,14 @@ class ExperimentBoard:
         sim_path = self.root / "simulations" / f"simulation_gen_{generation}.json"
         if sim_path.is_file():
             data = json.loads(sim_path.read_text(encoding="utf-8"))
-            data["files"] = {
-                "simulationGraphPdf": f"graphs/gen_{generation}_simulation_simplified.pdf",
-                "simulationGraphFull": f"graphs/gen_{generation}_simulation_full.pdf",
-            }
+            files = dict(data.get("files") or {})
+            files.update(
+                {
+                    "simulationGraphPdf": f"graphs/gen_{generation}_simulation_simplified.pdf",
+                    "simulationGraphFull": f"graphs/gen_{generation}_simulation_full.pdf",
+                }
+            )
+            data["files"] = files
             _safe_write_json(sim_path, data)
         self._write_main()
 
@@ -423,6 +431,7 @@ class ExperimentBoard:
             duration_sec=duration_sec,
             param_count_before=param_count_before,
             candidates=candidates,
+            search_tree=self.search_tree_from_candidates(candidates, rollouts),
         )
 
     @staticmethod
@@ -571,3 +580,113 @@ class ExperimentBoard:
             )
         out.sort(key=lambda row: row.get("ucbScore") or 0.0, reverse=True)
         return out
+
+    @staticmethod
+    def _mcts_ucb_score(parent: Any, child: Any) -> float:
+        if child.visit_counter == 0:
+            return float("inf")
+        if project_config.MCTS_UCB1_USE_SQRT:
+            n = child.visit_counter
+            return child.value / n + project_config.MCTS_UCB1_C * math.sqrt(
+                math.log(max(parent.visit_counter, 1)) / n
+            )
+        return child.value + project_config.MCTS_UCB1_C * (
+            math.log(max(parent.visit_counter, 1)) / child.visit_counter
+        )
+
+    def mcts_search_tree_from_root(
+        self,
+        root: Any,
+        config: RunningConfig,
+        *,
+        chosen_node: Any | None = None,
+        max_depth: int | None = None,
+    ) -> dict[str, Any]:
+        """Serialize visited MCTS nodes with depth and final rollout score (call before root.kill())."""
+
+        def walk(node: Any, node_id: str, depth: int) -> dict[str, Any]:
+            visits = int(node.visit_counter)
+            mean_score = node.value / visits if visits else float(node.value)
+            action_str = str(node.action) if node.action is not None else None
+            ucb_score = None
+            if node.parent is not None:
+                ucb = self._mcts_ucb_score(node.parent, node)
+                ucb_score = None if ucb == float("inf") else round(ucb, 6)
+            sim_metrics = dict(getattr(node, "rollout_metrics", None) or {})
+            composite = sim_metrics.get("composite_score")
+            final_score = composite if composite is not None else (mean_score if visits else None)
+            analyzed_children = [child for child in node.child_nodes if child.visit_counter > 0]
+            child_rows = [
+                walk(child, f"{node_id}-{index}", depth + 1)
+                for index, child in enumerate(analyzed_children)
+            ]
+            max_depth_below = depth
+            for child_row in child_rows:
+                max_depth_below = max(max_depth_below, child_row["maxDepthBelow"])
+            row: dict[str, Any] = {
+                "id": node_id,
+                "action": action_str,
+                "name": self.action_short_label(action_str) if action_str else "root",
+                "depth": depth,
+                "visits": visits,
+                "totalValue": round(float(node.value), 6),
+                "meanScore": round(float(mean_score), 6) if visits else None,
+                "ucbScore": ucb_score,
+                "compositeScore": composite,
+                "finalScore": round(float(final_score), 6) if final_score is not None else None,
+                "maxDepthBelow": max_depth_below,
+                "accuracyAfter": sim_metrics.get("weight_acc_score"),
+                "chosen": chosen_node is not None and node is chosen_node,
+                "children": child_rows,
+            }
+            return row
+
+        tree = walk(root, "0", 0)
+        tree["simMaxDepth"] = max_depth
+        return tree
+
+    @staticmethod
+    def search_tree_from_candidates(
+        candidates: list[dict[str, Any]] | None,
+        rollouts: int,
+    ) -> dict[str, Any]:
+        """Flat search tree for greedy/random runs (one root, one level of tried actions)."""
+        children: list[dict[str, Any]] = []
+        for index, row in enumerate(candidates or []):
+            composite = row.get("compositeScore")
+            mean = row.get("score")
+            final_score = composite if composite is not None else mean
+            children.append(
+                {
+                    "id": f"0-{index}",
+                    "action": row.get("action"),
+                    "name": row.get("name") or ExperimentBoard.action_short_label(row.get("action")),
+                    "depth": 1,
+                    "visits": row.get("visits", 1),
+                    "totalValue": mean,
+                    "meanScore": mean,
+                    "ucbScore": row.get("ucbScore"),
+                    "compositeScore": composite,
+                    "finalScore": final_score,
+                    "maxDepthBelow": 1,
+                    "accuracyAfter": row.get("accuracyAfter"),
+                    "chosen": bool(row.get("chosen")),
+                    "children": [],
+                }
+            )
+        return {
+            "id": "0",
+            "name": "root",
+            "depth": 0,
+            "visits": rollouts,
+            "totalValue": None,
+            "meanScore": None,
+            "ucbScore": None,
+            "compositeScore": None,
+            "finalScore": None,
+            "maxDepthBelow": 1 if children else 0,
+            "simMaxDepth": 1 if children else 0,
+            "accuracyAfter": None,
+            "chosen": False,
+            "children": children,
+        }

@@ -17,4 +17,8 @@ To place a layer between l1 -> l2, we start with l2 and go backward until we fin
 
 ## Results on complex_residual_many_widths
 
+
+
 ![[Pasted image 20260511225619.png]]
+
+

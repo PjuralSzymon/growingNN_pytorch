@@ -111,6 +111,98 @@ def test_build_score_breakdown_uses_config_weights(tmp_path: Path):
     assert breakdown["terms"]["accuracy"]["weighted"] == 0.42
 
 
+def test_search_tree_from_candidates_builds_root_and_children(tmp_path: Path):
+    """
+    search_tree_from_candidates should expose one root node and per-action child scores.
+    """
+    # Arrange
+    board = ExperimentBoard(tmp_path)
+    candidates = [
+        {
+            "action": " ( Add Layer Action: [] ) ",
+            "name": "Add Layer Action",
+            "visits": 3,
+            "score": 0.5,
+            "ucbScore": 1.2,
+            "compositeScore": 0.48,
+            "accuracyAfter": 0.4,
+            "chosen": True,
+        }
+    ]
+
+    # Act
+    tree = board.search_tree_from_candidates(candidates, rollouts=5)
+
+    # Assert
+    assert tree["name"] == "root"
+    assert tree["visits"] == 5
+    assert len(tree["children"]) == 1
+    child = tree["children"][0]
+    assert child["name"] == "Add Layer Action"
+    assert child["depth"] == 1
+    assert child["finalScore"] == 0.48
+    assert child["ucbScore"] == 1.2
+    assert child["compositeScore"] == 0.48
+    assert child["chosen"] is True
+
+
+def test_mcts_search_tree_from_root_exports_nested_nodes(tmp_path: Path):
+    """
+    mcts_search_tree_from_root should serialize visited nodes at every depth with final scores.
+    """
+
+    # Arrange
+    class _Node:
+        def __init__(self, parent=None, action=None, value=0.0, visits=0, children=None, metrics=None):
+            self.parent = parent
+            self.action = action
+            self.value = value
+            self.visit_counter = visits
+            self.child_nodes = children or []
+            self.rollout_metrics = metrics
+
+    grandchild = _Node(
+        action=" ( Add Layer Action: [] ) ",
+        value=0.7,
+        visits=1,
+        metrics={"composite_score": 0.7},
+    )
+    child = _Node(
+        action=" ( Delete Neurons Action: [] ) ",
+        value=1.6,
+        visits=2,
+        children=[grandchild],
+        metrics={"composite_score": 0.65},
+    )
+    unvisited = _Node(action=" ( Remove Layer Action: [] ) ", visits=0)
+    root = _Node(value=3.0, visits=5, children=[child, unvisited])
+    child.parent = root
+    grandchild.parent = child
+    unvisited.parent = root
+    board = ExperimentBoard(tmp_path)
+
+    # Act
+    tree = board.mcts_search_tree_from_root(
+        root, RunningConfig(generations=1, epochs=1), chosen_node=child, max_depth=2
+    )
+
+    # Assert
+    assert tree["name"] == "root"
+    assert tree["depth"] == 0
+    assert tree["simMaxDepth"] == 2
+    assert tree["maxDepthBelow"] == 2
+    assert len(tree["children"]) == 1
+    child_row = tree["children"][0]
+    assert child_row["depth"] == 1
+    assert child_row["finalScore"] == 0.65
+    assert child_row["chosen"] is True
+    assert len(child_row["children"]) == 1
+    grandchild_row = child_row["children"][0]
+    assert grandchild_row["depth"] == 2
+    assert grandchild_row["finalScore"] == 0.7
+    assert grandchild_row["children"] == []
+
+
 def test_action_short_label_extracts_action_name():
     """
     action_short_label should return the human-readable action class name from repr strings.
