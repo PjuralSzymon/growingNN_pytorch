@@ -1,10 +1,16 @@
 name: Build
+
 on:
   push:
     branches:
       - main
   pull_request:
     types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   sonarqube:
     name: SonarQube
@@ -12,8 +18,81 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+          fetch-depth: 0
+
       - name: SonarQube Scan
+        id: sonar-scan
+        continue-on-error: true
         uses: SonarSource/sonarqube-scan-action@7006c4492b2e0ee0f816d36501671557c97f5995 # v8.1.0
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Comment quality gate failure on PR
+        if: steps.sonar-scan.outcome == 'failure' && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          script: |
+            const projectKey = 'PjuralSzymon_growingNN_pytorch';
+            const pr = context.payload.pull_request.number;
+            const params = new URLSearchParams({
+              projectKey,
+              pullRequest: String(pr),
+            });
+
+            const metricLabels = {
+              new_reliability_rating: 'Reliability rating (new code)',
+              new_security_rating: 'Security rating (new code)',
+              new_maintainability_rating: 'Maintainability rating (new code)',
+              new_coverage: 'Coverage on new code (%)',
+              new_duplicated_lines_density: 'Duplicated lines on new code (%)',
+              new_security_hotspots_reviewed: 'Security hotspots reviewed on new code (%)',
+              new_violations: 'Issues on new code',
+              new_blocker_violations: 'Blocker issues on new code',
+              new_critical_violations: 'Critical issues on new code',
+              new_major_violations: 'Major issues on new code',
+            };
+
+            const response = await fetch(
+              `https://sonarcloud.io/api/qualitygates/project_status?${params}`,
+              { headers: { Authorization: `Bearer ${process.env.SONAR_TOKEN}` } },
+            );
+
+            let summary = 'Quality Gate **failed**. See details in SonarCloud.';
+            if (response.ok) {
+              const payload = await response.json();
+              const failed = (payload.projectStatus?.conditions ?? []).filter(
+                (condition) => condition.status === 'ERROR',
+              );
+
+              if (failed.length > 0) {
+                const lines = failed.map((condition) => {
+                  const label = metricLabels[condition.metricKey] ?? condition.metricKey;
+                  return `- **${label}**: ${condition.actualValue} (threshold: ${condition.comparator} ${condition.errorThreshold})`;
+                });
+                summary = ['### SonarCloud Quality Gate failed', '', ...lines].join('\n');
+              }
+            } else {
+              console.log(`SonarCloud API returned ${response.status}`);
+            }
+
+            const dashboard = `https://sonarcloud.io/dashboard?id=${projectKey}&pullRequest=${pr}`;
+            const body = [
+              '<!-- sonarcloud-quality-gate -->',
+              summary,
+              '',
+              `[Open analysis in SonarCloud](${dashboard})`,
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr,
+              body,
+            });
+
+      - name: Fail when SonarQube scan failed
+        if: steps.sonar-scan.outcome == 'failure'
+        run: exit 1
