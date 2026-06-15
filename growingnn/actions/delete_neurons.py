@@ -28,6 +28,9 @@ def shrink_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, ratio: fl
     new = max(1, int(mod.out_features * ratio))
     if new >= mod.out_features or new < config.MINIMUM_MATRIX_SIZE_FOR_NEURONS_REMOVAL:
         return gm
+    node = ModuleResolver.find_call_module(gm.graph.nodes, layer_id)
+    if NodeWidthAnalyser.propagation_hits_unsizable(gm, node):
+        return gm
     resize_layer_output(gm, layer_id, new)
 
 
