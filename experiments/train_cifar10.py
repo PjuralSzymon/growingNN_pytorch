@@ -37,16 +37,16 @@ from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_f
 
 # --- Metaparameter grid (one value per list => original single-run behavior) ---
 # ~24 configs x 3 seeds = 72 runs, ~30-44 h on 8 GB GPU
-GENERATIONS = [5, 10, 20]
+GENERATIONS = [20]
 EPOCHS = [30]
 BATCH_SIZE = [64]
 LR_ALPHA = [0.01]
-SIMULATION_TIME = [300.0, 500.0, 1000.0]
-SIMULATION_EPOCHS = [15, 20]
+SIMULATION_TIME = [1000.0]
+SIMULATION_EPOCHS = [15]
 SIMULATION_SET_SIZE = [2000]
-TARGET_ACCURACY = [0.9]
-SCORE_WEIGHT_ACC = [1.0]
-SCORE_WEIGHT_COUNTW = [0.2, 0.25]
+TARGET_ACCURACY = [0.9] # ?
+SCORE_WEIGHT_ACC = [1.0] # ?
+SCORE_WEIGHT_COUNTW = [0.2, 0.25] # ?
 TRAIN_AUGMENTATION = [True]
 MODEL_CHANNELS = [32]
 MODEL_HIDDEN_DIM = [256]
