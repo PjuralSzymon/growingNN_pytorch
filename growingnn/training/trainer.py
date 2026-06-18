@@ -24,6 +24,9 @@ def train_generations(
     train_loader: DataLoader,
     val_loader: DataLoader,
     config: RunningConfig,
+    *,
+    sim_train_loader: DataLoader | None = None,
+    sim_val_loader: DataLoader | None = None,
 ) -> tuple[nn.Module | fx.GraphModule, dict[str, list[Any]]]:
     logger.info("Training generations started")
 
@@ -31,9 +34,10 @@ def train_generations(
     if board is not None:
         board.on_run_start(model, config)
 
-    sim_train_loader, sim_val_loader = sample_loaders(
-        train_loader, val_loader, config.simulation_set_size
-    )
+    if sim_train_loader is None or sim_val_loader is None:
+        sim_train_loader, sim_val_loader = sample_loaders(
+            train_loader, val_loader, config.simulation_set_size
+        )
     config.set_simulation_loaders(sim_train_loader, sim_val_loader)
 
     loop = asyncio.new_event_loop()
