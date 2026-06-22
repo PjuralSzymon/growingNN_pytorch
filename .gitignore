@@ -1,6 +1,7 @@
+*.pdf
 # Fodlers in project: 
 testResults/
-
+experiments/output/*
 
 # Byte-compiled / optimized
 __pycache__/

@@ -1,0 +1,1 @@
+To generate all action you can use generate_all_actions which is the main function used in training algorithm it takes model and Running config from [[Config]] which allow to change what action is enabled

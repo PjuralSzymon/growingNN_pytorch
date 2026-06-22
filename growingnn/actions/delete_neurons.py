@@ -28,6 +28,10 @@ def shrink_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, ratio: fl
     new = max(1, int(mod.out_features * ratio))
     if new >= mod.out_features or new < config.MINIMUM_MATRIX_SIZE_FOR_NEURONS_REMOVAL:
         return gm
+    node = ModuleResolver.find_call_module(gm.graph.nodes, layer_id)
+    # Abort when shrink would reach an add whose other branch has non-resizable modules (e.g. Conv2d).
+    if NodeWidthAnalyser.propagation_hits_unsizable(gm, node):
+        return gm
     resize_layer_output(gm, layer_id, new)
 
 
@@ -41,9 +45,11 @@ class DelNeurons(Action):
         return False
 
     @staticmethod
-    def generate_all_actions(model: nn.Module | fx.GraphModule) -> List[Action]:
+    def generate_all_actions(
+        model: nn.Module | fx.GraphModule,
+        ratio: float = config.DEFAULT_NEURONS_SHRINK_RATIO,
+    ) -> List[Action]:
         gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
-        ratio = config.DEFAULT_NEURONS_SHRINK_RATIO
         actions: List[Action] = []
         for layer_id in GraphStructureQuery.get_all_hidden_modules(gm):
             mod = ModuleResolver.get_layer_module(layer_id, gm)
@@ -53,6 +59,7 @@ class DelNeurons(Action):
             if new_out >= mod.out_features or new_out < config.MINIMUM_MATRIX_SIZE_FOR_NEURONS_REMOVAL:
                 continue
             node = ModuleResolver.find_call_module(gm.graph.nodes, layer_id)
+            # Same guard as shrink_layer_output: conv/add residual paths cannot be width-synced.
             if NodeWidthAnalyser.propagation_hits_unsizable(gm, node):
                 continue
             actions.append(DelNeurons([layer_id, ratio]))

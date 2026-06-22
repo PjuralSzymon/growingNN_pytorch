@@ -16,12 +16,12 @@
 	    - {     **DONE**    } Testy regresyjne
 	- {     **DONE**    } Dodać testy regresyjne na dużych modelach 
 - Czerwiec
+    - {     **TODO**    } Alg treningowy
     - {     **TODO**    } Alg symulacyjny
     - {     **TODO**    } Score Fun
-    - {     **TODO**    } Scheduler symulacji
-    - {     **TODO**    } Nowa akcja optymalizacyjna SLWD (Bilski)
+    - {     **TODO**    } Nowa akcja optymalizacyjna SLWD (Bilski) LORA
 - Lipiec
-    - {     **TODO**    } Alg treningowy
+    - {     **TODO**    } Scheduler symulacji
     - {     **TODO**    } Eksperymenty wstepne
 - sierpien
     - {     **TODO**    } Eksperymenty Trening modeli

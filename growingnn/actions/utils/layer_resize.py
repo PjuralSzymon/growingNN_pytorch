@@ -69,6 +69,10 @@ def _sync_add_siblings_backward(gm, node, width, seen, *, via_pass=False, at_add
         if isinstance(mod, nn.Linear):
             if NodeTypeChecker.is_fork(node) and (at_add is None or node not in at_add.all_input_nodes):
                 return
+            # Skip fork linears used by another add with a Conv sibling: shrinking here would
+            # require resizing that conv branch too, which neuron removal cannot do safely.
+            if at_add is not None and NodeWidthAnalyser.fork_shrink_blocked_by_conv_add(gm, node, at_add):
+                return
             _rescale_output_neurons(gm, str(node.target), mod, width)
             propagate_neuron_change(gm, node, width, seen)
             return

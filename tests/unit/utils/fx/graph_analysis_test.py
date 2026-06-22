@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 import torch
 import torch.fx as fx
+import torch.nn as nn
 
 _REPO_ROOT = Path(__file__).resolve().parents[4]
 if str(_REPO_ROOT) not in sys.path:
@@ -13,6 +14,31 @@ if str(_REPO_ROOT) not in sys.path:
 
 from growingnn.utils.fx import LayerBridgeFinder, LayerShapeAnalyser, ModuleClassifier, GraphStructureQuery
 from tests.model_factory import ModelFactory
+
+
+def _linear_params(in_features: int, out_features: int, *, bias: bool = True) -> int:
+    total = in_features * out_features
+    if bias:
+        total += out_features
+    return total
+
+
+def _conv2d_params(
+    in_channels: int,
+    out_channels: int,
+    kernel_size: int,
+    *,
+    bias: bool = True,
+) -> int:
+    total = kernel_size * kernel_size * in_channels * out_channels
+    if bias:
+        total += out_channels
+    return total
+
+
+def _bn1d_params(num_features: int) -> int:
+    return 2 * num_features
+
 
 def test_uniform_activation_shape_returns_shared_shape_when_all_match():
     """
@@ -414,13 +440,22 @@ def test_is_at_least_one_hidden_module_when_one_endpoint_is_hidden():
     assert ModuleClassifier.is_at_least_one_hidden_module(l1, l2) is True
 
 
-def test_get_amount_of_parameters_matches_parameter_count():
+def test_get_amount_of_parameters_single_linear_layer():
     """
-    get_amount_of_parameters should equal the sum of parameter numels on the graph module.
+    A traced Linear(4, 3) should contribute 4*3 weights plus 3 bias terms (15 total).
     """
+
     # Arrange
-    gm = fx.symbolic_trace(ModelFactory.simple_chain_2())
-    expected = sum(p.numel() for p in gm.parameters())
+    class Model(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.fc = nn.Linear(4, 3)
+
+        def forward(self, x):
+            return self.fc(x)
+
+    gm = fx.symbolic_trace(Model())
+    expected = _linear_params(4, 3)
 
     # Act
     count = GraphStructureQuery.get_amount_of_parameters(gm)
@@ -429,29 +464,187 @@ def test_get_amount_of_parameters_matches_parameter_count():
     assert count == expected
 
 
-def test_get_amount_of_parameters_includes_conv_layers():
+def test_get_amount_of_parameters_linear_chain_sums_each_layer():
     """
-    get_amount_of_parameters should count Conv2d weights from call_module nodes in the graph.
+    Two linear layers (4->3 and 3->2) should sum to 15 + 8 = 23 parameters.
     """
-    # Arrange
-    import torch.nn as nn
 
-    gm = fx.symbolic_trace(ModelFactory.simple_conv_chain_2())
-    conv_params = sum(
-        p.numel()
-        for node in gm.graph.nodes
-        if node.op == "call_module"
-        for module in [gm.get_submodule(node.target)]
-        if isinstance(module, nn.Conv2d)
-        for p in module.parameters()
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_2_diffrent_input_output_features())
+    expected = _linear_params(4, 3) + _linear_params(3, 2)
+
+    # Act
+    count = GraphStructureQuery.get_amount_of_parameters(gm)
+
+    # Assert
+    assert count == expected
+
+
+def test_get_amount_of_parameters_ignores_relu_and_dropout():
+    """
+    ReLU, Dropout, and AdaptiveAvgPool1d have no weights; three linears and BatchNorm1d still count (68 total).
+    """
+
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_3_with_activation())
+    expected = (
+        _linear_params(4, 4)
+        + _linear_params(4, 4)
+        + _linear_params(4, 4)
+        + _bn1d_params(4)
     )
 
     # Act
     count = GraphStructureQuery.get_amount_of_parameters(gm)
 
     # Assert
-    assert conv_params > 0
-    assert count >= conv_params
+    assert count == expected
+
+
+def test_get_amount_of_parameters_single_conv2d_layer():
+    """
+    Conv2d(2, 4, kernel_size=3) should contribute 3*3*2*4 weights plus 4 bias terms (76 total).
+    """
+
+    # Arrange
+    class Model(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.conv = nn.Conv2d(2, 4, kernel_size=3)
+
+        def forward(self, x):
+            return self.conv(x)
+
+    gm = fx.symbolic_trace(Model())
+    expected = _conv2d_params(2, 4, 3)
+
+    # Act
+    count = GraphStructureQuery.get_amount_of_parameters(gm)
+
+    # Assert
+    assert count == expected
+
+
+def test_get_amount_of_parameters_conv2d_without_bias():
+    """
+    Conv2d with bias=False should count only the kernel weights (3*3*1*2 = 18).
+    """
+
+    # Arrange
+    class Model(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.conv = nn.Conv2d(1, 2, kernel_size=3, bias=False)
+
+        def forward(self, x):
+            return self.conv(x)
+
+    gm = fx.symbolic_trace(Model())
+    expected = _conv2d_params(1, 2, 3, bias=False)
+
+    # Act
+    count = GraphStructureQuery.get_amount_of_parameters(gm)
+
+    # Assert
+    assert count == expected
+
+
+def test_get_amount_of_parameters_conv_plus_linear_head():
+    """
+    Conv2d(1, 2, 3) plus Linear(2, 3) should sum to 20 + 9 = 29 parameters.
+    """
+
+    # Arrange
+    class Model(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.conv = nn.Conv2d(1, 2, kernel_size=3, padding=1)
+            self.pool = nn.AdaptiveAvgPool2d(1)
+            self.fc = nn.Linear(2, 3)
+
+        def forward(self, x):
+            x = self.pool(self.conv(x))
+            return self.fc(x.flatten(1))
+
+    gm = fx.symbolic_trace(Model())
+    expected = _conv2d_params(1, 2, 3) + _linear_params(2, 3)
+
+    # Act
+    count = GraphStructureQuery.get_amount_of_parameters(gm)
+
+    # Assert
+    assert count == expected
+
+
+def test_get_amount_of_parameters_includes_batch_norm():
+    """
+    BatchNorm1d(4) adds 8 parameters (scale and bias) on top of two linear layers.
+    """
+
+    # Arrange
+    class Model(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.l1 = nn.Linear(4, 4)
+            self.bn = nn.BatchNorm1d(4)
+            self.l2 = nn.Linear(4, 2)
+
+        def forward(self, x):
+            return self.l2(self.bn(self.l1(x)))
+
+    gm = fx.symbolic_trace(Model())
+    expected = _linear_params(4, 4) + _bn1d_params(4) + _linear_params(4, 2)
+
+    # Act
+    count = GraphStructureQuery.get_amount_of_parameters(gm)
+
+    # Assert
+    assert count == expected
+
+
+def test_get_amount_of_parameters_counts_shared_module_once():
+    """
+    The same Linear submodule used twice in forward should be counted once (9 params, not 18).
+    """
+
+    # Arrange
+    class Model(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.l = nn.Linear(2, 3)
+
+        def forward(self, x):
+            return self.l(self.l(x))
+
+    gm = fx.symbolic_trace(Model())
+    expected = _linear_params(2, 3)
+
+    # Act
+    count = GraphStructureQuery.get_amount_of_parameters(gm)
+
+    # Assert
+    assert count == expected
+
+
+def test_get_amount_of_parameters_full_conv_chain_matches_manual_sum():
+    """
+    simple_conv_chain_2 should match hand-counted conv and linear layers (pool has zero params).
+    """
+
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_conv_chain_2())
+    expected = (
+        _conv2d_params(4, 4, 3)
+        + _conv2d_params(4, 4, 3)
+        + _linear_params(4, 4)
+        + _linear_params(4, 4)
+    )
+
+    # Act
+    count = GraphStructureQuery.get_amount_of_parameters(gm)
+
+    # Assert
+    assert count == expected
 
 
 def test_get_input_layers_and_output_layers_for_middle_layer():

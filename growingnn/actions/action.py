@@ -15,6 +15,5 @@ class Action:
         pass
 
     @staticmethod
-    def generate_all_actions(model):
-        result = []
-        return result
+    def generate_all_actions(model, grow: bool = True, shrink: bool = True):
+        return []
