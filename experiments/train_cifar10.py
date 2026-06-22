@@ -6,10 +6,7 @@ import argparse
 import itertools
 import math
 import shutil
-import statistics
 import sys
-from collections import defaultdict
-from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -22,6 +19,8 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 _EXPERIMENT_DIR = Path(__file__).resolve().parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
+if str(_EXPERIMENT_DIR) not in sys.path:
+    sys.path.insert(0, str(_EXPERIMENT_DIR))
 
 from growingnn.board import ExperimentBoard
 from growingnn.core.config import RunningConfig
@@ -31,23 +30,31 @@ from growingnn.simulation.score_functions.simulation_score import SimulationScor
 from growingnn.training.stoppers import AccuracyStopper
 from growingnn.simulation.simulation_scheduler import SchedulerMode, SimulationScheduler
 from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.simulation.simulation_set import sample_loaders
 from growingnn.training.trainer import train_generations
 from growingnn.utils.fx import GraphStructureQuery
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 
+from reatesummary import (
+    RunResult,
+    combo_slug,
+    load_run_result_from_dir,
+    write_grid_summary,
+)
+
 # --- Metaparameter grid (one value per list => original single-run behavior) ---
 # ~24 configs x 3 seeds = 72 runs, ~30-44 h on 8 GB GPU
-GENERATIONS = [20]
+GENERATIONS = [10]
 EPOCHS = [30]
 BATCH_SIZE = [64]
 LR_ALPHA = [0.01]
-SIMULATION_TIME = [1000.0]
+SIMULATION_TIME = [500.0]
 SIMULATION_EPOCHS = [15]
 SIMULATION_SET_SIZE = [2000]
-TARGET_ACCURACY = [0.9] # ?
+TARGET_ACCURACY = [0.99]
 SCORE_WEIGHT_ACC = [1.0] # ?
-SCORE_WEIGHT_COUNTW = [0.2, 0.25] # ?
-TRAIN_AUGMENTATION = [True]
+SCORE_WEIGHT_COUNTW = [0.2] # ?
+AUGMENTATION_FACTOR = [0.0, 0.2, 0.5, 0.75, 1.0]  # 0=none, 1=maximum diversity/strength
 MODEL_CHANNELS = [32]
 MODEL_HIDDEN_DIM = [256]
 GRID_REPEAT_SEEDS = [0]
@@ -63,7 +70,7 @@ METAPARAM_KEYS = (
     "target_accuracy",
     "score_weight_acc",
     "score_weight_countw",
-    "train_augmentation",
+    "augmentation_factor",
     "model_channels",
     "model_hidden_dim",
 )
@@ -78,7 +85,7 @@ METAPARAM_LISTS = (
     TARGET_ACCURACY,
     SCORE_WEIGHT_ACC,
     SCORE_WEIGHT_COUNTW,
-    TRAIN_AUGMENTATION,
+    AUGMENTATION_FACTOR,
     MODEL_CHANNELS,
     MODEL_HIDDEN_DIM,
 )
@@ -115,19 +122,6 @@ class MinimalCifarNet(nn.Module):
         return self.output(x)
 
 
-@dataclass(frozen=True)
-class RunResult:
-    combo: dict[str, object]
-    config_slug: str
-    seed: int
-    run_dir: Path
-    best_val_acc: float
-    final_val_acc: float
-    params_before: int
-    params_after: int
-    architecture_changed: bool
-
-
 def _parse_cli(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="train_cifar10 minimal growingNN experiment")
     parser.add_argument(
@@ -155,17 +149,6 @@ def _is_grid_mode() -> bool:
 
 def _iter_combos() -> list[dict[str, object]]:
     return [dict(zip(METAPARAM_KEYS, combo)) for combo in itertools.product(*METAPARAM_LISTS)]
-
-
-def _combo_slug(combo: dict[str, object]) -> str:
-    aug = "aug" if combo["train_augmentation"] else "noaug"
-    return (
-        f"g{combo['generations']}_ep{combo['epochs']}_bs{combo['batch_size']}"
-        f"_lr{combo['lr_alpha']}_simt{combo['simulation_time']}_sime{combo['simulation_epochs']}"
-        f"_simsz{combo['simulation_set_size']}_tgt{combo['target_accuracy']}"
-        f"_wacc{combo['score_weight_acc']}_wcw{combo['score_weight_countw']}_{aug}"
-        f"_ch{combo['model_channels']}_hd{combo['model_hidden_dim']}"
-    )
 
 
 def _clear_output_dir() -> None:
@@ -198,40 +181,102 @@ def _build_model(
     return model
 
 
-def _train_transform(augment: bool):
-    if augment:
-        return transforms.Compose(
-            [
-                transforms.RandomCrop(32, padding=4),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD),
-            ]
+def _eval_transform() -> transforms.Compose:
+    return transforms.Compose(
+        [
+            transforms.ToTensor(),
+            transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD),
+        ]
+    )
+
+
+def _clamp_augmentation_factor(augmentation_factor: float) -> float:
+    return max(0.0, min(1.0, float(augmentation_factor)))
+
+
+def _train_transform(augmentation_factor: float) -> transforms.Compose:
+    factor = _clamp_augmentation_factor(augmentation_factor)
+    if factor <= 0.0:
+        return _eval_transform()
+
+    steps: list[transforms.Transform] = [
+        transforms.RandomCrop(32, padding=4),
+        transforms.RandomHorizontalFlip(),
+    ]
+    if factor >= 0.2:
+        jitter = 0.08 + 0.32 * factor
+        steps.append(
+            transforms.ColorJitter(
+                brightness=jitter,
+                contrast=jitter,
+                saturation=jitter,
+                hue=min(0.08, 0.02 + 0.06 * factor),
+            )
         )
-    return transforms.ToTensor()
-
-
-def _val_transform(augment: bool):
-    if augment:
-        return transforms.Compose(
-            [transforms.ToTensor(), transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD)]
+    if factor >= 0.4:
+        steps.append(transforms.TrivialAugmentWide())
+    if factor >= 0.6:
+        steps.append(
+            transforms.RandomAffine(
+                degrees=5.0 + 10.0 * factor,
+                translate=(0.05 + 0.05 * factor, 0.05 + 0.05 * factor),
+                scale=(1.0 - 0.08 * factor, 1.0 + 0.08 * factor),
+                shear=2.0 + 3.0 * factor,
+            )
         )
-    return transforms.ToTensor()
+    if factor >= 0.8:
+        steps.append(
+            transforms.RandAugment(num_ops=2, magnitude=min(14, int(6 + 8 * factor)))
+        )
+
+    steps.extend(
+        [
+            transforms.ToTensor(),
+            transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD),
+        ]
+    )
+    if factor >= 0.2:
+        steps.append(
+            transforms.RandomErasing(
+                p=min(0.5, 0.05 + 0.45 * factor),
+                scale=(0.02, 0.33),
+                ratio=(0.3, 3.3),
+                value="random",
+            )
+        )
+    return transforms.Compose(steps)
 
 
-def _loaders(batch_size: int, augment: bool):
-    logger.info("Loading CIFAR-10, batch_size %s augment %s", batch_size, augment)
+def _loaders(batch_size: int, augmentation_factor: float):
+    factor = _clamp_augmentation_factor(augmentation_factor)
+    logger.info(
+        "Loading CIFAR-10, batch_size %s augmentation_factor %s simulation_augment False",
+        batch_size,
+        factor,
+    )
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    eval_transform = _eval_transform()
+    train_transform = _train_transform(factor)
     train = datasets.CIFAR10(
-        str(DATA_DIR), train=True, download=True, transform=_train_transform(augment)
+        str(DATA_DIR), train=True, download=True, transform=train_transform
+    )
+    train_clean = datasets.CIFAR10(
+        str(DATA_DIR), train=True, download=True, transform=eval_transform
     )
     val = datasets.CIFAR10(
-        str(DATA_DIR), train=False, download=True, transform=_val_transform(augment)
+        str(DATA_DIR), train=False, download=True, transform=eval_transform
     )
     train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
     val_loader = torch.utils.data.DataLoader(val, batch_size=batch_size)
-    logger.info("Loaded CIFAR-10: %s train, %s val samples", len(train), len(val))
-    return train_loader, val_loader
+    clean_train_loader = torch.utils.data.DataLoader(
+        train_clean, batch_size=batch_size, shuffle=False
+    )
+    logger.info(
+        "Loaded CIFAR-10: %s train, %s val; simulation subset uses non-augmented train images",
+        len(train),
+        len(val),
+    )
+    return train_loader, val_loader, clean_train_loader
 
 
 def _draw_generation_graphs(out_dir: Path, generation: int, gm: fx.GraphModule) -> None:
@@ -294,7 +339,7 @@ def _run_training(
     train_device: torch.device,
     enable_board: bool,
 ) -> RunResult:
-    config_slug = _combo_slug(combo)
+    config_slug = combo_slug(combo)
     run_dir.mkdir(parents=True, exist_ok=True)
     _set_seed(seed)
     logger.info("Run %s seed %s -> %s", config_slug, seed, run_dir)
@@ -321,10 +366,25 @@ def _run_training(
     cfg = _build_running_config(
         combo, train_device=train_device, board=board, enable_board=enable_board
     )
-    train_loader, val_loader = _loaders(int(combo["batch_size"]), bool(combo["train_augmentation"]))
+    train_loader, val_loader, clean_train_loader = _loaders(
+        int(combo["batch_size"]), float(combo["augmentation_factor"])
+    )
+    sim_train_loader, sim_val_loader = sample_loaders(
+        clean_train_loader,
+        val_loader,
+        int(combo["simulation_set_size"]),
+        seed=seed,
+    )
 
     try:
-        gm, summary = train_generations(gm, train_loader, val_loader, cfg)
+        gm, summary = train_generations(
+            gm,
+            train_loader,
+            val_loader,
+            cfg,
+            sim_train_loader=sim_train_loader,
+            sim_val_loader=sim_val_loader,
+        )
     except Exception as exc:
         draw_filtered_fx_graph(gm, str(run_dir / "fx_graph_error_simplified"), fmt="pdf")
         draw_torch_fx_graph(gm, str(run_dir / "fx_graph_error"), fmt="pdf")
@@ -363,118 +423,6 @@ def _run_training(
     )
 
 
-def _format_combo(combo: dict[str, object]) -> str:
-    return ", ".join(f"{key}={combo[key]}" for key in METAPARAM_KEYS)
-
-
-def _load_existing_run_result(
-    combo: dict[str, object], *, seed: int, run_dir: Path
-) -> RunResult | None:
-    history_path = run_dir / "train_cifar10_history.pt"
-    if not history_path.is_file():
-        return None
-    step_history = torch.load(history_path, map_location="cpu", weights_only=False)
-    val_acc = step_history["val_acc"]
-    param_count = step_history["param_count"]
-    params_before = int(param_count[0])
-    params_after = int(param_count[-1])
-    return RunResult(
-        combo=combo,
-        config_slug=_combo_slug(combo),
-        seed=seed,
-        run_dir=run_dir,
-        best_val_acc=max(val_acc),
-        final_val_acc=val_acc[-1],
-        params_before=params_before,
-        params_after=params_after,
-        architecture_changed=params_after != params_before,
-    )
-
-
-def _write_grid_summary(results: list[RunResult], path: Path) -> None:
-    by_config: dict[str, list[RunResult]] = defaultdict(list)
-    for result in results:
-        by_config[result.config_slug].append(result)
-
-    config_stats: list[tuple[float, float, str, dict[str, object], list[RunResult]]] = []
-    for slug, runs in by_config.items():
-        accs = [run.best_val_acc for run in runs]
-        mean_acc = statistics.mean(accs)
-        std_acc = statistics.pstdev(accs) if len(accs) > 1 else 0.0
-        config_stats.append((mean_acc, std_acc, slug, runs[0].combo, runs))
-
-    config_stats.sort(key=lambda item: item[0], reverse=True)
-    best_mean, best_std, best_slug, best_combo, best_runs = config_stats[0]
-
-    lines = [
-        "GrowingNN CIFAR-10 grid search summary",
-        "=" * 72,
-        f"Total runs: {len(results)} ({len(by_config)} configs x {len(best_runs)} seeds)",
-        "",
-        "Configs ranked by mean best validation accuracy:",
-    ]
-    for rank, (mean_acc, std_acc, slug, combo, runs) in enumerate(config_stats, start=1):
-        seeds = ", ".join(str(run.seed) for run in runs)
-        acc_list = ", ".join(f"{run.best_val_acc:.4f}" for run in runs)
-        lines.append(
-            f"{rank:>2}. {slug} | mean={mean_acc:.4f} std={std_acc:.4f} | seeds=[{seeds}] acc=[{acc_list}]"
-        )
-        lines.append(f"    {_format_combo(combo)}")
-
-    lines.extend(
-        [
-            "",
-            "Best configuration (by mean best val_acc):",
-            f"  slug: {best_slug}",
-            f"  mean best val_acc: {best_mean:.4f} (std={best_std:.4f})",
-            f"  {_format_combo(best_combo)}",
-            "",
-            "Parameter sensitivity (mean best val_acc per value):",
-        ]
-    )
-
-    param_spread: list[tuple[str, float, object, object]] = []
-    for key in METAPARAM_KEYS:
-        grouped: dict[object, list[float]] = defaultdict(list)
-        for result in results:
-            grouped[result.combo[key]].append(result.best_val_acc)
-        lines.append(f"{key}:")
-        value_stats = []
-        for value, accs in sorted(grouped.items(), key=lambda item: str(item[0])):
-            mean_acc = statistics.mean(accs)
-            value_stats.append((value, mean_acc))
-            lines.append(f"  {value}: mean={mean_acc:.4f} (n={len(accs)})")
-        if len(value_stats) > 1:
-            best_value, best_value_acc = max(value_stats, key=lambda item: item[1])
-            worst_value, worst_value_acc = min(value_stats, key=lambda item: item[1])
-            spread = best_value_acc - worst_value_acc
-            param_spread.append((key, spread, best_value, worst_value))
-        lines.append("")
-
-    lines.append("Suggested tuning priority (largest val_acc spread across tested values):")
-    for key, spread, best_value, worst_value in sorted(param_spread, key=lambda item: item[1], reverse=True):
-        lines.append(
-            f"  {key}: spread={spread:.4f} (best={best_value}, worst={worst_value})"
-        )
-
-    lines.extend(
-        [
-            "",
-            "Algorithm notes:",
-            "  - Training loop: gradient descent per generation, then MCTS architecture mutation when scheduler allows.",
-            "  - Simulation score balances accuracy (weight_acc) vs parameter count (weight_countW); higher weight_acc favors val accuracy.",
-            "  - simulation_time / simulation_epochs control MCTS budget; simulation_set_size caps rollout data.",
-            "  - generations x epochs set total training budget; target_accuracy can stop early.",
-            "  - lr_alpha scales the progressive-parabolic LR schedule; batch_size and augmentation affect SGD stability.",
-            "  - model_channels / model_hidden_dim set initial capacity before architecture search grows or shrinks the graph.",
-        ]
-    )
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    logger.info("Wrote grid summary to %s", path)
-
-
 def _assert_cuda_ready(train_device: torch.device) -> None:
     if not torch.cuda.is_available():
         raise RuntimeError("train_cifar10 requires CUDA; torch.cuda.is_available() is False")
@@ -509,11 +457,13 @@ def _run_grid(args: argparse.Namespace, train_device: torch.device) -> None:
 
     results: list[RunResult] = []
     for combo in combos:
-        slug = _combo_slug(combo)
+        slug = combo_slug(combo)
         for seed in seeds:
             run_dir = RUNS_DIR / slug / f"seed_{seed}"
             if run_dir.exists():
-                result = _load_existing_run_result(combo, seed=seed, run_dir=run_dir)
+                result = load_run_result_from_dir(
+                    run_dir, combo=combo, config_slug=slug, seed=seed
+                )
                 if result is None:
                     logger.info("Skipping incomplete run %s seed %s (no history)", slug, seed)
                     continue
@@ -527,7 +477,7 @@ def _run_grid(args: argparse.Namespace, train_device: torch.device) -> None:
                     enable_board=args.board,
                 )
             results.append(result)
-            _write_grid_summary(results, SUMMARY_PATH)
+            write_grid_summary(results, SUMMARY_PATH)
     print(f"Grid search finished. Summary: {SUMMARY_PATH}")
 
 
