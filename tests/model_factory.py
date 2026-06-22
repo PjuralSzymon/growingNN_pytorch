@@ -359,3 +359,46 @@ class ModelFactory:
                 x = self.head(x)
                 return x
         return ModelDeeplyNested()
+
+    @staticmethod
+    def cifar_minimal_res_conv_fork_hidden(
+        *,
+        channels: int = 32,
+        neurons: int = 256,
+        num_classes: int = 10,
+    ) -> nn.Module:
+        """
+        CIFAR-style conv head with res_conv skip into hidden and a seq_linear residual.
+
+        Topology (matches error3 / fx_graph_error_simulation_simplified):
+          conv1 -> conv2 -> pool -> flatten -> hidden
+                        \\-> res_conv__0 -/
+          add1 = hidden + res_conv__0
+          seq_linear_0(add1)
+          add2 = seq_linear_0 + hidden
+          output(add2)
+        """
+        from growingnn.actions.utils.layer_Factory import ConvFactory
+
+        class CifarMinimalResConvForkHidden(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.conv1 = nn.Conv2d(3, channels, kernel_size=3, padding=1)
+                self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
+                self.pool = nn.AdaptiveAvgPool2d(1)
+                self.flatten = nn.Flatten()
+                self.res_conv__0 = ConvFactory.create_zero_conv_before_linear(
+                    channels, neurons, kernel_size=3, stride=1, padding=1
+                )
+                self.hidden = nn.Linear(channels, neurons)
+                self.seq_linear_0 = nn.Linear(neurons, neurons)
+                self.output = nn.Linear(neurons, num_classes)
+
+            def forward(self, x):
+                conv2 = self.conv2(self.conv1(x))
+                hidden = self.hidden(self.flatten(self.pool(conv2)))
+                merged = hidden + self.res_conv__0(conv2)
+                seq_out = self.seq_linear_0(merged)
+                return self.output(seq_out + hidden)
+
+        return CifarMinimalResConvForkHidden()

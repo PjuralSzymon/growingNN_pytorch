@@ -1,3 +1,4 @@
+*.pdf
 # Fodlers in project: 
 testResults/
 experiments/output/*

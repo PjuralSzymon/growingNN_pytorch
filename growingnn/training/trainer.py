@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import time
 from typing import Any
 
 import torch.fx as fx
@@ -22,12 +23,20 @@ def train_generations(
     train_loader: DataLoader,
     val_loader: DataLoader,
     config: RunningConfig,
+    *,
+    sim_train_loader: DataLoader | None = None,
+    sim_val_loader: DataLoader | None = None,
 ) -> tuple[nn.Module | fx.GraphModule, dict[str, list[Any]]]:
     logger.info("Training generations started")
 
-    sim_train_loader, sim_val_loader = sample_loaders(
-        train_loader, val_loader, config.simulation_set_size
-    )
+    board = config.experiment_board
+    if board is not None:
+        board.on_run_start(model, config)
+
+    if sim_train_loader is None or sim_val_loader is None:
+        sim_train_loader, sim_val_loader = sample_loaders(
+            train_loader, val_loader, config.simulation_set_size
+        )
     config.set_simulation_loaders(sim_train_loader, sim_val_loader)
 
     generation_val_acc: list[float] = []
@@ -43,6 +52,9 @@ def train_generations(
 
     for generation in range(config.generations):
         logger.info("Training generation %s started", generation)
+        if board is not None:
+            board.on_generation_start(generation, model)
+
         model, history = gradient_descent(
             model,
             config.epochs,
@@ -53,8 +65,10 @@ def train_generations(
             stopper=config.stopper,
             quiet=config.quiet,
             print_every=config.print_every,
+            experiment_board=board,
+            generation=generation,
+            device=config.device,
         )
-        #TODO: history tracking needs a better solution:
         val_acc = history["val_acc"][-1]
         generation_val_acc.append(val_acc)
         combined["generation"].append(generation)
@@ -66,6 +80,9 @@ def train_generations(
         param_count = GraphStructureQuery.get_amount_of_parameters(model)
         combined["param_count"].extend([param_count] * len(history["train_loss"]))
 
+        if board is not None:
+            board.on_generation_end(generation, model, history, param_count)
+
         metrics = {"accuracy": history["train_acc"][-1], "val_acc": val_acc}
         if config.stopper.check(model, generation, metrics):
             break
@@ -76,6 +93,11 @@ def train_generations(
                 continue
             action.execute(model)
             logger.info("Generation %s action executed: %s", generation, action)
+            if board is not None:
+                board.save_graphs(model, generation=generation, tag=f"gen_{generation}_simulation")
+                board.note_simulation_graph_saved(generation)
 
     clear_reshepers_cache()
+    if board is not None:
+        board.on_run_finished()
     return model, combined

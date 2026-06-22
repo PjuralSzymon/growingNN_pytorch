@@ -1,0 +1,60 @@
+<div class="board-shell">
+  <aside class="sidebar-card" id="training-sidebar"></aside>
+  <div class="board-main">
+    <div class="content-card pdf-card">
+      <div class="toggle-row">
+        <input type="checkbox" id="simplified-toggle" checked />
+        <label for="simplified-toggle">Simplified graph look</label>
+      </div>
+      <h2 id="training-pdf-title">Architecture Graph (PDF)</h2>
+      <p class="pdf-meta" id="training-pdf-path"></p>
+      <div class="pdf-toolbar" id="training-pdf-toolbar">
+        <button type="button" data-action="zoom-out">−</button>
+        <button type="button" data-action="zoom-in">+</button>
+        <span id="training-pdf-scale">100%</span>
+        <button type="button" data-action="prev">◀</button>
+        <button type="button" data-action="next">▶</button>
+        <span id="training-pdf-page-info">Page 1 / 1</span>
+        <button type="button" data-action="download" title="Download">⬇</button>
+        <button type="button" data-action="print" title="Print">🖨</button>
+        <button type="button" data-action="fullscreen" title="Fullscreen">⛶</button>
+      </div>
+      <div class="pdf-viewport" id="training-pdf-viewport">
+        <canvas id="training-pdf-canvas"></canvas>
+      </div>
+    </div>
+
+    <div class="metrics-charts">
+      <div class="metric-card">
+        <h3>Global train accuracy</h3>
+        <div class="chart-wrap"><canvas id="chart-train-acc"></canvas></div>
+      </div>
+      <div class="metric-card">
+        <h3>Global train loss</h3>
+        <div class="chart-wrap"><canvas id="chart-train-loss"></canvas></div>
+      </div>
+      <div class="metric-card">
+        <h3>Global val accuracy</h3>
+        <div class="chart-wrap"><canvas id="chart-val-acc"></canvas></div>
+      </div>
+      <div class="metric-card">
+        <h3>Global val loss</h3>
+        <div class="chart-wrap"><canvas id="chart-val-loss"></canvas></div>
+      </div>
+    </div>
+
+    <div class="content-card timeline-card">
+      <h3 class="timeline-heading">Training timeline</h3>
+      <div class="timeline-legend" aria-label="Timeline legend">
+        <span><span class="legend-line epoch"></span> Epoch</span>
+        <span><span class="legend-line generation"></span> Generation division</span>
+        <span><span class="legend-dot current"></span> Current position</span>
+        <span><span class="legend-action"></span> Action executed</span>
+      </div>
+      <div class="timeline-viewport">
+        <div id="training-timeline" class="training-timeline"></div>
+      </div>
+      <div id="timeline-action-popover" class="timeline-action-popover hidden" role="dialog" aria-label="Action details"></div>
+    </div>
+  </div>
+</div>

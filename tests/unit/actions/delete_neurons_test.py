@@ -563,5 +563,64 @@ def test_generate_actions_allows_nested_linear_chain_after_conv():
     assert y.shape == (2, 5)
 
 
+def test_del_neurons_on_seq_linear_skips_when_hidden_forks_to_conv_residual():
+    """
+    Shrinking seq_linear_0 after a conv residual skip must not narrow forked hidden,
+    which would break hidden + res_conv__0 (error3: 230 vs 256).
+    """
+
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.cifar_minimal_res_conv_fork_hidden())
+    x = torch.randn(2, 3, 32, 32)
+    ratio = 0.9
+
+    # Act
+    DelNeurons(["seq_linear_0", ratio]).execute(gm)
+    y = gm(x)
+
+    # Assert
+    assert gm.hidden.out_features == 256
+    assert gm.seq_linear_0.out_features == 256
+    assert gm.get_submodule("res_conv__0.0").out_channels == 256
+    assert y.shape == (2, 10)
+
+
+def test_generate_actions_skips_seq_linear_when_hidden_forks_to_conv_residual():
+    """
+    DelNeurons.generate_all_actions must omit seq_linear_0 when hidden feeds
+    both a conv residual add and a downstream linear residual add.
+    """
+
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.cifar_minimal_res_conv_fork_hidden())
+
+    # Act
+    actions = DelNeurons.generate_all_actions(gm, ratio=0.9)
+    layer_ids = [action.params[0] for action in actions]
+
+    # Assert
+    assert "seq_linear_0" not in layer_ids
+    assert "hidden" not in layer_ids
+
+
+def test_del_neurons_on_hidden_skips_when_res_conv_sibling_present():
+    """
+    Shrinking hidden directly must also be blocked when res_conv__0 is its add sibling.
+    """
+
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.cifar_minimal_res_conv_fork_hidden())
+    x = torch.randn(2, 3, 32, 32)
+
+    # Act
+    DelNeurons(["hidden", 0.9]).execute(gm)
+    y = gm(x)
+
+    # Assert
+    assert gm.hidden.out_features == 256
+    assert gm.seq_linear_0.in_features == 256
+    assert y.shape == (2, 10)
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

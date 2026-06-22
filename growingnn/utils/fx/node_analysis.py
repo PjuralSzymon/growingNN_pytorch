@@ -105,27 +105,51 @@ class NodeWidthAnalyser:
                    for n in gm.graph.nodes if n.op == "call_module" and n.target == module_name)
 
     @staticmethod
+    def branch_has_unsizable_module(gm: fx.GraphModule, node: fx.Node, seen: set[str] | None = None) -> bool:
+        """True when walking backward from node hits a non-resizable call_module."""
+        local_seen = seen if seen is not None else set()
+
+        def _walk(n: fx.Node) -> bool:
+            if n.name in local_seen:
+                return False
+            local_seen.add(n.name)
+            if NodeTypeChecker.is_passthrough(gm, n) or (
+                n.op == "call_module"
+                and isinstance(ModuleResolver.get_layer_module(n.target, gm), PASSTHROUGH_MODULES_TO_UPDATE)
+            ):
+                return any(_walk(inp) for inp in n.all_input_nodes)
+            if n.op == "call_module":
+                mod = ModuleResolver.get_layer_module(n.target, gm)
+                return mod is not None and not isinstance(mod, RESIZE_SAFE_MODULES)
+            if n.op == "placeholder":
+                return False
+            return any(_walk(inp) for inp in n.all_input_nodes)
+
+        return _walk(node)
+
+    @staticmethod
+    def fork_shrink_blocked_by_conv_add(gm: fx.GraphModule, linear_node: fx.Node, at_add: fx.Node) -> bool:
+        """True when shrinking a fork linear at at_add would break another add with a conv sibling."""
+        if not NodeTypeChecker.is_fork(linear_node):
+            return False
+        for user in linear_node.users:
+            if not NodeTypeChecker.is_add(user) or user is at_add:
+                continue
+            for inp in user.all_input_nodes:
+                if inp is linear_node:
+                    continue
+                if NodeWidthAnalyser.branch_has_unsizable_module(gm, inp):
+                    return True
+        return False
+
+    @staticmethod
     def propagation_hits_unsizable(gm: fx.GraphModule, start_node: fx.Node) -> bool:
         """True if forward propagation from start_node would reach an add whose
         sibling branch contains a non-resizable call_module (e.g. Conv2d)."""
         seen: set[str] = set()
 
         def _check_sibling(node: fx.Node) -> bool:
-            if node.name in seen:
-                return False
-            seen.add(node.name)
-            if NodeTypeChecker.is_passthrough(gm, node) or (
-                node.op == "call_module" and isinstance(ModuleResolver.get_layer_module(node.target, gm), PASSTHROUGH_MODULES_TO_UPDATE)
-            ):
-                return any(_check_sibling(inp) for inp in node.all_input_nodes)
-            if node.op == "call_module":
-                mod = ModuleResolver.get_layer_module(node.target, gm)
-                if mod is not None and not isinstance(mod, RESIZE_SAFE_MODULES):
-                    return True
-                return False
-            if node.op == "placeholder":
-                return False
-            return any(_check_sibling(inp) for inp in node.all_input_nodes)
+            return NodeWidthAnalyser.branch_has_unsizable_module(gm, node, seen)
 
         def _walk(node: fx.Node) -> bool:
             if node.name in seen:
@@ -137,6 +161,13 @@ class NodeWidthAnalyser:
                 if NodeTypeChecker.is_add(user):
                     for inp in user.all_input_nodes:
                         if inp is not node and _check_sibling(inp):
+                            return True
+                        if (
+                            inp is not node
+                            and inp.op == "call_module"
+                            and isinstance(ModuleResolver.get_layer_module(inp.target, gm), nn.Linear)
+                            and NodeWidthAnalyser.fork_shrink_blocked_by_conv_add(gm, inp, user)
+                        ):
                             return True
                 if _walk(user):
                     return True

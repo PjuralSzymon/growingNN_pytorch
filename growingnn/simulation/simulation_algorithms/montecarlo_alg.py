@@ -6,6 +6,7 @@ import copy
 import math
 import random
 import time
+from typing import Any
 
 import torch.fx as fx
 import torch.nn as nn
@@ -15,6 +16,7 @@ from growingnn.actions.registry import generate_all_actions
 from growingnn.core.config import RunningConfig
 from growingnn.core.logger import logger
 from growingnn.training.gradient_descent import gradient_descent
+from growingnn.utils.fx import GraphStructureQuery
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph
 from growingnn.utils.quaziIdentity import clear_reshepers_cache
 
@@ -40,6 +42,7 @@ class TreeNode:
         self.value = 0.0
         self.visit_counter = 0
         self._cleaned = False
+        self.rollout_metrics: dict[str, Any] | None = None
 
     def expand(self) -> None:
         cfg = self.running_config
@@ -55,11 +58,12 @@ class TreeNode:
                     cfg.criterion,
                     project_config.MCTS_ROLLOUT_LR,
                     quiet=True,
+                    device=cfg.device,
                 )
             except Exception as e:
-                logger.error("Error in gradient_descent: %s", e)
+                logger.error("Error in gradient_descent: %s after executing action %s", e, action)
                 draw_filtered_fx_graph(model_copy, "fx_graph_error_simulation_simplified", fmt="pdf")
-                exit(1)
+                raise
             self.child_nodes.append(
                 TreeNode(self, action, model_copy, cfg)
             )
@@ -74,17 +78,26 @@ class TreeNode:
                 break
             chosen = random.choice(actions)
             chosen.execute(model_copy)
-            gradient_descent(
-                model_copy,
-                project_config.MCTS_ROLLOUT_EPOCHS,
-                cfg.sim_train_loader,
-                cfg.sim_val_loader,
-                cfg.criterion,
-                project_config.MCTS_ROLLOUT_LR,
-                quiet=True,
-            )
+            try:
+                gradient_descent(
+                    model_copy,
+                    project_config.MCTS_ROLLOUT_EPOCHS,
+                    cfg.sim_train_loader,
+                    cfg.sim_val_loader,
+                    cfg.criterion,
+                    project_config.MCTS_ROLLOUT_LR,
+                    quiet=True,
+                    device=cfg.device,
+                )
+            except Exception as e:
+                logger.error("Error in gradient_descent: %s after executing action %s", e, chosen)
+                draw_filtered_fx_graph(model_copy, "fx_graph_error_simulation_simplified", fmt="pdf")
+                raise
             depth -= 1
-        return cfg.simulation_score.score(model_copy, cfg)
+        composite = cfg.simulation_score.score(model_copy, cfg)
+        if cfg.experiment_board is not None:
+            self.rollout_metrics = dict(cfg.experiment_board.simulation_metrics)
+        return composite
 
     def get_best_child(self) -> TreeNode | None:
         if not self.child_nodes:
@@ -146,8 +159,12 @@ def get_action(
     if not actions:
         return None, 0, 0
 
+    board = running_config.experiment_board
+    params_before = GraphStructureQuery.get_amount_of_parameters(model) if board is not None else None
+
     root = TreeNode(None, None, model, running_config)
     deadline = time.time() + running_config.simulation_scheduler.simulation_time
+    t0 = time.time()
     max_depth = 0
     rollouts = 0
     while time.time() < deadline or rollouts <= len(actions):
@@ -161,6 +178,27 @@ def get_action(
 
     best_child = root.get_best_child()
     best_action = best_child.action if best_child is not None else None
+    candidates = None
+    search_tree = None
+    generation = getattr(board, "_current_generation", 0) if board is not None else 0
+    if board is not None:
+        candidates = board.mcts_candidates_from_root(root, running_config)
+        search_tree = board.mcts_search_tree_from_root(
+            root, running_config, chosen_node=best_child, max_depth=max_depth
+        )
     root.kill()
     clear_reshepers_cache()
+
+    if board is not None and params_before is not None:
+        board.on_simulation_finished(
+            generation,
+            action=best_action,
+            max_depth=max_depth,
+            rollouts=rollouts,
+            duration_sec=time.time() - t0,
+            param_count_before=params_before,
+            candidates=candidates,
+            search_tree=search_tree,
+        )
+
     return best_action, max_depth, rollouts
