@@ -57,7 +57,7 @@ SIMULATION_SET_SIZE = [2000]
 TARGET_ACCURACY = [0.99]
 SCORE_WEIGHT_ACC = [1.0]  # ?
 SCORE_WEIGHT_COUNTW = [0.2]  # ?
-AUGMENTATION_FACTOR = [0.0, 0.2, 0.5, 0.75, 1.0]  # 0=none, 1=maximum diversity/strength
+AUGMENTATION_FACTOR = [0.1, 0.35, 0.70, 0.75, 0.85]  # 0=none, 1=maximum diversity/strength
 MODEL_CHANNELS = [32]
 MODEL_HIDDEN_DIM = [256]
 GRID_REPEAT_SEEDS = [0]
