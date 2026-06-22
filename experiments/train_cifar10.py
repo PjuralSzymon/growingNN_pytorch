@@ -120,6 +120,13 @@ def _plot_metric(values: list[float], name: str, save_path: Path) -> None:
     plt.close(fig)
 
 
+def _load_step_history(path: Path) -> dict[str, list[float]]:
+    data = torch.load(path, map_location="cpu", weights_only=True)
+    if not isinstance(data, dict):
+        raise TypeError(f"Expected dict in {path}, got {type(data).__name__}")
+    return data
+
+
 if __name__ == "__main__":
     args = _parse_cli()
     torch.manual_seed(0)
@@ -166,7 +173,7 @@ if __name__ == "__main__":
         if not args.save_output:
             print(f"Baseline missing; wrote {HISTORY_PATH}. Re-run with --save-output true to refresh.")
     else:
-        baseline = torch.load(HISTORY_PATH, map_location="cpu", weights_only=False)
+        baseline = _load_step_history(HISTORY_PATH)
         for key in step_history:
             assert step_history[key] == baseline[key]
 
