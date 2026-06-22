@@ -9,7 +9,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 
 from growingnn_board.cache import ExperimentCache
 from growingnn_board.config import settings
-from growingnn_board.file_reader import directory_status
+from growingnn_board.file_reader import directory_status, resolve_experiment_directory
 from growingnn_board.search_tree_viz import render_search_tree_html, resolve_search_tree
 
 router = APIRouter(prefix="/api")
@@ -52,7 +52,10 @@ def recent_experiments():
 
 @router.post("/experiment/load")
 def load_experiment(path: str):
-    experiment_path = Path(path)
+    try:
+        experiment_path = resolve_experiment_directory(path, root=settings.experiments_root)
+    except ValueError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
     if not experiment_path.is_dir():
         raise HTTPException(status_code=404, detail="Directory not found")
     _cache.load(experiment_path)

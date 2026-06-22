@@ -40,6 +40,18 @@ def read_training_metrics(path: Path) -> TrainingMetrics | None:
         return None
 
 
+def resolve_experiment_directory(path: str, *, root: Path) -> Path:
+    """Resolve an experiment directory under root; reject paths outside root."""
+    experiments_root = root.resolve()
+    candidate = Path(path)
+    resolved = candidate.resolve() if candidate.is_absolute() else (experiments_root / candidate).resolve()
+    try:
+        resolved.relative_to(experiments_root)
+    except ValueError as exc:
+        raise ValueError("Experiment path outside allowed root") from exc
+    return resolved
+
+
 def directory_status(last_update_iso: str) -> str:
     from datetime import datetime, timezone
 
