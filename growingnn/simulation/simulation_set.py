@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset, Subset
 
+from growingnn.core.config import DATALOADER_NUM_WORKERS
 from growingnn.core.logger import logger
 
 #TODO: Very old code, research for better way to create simualtion set 
@@ -29,9 +30,9 @@ def protected_sampling_indices(
     n: int,
     seed: int = 0,
 ) -> list[int]:
-    labels = torch.as_tensor(labels)
+    labels = torch.as_tensor(labels).reshape(-1)
     generator = torch.Generator().manual_seed(seed)
-    unique_classes = torch.unique(labels)
+    unique_classes = torch.unique(labels, dim=0)
     samples_per_class = max(1, n // len(unique_classes))
     selected: list[int] = []
     for cls in unique_classes.tolist():
@@ -79,9 +80,11 @@ def sample_loaders(
         Subset(train_loader.dataset, train_idx),
         batch_size=train_loader.batch_size,
         shuffle=True,
+        num_workers=DATALOADER_NUM_WORKERS,
     )
     sim_val = DataLoader(
         Subset(val_loader.dataset, val_idx),
         batch_size=val_loader.batch_size,
+        num_workers=DATALOADER_NUM_WORKERS,
     )
     return sim_train, sim_val

@@ -18,7 +18,7 @@ _EXPERIMENT_DIR = Path(__file__).resolve().parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from growingnn.core.config import RunningConfig
+from growingnn.core.config import DATALOADER_NUM_WORKERS, RunningConfig
 from growingnn.core.logger import logger
 import growingnn.simulation.simulation_algorithms.montecarlo_alg as montecarlo_alg
 from growingnn.simulation.score_functions.simulation_score import SimulationScore
@@ -96,8 +96,12 @@ def _loaders(batch_size: int = 64):
     transform = transforms.ToTensor()
     train = datasets.CIFAR10(str(DATA_DIR), train=True, download=True, transform=transform)
     val = datasets.CIFAR10(str(DATA_DIR), train=False, download=True, transform=transform)
-    train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True, num_workers=0)
-    val_loader = torch.utils.data.DataLoader(val, batch_size=batch_size, num_workers=0)
+    train_loader = torch.utils.data.DataLoader(
+        train, batch_size=batch_size, shuffle=True, num_workers=DATALOADER_NUM_WORKERS
+    )
+    val_loader = torch.utils.data.DataLoader(
+        val, batch_size=batch_size, num_workers=DATALOADER_NUM_WORKERS
+    )
     logger.info("Loaded CIFAR-10: %s train, %s val samples", len(train), len(val))
     return train_loader, val_loader
 
