@@ -4,6 +4,7 @@ import importlib.util
 import sys
 from pathlib import Path
 
+import pytest
 import torch
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -173,7 +174,7 @@ def test_write_grid_summary_skips_runs_missing_optional_param(tmp_path):
     summary_path = tmp_path / "summary.txt"
 
     # Act
-    module.write_grid_summary(results, summary_path)
+    module.write_grid_summary(results, summary_path, allowed_output_root=tmp_path)
     text = summary_path.read_text(encoding="utf-8")
 
     # Assert
@@ -222,7 +223,7 @@ def test_write_grid_summary_only_reports_varying_parameters(tmp_path):
     summary_path = tmp_path / "summary.txt"
 
     # Act
-    module.write_grid_summary(results, summary_path)
+    module.write_grid_summary(results, summary_path, allowed_output_root=tmp_path)
     text = summary_path.read_text(encoding="utf-8")
 
     # Assert
@@ -230,3 +231,32 @@ def test_write_grid_summary_only_reports_varying_parameters(tmp_path):
     assert "batch_size:" not in text
     assert "Suggested tuning priority" in text
     assert "augmentation_factor: spread=0.1000" in text
+
+
+def test_write_grid_summary_rejects_path_outside_allowed_root(tmp_path):
+    """
+    write_grid_summary should reject summary paths outside the allowed output root.
+    """
+    # Arrange
+    module = _load_createsummary_module()
+    hyperparameters = _sample_hyperparameters()
+    results = [
+        module.RunResult(
+            hyperparameters=hyperparameters,
+            hyperparameter_folder_name=module.build_hyperparameter_folder_name(hyperparameters),
+            seed=0,
+            run_dir=tmp_path / "run",
+            best_val_acc=0.7,
+            final_val_acc=0.7,
+            params_before=100,
+            params_after=100,
+            architecture_changed=False,
+        )
+    ]
+    allowed_root = tmp_path / "allowed"
+    allowed_root.mkdir()
+    outside_path = tmp_path / "outside" / "summary.txt"
+
+    # Act / Assert
+    with pytest.raises(ValueError, match="inside"):
+        module.write_grid_summary(results, outside_path, allowed_output_root=allowed_root)

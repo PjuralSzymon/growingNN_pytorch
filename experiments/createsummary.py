@@ -22,6 +22,7 @@ from growingnn.core.logger import logger
 
 DEFAULT_RUNS_DIR = _EXPERIMENT_DIR / "output" / "train_cifar10" / "runs"
 DEFAULT_SUMMARY_PATH = _EXPERIMENT_DIR / "output" / "train_cifar10" / "grid_search_summary.txt"
+EXPERIMENT_OUTPUT_ROOT = _EXPERIMENT_DIR / "output"
 HISTORY_FILENAME = "train_cifar10_history.pt"
 
 Hyperparameters: TypeAlias = dict[str, object]
@@ -77,6 +78,9 @@ _HYPERPARAMETER_FOLDER_NAME_RE = re.compile(
 # Inside each hyperparameter folder, repeated runs use subfolders like seed_0, seed_1, ...
 _SEED_DIR_RE = re.compile(r"^seed_(?P<seed>\d+)$")
 
+ConfigStats = tuple[float, float, str, Hyperparameters, list["RunResult"]]
+ParamSpread = tuple[str, float, object, object]
+
 
 @dataclass(frozen=True)
 class RunResult:
@@ -89,6 +93,176 @@ class RunResult:
     params_before: int
     params_after: int
     architecture_changed: bool
+
+
+class GridSummaryWriter:
+    """Build and write the text report that ranks grid-search runs."""
+
+    def __init__(self, allowed_output_root: Path = EXPERIMENT_OUTPUT_ROOT) -> None:
+        self._allowed_output_root = allowed_output_root
+
+    def write(self, results: list[RunResult], path: Path) -> None:
+        if not results:
+            raise ValueError("No completed runs found to summarize")
+
+        by_folder_name = self._group_by_folder_name(results)
+        config_stats = self._build_config_stats(by_folder_name)
+        lines = self._build_summary_lines(results, by_folder_name, config_stats)
+
+        safe_path = self._resolve_path_under_root(path)
+        safe_path.parent.mkdir(parents=True, exist_ok=True)
+        safe_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        logger.info("Wrote grid summary to %s", safe_path)
+
+    def _resolve_path_under_root(self, path: Path) -> Path:
+        allowed_root = self._allowed_output_root.resolve()
+        resolved = path.resolve()
+        try:
+            resolved.relative_to(allowed_root)
+        except ValueError as exc:
+            raise ValueError(f"Path must be inside {allowed_root}") from exc
+        return resolved
+
+    @staticmethod
+    def _group_by_folder_name(results: list[RunResult]) -> dict[str, list[RunResult]]:
+        by_folder_name: dict[str, list[RunResult]] = defaultdict(list)
+        for result in results:
+            by_folder_name[result.hyperparameter_folder_name].append(result)
+        return by_folder_name
+
+    @staticmethod
+    def _build_config_stats(by_folder_name: dict[str, list[RunResult]]) -> list[ConfigStats]:
+        config_stats: list[ConfigStats] = []
+        for folder_name, runs in by_folder_name.items():
+            accs = [run.best_val_acc for run in runs]
+            mean_acc = statistics.mean(accs)
+            std_acc = statistics.pstdev(accs) if len(accs) > 1 else 0.0
+            config_stats.append((mean_acc, std_acc, folder_name, runs[0].hyperparameters, runs))
+        config_stats.sort(key=lambda item: item[0], reverse=True)
+        return config_stats
+
+    @staticmethod
+    def _seed_count_note(by_folder_name: dict[str, list[RunResult]]) -> str:
+        seed_counts = sorted(len(runs) for runs in by_folder_name.values())
+        if seed_counts[0] == seed_counts[-1]:
+            return f"{seed_counts[0]} seeds each"
+        return f"seeds per config: {seed_counts[0]}-{seed_counts[-1]}"
+
+    @staticmethod
+    def _format_hyperparameters(hyperparameters: Hyperparameters) -> str:
+        extra = sorted(key for key in hyperparameters if key not in CANONICAL_PARAM_KEYS)
+        ordered = tuple(key for key in CANONICAL_PARAM_KEYS if key in hyperparameters) + tuple(extra)
+        return ", ".join(f"{key}={hyperparameters[key]}" for key in ordered)
+
+    @classmethod
+    def _ranked_config_lines(cls, config_stats: list[ConfigStats]) -> list[str]:
+        lines: list[str] = []
+        for rank, (mean_acc, std_acc, folder_name, hyperparameters, runs) in enumerate(
+            config_stats, start=1
+        ):
+            seeds = ", ".join(str(run.seed) for run in sorted(runs, key=lambda run: run.seed))
+            acc_list = ", ".join(
+                f"{run.best_val_acc:.4f}" for run in sorted(runs, key=lambda run: run.seed)
+            )
+            lines.append(
+                f"{rank:>2}. {folder_name} | mean={mean_acc:.4f} std={std_acc:.4f} | "
+                f"seeds=[{seeds}] acc=[{acc_list}]"
+            )
+            lines.append(f"    {cls._format_hyperparameters(hyperparameters)}")
+        return lines
+
+    @classmethod
+    def _all_hyperparameter_keys(cls, results: list[RunResult]) -> tuple[str, ...]:
+        keys: list[str] = []
+        seen: set[str] = set()
+        for key in CANONICAL_PARAM_KEYS:
+            if any(key in result.hyperparameters for result in results):
+                keys.append(key)
+                seen.add(key)
+        for result in results:
+            for key in sorted(result.hyperparameters):
+                if key not in seen:
+                    keys.append(key)
+                    seen.add(key)
+        return tuple(keys)
+
+    @classmethod
+    def _varying_param_keys(cls, results: list[RunResult]) -> tuple[str, ...]:
+        seen: dict[str, set[object]] = defaultdict(set)
+        for result in results:
+            for key, value in result.hyperparameters.items():
+                seen[key].add(value)
+        return tuple(
+            key
+            for key in cls._all_hyperparameter_keys(results)
+            if key in seen and len(seen[key]) > 1
+        )
+
+    @classmethod
+    def _sensitivity_section(
+        cls, results: list[RunResult]
+    ) -> tuple[list[str], list[ParamSpread]]:
+        lines: list[str] = []
+        param_spread: list[ParamSpread] = []
+        sensitivity_keys = cls._varying_param_keys(results)
+        if not sensitivity_keys:
+            lines.append("  (all runs share the same hyperparameter values)")
+            return lines, param_spread
+
+        for key in sensitivity_keys:
+            grouped: dict[object, list[float]] = defaultdict(list)
+            for result in results:
+                if key in result.hyperparameters:
+                    grouped[result.hyperparameters[key]].append(result.best_val_acc)
+            lines.append(f"{key}:")
+            value_stats = []
+            for value, accs in sorted(grouped.items(), key=lambda item: str(item[0])):
+                mean_acc = statistics.mean(accs)
+                value_stats.append((value, mean_acc))
+                lines.append(f"  {value}: mean={mean_acc:.4f} (n={len(accs)})")
+            if len(value_stats) > 1:
+                best_value, best_value_acc = max(value_stats, key=lambda item: item[1])
+                worst_value, worst_value_acc = min(value_stats, key=lambda item: item[1])
+                param_spread.append((key, best_value_acc - worst_value_acc, best_value, worst_value))
+            lines.append("")
+        return lines, param_spread
+
+    @staticmethod
+    def _tuning_priority_lines(param_spread: list[ParamSpread]) -> list[str]:
+        lines = ["Suggested tuning priority (largest val_acc spread across tested values):"]
+        if not param_spread:
+            lines.append("  (no varying hyperparameters)")
+            return lines
+        for key, spread, best_value, worst_value in sorted(param_spread, key=lambda item: item[1], reverse=True):
+            lines.append(f"  {key}: spread={spread:.4f} (best={best_value}, worst={worst_value})")
+        return lines
+
+    @classmethod
+    def _build_summary_lines(
+        cls,
+        results: list[RunResult],
+        by_folder_name: dict[str, list[RunResult]],
+        config_stats: list[ConfigStats],
+    ) -> list[str]:
+        best_mean, best_std, best_folder_name, best_hyperparameters, _best_runs = config_stats[0]
+        sensitivity_lines, param_spread = cls._sensitivity_section(results)
+        return [
+            "GrowingNN CIFAR-10 grid search summary",
+            "=" * 72,
+            f"Total runs: {len(results)} ({len(by_folder_name)} configs, {cls._seed_count_note(by_folder_name)})",
+            "",
+            "Configs ranked by mean best validation accuracy:",
+            *cls._ranked_config_lines(config_stats),
+            "",
+            "Best configuration (by mean best val_acc):",
+            f"  folder: {best_folder_name}",
+            f"  mean best val_acc: {best_mean:.4f} (std={best_std:.4f})",
+            f"  {cls._format_hyperparameters(best_hyperparameters)}",
+            "",
+            "Parameter sensitivity (mean best val_acc per value):",
+            *sensitivity_lines,
+            *cls._tuning_priority_lines(param_spread),
+        ]
 
 
 def build_hyperparameter_folder_name(hyperparameters: Hyperparameters) -> str:
@@ -126,42 +300,15 @@ def parse_seed_dir(name: str) -> int | None:
     return int(match.group("seed"))
 
 
-def _ordered_hyperparameter_keys(hyperparameters: Hyperparameters) -> tuple[str, ...]:
-    extra = sorted(key for key in hyperparameters if key not in CANONICAL_PARAM_KEYS)
-    return tuple(key for key in CANONICAL_PARAM_KEYS if key in hyperparameters) + tuple(extra)
+def _resolve_path_under_root(path: Path, root: Path) -> Path:
+    return GridSummaryWriter(root)._resolve_path_under_root(path)
 
 
-def format_hyperparameters(hyperparameters: Hyperparameters) -> str:
-    return ", ".join(
-        f"{key}={hyperparameters[key]}" for key in _ordered_hyperparameter_keys(hyperparameters)
-    )
-
-
-def _all_hyperparameter_keys(results: list[RunResult]) -> tuple[str, ...]:
-    keys: list[str] = []
-    seen: set[str] = set()
-    for key in CANONICAL_PARAM_KEYS:
-        if any(key in result.hyperparameters for result in results):
-            keys.append(key)
-            seen.add(key)
-    for result in results:
-        for key in sorted(result.hyperparameters):
-            if key not in seen:
-                keys.append(key)
-                seen.add(key)
-    return tuple(keys)
-
-
-def _varying_param_keys(results: list[RunResult]) -> tuple[str, ...]:
-    seen: dict[str, set[object]] = defaultdict(set)
-    for result in results:
-        for key, value in result.hyperparameters.items():
-            seen[key].add(value)
-    return tuple(
-        key
-        for key in _all_hyperparameter_keys(results)
-        if key in seen and len(seen[key]) > 1
-    )
+def _load_step_history(history_path: Path) -> dict[str, list[float]]:
+    data = torch.load(history_path, map_location="cpu", weights_only=True)
+    if not isinstance(data, dict):
+        raise TypeError(f"Expected dict in {history_path}, got {type(data).__name__}")
+    return data
 
 
 def load_run_result_from_dir(
@@ -175,7 +322,7 @@ def load_run_result_from_dir(
     if not history_path.is_file():
         return None
 
-    step_history = torch.load(history_path, map_location="cpu", weights_only=False)
+    step_history = _load_step_history(history_path)
     val_acc = step_history["val_acc"]
     param_count = step_history["param_count"]
     params_before = int(param_count[0])
@@ -225,96 +372,13 @@ def collect_run_results(runs_dir: Path) -> list[RunResult]:
     return results
 
 
-def write_grid_summary(results: list[RunResult], path: Path) -> None:
-    if not results:
-        raise ValueError("No completed runs found to summarize")
-
-    by_folder_name: dict[str, list[RunResult]] = defaultdict(list)
-    for result in results:
-        by_folder_name[result.hyperparameter_folder_name].append(result)
-
-    config_stats: list[tuple[float, float, str, Hyperparameters, list[RunResult]]] = []
-    for folder_name, runs in by_folder_name.items():
-        accs = [run.best_val_acc for run in runs]
-        mean_acc = statistics.mean(accs)
-        std_acc = statistics.pstdev(accs) if len(accs) > 1 else 0.0
-        config_stats.append((mean_acc, std_acc, folder_name, runs[0].hyperparameters, runs))
-
-    config_stats.sort(key=lambda item: item[0], reverse=True)
-    best_mean, best_std, best_folder_name, best_hyperparameters, _best_runs = config_stats[0]
-    seed_counts = sorted(len(runs) for runs in by_folder_name.values())
-    seed_note = (
-        f"{seed_counts[0]} seeds each"
-        if seed_counts[0] == seed_counts[-1]
-        else f"seeds per config: {seed_counts[0]}-{seed_counts[-1]}"
-    )
-
-    lines = [
-        "GrowingNN CIFAR-10 grid search summary",
-        "=" * 72,
-        f"Total runs: {len(results)} ({len(by_folder_name)} configs, {seed_note})",
-        "",
-        "Configs ranked by mean best validation accuracy:",
-    ]
-    for rank, (mean_acc, std_acc, folder_name, hyperparameters, runs) in enumerate(
-        config_stats, start=1
-    ):
-        seeds = ", ".join(str(run.seed) for run in sorted(runs, key=lambda run: run.seed))
-        acc_list = ", ".join(
-            f"{run.best_val_acc:.4f}" for run in sorted(runs, key=lambda run: run.seed)
-        )
-        lines.append(
-            f"{rank:>2}. {folder_name} | mean={mean_acc:.4f} std={std_acc:.4f} | "
-            f"seeds=[{seeds}] acc=[{acc_list}]"
-        )
-        lines.append(f"    {format_hyperparameters(hyperparameters)}")
-
-    lines.extend(
-        [
-            "",
-            "Best configuration (by mean best val_acc):",
-            f"  folder: {best_folder_name}",
-            f"  mean best val_acc: {best_mean:.4f} (std={best_std:.4f})",
-            f"  {format_hyperparameters(best_hyperparameters)}",
-            "",
-            "Parameter sensitivity (mean best val_acc per value):",
-        ]
-    )
-
-    param_spread: list[tuple[str, float, object, object]] = []
-    sensitivity_keys = _varying_param_keys(results)
-    if not sensitivity_keys:
-        lines.append("  (all runs share the same hyperparameter values)")
-    for key in sensitivity_keys:
-        grouped: dict[object, list[float]] = defaultdict(list)
-        for result in results:
-            if key not in result.hyperparameters:
-                continue
-            grouped[result.hyperparameters[key]].append(result.best_val_acc)
-        lines.append(f"{key}:")
-        value_stats = []
-        for value, accs in sorted(grouped.items(), key=lambda item: str(item[0])):
-            mean_acc = statistics.mean(accs)
-            value_stats.append((value, mean_acc))
-            lines.append(f"  {value}: mean={mean_acc:.4f} (n={len(accs)})")
-        if len(value_stats) > 1:
-            best_value, best_value_acc = max(value_stats, key=lambda item: item[1])
-            worst_value, worst_value_acc = min(value_stats, key=lambda item: item[1])
-            spread = best_value_acc - worst_value_acc
-            param_spread.append((key, spread, best_value, worst_value))
-        lines.append("")
-
-    lines.append("Suggested tuning priority (largest val_acc spread across tested values):")
-    if not param_spread:
-        lines.append("  (no varying hyperparameters)")
-    for key, spread, best_value, worst_value in sorted(param_spread, key=lambda item: item[1], reverse=True):
-        lines.append(
-            f"  {key}: spread={spread:.4f} (best={best_value}, worst={worst_value})"
-        )
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    logger.info("Wrote grid summary to %s", path)
+def write_grid_summary(
+    results: list[RunResult],
+    path: Path,
+    *,
+    allowed_output_root: Path = EXPERIMENT_OUTPUT_ROOT,
+) -> None:
+    GridSummaryWriter(allowed_output_root).write(results, path)
 
 
 def _parse_cli(argv: list[str] | None = None) -> argparse.Namespace:
@@ -343,9 +407,11 @@ def _parse_cli(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> None:
     args = _parse_cli(argv)
-    results = collect_run_results(args.runs_dir)
-    write_grid_summary(results, args.output)
-    print(f"Summary written to {args.output} ({len(results)} runs)")
+    runs_dir = _resolve_path_under_root(args.runs_dir, EXPERIMENT_OUTPUT_ROOT)
+    output_path = _resolve_path_under_root(args.output, EXPERIMENT_OUTPUT_ROOT)
+    results = collect_run_results(runs_dir)
+    write_grid_summary(results, output_path)
+    print(f"Summary written to {output_path} ({len(results)} runs)")
 
 
 if __name__ == "__main__":
