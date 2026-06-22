@@ -153,8 +153,8 @@ if __name__ == "__main__":
     try:
         gm, summary = train_generations(gm, *_loaders(), cfg)   
     except Exception as e:
-        draw_filtered_fx_graph(gm, str(OUT_DIR / f"fx_graph_error_simplified"), fmt="pdf")
-        draw_torch_fx_graph(gm, str(OUT_DIR / f"fx_graph_error"), fmt="pdf")
+        draw_filtered_fx_graph(gm, str(OUT_DIR / "fx_graph_error_simplified"), fmt="pdf")
+        draw_torch_fx_graph(gm, str(OUT_DIR / "fx_graph_error"), fmt="pdf")
         logger.error("Error in train_generations: %s", e)
         raise
     _draw_generation_graphs(int(summary["generation"][-1]), gm)
