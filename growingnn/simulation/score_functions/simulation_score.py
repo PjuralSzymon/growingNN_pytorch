@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import math
 
 import torch.fx as fx
 import torch.nn as nn
@@ -49,7 +50,7 @@ class SimulationScore:
             if weight > 0.0:
                 total += weight * fn(copy.deepcopy(model), running_config)
         divisor = self.weight_sum()
-        if divisor == 0.0:
+        if math.isclose(divisor, 0.0):
             logger.error("SimulationScore.score: all weights are 0, returning 0 instead of NaN")
             return 0.0
         return total / divisor
