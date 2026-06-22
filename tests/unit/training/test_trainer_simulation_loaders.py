@@ -25,8 +25,12 @@ from growingnn.training.trainer import train_generations
 
 
 class _TinyNet(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.head = nn.Linear(3, 2)
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        return x.mean(dim=(2, 3))
+        return self.head(x.mean(dim=(2, 3)))
 
 
 def test_train_generations_uses_prebuilt_simulation_loaders():

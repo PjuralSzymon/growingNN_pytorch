@@ -25,6 +25,7 @@ def test_get_action_logs_error_when_rollouts_stall_after_deadline(caplog):
     caplog.set_level(logging.ERROR, logger="growingnn")
     model = MagicMock()
     running_config = MagicMock()
+    running_config.experiment_board = None
     running_config.simulation_scheduler.simulation_time = 0.0
     actions = [MagicMock(), MagicMock()]
     simulate_results = [(0.0, 0, 1), (0.0, 0, 1), (0.0, 0, 3)]
@@ -53,6 +54,7 @@ def test_get_action_breaks_when_rollouts_exceed_action_count_after_deadline():
     # Arrange
     model = MagicMock()
     running_config = MagicMock()
+    running_config.experiment_board = None
     running_config.simulation_scheduler.simulation_time = 0.0
     actions = [MagicMock(), MagicMock()]
 

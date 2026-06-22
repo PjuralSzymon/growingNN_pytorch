@@ -7,13 +7,13 @@ from pathlib import Path
 import torch
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
-_EXPERIMENT_PATH = _REPO_ROOT / "experiments" / "reatesummary.py"
+_EXPERIMENT_PATH = _REPO_ROOT / "experiments" / "createsummary.py"
 
 
-def _load_reatesummary_module():
+def _load_createsummary_module():
     if str(_REPO_ROOT) not in sys.path:
         sys.path.insert(0, str(_REPO_ROOT))
-    spec = importlib.util.spec_from_file_location("reatesummary", _EXPERIMENT_PATH)
+    spec = importlib.util.spec_from_file_location("createsummary", _EXPERIMENT_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(module)
@@ -25,7 +25,7 @@ def test_parse_config_slug_round_trips_current_slug_format():
     parse_config_slug should recover combo values encoded by combo_slug.
     """
     # Arrange
-    module = _load_reatesummary_module()
+    module = _load_createsummary_module()
     combo = {
         "generations": 20,
         "epochs": 30,
@@ -55,7 +55,7 @@ def test_parse_config_slug_supports_legacy_aug_token_without_f():
     parse_config_slug should accept older slugs that used _aug instead of _augf.
     """
     # Arrange
-    module = _load_reatesummary_module()
+    module = _load_createsummary_module()
     slug = "g5_ep30_bs64_lr0.01_simt150.0_sime15_simsz2000_tgt0.9_wacc1.0_wcw0.5_aug0.5_ch32_hd256"
 
     # Act
@@ -72,7 +72,7 @@ def test_collect_run_results_loads_history_from_seed_folders(tmp_path):
     collect_run_results should scan config_slug/seed_N folders and load history files.
     """
     # Arrange
-    module = _load_reatesummary_module()
+    module = _load_createsummary_module()
     combo = {
         "generations": 20,
         "epochs": 30,
@@ -113,7 +113,7 @@ def test_parse_config_slug_accepts_bare_aug_token_without_value():
     parse_config_slug should accept legacy slugs with _aug but no numeric factor.
     """
     # Arrange
-    module = _load_reatesummary_module()
+    module = _load_createsummary_module()
     slug = "g10_ep30_bs64_lr0.01_simt500.0_sime15_simsz2000_tgt0.9_wacc1.0_wcw0.2_aug_ch32_hd256"
 
     # Act
@@ -129,7 +129,7 @@ def test_write_grid_summary_skips_runs_missing_optional_param(tmp_path):
     write_grid_summary should analyze augmentation_factor only for runs that recorded it.
     """
     # Arrange
-    module = _load_reatesummary_module()
+    module = _load_createsummary_module()
     base_combo = {
         "generations": 20,
         "epochs": 30,
@@ -197,7 +197,7 @@ def test_write_grid_summary_only_reports_varying_parameters(tmp_path):
     write_grid_summary should include sensitivity only for hyperparameters that vary across runs.
     """
     # Arrange
-    module = _load_reatesummary_module()
+    module = _load_createsummary_module()
     base_combo = {
         "generations": 20,
         "epochs": 30,

@@ -35,7 +35,7 @@ from growingnn.training.trainer import train_generations
 from growingnn.utils.fx import GraphStructureQuery
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 
-from reatesummary import (
+from createsummary import (
     RunResult,
     combo_slug,
     load_run_result_from_dir,

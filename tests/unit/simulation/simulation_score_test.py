@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from growingnn.board.experiment_board import ExperimentBoard
 from growingnn.core.config import RunningConfig
 from growingnn.simulation.score_functions.simulation_score import SimulationScore
@@ -35,11 +37,11 @@ def test_score_fills_experiment_board_simulation_metrics():
     composite = score_fn.score(object(), cfg)
 
     # Assert
-    assert composite == 0.3
+    assert composite == pytest.approx(0.3)
     assert board.simulation_metrics["weight_acc_score"] == 0.4
     assert board.simulation_metrics["weight_acc_weight"] == 0.5
     assert board.simulation_metrics["weight_countW_score"] == 0.2
-    assert board.simulation_metrics["composite_score"] == 0.3
+    assert board.simulation_metrics["composite_score"] == pytest.approx(0.3)
 
 
 def test_simulation_score_weight_sum():
