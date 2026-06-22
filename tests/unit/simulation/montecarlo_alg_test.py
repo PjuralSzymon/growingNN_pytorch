@@ -1,6 +1,5 @@
 """Unit tests for Monte Carlo tree search simulation."""
 
-import asyncio
 import logging
 import sys
 from pathlib import Path
@@ -40,7 +39,7 @@ def test_get_action_logs_error_when_rollouts_stall_after_deadline(caplog):
         mock_time.time.side_effect = lambda: next(past_deadline)
 
         # Act
-        _, _, rollouts = asyncio.run(montecarlo_alg.get_action(model, running_config))
+        _, _, rollouts = montecarlo_alg.get_action(model, running_config)
 
     # Assert
     assert rollouts == 3
@@ -67,7 +66,7 @@ def test_get_action_breaks_when_rollouts_exceed_action_count_after_deadline():
         mock_time.time.side_effect = lambda: next(past_deadline)
 
         # Act
-        _, _, rollouts = asyncio.run(montecarlo_alg.get_action(model, running_config))
+        _, _, rollouts = montecarlo_alg.get_action(model, running_config)
 
         # Assert
         assert rollouts == 3

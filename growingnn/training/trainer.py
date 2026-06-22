@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import copy
 from typing import Any
 
@@ -31,8 +30,6 @@ def train_generations(
     )
     config.set_simulation_loaders(sim_train_loader, sim_val_loader)
 
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
     generation_val_acc: list[float] = []
     combined: dict[str, list[Any]] = {
         "generation": [],
@@ -74,9 +71,7 @@ def train_generations(
             break
 
         if config.simulation_scheduler.can_simulate(generation, generation_val_acc, quiet=config.quiet):
-            action, _, _ = loop.run_until_complete(
-                config.simulation_alg.get_action(copy.deepcopy(model), config)
-            )
+            action, _, _ = config.simulation_alg.get_action(copy.deepcopy(model), config)
             if action is None:
                 continue
             action.execute(model)

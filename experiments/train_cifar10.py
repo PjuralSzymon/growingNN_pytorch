@@ -96,9 +96,7 @@ def _loaders(batch_size: int = 64):
     transform = transforms.ToTensor()
     train = datasets.CIFAR10(str(DATA_DIR), train=True, download=True, transform=transform)
     val = datasets.CIFAR10(str(DATA_DIR), train=False, download=True, transform=transform)
-    train_loader = torch.utils.data.DataLoader(
-        train, batch_size=batch_size, shuffle=True, num_workers=0
-    )
+    train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True, num_workers=0)
     val_loader = torch.utils.data.DataLoader(val, batch_size=batch_size, num_workers=0)
     logger.info("Loaded CIFAR-10: %s train, %s val samples", len(train), len(val))
     return train_loader, val_loader

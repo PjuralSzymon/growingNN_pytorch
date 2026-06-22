@@ -138,7 +138,7 @@ def _simulate(node: TreeNode, depth: int = 0, rollouts: int = 0) -> tuple[float,
     return node.value, depth, rollouts
 
 
-async def get_action(
+def get_action(
     model: nn.Module | fx.GraphModule,
     running_config: RunningConfig,
 ) -> tuple[object | None, int, int]:

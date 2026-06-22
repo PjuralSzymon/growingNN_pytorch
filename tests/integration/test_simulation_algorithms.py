@@ -1,6 +1,5 @@
 """Integration tests for architecture simulation algorithms."""
 
-import asyncio
 import sys
 from pathlib import Path
 
@@ -52,7 +51,7 @@ def test_random_alg_returns_executable_action():
     cfg = _running_config()
 
     # Act
-    action, _, _ = asyncio.run(random_alg.get_action(gm, cfg))
+    action, _, _ = random_alg.get_action(gm, cfg)
 
     # Assert
     assert action is not None
@@ -72,7 +71,7 @@ def test_greedy_alg_returns_action_within_time_budget():
     )
 
     # Act
-    action, _, rollouts = asyncio.run(greedy_alg.get_action(gm, cfg))
+    action, _, rollouts = greedy_alg.get_action(gm, cfg)
 
     # Assert
     assert action is not None
