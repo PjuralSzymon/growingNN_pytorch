@@ -304,7 +304,7 @@ def _resolve_path_under_root(path: Path, root: Path) -> Path:
     return GridSummaryWriter(root)._resolve_path_under_root(path)
 
 
-def _load_step_history(history_path: Path) -> dict[str, list[float]]:
+def load_step_history(history_path: Path) -> dict[str, list[float]]:
     data = torch.load(history_path, map_location="cpu", weights_only=True)
     if not isinstance(data, dict):
         raise TypeError(f"Expected dict in {history_path}, got {type(data).__name__}")
@@ -322,7 +322,7 @@ def load_run_result_from_dir(
     if not history_path.is_file():
         return None
 
-    step_history = _load_step_history(history_path)
+    step_history = load_step_history(history_path)
     val_acc = step_history["val_acc"]
     param_count = step_history["param_count"]
     params_before = int(param_count[0])
@@ -340,6 +340,36 @@ def load_run_result_from_dir(
     )
 
 
+def run_dir_for_seed(runs_root: Path, hyperparameter_folder_name: str, seed: int) -> Path:
+    """Path to one grid run: runs_root/<config_folder>/seed_<N>."""
+    return runs_root / hyperparameter_folder_name / f"seed_{seed}"
+
+
+def load_completed_run(
+    run_dir: Path,
+    *,
+    hyperparameters: Hyperparameters,
+    hyperparameter_folder_name: str,
+    seed: int,
+) -> RunResult | None:
+    """Load a finished run from disk; log and return None when the folder exists without history."""
+    if not run_dir.is_dir():
+        return None
+    result = load_run_result_from_dir(
+        run_dir,
+        hyperparameters=hyperparameters,
+        hyperparameter_folder_name=hyperparameter_folder_name,
+        seed=seed,
+    )
+    if result is None:
+        logger.info(
+            "Skipping incomplete run %s seed %s (no history)",
+            hyperparameter_folder_name,
+            seed,
+        )
+    return result
+
+
 def collect_run_results(runs_dir: Path) -> list[RunResult]:
     if not runs_dir.is_dir():
         raise FileNotFoundError(f"Runs directory not found: {runs_dir}")
@@ -355,18 +385,13 @@ def collect_run_results(runs_dir: Path) -> list[RunResult]:
             seed = parse_seed_dir(seed_dir.name)
             if seed is None:
                 continue
-            result = load_run_result_from_dir(
+            result = load_completed_run(
                 seed_dir,
                 hyperparameters=hyperparameters,
                 hyperparameter_folder_name=config_dir.name,
                 seed=seed,
             )
             if result is None:
-                logger.info(
-                    "Skipping incomplete run %s seed %s (no history)",
-                    config_dir.name,
-                    seed,
-                )
                 continue
             results.append(result)
     return results

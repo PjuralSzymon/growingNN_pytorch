@@ -23,7 +23,7 @@ if str(_EXPERIMENT_DIR) not in sys.path:
     sys.path.insert(0, str(_EXPERIMENT_DIR))
 
 from growingnn.board import ExperimentBoard
-from growingnn.core.config import RunningConfig
+from growingnn.core.config import DATALOADER_NUM_WORKERS, RunningConfig
 from growingnn.core.logger import logger
 import growingnn.simulation.simulation_algorithms.montecarlo_alg as montecarlo_alg
 from growingnn.simulation.score_functions.simulation_score import SimulationScore
@@ -36,9 +36,12 @@ from growingnn.utils.fx import GraphStructureQuery
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 
 from createsummary import (
+    HISTORY_FILENAME,
     RunResult,
     build_hyperparameter_folder_name,
-    load_run_result_from_dir,
+    load_completed_run,
+    load_step_history,
+    run_dir_for_seed,
     write_grid_summary,
 )
 
@@ -52,8 +55,8 @@ SIMULATION_TIME = [500.0]
 SIMULATION_EPOCHS = [15]
 SIMULATION_SET_SIZE = [2000]
 TARGET_ACCURACY = [0.99]
-SCORE_WEIGHT_ACC = [1.0] # ?
-SCORE_WEIGHT_COUNTW = [0.2] # ?
+SCORE_WEIGHT_ACC = [1.0]  # ?
+SCORE_WEIGHT_COUNTW = [0.2]  # ?
 AUGMENTATION_FACTOR = [0.0, 0.2, 0.5, 0.75, 1.0]  # 0=none, 1=maximum diversity/strength
 MODEL_CHANNELS = [32]
 MODEL_HIDDEN_DIM = [256]
@@ -93,7 +96,7 @@ METAPARAM_LISTS = (
 OUT_DIR = _EXPERIMENT_DIR / "output" / "train_cifar10"
 DATA_DIR = OUT_DIR / "data"
 RUNS_DIR = OUT_DIR / "runs"
-HISTORY_PATH = OUT_DIR / "train_cifar10_history.pt"
+HISTORY_PATH = OUT_DIR / HISTORY_FILENAME
 SUMMARY_PATH = OUT_DIR / "grid_search_summary.txt"
 NUM_CLASSES = 10
 METRIC_KEYS = ("train_loss", "train_acc", "val_loss", "val_acc", "lr", "param_count")
@@ -122,6 +125,350 @@ class MinimalCifarNet(nn.Module):
         return self.output(x)
 
 
+class Cifar10Data:
+    """CIFAR-10 transforms and DataLoaders for training, validation, and simulation."""
+
+    def __init__(self, data_dir: Path, *, num_workers: int = DATALOADER_NUM_WORKERS) -> None:
+        self._data_dir = data_dir
+        self._num_workers = num_workers
+
+    @staticmethod
+    def clamp_augmentation_factor(augmentation_factor: float) -> float:
+        return max(0.0, min(1.0, float(augmentation_factor)))
+
+    @staticmethod
+    def eval_transform() -> transforms.Compose:
+        return transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD),
+            ]
+        )
+
+    @classmethod
+    def train_transform(cls, augmentation_factor: float) -> transforms.Compose:
+        factor = cls.clamp_augmentation_factor(augmentation_factor)
+        if factor <= 0.0:
+            return cls.eval_transform()
+
+        steps: list[transforms.Transform] = [
+            transforms.RandomCrop(32, padding=4),
+            transforms.RandomHorizontalFlip(),
+        ]
+        if factor < 0.35:
+            pass
+        elif factor < 0.70:
+            steps.append(transforms.TrivialAugmentWide())
+        else:
+            steps.append(transforms.AutoAugment(policy=transforms.AutoAugmentPolicy.CIFAR10))
+
+        steps.extend(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD),
+            ]
+        )
+        if factor >= 0.85:
+            steps.append(
+                transforms.RandomErasing(
+                    p=0.25,
+                    scale=(0.02, 0.20),
+                    ratio=(0.3, 3.3),
+                    value="random",
+                )
+            )
+        return transforms.Compose(steps)
+
+    def loaders(self, batch_size: int, augmentation_factor: float):
+        factor = self.clamp_augmentation_factor(augmentation_factor)
+        logger.info(
+            "Loading CIFAR-10, batch_size %s augmentation_factor %s simulation_augment False",
+            batch_size,
+            factor,
+        )
+        self._data_dir.mkdir(parents=True, exist_ok=True)
+        eval_transform = self.eval_transform()
+        train_transform = self.train_transform(factor)
+        train = datasets.CIFAR10(
+            str(self._data_dir), train=True, download=True, transform=train_transform
+        )
+        train_clean = datasets.CIFAR10(
+            str(self._data_dir), train=True, download=True, transform=eval_transform
+        )
+        val = datasets.CIFAR10(
+            str(self._data_dir), train=False, download=True, transform=eval_transform
+        )
+        loader_kwargs = {"batch_size": batch_size, "num_workers": self._num_workers}
+        train_loader = torch.utils.data.DataLoader(train, shuffle=True, **loader_kwargs)
+        val_loader = torch.utils.data.DataLoader(val, **loader_kwargs)
+        clean_train_loader = torch.utils.data.DataLoader(train_clean, shuffle=False, **loader_kwargs)
+        logger.info(
+            "Loaded CIFAR-10: %s train, %s val; simulation subset uses non-augmented train images",
+            len(train),
+            len(val),
+        )
+        return train_loader, val_loader, clean_train_loader
+
+
+class Cifar10TrainingRun:
+    """Train one hyperparameter configuration and seed; save artifacts under run_dir."""
+
+    def __init__(
+        self,
+        *,
+        data: Cifar10Data,
+        train_device: torch.device,
+        enable_board: bool,
+    ) -> None:
+        self._data = data
+        self._train_device = train_device
+        self._enable_board = enable_board
+
+    def run(self, hyperparameters: dict[str, object], *, seed: int, run_dir: Path) -> RunResult:
+        hyperparameter_folder_name = build_hyperparameter_folder_name(hyperparameters)
+        run_dir.mkdir(parents=True, exist_ok=True)
+        self._set_seed(seed)
+        logger.info("Run %s seed %s -> %s", hyperparameter_folder_name, seed, run_dir)
+
+        gm = fx.symbolic_trace(
+            self._build_model(
+                channels=int(hyperparameters["model_channels"]),
+                hidden_dim=int(hyperparameters["model_hidden_dim"]),
+            )
+        )
+        params_before = GraphStructureQuery.get_amount_of_parameters(gm)
+        self._draw_generation_graphs(run_dir, 0, gm)
+
+        board = (
+            ExperimentBoard(
+                run_dir / "board",
+                experiment_name=f"CIFAR-10 minimal | {hyperparameter_folder_name} | seed {seed}",
+                dataset="CIFAR-10",
+                device=str(self._train_device),
+            )
+            if self._enable_board
+            else None
+        )
+        cfg = self._build_running_config(
+            hyperparameters, board=board, enable_board=self._enable_board
+        )
+        train_loader, val_loader, clean_train_loader = self._data.loaders(
+            int(hyperparameters["batch_size"]), float(hyperparameters["augmentation_factor"])
+        )
+        sim_train_loader, sim_val_loader = sample_loaders(
+            clean_train_loader,
+            val_loader,
+            int(hyperparameters["simulation_set_size"]),
+            seed=seed,
+        )
+
+        try:
+            gm, summary = train_generations(
+                gm,
+                train_loader,
+                val_loader,
+                cfg,
+                sim_train_loader=sim_train_loader,
+                sim_val_loader=sim_val_loader,
+            )
+        except Exception as exc:
+            draw_filtered_fx_graph(gm, str(run_dir / "fx_graph_error_simplified"), fmt="pdf")
+            draw_torch_fx_graph(gm, str(run_dir / "fx_graph_error"), fmt="pdf")
+            logger.error(
+                "Error in train_generations (%s seed %s): %s",
+                hyperparameter_folder_name,
+                seed,
+                exc,
+            )
+            raise
+
+        self._draw_generation_graphs(run_dir, int(summary["generation"][-1]), gm)
+        params_after = GraphStructureQuery.get_amount_of_parameters(gm)
+        architecture_changed = params_after != params_before
+        logger.info(
+            "Run %s seed %s params before %s after %s changed %s",
+            hyperparameter_folder_name,
+            seed,
+            params_before,
+            params_after,
+            architecture_changed,
+        )
+
+        step_history = {key: summary[key] for key in METRIC_KEYS}
+        for key in METRIC_KEYS:
+            self._plot_metric(step_history[key], key, run_dir / f"{key}.png")
+        torch.save(step_history, run_dir / HISTORY_FILENAME)
+
+        return RunResult(
+            hyperparameters=hyperparameters,
+            hyperparameter_folder_name=hyperparameter_folder_name,
+            seed=seed,
+            run_dir=run_dir,
+            best_val_acc=max(summary["val_acc"]),
+            final_val_acc=summary["val_acc"][-1],
+            params_before=params_before,
+            params_after=params_after,
+            architecture_changed=architecture_changed,
+        )
+
+    @staticmethod
+    def _set_seed(seed: int) -> None:
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+
+    @staticmethod
+    def _build_model(
+        num_classes: int = NUM_CLASSES,
+        *,
+        channels: int = 32,
+        hidden_dim: int = 256,
+    ) -> nn.Module:
+        model = MinimalCifarNet(num_classes=num_classes, channels=channels, hidden_dim=hidden_dim)
+        logger.info(
+            "Built MinimalCifarNet: conv1 3->%s conv2 %s->%s -> pool -> linear %s -> %s",
+            model.conv1.out_channels,
+            model.conv2.in_channels,
+            model.conv2.out_channels,
+            model.hidden.out_features,
+            num_classes,
+        )
+        return model
+
+    def _build_running_config(
+        self,
+        hyperparameters: dict[str, object],
+        *,
+        board: ExperimentBoard | None,
+        enable_board: bool,
+    ) -> RunningConfig:
+        return RunningConfig(
+            generations=int(hyperparameters["generations"]),
+            epochs=int(hyperparameters["epochs"]),
+            device=self._train_device,
+            lr_scheduler=LearningRateScheduler(
+                ScheduleMode.PROGRESSIVE_PARABOLIC, alpha=float(hyperparameters["lr_alpha"])
+            ),
+            print_every=1,
+            simulation_alg=montecarlo_alg,
+            simulation_scheduler=SimulationScheduler(
+                SchedulerMode.ALWAYS,
+                simulation_time=float(hyperparameters["simulation_time"]),
+                simulation_epochs=int(hyperparameters["simulation_epochs"]),
+            ),
+            stopper=AccuracyStopper(target_accuracy=float(hyperparameters["target_accuracy"])),
+            simulation_score=SimulationScore(
+                weight_acc=float(hyperparameters["score_weight_acc"]),
+                weight_countW=float(hyperparameters["score_weight_countw"]),
+            ),
+            simulation_set_size=int(hyperparameters["simulation_set_size"]),
+            criterion=nn.CrossEntropyLoss(),
+            quiet=False,
+            enable_experiment_board=enable_board,
+            experiment_board=board,
+        )
+
+    @staticmethod
+    def _draw_generation_graphs(out_dir: Path, generation: int, gm: fx.GraphModule) -> None:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        draw_filtered_fx_graph(gm, str(out_dir / f"fx_graph_simplified{generation}"), fmt="pdf")
+        draw_torch_fx_graph(gm, str(out_dir / f"fx_graph{generation}"), fmt="pdf")
+
+    @staticmethod
+    def _plot_metric(values: list[float], name: str, save_path: Path) -> None:
+        steps = range(1, len(values) + 1)
+        fig, ax = plt.subplots(figsize=(6, 4))
+        ax.plot(steps, values)
+        ax.set_xlabel("step")
+        ax.set_ylabel(name)
+        fig.tight_layout()
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(save_path, dpi=150)
+        plt.close(fig)
+
+
+class Cifar10Experiment:
+    """Grid-search or single-run orchestration for the CIFAR-10 experiment."""
+
+    def __init__(self, args: argparse.Namespace, train_device: torch.device) -> None:
+        self._args = args
+        self._train_device = train_device
+        self._data = Cifar10Data(DATA_DIR)
+        self._trainer = Cifar10TrainingRun(
+            data=self._data, train_device=train_device, enable_board=args.board
+        )
+
+    def run(self) -> None:
+        if self._is_grid_mode():
+            self._run_grid()
+        else:
+            self._run_single()
+
+    @staticmethod
+    def _is_grid_mode() -> bool:
+        return math.prod(len(values) for values in METAPARAM_LISTS) > 1
+
+    @staticmethod
+    def _iter_hyperparameter_sets() -> list[dict[str, object]]:
+        return [dict(zip(METAPARAM_KEYS, combo)) for combo in itertools.product(*METAPARAM_LISTS)]
+
+    def _run_grid(self) -> None:
+        RUNS_DIR.mkdir(parents=True, exist_ok=True)
+        OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+        results: list[RunResult] = []
+        for hyperparameters in self._iter_hyperparameter_sets():
+            hyperparameter_folder_name = build_hyperparameter_folder_name(hyperparameters)
+            for seed in GRID_REPEAT_SEEDS:
+                run_dir = run_dir_for_seed(RUNS_DIR, hyperparameter_folder_name, seed)
+                result = load_completed_run(
+                    run_dir,
+                    hyperparameters=hyperparameters,
+                    hyperparameter_folder_name=hyperparameter_folder_name,
+                    seed=seed,
+                )
+                if result is not None:
+                    logger.info(
+                        "Skipping completed run %s seed %s -> %s",
+                        hyperparameter_folder_name,
+                        seed,
+                        run_dir,
+                    )
+                elif run_dir.exists():
+                    continue
+                else:
+                    result = self._trainer.run(hyperparameters, seed=seed, run_dir=run_dir)
+                results.append(result)
+                write_grid_summary(results, SUMMARY_PATH)
+        print(f"Grid search finished. Summary: {SUMMARY_PATH}")
+
+    def _run_single(self) -> None:
+        hyperparameters = self._iter_hyperparameter_sets()[0]
+        run_dir = OUT_DIR
+        result = self._trainer.run(hyperparameters, seed=0, run_dir=run_dir)
+        if not result.architecture_changed:
+            raise AssertionError("architecture search did not change the model")
+
+        step_history = load_step_history(run_dir / HISTORY_FILENAME)
+        if self._args.save_output or not HISTORY_PATH.is_file():
+            torch.save(step_history, HISTORY_PATH)
+            if not self._args.save_output:
+                print(f"Baseline missing; wrote {HISTORY_PATH}. Re-run with --save-output true to refresh.")
+        else:
+            baseline = load_step_history(HISTORY_PATH)
+            for key in step_history:
+                assert step_history[key] == baseline[key]
+
+        if not self._args.save_output:
+            self._clear_output_dir()
+
+    @staticmethod
+    def _clear_output_dir() -> None:
+        if OUT_DIR.exists():
+            shutil.rmtree(OUT_DIR)
+        OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+
 def _parse_cli(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="train_cifar10 minimal growingNN experiment")
     parser.add_argument(
@@ -141,289 +488,6 @@ def _parse_cli(argv: list[str] | None = None) -> argparse.Namespace:
     ns.save_output = ns.save_output == "true"
     ns.board = ns.board == "true"
     return ns
-
-
-def _is_grid_mode() -> bool:
-    return math.prod(len(values) for values in METAPARAM_LISTS) > 1
-
-
-def _iter_combos() -> list[dict[str, object]]:
-    return [dict(zip(METAPARAM_KEYS, combo)) for combo in itertools.product(*METAPARAM_LISTS)]
-
-
-def _clear_output_dir() -> None:
-    if OUT_DIR.exists():
-        shutil.rmtree(OUT_DIR)
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-
-
-def _set_seed(seed: int) -> None:
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
-
-
-def _build_model(
-    num_classes: int = NUM_CLASSES,
-    *,
-    channels: int = 32,
-    hidden_dim: int = 256,
-) -> nn.Module:
-    model = MinimalCifarNet(num_classes=num_classes, channels=channels, hidden_dim=hidden_dim)
-    logger.info(
-        "Built MinimalCifarNet: conv1 3->%s conv2 %s->%s -> pool -> linear %s -> %s",
-        model.conv1.out_channels,
-        model.conv2.in_channels,
-        model.conv2.out_channels,
-        model.hidden.out_features,
-        num_classes,
-    )
-    return model
-
-
-def _eval_transform() -> transforms.Compose:
-    return transforms.Compose(
-        [
-            transforms.ToTensor(),
-            transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD),
-        ]
-    )
-
-
-def _clamp_augmentation_factor(augmentation_factor: float) -> float:
-    return max(0.0, min(1.0, float(augmentation_factor)))
-
-from torchvision import transforms
-
-def _train_transform(augmentation_factor: float) -> transforms.Compose:
-    """
-    CIFAR-10 / ResNet training transform.
-
-    Recommended strategy:
-    - always use CIFAR baseline: crop + horizontal flip
-    - use only ONE strong policy: AutoAugment OR TrivialAugment/RandAugment
-    - do not stack TrivialAugment + RandAugment + affine + heavy jitter
-    """
-    factor = _clamp_augmentation_factor(augmentation_factor)
-
-    if factor <= 0.0:
-        return _eval_transform()
-
-    steps: list[transforms.Transform] = [
-        transforms.RandomCrop(32, padding=4),
-        transforms.RandomHorizontalFlip(),
-    ]
-
-    if factor < 0.35:
-        # Light, safe baseline.
-        pass
-
-    elif factor < 0.70:
-        # Strong but simple. Good default if you want little tuning.
-        steps.append(transforms.TrivialAugmentWide())
-
-    else:
-        # Best CIFAR-10-specific image-level policy.
-        steps.append(
-            transforms.AutoAugment(
-                policy=transforms.AutoAugmentPolicy.CIFAR10
-            )
-        )
-
-    steps.extend([
-        transforms.ToTensor(),
-        transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD),
-    ])
-
-    # Optional Cutout-like regularization.
-    # Keep it mild; do not use huge erase probability on 32x32 images.
-    if factor >= 0.85:
-        steps.append(
-            transforms.RandomErasing(
-                p=0.25,
-                scale=(0.02, 0.20),
-                ratio=(0.3, 3.3),
-                value="random",
-            )
-        )
-
-    return transforms.Compose(steps)
-
-
-def _loaders(batch_size: int, augmentation_factor: float):
-    factor = _clamp_augmentation_factor(augmentation_factor)
-    logger.info(
-        "Loading CIFAR-10, batch_size %s augmentation_factor %s simulation_augment False",
-        batch_size,
-        factor,
-    )
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    eval_transform = _eval_transform()
-    train_transform = _train_transform(factor)
-    train = datasets.CIFAR10(
-        str(DATA_DIR), train=True, download=True, transform=train_transform
-    )
-    train_clean = datasets.CIFAR10(
-        str(DATA_DIR), train=True, download=True, transform=eval_transform
-    )
-    val = datasets.CIFAR10(
-        str(DATA_DIR), train=False, download=True, transform=eval_transform
-    )
-    train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
-    val_loader = torch.utils.data.DataLoader(val, batch_size=batch_size)
-    clean_train_loader = torch.utils.data.DataLoader(
-        train_clean, batch_size=batch_size, shuffle=False
-    )
-    logger.info(
-        "Loaded CIFAR-10: %s train, %s val; simulation subset uses non-augmented train images",
-        len(train),
-        len(val),
-    )
-    return train_loader, val_loader, clean_train_loader
-
-
-def _draw_generation_graphs(out_dir: Path, generation: int, gm: fx.GraphModule) -> None:
-    out_dir.mkdir(parents=True, exist_ok=True)
-    draw_filtered_fx_graph(gm, str(out_dir / f"fx_graph_simplified{generation}"), fmt="pdf")
-    draw_torch_fx_graph(gm, str(out_dir / f"fx_graph{generation}"), fmt="pdf")
-
-
-def _plot_metric(values: list[float], name: str, save_path: Path) -> None:
-    steps = range(1, len(values) + 1)
-    fig, ax = plt.subplots(figsize=(6, 4))
-    ax.plot(steps, values)
-    ax.set_xlabel("step")
-    ax.set_ylabel(name)
-    fig.tight_layout()
-    save_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(save_path, dpi=150)
-    plt.close(fig)
-
-
-def _build_running_config(
-    combo: dict[str, object],
-    *,
-    train_device: torch.device,
-    board: ExperimentBoard | None,
-    enable_board: bool,
-) -> RunningConfig:
-    return RunningConfig(
-        generations=int(combo["generations"]),
-        epochs=int(combo["epochs"]),
-        device=train_device,
-        lr_scheduler=LearningRateScheduler(
-            ScheduleMode.PROGRESSIVE_PARABOLIC, alpha=float(combo["lr_alpha"])
-        ),
-        print_every=1,
-        simulation_alg=montecarlo_alg,
-        simulation_scheduler=SimulationScheduler(
-            SchedulerMode.ALWAYS,
-            simulation_time=float(combo["simulation_time"]),
-            simulation_epochs=int(combo["simulation_epochs"]),
-        ),
-        stopper=AccuracyStopper(target_accuracy=float(combo["target_accuracy"])),
-        simulation_score=SimulationScore(
-            weight_acc=float(combo["score_weight_acc"]),
-            weight_countW=float(combo["score_weight_countw"]),
-        ),
-        simulation_set_size=int(combo["simulation_set_size"]),
-        criterion=nn.CrossEntropyLoss(),
-        quiet=False,
-        enable_experiment_board=enable_board,
-        experiment_board=board,
-    )
-
-
-def _run_training(
-    combo: dict[str, object],
-    *,
-    seed: int,
-    run_dir: Path,
-    train_device: torch.device,
-    enable_board: bool,
-) -> RunResult:
-    hyperparameter_folder_name = build_hyperparameter_folder_name(combo)
-    run_dir.mkdir(parents=True, exist_ok=True)
-    _set_seed(seed)
-    logger.info("Run %s seed %s -> %s", hyperparameter_folder_name, seed, run_dir)
-
-    gm = fx.symbolic_trace(
-        _build_model(
-            channels=int(combo["model_channels"]),
-            hidden_dim=int(combo["model_hidden_dim"]),
-        )
-    )
-    params_before = GraphStructureQuery.get_amount_of_parameters(gm)
-    _draw_generation_graphs(run_dir, 0, gm)
-
-    board = (
-        ExperimentBoard(
-            run_dir / "board",
-            experiment_name=f"CIFAR-10 minimal | {hyperparameter_folder_name} | seed {seed}",
-            dataset="CIFAR-10",
-            device=str(train_device),
-        )
-        if enable_board
-        else None
-    )
-    cfg = _build_running_config(
-        combo, train_device=train_device, board=board, enable_board=enable_board
-    )
-    train_loader, val_loader, clean_train_loader = _loaders(
-        int(combo["batch_size"]), float(combo["augmentation_factor"])
-    )
-    sim_train_loader, sim_val_loader = sample_loaders(
-        clean_train_loader,
-        val_loader,
-        int(combo["simulation_set_size"]),
-        seed=seed,
-    )
-
-    try:
-        gm, summary = train_generations(
-            gm,
-            train_loader,
-            val_loader,
-            cfg,
-            sim_train_loader=sim_train_loader,
-            sim_val_loader=sim_val_loader,
-        )
-    except Exception as exc:
-        draw_filtered_fx_graph(gm, str(run_dir / "fx_graph_error_simplified"), fmt="pdf")
-        draw_torch_fx_graph(gm, str(run_dir / "fx_graph_error"), fmt="pdf")
-        logger.error("Error in train_generations (%s seed %s): %s", hyperparameter_folder_name, seed, exc)
-        raise
-
-    _draw_generation_graphs(run_dir, int(summary["generation"][-1]), gm)
-    params_after = GraphStructureQuery.get_amount_of_parameters(gm)
-    architecture_changed = params_after != params_before
-    logger.info(
-        "Run %s seed %s params before %s after %s changed %s",
-        hyperparameter_folder_name,
-        seed,
-        params_before,
-        params_after,
-        architecture_changed,
-    )
-
-    step_history = {key: summary[key] for key in METRIC_KEYS}
-    for key in METRIC_KEYS:
-        _plot_metric(step_history[key], key, run_dir / f"{key}.png")
-    torch.save(step_history, run_dir / "train_cifar10_history.pt")
-
-    best_val_acc = max(summary["val_acc"])
-    final_val_acc = summary["val_acc"][-1]
-    return RunResult(
-        hyperparameters=combo,
-        hyperparameter_folder_name=hyperparameter_folder_name,
-        seed=seed,
-        run_dir=run_dir,
-        best_val_acc=best_val_acc,
-        final_val_acc=final_val_acc,
-        params_before=params_before,
-        params_after=params_after,
-        architecture_changed=architecture_changed,
-    )
 
 
 def _assert_cuda_ready(train_device: torch.device) -> None:
@@ -452,83 +516,16 @@ def _assert_cuda_ready(train_device: torch.device) -> None:
         raise
 
 
-def _run_grid(args: argparse.Namespace, train_device: torch.device) -> None:
-    combos = _iter_combos()
-    seeds = GRID_REPEAT_SEEDS
-    RUNS_DIR.mkdir(parents=True, exist_ok=True)
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-
-    results: list[RunResult] = []
-    for combo in combos:
-        hyperparameter_folder_name = build_hyperparameter_folder_name(combo)
-        for seed in seeds:
-            run_dir = RUNS_DIR / hyperparameter_folder_name / f"seed_{seed}"
-            if run_dir.exists():
-                result = load_run_result_from_dir(
-                    run_dir,
-                    hyperparameters=combo,
-                    hyperparameter_folder_name=hyperparameter_folder_name,
-                    seed=seed,
-                )
-                if result is None:
-                    logger.info(
-                        "Skipping incomplete run %s seed %s (no history)",
-                        hyperparameter_folder_name,
-                        seed,
-                    )
-                    continue
-                logger.info(
-                    "Skipping completed run %s seed %s -> %s",
-                    hyperparameter_folder_name,
-                    seed,
-                    run_dir,
-                )
-            else:
-                result = _run_training(
-                    combo,
-                    seed=seed,
-                    run_dir=run_dir,
-                    train_device=train_device,
-                    enable_board=args.board,
-                )
-            results.append(result)
-            write_grid_summary(results, SUMMARY_PATH)
-    print(f"Grid search finished. Summary: {SUMMARY_PATH}")
+def _eval_transform() -> transforms.Compose:
+    return Cifar10Data.eval_transform()
 
 
-def _run_single(args: argparse.Namespace, train_device: torch.device) -> None:
-    combo = _iter_combos()[0]
-    run_dir = OUT_DIR
-    result = _run_training(
-        combo,
-        seed=0,
-        run_dir=run_dir,
-        train_device=train_device,
-        enable_board=args.board,
-    )
-    if not result.architecture_changed:
-        raise AssertionError("architecture search did not change the model")
-
-    step_history = torch.load(run_dir / "train_cifar10_history.pt", map_location="cpu", weights_only=False)
-    if args.save_output or not HISTORY_PATH.is_file():
-        torch.save(step_history, HISTORY_PATH)
-        if not args.save_output:
-            print(f"Baseline missing; wrote {HISTORY_PATH}. Re-run with --save-output true to refresh.")
-    else:
-        baseline = _load_step_history(HISTORY_PATH)
-        for key in step_history:
-            assert step_history[key] == baseline[key]
-
-    if not args.save_output:
-        _clear_output_dir()
+def _train_transform(augmentation_factor: float) -> transforms.Compose:
+    return Cifar10Data.train_transform(augmentation_factor)
 
 
 if __name__ == "__main__":
     args = _parse_cli()
     train_device = torch.device("cuda")
     _assert_cuda_ready(train_device)
-
-    if _is_grid_mode():
-        _run_grid(args, train_device)
-    else:
-        _run_single(args, train_device)
+    Cifar10Experiment(args, train_device).run()

@@ -100,6 +100,51 @@ def test_collect_run_results_loads_history_from_seed_folders(tmp_path):
     assert results[0].architecture_changed is True
 
 
+def test_load_completed_run_returns_none_for_missing_or_incomplete_dirs(tmp_path):
+    """
+    load_completed_run should return None for a missing dir or one without history.
+    """
+    # Arrange
+    module = _load_createsummary_module()
+    hyperparameters = _sample_hyperparameters()
+    folder_name = module.build_hyperparameter_folder_name(hyperparameters)
+    missing_dir = module.run_dir_for_seed(tmp_path, folder_name, 0)
+    incomplete_dir = module.run_dir_for_seed(tmp_path, folder_name, 1)
+    incomplete_dir.mkdir(parents=True)
+
+    # Act
+    missing_result = module.load_completed_run(
+        missing_dir,
+        hyperparameters=hyperparameters,
+        hyperparameter_folder_name=folder_name,
+        seed=0,
+    )
+    incomplete_result = module.load_completed_run(
+        incomplete_dir,
+        hyperparameters=hyperparameters,
+        hyperparameter_folder_name=folder_name,
+        seed=1,
+    )
+
+    # Assert
+    assert missing_result is None
+    assert incomplete_result is None
+
+
+def test_run_dir_for_seed_builds_expected_path(tmp_path):
+    """
+    run_dir_for_seed should place runs under runs_root/<config>/seed_<N>.
+    """
+    # Arrange
+    module = _load_createsummary_module()
+
+    # Act
+    run_dir = module.run_dir_for_seed(tmp_path, "config_a", 3)
+
+    # Assert
+    assert run_dir == tmp_path / "config_a" / "seed_3"
+
+
 def test_parse_hyperparameters_from_folder_name_accepts_bare_aug_token_without_value():
     """
     parse_hyperparameters_from_folder_name should accept legacy folder names with bare _aug.
