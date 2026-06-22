@@ -60,7 +60,7 @@ def test_get_action_breaks_when_rollouts_exceed_action_count_after_deadline():
     with (
         patch.object(montecarlo_alg, "generate_all_actions", return_value=actions),
         patch.object(montecarlo_alg, "time") as mock_time,
-        patch.object(montecarlo_alg, "_simulate", return_value=(0.0, 0, 3)),
+        patch.object(montecarlo_alg, "_simulate", return_value=(0.0, 0, 3)) as mock_simulate,
         patch.object(montecarlo_alg, "clear_reshepers_cache"),
     ):
         past_deadline = iter([0.0] + [100.0] * 10)
@@ -69,6 +69,6 @@ def test_get_action_breaks_when_rollouts_exceed_action_count_after_deadline():
         # Act
         _, _, rollouts = asyncio.run(montecarlo_alg.get_action(model, running_config))
 
-    # Assert
-    assert rollouts == 3
-    montecarlo_alg._simulate.assert_called_once()
+        # Assert
+        assert rollouts == 3
+        mock_simulate.assert_called_once()
