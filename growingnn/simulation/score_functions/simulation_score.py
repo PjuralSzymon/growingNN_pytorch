@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import math
 
 import torch.fx as fx
 import torch.nn as nn
@@ -59,7 +60,7 @@ class SimulationScore:
                 board_metrics[f"{key}_weighted"] = weight * term_score
             total += weight * term_score
         divisor = self.weight_sum()
-        if divisor == 0.0:
+        if math.isclose(divisor, 0.0):
             logger.error("SimulationScore.score: all weights are 0, returning 0 instead of NaN")
             return 0.0
         composite = total / divisor

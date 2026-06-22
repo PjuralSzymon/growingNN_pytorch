@@ -151,7 +151,7 @@ def _simulate(node: TreeNode, depth: int = 0, rollouts: int = 0) -> tuple[float,
     return node.value, depth, rollouts
 
 
-async def get_action(
+def get_action(
     model: nn.Module | fx.GraphModule,
     running_config: RunningConfig,
 ) -> tuple[object | None, int, int]:
@@ -168,9 +168,13 @@ async def get_action(
     max_depth = 0
     rollouts = 0
     while time.time() < deadline or rollouts <= len(actions):
+        prev_rollouts = rollouts
         _, max_depth, rollouts = _simulate(root, 0, rollouts)
-        if time.time() >= deadline and rollouts > len(actions):
-            break
+        if time.time() >= deadline:
+            if rollouts > len(actions):
+                break
+            elif rollouts <= prev_rollouts:
+                logger.error("MCTS no new rollouts after deadline (rollouts=%s, actions=%s)",rollouts,len(actions),)
 
     best_child = root.get_best_child()
     best_action = best_child.action if best_child is not None else None

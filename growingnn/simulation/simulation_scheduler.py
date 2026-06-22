@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from enum import Enum
 
-
 class SchedulerMode(Enum):
     ALWAYS = 0
     PROGRESS_CHECK = 1
@@ -39,6 +38,4 @@ class SimulationScheduler:
             return False
         recent = generation_val_acc[-(self.stagnation_window + 1):]
         improved = recent[-1] > max(recent[:-1])
-        if not quiet and not improved:
-            pass
         return not improved

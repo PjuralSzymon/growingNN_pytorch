@@ -15,7 +15,7 @@ from growingnn.utils.fx import GraphStructureQuery
 from growingnn.utils.quaziIdentity import clear_reshepers_cache
 
 
-async def get_action(
+def get_action(
     model: nn.Module | fx.GraphModule,
     running_config: RunningConfig,
 ) -> tuple[object | None, int, int]:

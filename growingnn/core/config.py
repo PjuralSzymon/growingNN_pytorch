@@ -62,6 +62,9 @@ LOG_FILE_NAME = "growingnn.log"
 LOG_FILE_MAX_BYTES = 100 * 1024 * 1024  # 100 MB per rotated file
 LOG_FILE_BACKUP_COUNT = 9  # 1 active + 9 backups => ~1 GB on disk total
 
+# DataLoader: subprocess count for loading batches (0 = main process only)
+DATALOADER_NUM_WORKERS = 0
+
 
 def default_training_device() -> str:
     """Pick CUDA when available, otherwise CPU."""

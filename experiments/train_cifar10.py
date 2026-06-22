@@ -500,7 +500,7 @@ def _run_single(args: argparse.Namespace, train_device: torch.device) -> None:
         if not args.save_output:
             print(f"Baseline missing; wrote {HISTORY_PATH}. Re-run with --save-output true to refresh.")
     else:
-        baseline = torch.load(HISTORY_PATH, map_location="cpu", weights_only=False)
+        baseline = _load_step_history(HISTORY_PATH)
         for key in step_history:
             assert step_history[key] == baseline[key]
 
