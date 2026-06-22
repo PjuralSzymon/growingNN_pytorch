@@ -37,7 +37,7 @@ from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_f
 
 from createsummary import (
     RunResult,
-    combo_slug,
+    build_hyperparameter_folder_name,
     load_run_result_from_dir,
     write_grid_summary,
 )
@@ -195,6 +195,9 @@ def _clamp_augmentation_factor(augmentation_factor: float) -> float:
 
 
 def _train_transform(augmentation_factor: float) -> transforms.Compose:
+    """
+    Very basic not fully working augmentation pipeline.
+    """
     factor = _clamp_augmentation_factor(augmentation_factor)
     if factor <= 0.0:
         return _eval_transform()
@@ -339,10 +342,10 @@ def _run_training(
     train_device: torch.device,
     enable_board: bool,
 ) -> RunResult:
-    config_slug = combo_slug(combo)
+    hyperparameter_folder_name = build_hyperparameter_folder_name(combo)
     run_dir.mkdir(parents=True, exist_ok=True)
     _set_seed(seed)
-    logger.info("Run %s seed %s -> %s", config_slug, seed, run_dir)
+    logger.info("Run %s seed %s -> %s", hyperparameter_folder_name, seed, run_dir)
 
     gm = fx.symbolic_trace(
         _build_model(
@@ -356,7 +359,7 @@ def _run_training(
     board = (
         ExperimentBoard(
             run_dir / "board",
-            experiment_name=f"CIFAR-10 minimal | {config_slug} | seed {seed}",
+            experiment_name=f"CIFAR-10 minimal | {hyperparameter_folder_name} | seed {seed}",
             dataset="CIFAR-10",
             device=str(train_device),
         )
@@ -388,7 +391,7 @@ def _run_training(
     except Exception as exc:
         draw_filtered_fx_graph(gm, str(run_dir / "fx_graph_error_simplified"), fmt="pdf")
         draw_torch_fx_graph(gm, str(run_dir / "fx_graph_error"), fmt="pdf")
-        logger.error("Error in train_generations (%s seed %s): %s", config_slug, seed, exc)
+        logger.error("Error in train_generations (%s seed %s): %s", hyperparameter_folder_name, seed, exc)
         raise
 
     _draw_generation_graphs(run_dir, int(summary["generation"][-1]), gm)
@@ -396,7 +399,7 @@ def _run_training(
     architecture_changed = params_after != params_before
     logger.info(
         "Run %s seed %s params before %s after %s changed %s",
-        config_slug,
+        hyperparameter_folder_name,
         seed,
         params_before,
         params_after,
@@ -411,8 +414,8 @@ def _run_training(
     best_val_acc = max(summary["val_acc"])
     final_val_acc = summary["val_acc"][-1]
     return RunResult(
-        combo=combo,
-        config_slug=config_slug,
+        hyperparameters=combo,
+        hyperparameter_folder_name=hyperparameter_folder_name,
         seed=seed,
         run_dir=run_dir,
         best_val_acc=best_val_acc,
@@ -457,17 +460,29 @@ def _run_grid(args: argparse.Namespace, train_device: torch.device) -> None:
 
     results: list[RunResult] = []
     for combo in combos:
-        slug = combo_slug(combo)
+        hyperparameter_folder_name = build_hyperparameter_folder_name(combo)
         for seed in seeds:
-            run_dir = RUNS_DIR / slug / f"seed_{seed}"
+            run_dir = RUNS_DIR / hyperparameter_folder_name / f"seed_{seed}"
             if run_dir.exists():
                 result = load_run_result_from_dir(
-                    run_dir, combo=combo, config_slug=slug, seed=seed
+                    run_dir,
+                    hyperparameters=combo,
+                    hyperparameter_folder_name=hyperparameter_folder_name,
+                    seed=seed,
                 )
                 if result is None:
-                    logger.info("Skipping incomplete run %s seed %s (no history)", slug, seed)
+                    logger.info(
+                        "Skipping incomplete run %s seed %s (no history)",
+                        hyperparameter_folder_name,
+                        seed,
+                    )
                     continue
-                logger.info("Skipping completed run %s seed %s -> %s", slug, seed, run_dir)
+                logger.info(
+                    "Skipping completed run %s seed %s -> %s",
+                    hyperparameter_folder_name,
+                    seed,
+                    run_dir,
+                )
             else:
                 result = _run_training(
                     combo,
