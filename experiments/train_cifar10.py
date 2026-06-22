@@ -193,12 +193,19 @@ def _eval_transform() -> transforms.Compose:
 def _clamp_augmentation_factor(augmentation_factor: float) -> float:
     return max(0.0, min(1.0, float(augmentation_factor)))
 
+from torchvision import transforms
 
 def _train_transform(augmentation_factor: float) -> transforms.Compose:
     """
-    Very basic not fully working augmentation pipeline.
+    CIFAR-10 / ResNet training transform.
+
+    Recommended strategy:
+    - always use CIFAR baseline: crop + horizontal flip
+    - use only ONE strong policy: AutoAugment OR TrivialAugment/RandAugment
+    - do not stack TrivialAugment + RandAugment + affine + heavy jitter
     """
     factor = _clamp_augmentation_factor(augmentation_factor)
+
     if factor <= 0.0:
         return _eval_transform()
 
@@ -206,47 +213,40 @@ def _train_transform(augmentation_factor: float) -> transforms.Compose:
         transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip(),
     ]
-    if factor >= 0.2:
-        jitter = 0.08 + 0.32 * factor
-        steps.append(
-            transforms.ColorJitter(
-                brightness=jitter,
-                contrast=jitter,
-                saturation=jitter,
-                hue=min(0.08, 0.02 + 0.06 * factor),
-            )
-        )
-    if factor >= 0.4:
+
+    if factor < 0.35:
+        # Light, safe baseline.
+        pass
+
+    elif factor < 0.70:
+        # Strong but simple. Good default if you want little tuning.
         steps.append(transforms.TrivialAugmentWide())
-    if factor >= 0.6:
+
+    else:
+        # Best CIFAR-10-specific image-level policy.
         steps.append(
-            transforms.RandomAffine(
-                degrees=5.0 + 10.0 * factor,
-                translate=(0.05 + 0.05 * factor, 0.05 + 0.05 * factor),
-                scale=(1.0 - 0.08 * factor, 1.0 + 0.08 * factor),
-                shear=2.0 + 3.0 * factor,
+            transforms.AutoAugment(
+                policy=transforms.AutoAugmentPolicy.CIFAR10
             )
-        )
-    if factor >= 0.8:
-        steps.append(
-            transforms.RandAugment(num_ops=2, magnitude=min(14, int(6 + 8 * factor)))
         )
 
-    steps.extend(
-        [
-            transforms.ToTensor(),
-            transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD),
-        ]
-    )
-    if factor >= 0.2:
+    steps.extend([
+        transforms.ToTensor(),
+        transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD),
+    ])
+
+    # Optional Cutout-like regularization.
+    # Keep it mild; do not use huge erase probability on 32x32 images.
+    if factor >= 0.85:
         steps.append(
             transforms.RandomErasing(
-                p=min(0.5, 0.05 + 0.45 * factor),
-                scale=(0.02, 0.33),
+                p=0.25,
+                scale=(0.02, 0.20),
                 ratio=(0.3, 3.3),
                 value="random",
             )
         )
+
     return transforms.Compose(steps)
 
 
