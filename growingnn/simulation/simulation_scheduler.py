@@ -4,9 +4,6 @@ from __future__ import annotations
 
 from enum import Enum
 
-from growingnn.core.logger import logger
-
-
 class SchedulerMode(Enum):
     ALWAYS = 0
     PROGRESS_CHECK = 1
@@ -41,6 +38,4 @@ class SimulationScheduler:
             return False
         recent = generation_val_acc[-(self.stagnation_window + 1):]
         improved = recent[-1] > max(recent[:-1])
-        if not quiet and not improved:
-            logger.info("Validation accuracy did not improve; running architecture simulation")
         return not improved
