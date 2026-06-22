@@ -58,7 +58,7 @@ class TreeNode:
                 )
             except Exception as e:
                 logger.error("Error in gradient_descent: %s", e)
-                draw_filtered_fx_graph(model_copy, str("." / f"fx_graph_error_simulation_simplified"), fmt="pdf")
+                draw_filtered_fx_graph(model_copy, "fx_graph_error_simulation_simplified", fmt="pdf")
                 exit(1)
             self.child_nodes.append(
                 TreeNode(self, action, model_copy, cfg)
