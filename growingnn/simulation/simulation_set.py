@@ -8,6 +8,8 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader, Dataset, Subset
 
+from growingnn.core.logger import logger
+
 #TODO: Very old code, research for better way to create simualtion set 
 
 def _dataset_labels(dataset: Dataset) -> torch.Tensor:
@@ -37,6 +39,8 @@ def protected_sampling_indices(
         k = min(samples_per_class, len(class_indices))
         pick = class_indices[torch.randperm(len(class_indices), generator=generator)[:k]]
         selected.extend(pick.tolist())
+    if len(selected) > n:
+        logger.info("Simulation sample count %s exceeds requested %s (classes=%s, min one per class)", len(selected), n, len(unique_classes))
     return selected
 
 
