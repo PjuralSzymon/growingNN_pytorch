@@ -40,7 +40,7 @@ def test_train_transform_factor_zero_uses_eval_pipeline_only():
 
 def test_train_transform_factor_one_enables_full_augmentation_stack():
     """
-    augmentation_factor 1 should include the strongest multi-policy augmentation stack.
+    augmentation_factor 1 should use AutoAugment CIFAR-10 policy plus RandomErasing.
     """
     # Arrange
     module = _load_train_cifar10_module()
@@ -50,13 +50,14 @@ def test_train_transform_factor_one_enables_full_augmentation_stack():
     transform_types = _transform_types(pipeline)
 
     # Assert
-    assert transforms.RandomCrop in transform_types
-    assert transforms.RandomHorizontalFlip in transform_types
-    assert transforms.ColorJitter in transform_types
-    assert transforms.TrivialAugmentWide in transform_types
-    assert transforms.RandomAffine in transform_types
-    assert transforms.RandAugment in transform_types
-    assert transforms.RandomErasing in transform_types
+    assert transform_types == (
+        transforms.RandomCrop,
+        transforms.RandomHorizontalFlip,
+        transforms.AutoAugment,
+        transforms.ToTensor,
+        transforms.Normalize,
+        transforms.RandomErasing,
+    )
 
 
 def test_train_transform_factor_scales_enabled_transform_count():
