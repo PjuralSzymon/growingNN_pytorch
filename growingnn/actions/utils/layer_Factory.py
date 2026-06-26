@@ -143,6 +143,53 @@ class ConvFactory:
         return layer
 
     @staticmethod
+    def _conv_kwargs(mod: nn.Conv2d) -> dict[str, object]:
+        return {
+            "kernel_size": mod.kernel_size,
+            "stride": mod.stride,
+            "padding": mod.padding,
+            "dilation": mod.dilation,
+            "groups": mod.groups,
+            "bias": mod.bias is not None,
+            "padding_mode": mod.padding_mode,
+        }
+
+    @staticmethod
+    def create_conv_with_rescaled_output_channels(mod: nn.Conv2d, new_out_channels: int) -> nn.Conv2d:
+        """New Conv2d with out_channels=new_out_channels, weights rescaled from mod."""
+        device, dtype = _module_device_dtype(mod)
+        conv = nn.Conv2d(mod.in_channels, new_out_channels, **ConvFactory._conv_kwargs(mod))
+        conv = conv.to(device=device, dtype=dtype)
+        with torch.no_grad():
+            rescale = get_reshsper(
+                mod.out_channels, new_out_channels, dtype=dtype, device=device,
+            )
+            kh, kw = mod.weight.shape[2:]
+            flat = mod.weight.reshape(mod.out_channels, -1)
+            conv.weight.copy_((rescale.T @ flat).reshape(new_out_channels, mod.in_channels, kh, kw).contiguous())
+            if mod.bias is not None:
+                conv.bias.copy_((rescale.T @ mod.bias).contiguous())
+        return conv
+
+    @staticmethod
+    def create_conv_with_rescaled_input_channels(mod: nn.Conv2d, new_in_channels: int) -> nn.Conv2d:
+        """New Conv2d with in_channels=new_in_channels, weights rescaled from mod."""
+        device, dtype = _module_device_dtype(mod)
+        conv = nn.Conv2d(new_in_channels, mod.out_channels, **ConvFactory._conv_kwargs(mod))
+        conv = conv.to(device=device, dtype=dtype)
+        with torch.no_grad():
+            rescale = get_reshsper(
+                mod.in_channels, new_in_channels, dtype=dtype, device=device,
+            )
+            kh, kw = mod.weight.shape[2:]
+            flat = mod.weight.permute(0, 2, 3, 1).reshape(-1, mod.in_channels)
+            reshaped = (flat @ rescale).reshape(mod.out_channels, kh, kw, new_in_channels)
+            conv.weight.copy_(reshaped.permute(0, 3, 1, 2).contiguous())
+            if mod.bias is not None:
+                conv.bias.copy_(mod.bias)
+        return conv
+
+    @staticmethod
     def create_zero_conv_before_linear(in_channels: int, out_channels: int, kernel_size: int, stride: int, padding: int) -> nn.Conv2d:
         layer = ConvFactory.create_zero_conv(
             in_channels=in_channels,

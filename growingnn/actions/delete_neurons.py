@@ -17,6 +17,9 @@ def resize_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, new_width
     NodeEditor.replace_submodule(gm, layer_id, LinearFactory.create_linear_with_rescaled_neurons(mod, new_width))
     propagate_neuron_change(gm, ModuleResolver.find_call_module(gm.graph.nodes, layer_id), new_width, set())
     gm.recompile()
+    for tensor in list(gm.parameters()) + list(gm.buffers()):
+        if tensor.numel() > 0 and not tensor.is_contiguous():
+            tensor.data = tensor.data.contiguous()
 
 
 def shrink_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, ratio: float) -> fx.GraphModule:
@@ -29,7 +32,6 @@ def shrink_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, ratio: fl
     if new >= mod.out_features or new < config.MINIMUM_MATRIX_SIZE_FOR_NEURONS_REMOVAL:
         return gm
     node = ModuleResolver.find_call_module(gm.graph.nodes, layer_id)
-    # Abort when shrink would reach an add whose other branch has non-resizable modules (e.g. Conv2d).
     if NodeWidthAnalyser.propagation_hits_unsizable(gm, node):
         return gm
     resize_layer_output(gm, layer_id, new)
@@ -59,7 +61,6 @@ class DelNeurons(Action):
             if new_out >= mod.out_features or new_out < config.MINIMUM_MATRIX_SIZE_FOR_NEURONS_REMOVAL:
                 continue
             node = ModuleResolver.find_call_module(gm.graph.nodes, layer_id)
-            # Same guard as shrink_layer_output: conv/add residual paths cannot be width-synced.
             if NodeWidthAnalyser.propagation_hits_unsizable(gm, node):
                 continue
             actions.append(DelNeurons([layer_id, ratio]))

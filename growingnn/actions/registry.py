@@ -13,6 +13,7 @@ from growingnn.actions.add_res_layer import AddResLayer
 from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
 from growingnn.actions.add_seq_layer import AddSeqLayer
 from growingnn.actions.delete_layer import DelLayer
+from growingnn.actions.add_neurons import AddNeurons
 from growingnn.actions.delete_neurons import DelNeurons
 from growingnn.core.config import RunningConfig
 
@@ -29,6 +30,12 @@ def generate_all_actions(
         actions.extend(AddSeqLayer.generate_all_actions(model))
     if config.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER:
         actions.extend(AddSeqConvLayer.generate_all_actions(model))
+    if config.ACTIONS_ENABLE_ADD_NEURONS_11:
+        actions.extend(AddNeurons.generate_all_actions(model, ratio=1.1))
+    if config.ACTIONS_ENABLE_ADD_NEURONS_15:
+        actions.extend(AddNeurons.generate_all_actions(model, ratio=1.5))
+    if config.ACTIONS_ENABLE_ADD_NEURONS_20:
+        actions.extend(AddNeurons.generate_all_actions(model, ratio=2.0))
     if config.ACTIONS_ENABLE_DEL_LAYER:
         actions.extend(DelLayer.generate_all_actions(model))
     if config.ACTIONS_ENABLE_DEL_NEURONS_01:
