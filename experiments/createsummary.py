@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import statistics
 import sys
@@ -24,6 +25,7 @@ DEFAULT_RUNS_DIR = _EXPERIMENT_DIR / "output" / "train_cifar10" / "runs"
 DEFAULT_SUMMARY_PATH = _EXPERIMENT_DIR / "output" / "train_cifar10" / "grid_search_summary.txt"
 EXPERIMENT_OUTPUT_ROOT = _EXPERIMENT_DIR / "output"
 HISTORY_FILENAME = "train_cifar10_history.pt"
+RUN_LOCK_FILENAME = ".running.lock"
 
 Hyperparameters: TypeAlias = dict[str, object]
 
@@ -343,6 +345,56 @@ def load_run_result_from_dir(
 def run_dir_for_seed(runs_root: Path, hyperparameter_folder_name: str, seed: int) -> Path:
     """Path to one grid run: runs_root/<config_folder>/seed_<N>."""
     return runs_root / hyperparameter_folder_name / f"seed_{seed}"
+
+
+def _pid_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    if sys.platform == "win32":
+        import ctypes
+
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        handle = ctypes.windll.kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if handle:
+            ctypes.windll.kernel32.CloseHandle(handle)
+            return True
+        return False
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True
+
+
+def _clear_stale_run_lock(run_dir: Path) -> None:
+    lock = run_dir / RUN_LOCK_FILENAME
+    if not lock.is_file():
+        return
+    try:
+        pid = int(lock.read_text(encoding="utf-8").strip().split()[0])
+    except (OSError, ValueError):
+        pid = -1
+    if not _pid_alive(pid):
+        lock.unlink(missing_ok=True)
+
+
+def try_claim_run(run_dir: Path) -> bool:
+    """Atomically claim a run directory for this process; False if another live worker owns it."""
+    run_dir.mkdir(parents=True, exist_ok=True)
+    _clear_stale_run_lock(run_dir)
+    lock = run_dir / RUN_LOCK_FILENAME
+    try:
+        fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        os.write(fd, f"{os.getpid()}\n".encode())
+        os.close(fd)
+        return True
+    except FileExistsError:
+        return False
+
+
+def release_run_claim(run_dir: Path) -> None:
+    """Drop the worker lock after a run finishes or fails."""
+    (run_dir / RUN_LOCK_FILENAME).unlink(missing_ok=True)
 
 
 def load_completed_run(
