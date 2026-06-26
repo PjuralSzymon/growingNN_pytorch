@@ -19,6 +19,17 @@ class Layer_Type(Enum):
     RANDOM = 2
     EYE = 3
 
+
+def _module_device_dtype(mod: nn.Module) -> tuple[torch.device, torch.dtype]:
+    param = next(mod.parameters(), None)
+    if param is not None:
+        return param.device, param.dtype
+    buf = next(mod.buffers(), None)
+    if buf is not None:
+        return buf.device, buf.dtype
+    return torch.device("cpu"), torch.float32
+
+
 class LinearFactory:
 
     @staticmethod
@@ -59,18 +70,20 @@ class LinearFactory:
     @staticmethod
     def create_linear_with_rescaled_neurons(mod: nn.Linear, new_neuron_count: int) -> nn.Linear:
         """New Linear with out_features=new_neuron_count, weights rescaled from mod."""
+        device, dtype = _module_device_dtype(mod)
         lin = nn.Linear(mod.in_features, new_neuron_count, bias=mod.bias is not None)
+        lin = lin.to(device=device, dtype=dtype)
         with torch.no_grad():
             neuron_rescale_matrix = get_reshsper(
                 mod.out_features, new_neuron_count,
-                dtype=mod.weight.dtype, device=mod.weight.device,
+                dtype=dtype, device=device,
             )
             rescaled_weights = (neuron_rescale_matrix.T @ mod.weight).contiguous()
             lin.weight.copy_(rescaled_weights)
             if mod.bias is not None:
                 bias_rescale_matrix = get_reshsper(
                     mod.out_features, new_neuron_count,
-                    dtype=mod.bias.dtype, device=mod.bias.device,
+                    dtype=dtype, device=device,
                 )
                 rescaled_bias = (bias_rescale_matrix.T @ mod.bias).contiguous()
                 lin.bias.copy_(rescaled_bias)
@@ -79,11 +92,13 @@ class LinearFactory:
     @staticmethod
     def create_linear_with_rescaled_connections(mod: nn.Linear, new_input_count: int) -> nn.Linear:
         """New Linear with in_features=new_input_count, weights rescaled from mod."""
+        device, dtype = _module_device_dtype(mod)
         lin = nn.Linear(new_input_count, mod.out_features, bias=mod.bias is not None)
+        lin = lin.to(device=device, dtype=dtype)
         with torch.no_grad():
             connection_rescale_matrix = get_reshsper(
                 mod.in_features, new_input_count,
-                dtype=mod.weight.dtype, device=mod.weight.device,
+                dtype=dtype, device=device,
             )
             rescaled_weights = (mod.weight @ connection_rescale_matrix).contiguous()
             lin.weight.copy_(rescaled_weights)
