@@ -26,7 +26,7 @@ Builds `gm` from `model` or uses an existing `GraphModule`, then walks `.users`.
 
 Example chain `l1 -> l2 -> l3` (all hidden/editable as required): dependency pairs include `(l1,l2)`, `(l1,l3)`, `(l2,l3)`; sequential pairs only `(l1,l2)` and `(l2,l3)`.
 
-Used by `add_res_layer.py`, `add_res_conv_layer.py`, `add_seq_layer.py`, `add_seq_conv_layer.py`, `delete_layer.py`.
+Used by `add_res_linear_layer.py`, `add_res_conv_layer.py`, `add_seq_linear_layer.py`, `add_seq_conv_layer.py`, `delete_layer.py`.
 
 ---
 
@@ -49,8 +49,8 @@ Maps probed tuples to bridge sizes (no live `isinstance` on modules for width).
 
 | Method | Returns | Typical caller |
 |--------|---------|----------------|
-| `find_bridge_linear_sizes` | `(in_f, out_f)` | `add_seq_layer.py` linear→linear |
-| `find_bridge_res_linear_sizes` | `(in_f, out_f)` | `add_res_layer.py` |
+| `find_bridge_linear_sizes` | `(in_f, out_f)` | `add_seq_linear_layer.py` linear→linear |
+| `find_bridge_res_linear_sizes` | `(in_f, out_f)` | `add_res_linear_layer.py` |
 | `find_equal_conv_output_shapes` | bool | `add_res_conv_layer.py` conv→conv |
 | `find_conv_before_linear_sizes` | `(C, out)` | conv→linear residual |
 | `find_seq_conv_bridge_channels` | channels | `add_seq_conv_layer.py` |

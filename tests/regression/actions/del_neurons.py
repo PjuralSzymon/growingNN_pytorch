@@ -11,8 +11,8 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from growingnn.actions.action import Action, Layer_Type
-from growingnn.actions.add_res_layer import AddResLayer
-from growingnn.actions.add_seq_layer import AddSeqLayer
+from growingnn.actions.add_res_linear_layer import AddResLinearLayer
+from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
 from growingnn.actions.delete_neurons import DelNeurons
 from growingnn.utils.fx import GraphStructureQuery
 from growingnn.core.logger import logger
@@ -45,8 +45,8 @@ if __name__ == "__main__":
         logger.info("idx: %s --------------------------------", id)
         actions: List[Action] = []
         if id < grow_iterations:
-            actions += AddResLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])
-            actions += AddSeqLayer.generate_all_actions(gm)
+            actions += AddResLinearLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])
+            actions += AddSeqLinearLayer.generate_all_actions(gm)
         else:
             actions += DelNeurons.generate_all_actions(gm)
         if len(actions) == 0:

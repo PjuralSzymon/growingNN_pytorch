@@ -11,3 +11,10 @@
 8. (27.05.2026) -- Report send
 9. (29.05.2026) I was refactoring anding tests and I discover that there is a problem with batchnorm layer because it is changing the shape so it should not be used as passthought module but handling it seems to be possible but would need a special handling It's a bit worrying we will ahve  alot of those that will block us, movign it out from config will cost alot of actions that won't be possible to execute, also In one of the test i used .view to reshape the layer output manually and it was not working corectly that is also not supported, which may be problematic in the futhure.  I was forced to add PASSTHROUGH_MODULES_TO_UPDATE to handle the batchnorm, Also added new test script which runs the action in ohther way and is a very good way to check the alg stability:
 ![[Pasted image 20260529182429.png|288]] ![[Pasted image 20260529182440.png|244]]
+10. (18.06.2026) I expanded expeirmnt script it was running or very long time few unstable errors were detected and fixed 
+11. (20.06.2026) I added add neurons action 
+12. (25.06.2026) I was expanding how experiment script is working to test the stability I got a new error; 2026-06-25 22:34:30,953 | ERROR    | Error in train_generations (g10_ep30_bs64_lr0.01_simt500.0_sime15_simsz500_tgt0.98_wacc1.0_wcw1.0_augf0.0_ch64_hd512 seed 20): CUDA error: misaligned address
+Search for `cudaErrorMisalignedAddress' in https://docs.nvidia.com/cuda/cuda-runtime-api/group__CUDART__TYPES.html for more information.
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions. (AI made some auto changes sugesting it is caused by add/delete of neurons)

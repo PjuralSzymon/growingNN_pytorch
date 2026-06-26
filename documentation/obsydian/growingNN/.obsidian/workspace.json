@@ -6,7 +6,7 @@
       {
         "id": "50a3c76cfef85c02",
         "type": "tabs",
-        "dimension": 72.37261146496814,
+        "dimension": 53.821656050955404,
         "children": [
           {
             "id": "b72e270d2b0f453e",
@@ -42,7 +42,7 @@
       {
         "id": "1bc94f06e7375099",
         "type": "tabs",
-        "dimension": 27.62738853503185,
+        "dimension": 46.178343949044596,
         "children": [
           {
             "id": "7c9c7d5673f234b6",
@@ -220,9 +220,9 @@
   },
   "active": "b21a7027cf935f4b",
   "lastOpenFiles": [
+    "Reports/TODO.md",
     "Reports/PLAN.md",
     "Reports/Part 1.md",
-    "Reports/TODO.md",
     "Plan Prezentacji.md",
     "Actions/Grow oriented actions/Sequential Linear Actions.md",
     "references/Pasted image 20260529182135.png",

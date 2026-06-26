@@ -4,7 +4,7 @@ This action is responsible for adding layers sequentially between other layers f
 ### Benefits:
 - Those actions don't introduce any data loss ad
 
-Code lives in `growingnn/actions/add_seq_layer.py`
+Code lives in `growingnn/actions/add_seq_linear_layer.py`
 
 
 It uses [[Torch.fx]]: `GraphStructureQuery.module_sequential_pairs`, `ModuleResolver.get_layer_module`, `LayerShapeAnalyser`, `LayerBridgeFinder`, `ModelStructureEditor.add_new_seq_layer`, `ModuleResolver.unique_call_module_name`.

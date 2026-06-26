@@ -25,9 +25,9 @@ if str(_REPO_ROOT) not in sys.path:
 
 from growingnn.actions.action import Action, Layer_Type
 from growingnn.actions.add_res_conv_layer import AddResConvLayer
-from growingnn.actions.add_res_layer import AddResLayer
+from growingnn.actions.add_res_linear_layer import AddResLinearLayer
 from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
-from growingnn.actions.add_seq_layer import AddSeqLayer
+from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
 from growingnn.actions.delete_layer import DelLayer
 from growingnn.actions.delete_neurons import DelNeurons
 from growingnn.core.logger import logger
@@ -144,9 +144,9 @@ MODEL_SPECS: List[ModelSpec] = [
 ActionGenerator = Tuple[str, Callable[[fx.GraphModule], List[Action]]]
 
 ACTION_GENERATORS: List[ActionGenerator] = [
-    ("AddResLayer", lambda gm: AddResLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])),
+    ("AddResLinearLayer", lambda gm: AddResLinearLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])),
     ("AddResConvLayer", AddResConvLayer.generate_all_actions),
-    ("AddSeqLayer", AddSeqLayer.generate_all_actions),
+    ("AddSeqLinearLayer", AddSeqLinearLayer.generate_all_actions),
     ("AddSeqConvLayer", AddSeqConvLayer.generate_all_actions),
     ("DelLayer", DelLayer.generate_all_actions),
     ("DelNeurons", DelNeurons.generate_all_actions),

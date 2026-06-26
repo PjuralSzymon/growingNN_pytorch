@@ -1,6 +1,6 @@
 This note is about `tests/regression/resnet_regression_test.py`.
 
-What it does. It loads a real pretrained ResNet-18 from `torchvision.models.resnet18` with `ResNet18_Weights.DEFAULT`, sets `eval()`, traces with `torch.fx.symbolic_trace` into `gm`, then loops up to `ITERATIONS = 50` steps. Each step builds a list of actions from `AddResLayer.generate_all_actions`, `AddResConvLayer.generate_all_actions`, and optional seq or delete flags, picks one action at random, calls `execute`, runs `gm(x)` with `BATCH_SIZE = 2` and `INPUT_SHAPE = (3, 64, 64)`, logs norms, draws FX graphs into `testResults/regression/` via FX graph drawer `draw_filtered_fx_graph` and `draw_torch_fx_graph`.
+What it does. It loads a real pretrained ResNet-18 from `torchvision.models.resnet18` with `ResNet18_Weights.DEFAULT`, sets `eval()`, traces with `torch.fx.symbolic_trace` into `gm`, then loops up to `ITERATIONS = 50` steps. Each step builds a list of actions from `AddResLinearLayer.generate_all_actions`, `AddResConvLayer.generate_all_actions`, and optional seq or delete flags, picks one action at random, calls `execute`, runs `gm(x)` with `BATCH_SIZE = 2` and `INPUT_SHAPE = (3, 64, 64)`, logs norms, draws FX graphs into `testResults/regression/` via FX graph drawer `draw_filtered_fx_graph` and `draw_torch_fx_graph`.
 
 Why. It stress-tests growth on a large real graph with dotted submodule names. Where. Run as a script from the `tests` folder; CLI uses `parse_regression_cli` from Regression utils.
 

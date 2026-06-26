@@ -222,8 +222,16 @@ def propagate_neuron_change(gm, node, width, seen):
             if not NodeWidthAnalyser.inputs_match_width(gm, user, width):
                 logger.debug("propagate_neuron_change --- skip input width mismatch: %s", name)
                 continue
+            was_square = (
+                (isinstance(mod, nn.Linear) and mod.in_features == mod.out_features)
+                or (isinstance(mod, nn.Conv2d) and mod.in_channels == mod.out_channels)
+            )
             _rescale_input_connections(gm, name, mod, width)
             updated = ModuleResolver.get_layer_module(name, gm)
-            propagate_neuron_change(gm, user, _module_output_width(updated), seen)
+            out_w = _module_output_width(updated)
+            if NodeTypeChecker.is_add(node) and was_square and out_w != width:
+                _rescale_output_neurons(gm, name, updated, width)
+                out_w = width
+            propagate_neuron_change(gm, user, out_w, seen)
         else:
             logger.debug("propagate_neuron_change --- skip non-resizable module: %s", name)

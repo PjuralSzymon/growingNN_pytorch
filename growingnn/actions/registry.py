@@ -9,9 +9,9 @@ import torch.nn as nn
 
 from growingnn.actions.action import Action, Layer_Type
 from growingnn.actions.add_res_conv_layer import AddResConvLayer
-from growingnn.actions.add_res_layer import AddResLayer
+from growingnn.actions.add_res_linear_layer import AddResLinearLayer
 from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
-from growingnn.actions.add_seq_layer import AddSeqLayer
+from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
 from growingnn.actions.delete_layer import DelLayer
 from growingnn.actions.add_neurons import AddNeurons
 from growingnn.actions.delete_neurons import DelNeurons
@@ -23,11 +23,11 @@ def generate_all_actions(
 ) -> list[Action]:
     actions: list[Action] = []
     if config.ACTIONS_ENABLE_ADD_RES_LAYER:
-        actions.extend(AddResLayer.generate_all_actions(model, layer_types=(Layer_Type.EYE, Layer_Type.ZERO)))
+        actions.extend(AddResLinearLayer.generate_all_actions(model, layer_types=(Layer_Type.EYE, Layer_Type.ZERO)))
     if config.ACTIONS_ENABLE_ADD_RES_CONV_LAYER:
         actions.extend(AddResConvLayer.generate_all_actions(model))
     if config.ACTIONS_ENABLE_ADD_SEQ_LAYER:
-        actions.extend(AddSeqLayer.generate_all_actions(model))
+        actions.extend(AddSeqLinearLayer.generate_all_actions(model))
     if config.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER:
         actions.extend(AddSeqConvLayer.generate_all_actions(model))
     if config.ACTIONS_ENABLE_ADD_NEURONS_11:

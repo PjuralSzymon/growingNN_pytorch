@@ -16,9 +16,9 @@ if str(_REPO_ROOT) not in sys.path:
 from growingnn.actions.add_neurons import AddNeurons
 from growingnn.actions.action import Action, Layer_Type
 from growingnn.actions.add_res_conv_layer import AddResConvLayer
-from growingnn.actions.add_res_layer import AddResLayer
+from growingnn.actions.add_res_linear_layer import AddResLinearLayer
 from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
-from growingnn.actions.add_seq_layer import AddSeqLayer
+from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
 from growingnn.actions.delete_layer import DelLayer
 from growingnn.utils.fx import GraphStructureQuery
 from growingnn.core.logger import logger
@@ -65,11 +65,11 @@ def _make_xy(rng: torch.Generator) -> tuple[torch.Tensor, torch.Tensor]:
 def _generate_actions(gm: fx.GraphModule) -> List[Action]:
     actions: List[Action] = []
     if USE_ADD_RES_LAYER:
-        actions += AddResLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])
+        actions += AddResLinearLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])
     if USE_ADD_RES_CONV_LAYER:
         actions += AddResConvLayer.generate_all_actions(gm)
     if USE_ADD_SEQ_LAYER:
-        actions += AddSeqLayer.generate_all_actions(gm)
+        actions += AddSeqLinearLayer.generate_all_actions(gm)
     if USE_ADD_SEQ_CONV_LAYER:
         actions += AddSeqConvLayer.generate_all_actions(gm)
     if USE_DEL_LAYER:

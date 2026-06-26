@@ -13,9 +13,9 @@ if str(_REPO_ROOT) not in sys.path:
 
 from growingnn.actions.action import Action, Layer_Type
 from growingnn.actions.add_res_conv_layer import AddResConvLayer
-from growingnn.actions.add_res_layer import AddResLayer
+from growingnn.actions.add_res_linear_layer import AddResLinearLayer
 from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
-from growingnn.actions.add_seq_layer import AddSeqLayer
+from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
 from growingnn.actions.delete_layer import DelLayer
 from growingnn.utils.fx import GraphStructureQuery
 from growingnn.core.logger import logger
@@ -51,10 +51,10 @@ if __name__ == "__main__":
         logger.info("idx: %s --------------------------------", id)
         actions: List[Action] = []
         if id < grow_iterations:
-            actions += AddResLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])
+            actions += AddResLinearLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])
             actions += AddResConvLayer.generate_all_actions(gm)
             actions += AddSeqConvLayer.generate_all_actions(gm)
-            actions += AddSeqLayer.generate_all_actions(gm)
+            actions += AddSeqLinearLayer.generate_all_actions(gm)
         else:
             actions += DelLayer.generate_all_actions(gm)
         if len(actions) == 0:

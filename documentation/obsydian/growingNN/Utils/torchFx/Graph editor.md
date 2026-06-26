@@ -1,6 +1,6 @@
 File: `growingnn/utils/fx/graph_editor.py`. Class `ModelStructureEditor`. Edits `fx.GraphModule` in place, then `lint` and `recompile`. 
 
-Called from grow/shrink actions in `growingnn/actions/` (`add_res_layer.py`, `add_res_conv_layer.py`, `add_seq_layer.py`, `add_seq_conv_layer.py`, `delete_layer.py`) via [[Torch.fx]] Layer names needs to be unique, during adding new layers protection over uniquness is manged by unique_call_module_name in [[Node analysis]].
+Called from grow/shrink actions in `growingnn/actions/` (`add_res_linear_layer.py`, `add_res_conv_layer.py`, `add_seq_linear_layer.py`, `add_seq_conv_layer.py`, `delete_layer.py`) via [[Torch.fx]] Layer names needs to be unique, during adding new layers protection over uniquness is manged by unique_call_module_name in [[Node analysis]].
 
 ---
 
