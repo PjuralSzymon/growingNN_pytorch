@@ -305,3 +305,32 @@ def test_write_grid_summary_rejects_path_outside_allowed_root(tmp_path):
     # Act / Assert
     with pytest.raises(ValueError, match="inside"):
         module.write_grid_summary(results, outside_path, allowed_output_root=allowed_root)
+
+
+def test_try_claim_run_grants_exclusive_access(tmp_path):
+    """
+    try_claim_run should allow only one live claim per run directory.
+    """
+    # Arrange
+    module = _load_createsummary_module()
+    run_dir = tmp_path / "seed_0"
+
+    # Act / Assert
+    assert module.try_claim_run(run_dir) is True
+    assert module.try_claim_run(run_dir) is False
+    module.release_run_claim(run_dir)
+    assert module.try_claim_run(run_dir) is True
+
+
+def test_try_claim_run_reclaims_stale_lock(tmp_path):
+    """
+    try_claim_run should reclaim a lock left by a non-running PID.
+    """
+    # Arrange
+    module = _load_createsummary_module()
+    run_dir = tmp_path / "seed_1"
+    run_dir.mkdir(parents=True)
+    (run_dir / module.RUN_LOCK_FILENAME).write_text("999999999\n", encoding="utf-8")
+
+    # Act / Assert
+    assert module.try_claim_run(run_dir) is True

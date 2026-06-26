@@ -414,11 +414,9 @@ def test_shrink_propagates_through_add_chain_with_forked_siblings():
     assert y.shape == (2, 5)
 
 
-def test_generate_actions_skips_linear_with_conv_sibling_at_add():
+def test_generate_actions_allows_linear_with_conv_sibling_at_add():
     """
-    DelNeurons.generate_all_actions must NOT produce an action for a Linear
-    whose forward propagation reaches an add node where the sibling branch
-    is a Conv2d (non-sizable). This prevents runtime shape mismatches.
+    DelNeurons.generate_all_actions should include linears whose sibling branch is Conv2d.
     """
 
     # Arrange
@@ -442,10 +440,39 @@ def test_generate_actions_skips_linear_with_conv_sibling_at_add():
 
     # Assert
     layer_ids = [a.params[0] for a in actions]
-    print("test_generate_actions_skips_linear_with_conv_sibling_at_add: layer_ids: %s", layer_ids)
-    assert "linear_hidden" not in layer_ids, (
-        "linear_hidden feeds an add with a conv sibling — must be filtered out"
-    )
+    assert "linear_hidden" in layer_ids
+
+
+def test_shrink_linear_with_conv_sibling_resizes_conv_output():
+    """
+    Shrinking linear_hidden should resize the conv sibling output channels at the add.
+    """
+    # Arrange
+    class LinearConvAdd(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.conv = nn.Conv2d(3, 10, 3, padding=1)
+            self.pool = nn.AdaptiveAvgPool2d(1)
+            self.linear_hidden = nn.Linear(10, 10)
+            self.fc = nn.Linear(10, 5)
+
+        def forward(self, x):
+            conv_out = self.pool(self.conv(x)).flatten(1)
+            lin_out = self.linear_hidden(conv_out)
+            return self.fc(lin_out + conv_out)
+
+    gm = fx.symbolic_trace(LinearConvAdd())
+    x = torch.randn(2, 3, 8, 8)
+
+    # Act
+    DelNeurons(["linear_hidden", 0.5]).execute(gm)
+    y = gm(x)
+
+    # Assert
+    assert gm.linear_hidden.out_features == 5
+    assert gm.conv.out_channels == 5
+    assert gm.fc.in_features == 5
+    assert y.shape == (2, 5)
 
 
 def test_generate_actions_keeps_linear_without_conv_sibling():
@@ -563,10 +590,9 @@ def test_generate_actions_allows_nested_linear_chain_after_conv():
     assert y.shape == (2, 5)
 
 
-def test_del_neurons_on_seq_linear_skips_when_hidden_forks_to_conv_residual():
+def test_del_neurons_on_seq_linear_resizes_conv_residual_branch():
     """
-    Shrinking seq_linear_0 after a conv residual skip must not narrow forked hidden,
-    which would break hidden + res_conv__0 (error3: 230 vs 256).
+    Shrinking seq_linear_0 should align hidden and res_conv output width at add1.
     """
 
     # Arrange
@@ -579,16 +605,15 @@ def test_del_neurons_on_seq_linear_skips_when_hidden_forks_to_conv_residual():
     y = gm(x)
 
     # Assert
-    assert gm.hidden.out_features == 256
-    assert gm.seq_linear_0.out_features == 256
-    assert gm.get_submodule("res_conv__0.0").out_channels == 256
+    assert gm.seq_linear_0.out_features == 230
+    assert gm.hidden.out_features == 230
+    assert gm.get_submodule("res_conv__0.0").out_channels == 230
     assert y.shape == (2, 10)
 
 
-def test_generate_actions_skips_seq_linear_when_hidden_forks_to_conv_residual():
+def test_generate_actions_allows_seq_linear_when_hidden_forks_to_conv_residual():
     """
-    DelNeurons.generate_all_actions must omit seq_linear_0 when hidden feeds
-    both a conv residual add and a downstream linear residual add.
+    DelNeurons.generate_all_actions should include seq_linear_0 when res_conv can be synced.
     """
 
     # Arrange
@@ -599,13 +624,13 @@ def test_generate_actions_skips_seq_linear_when_hidden_forks_to_conv_residual():
     layer_ids = [action.params[0] for action in actions]
 
     # Assert
-    assert "seq_linear_0" not in layer_ids
-    assert "hidden" not in layer_ids
+    assert "seq_linear_0" in layer_ids
+    assert "hidden" in layer_ids
 
 
-def test_del_neurons_on_hidden_skips_when_res_conv_sibling_present():
+def test_del_neurons_on_hidden_resizes_conv_residual_sibling():
     """
-    Shrinking hidden directly must also be blocked when res_conv__0 is its add sibling.
+    Shrinking hidden should also resize res_conv__0 output channels at add1.
     """
 
     # Arrange
@@ -617,8 +642,9 @@ def test_del_neurons_on_hidden_skips_when_res_conv_sibling_present():
     y = gm(x)
 
     # Assert
-    assert gm.hidden.out_features == 256
-    assert gm.seq_linear_0.in_features == 256
+    assert gm.hidden.out_features == 230
+    assert gm.seq_linear_0.in_features == 230
+    assert gm.get_submodule("res_conv__0.0").out_channels == 230
     assert y.shape == (2, 10)
 
 
