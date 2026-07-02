@@ -38,29 +38,26 @@ from createsummary import (
     RunResult,
     build_hyperparameter_folder_name,
     collect_run_results,
-    load_completed_run,
-    release_run_claim,
     run_dir_for_seed,
-    try_claim_run,
     write_grid_summary,
 )
 
 # --- Metaparameter grid (one value per list => original single-run behavior) ---
 # ~24 configs x 3 seeds = 72 runs, ~30-44 h on 8 GB GPU
 GENERATIONS = [10, 20]
-EPOCHS = [30, 50]
-BATCH_SIZE = [64, 128]
+EPOCHS = [30]
+BATCH_SIZE = [64]
 LR_ALPHA = [0.01]
-SIMULATION_TIME = [500.0, 750]
-SIMULATION_EPOCHS = [15, 5, 20]
-SIMULATION_SET_SIZE = [500, 1000, 2000]
-TARGET_ACCURACY = [0.98]
+SIMULATION_TIME = [500.0]
+SIMULATION_EPOCHS = [15]
+SIMULATION_SET_SIZE = [2000]
+TARGET_ACCURACY = [0.99, 1.0]
 SCORE_WEIGHT_ACC = [1.0, 0.5]  # ?
-SCORE_WEIGHT_COUNTW = [1.0, 0.2, 0.1]  # ?
-AUGMENTATION_FACTOR = [0.0, 0.5, 0.75, 1.0]  # 0=none, 1=maximum diversity/strength
-MODEL_CHANNELS = [32, 64]
-MODEL_HIDDEN_DIM = [256, 512, 1024, 2048]
-GRID_REPEAT_SEEDS = [20]
+SCORE_WEIGHT_COUNTW = [0.2, 0.1]  # ?
+AUGMENTATION_FACTOR = [0.75, 1.0]  # 0=none, 1=maximum diversity/strength
+MODEL_CHANNELS = [32]
+MODEL_HIDDEN_DIM = [1024, 2048]
+GRID_REPEAT_SEEDS = [30]
 
 METAPARAM_KEYS = (
     "generations",
@@ -225,7 +222,8 @@ class Cifar10TrainingRun:
 
     def run(self, hyperparameters: dict[str, object], *, seed: int, run_dir: Path) -> RunResult:
         hyperparameter_folder_name = build_hyperparameter_folder_name(hyperparameters)
-        run_dir.mkdir(parents=True, exist_ok=True)
+        if not run_dir.exists():
+            run_dir.mkdir(parents=True, exist_ok=True)
         self._set_seed(seed)
         logger.info("Run %s seed %s -> %s", hyperparameter_folder_name, seed, run_dir)
 
@@ -387,7 +385,7 @@ class Cifar10TrainingRun:
 
 
 class Cifar10Experiment:
-    """Process pending grid runs one by one; skips completed dirs, claims the rest."""
+    """Run the hyperparameter grid sequentially; skip run dirs that already exist."""
 
     def __init__(self, args: argparse.Namespace, train_device: torch.device) -> None:
         self._args = args
@@ -401,21 +399,21 @@ class Cifar10Experiment:
         RUNS_DIR.mkdir(parents=True, exist_ok=True)
         OUT_DIR.mkdir(parents=True, exist_ok=True)
         runs_done = 0
-        while True:
-            claimed = self._claim_next_run()
-            if claimed is None:
-                break
-            hyperparameters, seed, run_dir = claimed
+        for hyperparameters in self._iter_hyperparameter_sets():
             hyperparameter_folder_name = build_hyperparameter_folder_name(hyperparameters)
-            logger.info("Claimed %s seed %s -> %s", hyperparameter_folder_name, seed, run_dir)
-            try:
+            for seed in GRID_REPEAT_SEEDS:
+                run_dir = run_dir_for_seed(RUNS_DIR, hyperparameter_folder_name, seed)
+                if run_dir.exists():
+                    logger.info("Skipping existing %s seed %s", hyperparameter_folder_name, seed)
+                    continue
+                logger.info(
+                    "Starting experiment %s seed %s -> %s",
+                    hyperparameter_folder_name,
+                    seed,
+                    run_dir,
+                )
                 self._trainer.run(hyperparameters, seed=seed, run_dir=run_dir)
-            finally:
-                release_run_claim(run_dir)
-            runs_done += 1
-            write_grid_summary(collect_run_results(RUNS_DIR), SUMMARY_PATH)
-            if self._args.once:
-                break
+                runs_done += 1
         if runs_done:
             print(f"Finished {runs_done} run(s). Summary: {SUMMARY_PATH}")
         else:
@@ -425,32 +423,9 @@ class Cifar10Experiment:
     def _iter_hyperparameter_sets() -> list[dict[str, object]]:
         return [dict(zip(METAPARAM_KEYS, combo)) for combo in itertools.product(*METAPARAM_LISTS)]
 
-    def _claim_next_run(self) -> tuple[dict[str, object], int, Path] | None:
-        for hyperparameters in self._iter_hyperparameter_sets():
-            hyperparameter_folder_name = build_hyperparameter_folder_name(hyperparameters)
-            for seed in GRID_REPEAT_SEEDS:
-                run_dir = run_dir_for_seed(RUNS_DIR, hyperparameter_folder_name, seed)
-                if load_completed_run(
-                    run_dir,
-                    hyperparameters=hyperparameters,
-                    hyperparameter_folder_name=hyperparameter_folder_name,
-                    seed=seed,
-                ) is not None:
-                    logger.info("Skipping completed %s seed %s", hyperparameter_folder_name, seed)
-                    continue
-                if try_claim_run(run_dir):
-                    return hyperparameters, seed, run_dir
-                logger.info("Skipping in-progress %s seed %s", hyperparameter_folder_name, seed)
-        return None
-
 
 def _parse_cli(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="train_cifar10 minimal growingNN experiment")
-    parser.add_argument(
-        "--once",
-        action="store_true",
-        help="Run at most one pending config/seed then exit (for parallel terminals)",
-    )
     parser.add_argument(
         "--board",
         choices=("true", "false"),
