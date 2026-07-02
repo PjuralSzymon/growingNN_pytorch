@@ -1,6 +1,8 @@
 import torch
+import torch.fx as fx
 import torch.nn as nn
 
+from growingnn.core import config
 from growingnn.core.config import PASSTHROUGH_MODULES_TO_UPDATE, PROPAGATION_RESIZABLE_MODULES, PASSTHROUGH_MODULES
 from growingnn.core.logger import logger
 from growingnn.utils.fx import ModuleResolver, NodeEditor, NodeTypeChecker, NodeWidthAnalyser
@@ -178,6 +180,48 @@ def _align_inputs_backward(gm, node, add_node, width, seen):
         _align_inputs_backward(gm, pred, add_node, width, seen)
     if node.op == "call_module" and NodeWidthAnalyser.inputs_match_width(gm, node, width):
         _rescale_input_connections(gm, str(node.target), ModuleResolver.get_layer_module(node.target, gm), width)
+
+
+def _within_linear_matrix_limit(mod: nn.Linear, new_out: int) -> bool:
+    max_side = max(mod.out_features, new_out)
+    return (
+        max_side * max_side <= config.MAX_ADD_SEQ_LAYER_WEIGHT_MATRIX_SIZE
+        and mod.in_features * new_out <= config.MAX_ADD_SEQ_LAYER_WEIGHT_MATRIX_SIZE
+    )
+
+
+def can_resize_linear_output(
+    gm: nn.Module | fx.GraphModule,
+    layer_id: str,
+    new_width: int,
+) -> bool:
+    """Return True when a Linear layer output can be rescaled to new_width and propagated."""
+    gm = gm if isinstance(gm, fx.GraphModule) else fx.symbolic_trace(gm)
+    mod = ModuleResolver.get_layer_module(layer_id, gm)
+    if not isinstance(mod, nn.Linear) or new_width == mod.out_features:
+        return False
+    if new_width < mod.out_features:
+        if new_width < config.MINIMUM_MATRIX_SIZE_FOR_NEURONS_REMOVAL:
+            return False
+    elif not _within_linear_matrix_limit(mod, new_width):
+        return False
+    node = ModuleResolver.find_call_module(gm.graph.nodes, layer_id)
+    return not NodeWidthAnalyser.propagation_hits_unsizable(gm, node)
+
+
+def resize_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, new_width: int) -> fx.GraphModule:
+    """Resize a Linear layer's output to new_width and propagate the change through the graph."""
+    gm = gm if isinstance(gm, fx.GraphModule) else fx.symbolic_trace(gm)
+    mod = ModuleResolver.get_layer_module(layer_id, gm)
+    if not isinstance(mod, nn.Linear):
+        raise TypeError(f"{layer_id} is {type(mod).__name__}, not nn.Linear")
+    NodeEditor.replace_submodule(gm, layer_id, LinearFactory.create_linear_with_rescaled_neurons(mod, new_width))
+    propagate_neuron_change(gm, ModuleResolver.find_call_module(gm.graph.nodes, layer_id), new_width, set())
+    gm.recompile()
+    for tensor in list(gm.parameters()) + list(gm.buffers()):
+        if tensor.numel() > 0 and not tensor.is_contiguous():
+            tensor.data = tensor.data.contiguous()
+    return gm
 
 
 def propagate_neuron_change(gm, node, width, seen):
