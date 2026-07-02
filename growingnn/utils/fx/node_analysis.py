@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import operator
-
 import torch.nn as nn
 import torch.fx as fx
+
+from growingnn.utils.fx.sum_nodes import is_sum_node
 
 from growingnn.core.config import (
     PASSTHROUGH_MODULES,
@@ -77,8 +77,8 @@ class NodeTypeChecker:
 
     @staticmethod
     def is_add(n: fx.Node) -> bool:
-        """True for operator.add call_function nodes."""
-        return n.op == "call_function" and n.target == operator.add
+        """True for binary or variadic tensor-sum call_function nodes."""
+        return is_sum_node(n)
 
 
 class NodeWidthAnalyser:
