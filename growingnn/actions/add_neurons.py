@@ -2,19 +2,10 @@ from typing import List
 
 from torch import fx, nn
 
-from growingnn.utils.fx import ModuleResolver, NodeWidthAnalyser, GraphStructureQuery
-from growingnn.actions.delete_neurons import resize_layer_output
+from growingnn.utils.fx import ModuleResolver, GraphStructureQuery
+from growingnn.actions.utils.layer_resize import can_resize_linear_output, resize_layer_output
 from growingnn.core import config
 from .action import Action
-
-
-def _grow_within_matrix_limit(mod: nn.Linear, new_out: int) -> bool:
-    """Return False when grow would need an oversized rescale matrix or weight tensor."""
-    max_side = max(mod.out_features, new_out)
-    return (
-        max_side * max_side <= config.MAX_ADD_SEQ_LAYER_WEIGHT_MATRIX_SIZE
-        and mod.in_features * new_out <= config.MAX_ADD_SEQ_LAYER_WEIGHT_MATRIX_SIZE
-    )
 
 
 def expand_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, ratio: float) -> fx.GraphModule:
@@ -24,14 +15,9 @@ def expand_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, ratio: fl
     if not isinstance(mod, nn.Linear):
         raise TypeError(f"{layer_id} is not nn.Linear")
     new = max(1, int(mod.out_features * ratio))
-    if new <= mod.out_features:
+    if not can_resize_linear_output(gm, layer_id, new):
         return gm
-    if not _grow_within_matrix_limit(mod, new):
-        return gm
-    node = ModuleResolver.find_call_module(gm.graph.nodes, layer_id)
-    if NodeWidthAnalyser.propagation_hits_unsizable(gm, node):
-        return gm
-    resize_layer_output(gm, layer_id, new)
+    return resize_layer_output(gm, layer_id, new)
 
 
 class AddNeurons(Action):
@@ -55,12 +41,7 @@ class AddNeurons(Action):
             if not isinstance(mod, nn.Linear):
                 continue
             new_out = max(1, int(mod.out_features * ratio))
-            if new_out <= mod.out_features:
-                continue
-            if not _grow_within_matrix_limit(mod, new_out):
-                continue
-            node = ModuleResolver.find_call_module(gm.graph.nodes, layer_id)
-            if NodeWidthAnalyser.propagation_hits_unsizable(gm, node):
+            if not can_resize_linear_output(gm, layer_id, new_out):
                 continue
             actions.append(AddNeurons([layer_id, ratio]))
         return actions
