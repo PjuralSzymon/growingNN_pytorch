@@ -1,6 +1,7 @@
 """Unit tests for CIFAR-10 grid summary collection from disk."""
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -17,6 +18,7 @@ def _load_createsummary_module():
     spec = importlib.util.spec_from_file_location("createsummary", _EXPERIMENT_PATH)
     module = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
+    sys.modules[spec.name] = module
     spec.loader.exec_module(module)
     return module
 
@@ -37,6 +39,63 @@ def _sample_hyperparameters() -> dict[str, object]:
         "model_channels": 32,
         "model_hidden_dim": 256,
     }
+
+
+def _write_run_history(run_dir: Path, *, train_acc: list[float], val_acc: list[float]) -> None:
+    run_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "train_acc": train_acc,
+            "val_acc": val_acc,
+            "param_count": [100, 120],
+        },
+        run_dir / "train_cifar10_history.pt",
+    )
+
+
+def _write_board_action(
+    run_dir: Path,
+    *,
+    generation: int,
+    action_type: str,
+    train_acc_before: float,
+    train_acc_after: float,
+) -> None:
+    board_dir = run_dir / "board"
+    simulations_dir = board_dir / "simulations"
+    generations_dir = board_dir / "generations"
+    metrics_dir = board_dir / "metrics"
+    simulations_dir.mkdir(parents=True, exist_ok=True)
+    generations_dir.mkdir(parents=True, exist_ok=True)
+    metrics_dir.mkdir(parents=True, exist_ok=True)
+
+    simulation = {
+        "generation": generation,
+        "actionChosen": f"( {action_type}: ['hidden'] )",
+        "candidates": [{"name": action_type, "chosen": True, "action": f"( {action_type}: ['hidden'] )"}],
+    }
+    (simulations_dir / f"simulation_gen_{generation}.json").write_text(
+        json.dumps(simulation),
+        encoding="utf-8",
+    )
+    (generations_dir / f"generation_{generation}.json").write_text(
+        json.dumps({"generation": generation, "finalTrainAcc": train_acc_before}),
+        encoding="utf-8",
+    )
+    (metrics_dir / "training.json").write_text(
+        json.dumps(
+            {
+                "epochs": [
+                    {
+                        "generation": generation + 1,
+                        "epochInGeneration": 0,
+                        "trainAcc": train_acc_after,
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
 
 
 def test_build_hyperparameter_folder_name_round_trips_with_parser():
@@ -334,3 +393,130 @@ def test_try_claim_run_reclaims_stale_lock(tmp_path):
 
     # Act / Assert
     assert module.try_claim_run(run_dir) is True
+
+
+def test_load_board_action_executions_reads_simulation_and_generation_metrics(tmp_path):
+    """
+    load_board_action_executions should parse chosen actions and train-acc deltas from board files.
+    """
+    # Arrange
+    module = _load_createsummary_module()
+    run_dir = tmp_path / "seed_0"
+    _write_board_action(
+        run_dir,
+        generation=0,
+        action_type="Add Seq Dropout Layer Action",
+        train_acc_before=0.20,
+        train_acc_after=0.25,
+    )
+
+    # Act
+    executions = module.load_board_action_executions(run_dir)
+
+    # Assert
+    assert len(executions) == 1
+    assert executions[0].action_type == "Add Seq Dropout Layer Action"
+    assert executions[0].train_acc_before == 0.20
+    assert executions[0].train_acc_after == 0.25
+    assert executions[0].train_acc_delta == pytest.approx(0.05)
+
+
+def test_normalize_action_type_merges_seq_linear_into_seq_layer():
+    """
+    normalize_action_type should treat Add Seq Linear Layer Action as Add Seq Layer Action.
+    """
+    # Arrange
+    module = _load_createsummary_module()
+
+    # Act
+    normalized = module.normalize_action_type("Add Seq Linear Layer Action")
+
+    # Assert
+    assert normalized == "Add Seq Layer Action"
+
+
+def test_write_grid_summary_includes_action_analysis_tables(tmp_path):
+    """
+    write_grid_summary should append action usage and accuracy tables when board artifacts exist.
+    """
+    # Arrange
+    module = _load_createsummary_module()
+    hyperparameters = _sample_hyperparameters()
+    folder_name = module.build_hyperparameter_folder_name(hyperparameters)
+    run_a = tmp_path / folder_name / "seed_0"
+    run_b = tmp_path / folder_name / "seed_1"
+    _write_run_history(run_a, train_acc=[0.4, 0.6], val_acc=[0.3, 0.5])
+    _write_run_history(run_b, train_acc=[0.5, 0.7], val_acc=[0.4, 0.6])
+    _write_board_action(
+        run_a,
+        generation=0,
+        action_type="Add Seq Dropout Layer Action",
+        train_acc_before=0.20,
+        train_acc_after=0.25,
+    )
+    _write_board_action(
+        run_b,
+        generation=0,
+        action_type="Add Seq Dropout Layer Action",
+        train_acc_before=0.30,
+        train_acc_after=0.40,
+    )
+    _write_board_action(
+        run_b,
+        generation=1,
+        action_type="Add Seq Conv Layer Action",
+        train_acc_before=0.50,
+        train_acc_after=0.55,
+    )
+    _write_board_action(
+        run_b,
+        generation=2,
+        action_type="Add Seq Linear Layer Action",
+        train_acc_before=0.55,
+        train_acc_after=0.56,
+    )
+    results = [
+        module.RunResult(
+            hyperparameters=hyperparameters,
+            hyperparameter_folder_name=folder_name,
+            seed=0,
+            run_dir=run_a,
+            best_val_acc=0.5,
+            final_val_acc=0.5,
+            params_before=100,
+            params_after=120,
+            architecture_changed=True,
+        ),
+        module.RunResult(
+            hyperparameters=hyperparameters,
+            hyperparameter_folder_name=folder_name,
+            seed=1,
+            run_dir=run_b,
+            best_val_acc=0.6,
+            final_val_acc=0.6,
+            params_before=100,
+            params_after=120,
+            architecture_changed=True,
+        ),
+    ]
+    summary_path = tmp_path / "summary.txt"
+
+    # Act
+    module.write_grid_summary(results, summary_path, allowed_output_root=tmp_path)
+    text = summary_path.read_text(encoding="utf-8")
+
+    # Assert
+    assert "Configs ranked by mean best validation accuracy:" in text
+    assert "Action analysis (from board/simulations):" in text
+    assert "1. Action usage count:" in text
+    assert "Add Seq Dropout Layer Action" in text
+    assert "Add Seq Conv Layer Action" in text
+    assert "Add Seq Linear Layer Action" not in text
+    assert "2. Mean best train accuracy by action type (runs that used the action):" in text
+    assert "3. Mean best test accuracy by action type (runs that used the action):" in text
+    assert "4. Mean train accuracy change after action execution:" in text
+    train_section = text.split("2. Mean best train accuracy by action type (runs that used the action):")[1]
+    train_section = train_section.split("3. Mean best test accuracy by action type (runs that used the action):")[0]
+    train_lines = [line for line in train_section.splitlines() if line.strip() and not line.startswith("-")]
+    train_accs = [float(line.split()[-2]) for line in train_lines[1:]]
+    assert train_accs == sorted(train_accs, reverse=True)

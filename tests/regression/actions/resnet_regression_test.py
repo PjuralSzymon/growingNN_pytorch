@@ -13,6 +13,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from growingnn.actions.add_seq_dropout_layer import AddSeqDropoutLayer
 from growingnn.actions.add_neurons import AddNeurons
 from growingnn.actions.action import Action, Layer_Type
 from growingnn.actions.add_res_conv_layer import AddResConvLayer
@@ -36,15 +37,16 @@ from tests.regression.regression_utils import (
 # Which growth actions to consider (delete is always available in the shrink phase).
 USE_ADD_RES_LAYER = False
 USE_ADD_RES_CONV_LAYER = False
-USE_ADD_SEQ_LAYER = True
+USE_ADD_SEQ_LAYER = False
 USE_ADD_SEQ_CONV_LAYER = False
 USE_DEL_LAYER = False
-USE_DEL_NEURONS = True
-USE_ADD_NEURONS = True
+USE_DEL_NEURONS = False
+USE_ADD_NEURONS = False
+USE_ADD_SEQ_DROPOUT = True
 
 BATCH_SIZE = 2
 INPUT_SHAPE = (3, 64, 64)
-ITERATIONS = 5
+ITERATIONS = 20
 
 
 def _load_pretrained_resnet18() -> torch.nn.Module:
@@ -78,6 +80,8 @@ def _generate_actions(gm: fx.GraphModule) -> List[Action]:
         actions += DelNeurons.generate_all_actions(gm)
     if USE_ADD_NEURONS:
         actions += AddNeurons.generate_all_actions(gm)
+    if USE_ADD_SEQ_DROPOUT:
+        actions += AddSeqDropoutLayer.generate_all_actions(model, p=0.1)
     return actions
 
 def _generate_only_shrink_actions(gm: fx.GraphModule) -> List[Action]:
