@@ -57,7 +57,7 @@ SCORE_WEIGHT_COUNTW = [0.2, 0.1]  # ?
 AUGMENTATION_FACTOR = [0.75, 1.0]  # 0=none, 1=maximum diversity/strength
 MODEL_CHANNELS = [32]
 MODEL_HIDDEN_DIM = [1024, 2048]
-GRID_REPEAT_SEEDS = [30]
+GRID_REPEAT_SEEDS = [40, 41]
 
 METAPARAM_KEYS = (
     "generations",
