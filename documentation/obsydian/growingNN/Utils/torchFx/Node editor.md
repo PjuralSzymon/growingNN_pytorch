@@ -10,7 +10,7 @@ Splits `module_path` on the last `.`, resolves the parent with `gm.get_submodule
 
 ## `swap_node_input(node, old, new)`
 
-Replaces `old` with `new` in `node.args` and `node.kwargs`. Used by `ModelStructureEditor.add_new_seq_layer` in [[Graph editor]].
+Replaces `old` with `new` in `node.args` and `node.kwargs`. Used by `ModelStructureEditor.add_new_seq_layer` in `graph_editor.py`.
 
 ---
 
@@ -22,7 +22,7 @@ No enumeration here.
 
 ## Executing actions
 
-`delete_neurons.py` calls `replace_submodule` after [[Node analysis]] width checks. Sequential layer insert uses `swap_node_input` inside [[Graph editor]].
+`delete_neurons.py` calls `replace_submodule` after width checks in `node_analysis.py`. Sequential layer insert uses `swap_node_input` inside `graph_editor.py`.
 
 ---
 
