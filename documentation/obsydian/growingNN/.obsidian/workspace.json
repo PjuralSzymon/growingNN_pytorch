@@ -218,13 +218,13 @@
       "graph:Open graph view": false
     }
   },
-  "active": "b21a7027cf935f4b",
+  "active": "7c9c7d5673f234b6",
   "lastOpenFiles": [
+    "Actions/Shrink oriented actions/Del Layer Action.md",
     "Core/Config.md",
     "Actions/utils/Layer resize.md",
     "Actions/utils/Layer Factory.md",
     "Actions/Shrink oriented actions/Del neurons Action.md",
-    "Actions/Shrink oriented actions/Del Layer Action.md",
     "Actions/Grow oriented actions/Sequential Linear Actions.md",
     "Actions/Grow oriented actions/Sequential Conv Action.md",
     "Actions/Grow oriented actions/Residual Linear Actions.md",

@@ -132,7 +132,7 @@ def _rewire_branch_only_layer(layer_node: fx.Node) -> None:
     if len(inputs) != 1:
         raise ValueError("Branch-only layer delete requires exactly one FX input")
     replacement = inputs[0]
-    for user in list(layer_node.users):
+    for user in layer_node.users.copy():
         user.replace_input_with(layer_node, replacement)
 
 
@@ -145,12 +145,12 @@ def _rewire_layer_users(
     """Replace layer_node in each user with the minimal compatible predecessor branch."""
     if len(matching) == 1:
         replacement = _producer_before_layer(gm, layer_node, next(iter(matching.values())))
-        for user in list(layer_node.users):
+        for user in layer_node.users.copy():
             user.replace_input_with(layer_node, replacement)
         return
 
     default_out = output_layers[0]
-    for user in list(layer_node.users):
+    for user in layer_node.users.copy():
         reached = _reachable_output_layers(gm, user, set(matching))
         out_id = reached[0] if reached else default_out
         replacement = _producer_before_layer(gm, layer_node, matching[out_id])
