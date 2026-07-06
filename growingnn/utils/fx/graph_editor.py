@@ -106,7 +106,6 @@ def _producer_before_layer(
 
 
 def _reachable_output_layers(
-    gm: fx.GraphModule,
     start: fx.Node,
     output_layer_ids: set[str],
 ) -> list[str]:
@@ -151,7 +150,7 @@ def _rewire_layer_users(
 
     default_out = output_layers[0]
     for user in layer_node.users.copy():
-        reached = _reachable_output_layers(gm, user, set(matching))
+        reached = _reachable_output_layers(user, set(matching))
         out_id = reached[0] if reached else default_out
         replacement = _producer_before_layer(gm, layer_node, matching[out_id])
         user.replace_input_with(layer_node, replacement)
