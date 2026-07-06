@@ -12,6 +12,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from growingnn.utils.fx.sum_nodes import connect_residual_branch, is_sum_node, nary_add
+from growingnn.utils.fx import ModelStructureEditor
 
 
 def test_nary_add_sums_multiple_tensors():
@@ -95,3 +96,32 @@ def test_connect_residual_branch_flattens_existing_binary_add():
     # Assert
     assert len(nary_nodes) == 1
     assert len(nary_nodes[0].args) == 3
+
+
+def test_remove_layer_from_sums_keeps_graph_topologically_ordered():
+    """
+    remove_layer_from_sums should insert the rebuilt nary_add after every term it references.
+    """
+
+    # Arrange
+    class Model(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.l1 = nn.Linear(4, 4)
+            self.l2 = nn.Linear(4, 4)
+            self.l3 = nn.Linear(4, 4)
+
+        def forward(self, x):
+            a = self.l1(x)
+            b = self.l2(a)
+            return self.l3(a + b)
+
+    gm = fx.symbolic_trace(Model())
+    ModelStructureEditor.add_new_residual_layer(gm, "l1", "l2", nn.Linear(4, 4), name="res")
+
+    # Act
+    ModelStructureEditor.delete_layer(gm, "res")
+
+    # Assert
+    assert not hasattr(gm, "res")
+    assert gm(torch.randn(2, 4)).shape == (2, 4)

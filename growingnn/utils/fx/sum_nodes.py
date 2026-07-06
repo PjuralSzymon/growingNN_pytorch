@@ -37,6 +37,12 @@ def _find_sum_user(node: fx.Node) -> fx.Node | None:
     return next((user for user in node.users if is_sum_node(user)), None)
 
 
+def _latest_node(gm: fx.GraphModule, terms: list[fx.Node]) -> fx.Node:
+    """Return the term that appears last in the graph's topological order."""
+    node_to_idx = {node: idx for idx, node in enumerate(gm.graph.nodes)}
+    return max(terms, key=lambda node: node_to_idx[node])
+
+
 def _create_sum(gm: fx.GraphModule, terms: list[fx.Node], *, after: fx.Node) -> fx.Node:
     with gm.graph.inserting_after(after):
         return gm.graph.call_function(nary_add, args=tuple(terms))
@@ -60,7 +66,7 @@ def _install_sum(
     replace: fx.Node,
 ) -> fx.Node:
     """Create nary_add(*terms) and rewire *replace* users; args are fixed after rewire."""
-    new_sum = _create_sum(gm, terms, after=after)
+    new_sum = _create_sum(gm, terms, after=_latest_node(gm, terms))
     replace.replace_all_uses_with(new_sum)
     new_sum.args = tuple(terms)
     return new_sum
@@ -93,4 +99,26 @@ def connect_residual_branch(
 
 def sum_nodes(gm: fx.GraphModule, terms: list[fx.Node]) -> fx.Node:
     """Create one nary_add node for *terms*."""
-    return _create_sum(gm, terms, after=terms[-1])
+    return _create_sum(gm, terms, after=_latest_node(gm, terms))
+
+
+def is_merge_branch_layer(node: fx.Node) -> bool:
+    """True when a layer only feeds merge sums and never carries the main trunk."""
+    return bool(node.users) and all(is_sum_node(user) for user in node.users)
+
+
+def remove_layer_from_sums(gm: fx.GraphModule, layer_node: fx.Node) -> None:
+    """Drop layer_node from every nary_add that consumes it."""
+    for user in list(layer_node.users):
+        if not is_sum_node(user):
+            raise ValueError(f"Cannot remove branch layer from non-sum user {user.name!r}")
+        terms = _flatten_terms(user)
+        new_terms = [term for term in terms if term is not layer_node]
+        if not new_terms:
+            raise ValueError(f"Cannot remove last term from sum {user.name!r}")
+        if len(new_terms) == 1:
+            user.replace_all_uses_with(new_terms[0])
+            gm.graph.erase_node(user)
+            continue
+        _install_sum(gm, new_terms, after=new_terms[-1], replace=user)
+        _erase_dead_sums(gm, user)

@@ -28,12 +28,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Core/Config.md",
+                "file": "Actions/Shrink oriented actions/Del Layer Action.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Config"
+              "title": "Del Layer Action"
             }
           }
         ],
@@ -220,6 +220,7 @@
   },
   "active": "b21a7027cf935f4b",
   "lastOpenFiles": [
+    "Core/Config.md",
     "Actions/utils/Layer resize.md",
     "Actions/utils/Layer Factory.md",
     "Actions/Shrink oriented actions/Del neurons Action.md",
@@ -249,7 +250,6 @@
     "Simulation/Scoring Functions/Scoring function.md",
     "Simulation/Scoring Functions/Score by learning.md",
     "Simulation/Scoring Functions/Score by effitiency.md",
-    "Simulation/Scoring Functions/Untitled.md",
     "Simulation/Scoring Functions",
     "references/addactionproblem.png",
     "Utils/torchFx",
