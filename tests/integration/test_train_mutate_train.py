@@ -17,7 +17,7 @@ if str(_REPO_ROOT) not in sys.path:
 import growingnn.core.config
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph
 from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
-from growingnn.actions.add_seq_layer import AddSeqLayer
+from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
 from growingnn.actions.delete_layer import DelLayer
 from growingnn.training.gradient_descent import gradient_descent
 from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
@@ -62,7 +62,7 @@ def _train(
 def _first_grow_action(gm: fx.GraphModule):
     actions = AddSeqConvLayer.generate_all_actions(gm)
     if not actions:
-        actions = AddSeqLayer.generate_all_actions(gm)
+        actions = AddSeqLinearLayer.generate_all_actions(gm)
     assert actions, "expected at least one grow action on ResNet-18"
     return actions[0]
 

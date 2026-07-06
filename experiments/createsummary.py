@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import re
 import statistics
 import sys
@@ -24,6 +26,7 @@ DEFAULT_RUNS_DIR = _EXPERIMENT_DIR / "output" / "train_cifar10" / "runs"
 DEFAULT_SUMMARY_PATH = _EXPERIMENT_DIR / "output" / "train_cifar10" / "grid_search_summary.txt"
 EXPERIMENT_OUTPUT_ROOT = _EXPERIMENT_DIR / "output"
 HISTORY_FILENAME = "train_cifar10_history.pt"
+RUN_LOCK_FILENAME = ".running.lock"
 
 Hyperparameters: TypeAlias = dict[str, object]
 
@@ -77,6 +80,11 @@ _HYPERPARAMETER_FOLDER_NAME_RE = re.compile(
 )
 # Inside each hyperparameter folder, repeated runs use subfolders like seed_0, seed_1, ...
 _SEED_DIR_RE = re.compile(r"^seed_(?P<seed>\d+)$")
+_ACTION_SHORT_LABEL_RE = re.compile(r"\(\s*([^:(]+)")
+_SIMULATION_GEN_RE = re.compile(r"^simulation_gen_(?P<generation>\d+)\.json$")
+_ACTION_TYPE_ALIASES: dict[str, str] = {
+    "Add Seq Linear Layer Action": "Add Seq Layer Action",
+}
 
 ConfigStats = tuple[float, float, str, Hyperparameters, list["RunResult"]]
 ParamSpread = tuple[str, float, object, object]
@@ -95,6 +103,23 @@ class RunResult:
     architecture_changed: bool
 
 
+@dataclass(frozen=True)
+class ActionExecution:
+    run_dir: Path
+    generation: int
+    action_type: str
+    train_acc_before: float | None
+    train_acc_after: float | None
+    train_acc_delta: float | None
+
+
+@dataclass(frozen=True)
+class ActionAnalysis:
+    executions: tuple[ActionExecution, ...]
+    runs_with_board: int
+    runs_without_board: int
+
+
 class GridSummaryWriter:
     """Build and write the text report that ranks grid-search runs."""
 
@@ -107,7 +132,8 @@ class GridSummaryWriter:
 
         by_folder_name = self._group_by_folder_name(results)
         config_stats = self._build_config_stats(by_folder_name)
-        lines = self._build_summary_lines(results, by_folder_name, config_stats)
+        action_analysis = collect_action_analysis(results)
+        lines = self._build_summary_lines(results, by_folder_name, config_stats, action_analysis)
 
         safe_path = self._resolve_path_under_root(path)
         safe_path.parent.mkdir(parents=True, exist_ok=True)
@@ -237,12 +263,116 @@ class GridSummaryWriter:
             lines.append(f"  {key}: spread={spread:.4f} (best={best_value}, worst={worst_value})")
         return lines
 
+    @staticmethod
+    def _format_table(headers: tuple[str, ...], rows: list[tuple[str, ...]]) -> list[str]:
+        if not rows:
+            return ["  (no data)"]
+        widths = [len(header) for header in headers]
+        for row in rows:
+            for index, cell in enumerate(row):
+                widths[index] = max(widths[index], len(cell))
+        header_line = "  ".join(header.ljust(widths[index]) for index, header in enumerate(headers))
+        rule = "  ".join("-" * widths[index] for index in range(len(headers)))
+        lines = [header_line, rule]
+        for row in rows:
+            lines.append("  ".join(cell.rjust(widths[index]) for index, cell in enumerate(row)))
+        return lines
+
+    @classmethod
+    def _action_analysis_section(cls, analysis: ActionAnalysis, results: list[RunResult]) -> list[str]:
+        if not analysis.executions and analysis.runs_without_board == len(results):
+            return [
+                "",
+                "Action analysis (from board/simulations):",
+                "  (no board artifacts found under completed runs)",
+            ]
+
+        run_metrics = {result.run_dir.resolve(): load_run_accuracy_metrics(result.run_dir) for result in results}
+        actions_per_run: dict[Path, set[str]] = defaultdict(set)
+        usage_count: dict[str, int] = defaultdict(int)
+        train_deltas: dict[str, list[float]] = defaultdict(list)
+
+        for execution in analysis.executions:
+            usage_count[execution.action_type] += 1
+            actions_per_run[execution.run_dir.resolve()].add(execution.action_type)
+            if execution.train_acc_delta is not None:
+                train_deltas[execution.action_type].append(execution.train_acc_delta)
+
+        train_acc_by_action: dict[str, list[float]] = defaultdict(list)
+        test_acc_by_action: dict[str, list[float]] = defaultdict(list)
+        for run_dir, action_types in actions_per_run.items():
+            metrics = run_metrics.get(run_dir)
+            if metrics is None:
+                continue
+            best_train_acc, best_test_acc = metrics
+            for action_type in action_types:
+                train_acc_by_action[action_type].append(best_train_acc)
+                test_acc_by_action[action_type].append(best_test_acc)
+
+        def _sorted_metric_rows(
+            values: dict[str, list[float]],
+            formatter,
+            *,
+            descending: bool = True,
+        ) -> list[tuple[str, ...]]:
+            rows: list[tuple[str, ...]] = []
+            for action_type, items in sorted(
+                values.items(),
+                key=lambda item: statistics.mean(item[1]),
+                reverse=descending,
+            ):
+                rows.append((action_type, formatter(items), str(len(items))))
+            return rows
+
+        usage_rows = [
+            (action_type, str(count))
+            for action_type, count in sorted(usage_count.items(), key=lambda item: (-item[1], item[0]))
+        ]
+        train_rows = _sorted_metric_rows(
+            train_acc_by_action,
+            lambda items: f"{statistics.mean(items):.4f}",
+        )
+        test_rows = _sorted_metric_rows(
+            test_acc_by_action,
+            lambda items: f"{statistics.mean(items):.4f}",
+        )
+        delta_rows = _sorted_metric_rows(
+            train_deltas,
+            lambda items: f"{statistics.mean(items):+.4f}",
+            descending=True,
+        )
+
+        board_note = (
+            f"Board data from {analysis.runs_with_board}/{len(results)} completed runs "
+            f"({len(analysis.executions)} action executions)."
+        )
+        return [
+            "",
+            "Action analysis (from board/simulations):",
+            f"  {board_note}",
+            "",
+            "1. Action usage count:",
+            *cls._format_table(("action_type", "count"), usage_rows),
+            "",
+            "2. Mean best train accuracy by action type (runs that used the action):",
+            *cls._format_table(("action_type", "mean_train_acc", "runs"), train_rows),
+            "",
+            "3. Mean best test accuracy by action type (runs that used the action):",
+            "  (CIFAR-10 test split is logged as val_acc during training.)",
+            *cls._format_table(("action_type", "mean_test_acc", "runs"), test_rows),
+            "",
+            "4. Mean train accuracy change after action execution:",
+            "  (delta = first train_acc in next generation minus final train_acc before the action.)",
+            *cls._format_table(("action_type", "mean_delta", "executions"), delta_rows),
+        ]
+
     @classmethod
     def _build_summary_lines(
         cls,
         results: list[RunResult],
         by_folder_name: dict[str, list[RunResult]],
         config_stats: list[ConfigStats],
+        action_analysis: ActionAnalysis,
     ) -> list[str]:
         best_mean, best_std, best_folder_name, best_hyperparameters, _best_runs = config_stats[0]
         sensitivity_lines, param_spread = cls._sensitivity_section(results)
@@ -262,6 +392,7 @@ class GridSummaryWriter:
             "Parameter sensitivity (mean best val_acc per value):",
             *sensitivity_lines,
             *cls._tuning_priority_lines(param_spread),
+            *cls._action_analysis_section(action_analysis, results),
         ]
 
 
@@ -311,6 +442,153 @@ def load_step_history(history_path: Path) -> dict[str, list[float]]:
     return data
 
 
+def action_short_label(action_str: str | None) -> str:
+    if not action_str:
+        return "—"
+    match = _ACTION_SHORT_LABEL_RE.search(action_str)
+    return match.group(1).strip() if match else action_str[:48]
+
+
+def normalize_action_type(action_type: str) -> str:
+    return _ACTION_TYPE_ALIASES.get(action_type, action_type)
+
+
+def _as_float(value: object) -> float | None:
+    return float(value) if isinstance(value, (int, float)) else None
+
+
+def _action_type_from_chosen_candidate(candidate: object) -> str | None:
+    if not isinstance(candidate, dict) or not candidate.get("chosen"):
+        return None
+    name = candidate.get("name")
+    if isinstance(name, str) and name:
+        return name
+    action = candidate.get("action")
+    if isinstance(action, str):
+        return action_short_label(action)
+    return None
+
+
+def action_type_from_simulation(simulation: dict[str, object]) -> str | None:
+    candidates = simulation.get("candidates")
+    if isinstance(candidates, list):
+        for candidate in candidates:
+            action_type = _action_type_from_chosen_candidate(candidate)
+            if action_type is not None:
+                return action_type
+    action_chosen = simulation.get("actionChosen")
+    if isinstance(action_chosen, str) and action_chosen:
+        return action_short_label(action_chosen)
+    return None
+
+
+def _load_board_json(path: Path) -> dict[str, object] | None:
+    if not path.is_file():
+        return None
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return data if isinstance(data, dict) else None
+
+
+def _train_acc_from_training_epochs(training: dict[str, object], generation: int) -> float | None:
+    epochs = training.get("epochs")
+    if not isinstance(epochs, list):
+        return None
+    for row in epochs:
+        if not isinstance(row, dict):
+            continue
+        if row.get("generation") != generation + 1 or row.get("epochInGeneration") != 0:
+            continue
+        return _as_float(row.get("trainAcc"))
+    return None
+
+
+def _final_train_acc_from_generation(board_dir: Path, generation: int) -> float | None:
+    snapshot = _load_board_json(board_dir / "generations" / f"generation_{generation}.json")
+    return None if snapshot is None else _as_float(snapshot.get("finalTrainAcc"))
+
+
+def _first_train_acc_next_generation(board_dir: Path, generation: int) -> float | None:
+    training = _load_board_json(board_dir / "metrics" / "training.json")
+    if training is not None:
+        train_acc = _train_acc_from_training_epochs(training, generation)
+        if train_acc is not None:
+            return train_acc
+    next_generation = _load_board_json(board_dir / "generations" / f"generation_{generation + 1}.json")
+    return None if next_generation is None else _as_float(next_generation.get("finalTrainAcc"))
+
+
+def _action_execution_from_simulation(
+    run_dir: Path, board_dir: Path, simulation_path: Path
+) -> ActionExecution | None:
+    match = _SIMULATION_GEN_RE.match(simulation_path.name)
+    if match is None:
+        return None
+    generation = int(match.group("generation"))
+    simulation = _load_board_json(simulation_path)
+    if simulation is None:
+        return None
+    action_type = action_type_from_simulation(simulation)
+    if action_type is None:
+        return None
+    action_type = normalize_action_type(action_type)
+    train_acc_before = _final_train_acc_from_generation(board_dir, generation)
+    train_acc_after = _first_train_acc_next_generation(board_dir, generation)
+    train_acc_delta = None
+    if train_acc_before is not None and train_acc_after is not None:
+        train_acc_delta = train_acc_after - train_acc_before
+    return ActionExecution(
+        run_dir=run_dir,
+        generation=generation,
+        action_type=action_type,
+        train_acc_before=train_acc_before,
+        train_acc_after=train_acc_after,
+        train_acc_delta=train_acc_delta,
+    )
+
+
+def load_board_action_executions(run_dir: Path) -> list[ActionExecution]:
+    board_dir = run_dir / "board"
+    simulations_dir = board_dir / "simulations"
+    if not simulations_dir.is_dir():
+        return []
+
+    executions: list[ActionExecution] = []
+    for simulation_path in sorted(simulations_dir.glob("simulation_gen_*.json")):
+        execution = _action_execution_from_simulation(run_dir, board_dir, simulation_path)
+        if execution is not None:
+            executions.append(execution)
+    return executions
+
+
+def load_run_accuracy_metrics(run_dir: Path) -> tuple[float, float] | None:
+    history_path = run_dir / HISTORY_FILENAME
+    if not history_path.is_file():
+        return None
+    step_history = load_step_history(history_path)
+    train_acc = step_history.get("train_acc")
+    val_acc = step_history.get("val_acc")
+    if not isinstance(train_acc, list) or not train_acc:
+        return None
+    if not isinstance(val_acc, list) or not val_acc:
+        return None
+    return max(float(value) for value in train_acc), max(float(value) for value in val_acc)
+
+
+def collect_action_analysis(results: list[RunResult]) -> ActionAnalysis:
+    executions: list[ActionExecution] = []
+    runs_with_board = 0
+    for result in results:
+        run_executions = load_board_action_executions(result.run_dir)
+        if run_executions:
+            runs_with_board += 1
+        executions.extend(run_executions)
+    return ActionAnalysis(
+        executions=tuple(executions),
+        runs_with_board=runs_with_board,
+        runs_without_board=len(results) - runs_with_board,
+    )
+
+
 def load_run_result_from_dir(
     run_dir: Path,
     *,
@@ -343,6 +621,56 @@ def load_run_result_from_dir(
 def run_dir_for_seed(runs_root: Path, hyperparameter_folder_name: str, seed: int) -> Path:
     """Path to one grid run: runs_root/<config_folder>/seed_<N>."""
     return runs_root / hyperparameter_folder_name / f"seed_{seed}"
+
+
+def _pid_alive(pid: int) -> bool:
+    if pid <= 0:
+        return False
+    if sys.platform == "win32":
+        import ctypes
+
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        handle = ctypes.windll.kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if handle:
+            ctypes.windll.kernel32.CloseHandle(handle)
+            return True
+        return False
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True
+
+
+def _clear_stale_run_lock(run_dir: Path) -> None:
+    lock = run_dir / RUN_LOCK_FILENAME
+    if not lock.is_file():
+        return
+    try:
+        pid = int(lock.read_text(encoding="utf-8").strip().split()[0])
+    except (OSError, ValueError):
+        pid = -1
+    if not _pid_alive(pid):
+        lock.unlink(missing_ok=True)
+
+
+def try_claim_run(run_dir: Path) -> bool:
+    """Atomically claim a run directory for this process; False if another live worker owns it."""
+    run_dir.mkdir(parents=True, exist_ok=True)
+    _clear_stale_run_lock(run_dir)
+    lock = run_dir / RUN_LOCK_FILENAME
+    try:
+        fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        os.write(fd, f"{os.getpid()}\n".encode())
+        os.close(fd)
+        return True
+    except FileExistsError:
+        return False
+
+
+def release_run_claim(run_dir: Path) -> None:
+    """Drop the worker lock after a run finishes or fails."""
+    (run_dir / RUN_LOCK_FILENAME).unlink(missing_ok=True)
 
 
 def load_completed_run(

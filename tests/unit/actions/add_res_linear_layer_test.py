@@ -6,22 +6,20 @@ from typing import List
 import pytest
 import torch
 import torch.fx as fx
-from torch.fx.passes.graph_drawer import FxGraphDrawer
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from growingnn.actions.action import Layer_Type
-from growingnn.actions.add_res_layer import AddResLayer
+from growingnn.actions.add_res_linear_layer import AddResLinearLayer
 from growingnn.core import config
-from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph
 from tests.model_factory import ModelFactory
 
 
 def test_generate_all_actions_skips_when_weight_matrix_exceeds_config_limit(monkeypatch):
     """
-    AddResLayer should skip pairs whose Linear weight matrix in*out exceeds config limit.
+    AddResLinearLayer should skip pairs whose Linear weight matrix in*out exceeds config limit.
     """
 
     # Arrange
@@ -29,23 +27,23 @@ def test_generate_all_actions_skips_when_weight_matrix_exceeds_config_limit(monk
     gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
 
     # Act
-    actions = AddResLayer.generate_all_actions(gm)
+    actions = AddResLinearLayer.generate_all_actions(gm)
 
     # Assert
     assert actions == []
 
 
-"Generate AddResLayer actions for a simple linear chain"
-def test_add_res_layer_generate_all_actions_linear_chain():
+"Generate AddResLinearLayer actions for a simple linear chain"
+def test_add_res_linear_layer_generate_all_actions_linear_chain():
     model = ModelFactory.simple_chain_3()
     gm = fx.symbolic_trace(model)
 
-    actions = AddResLayer.generate_all_actions(gm)
+    actions = AddResLinearLayer.generate_all_actions(gm)
 
     # For l1->l2->l3, only l1->l2 is an edge into a hidden module; one action per Layer_Type.
     assert len(actions) == len(list(Layer_Type))
 
-def test_add_res_layer_execute():
+def test_add_res_linear_layer_execute():
     #Arrange
     model = ModelFactory.simple_chain_3()
     gm = fx.symbolic_trace(model)
@@ -56,7 +54,7 @@ def test_add_res_layer_execute():
 
     # Act
     for _ in range(30):
-        actions: List[AddResLayer] = AddResLayer.generate_all_actions(gm)
+        actions: List[AddResLinearLayer] = AddResLinearLayer.generate_all_actions(gm)
         idx = rng.randrange(len(actions))
         actions[idx].execute(gm)
     out = gm(x)
@@ -71,4 +69,4 @@ def test_add_res_layer_execute():
         assert action.params[1] in gm.graph.nodes
 
 if __name__ == "__main__":
-    pytest.main([__file__, "-v"])    
+    pytest.main([__file__, "-v"])

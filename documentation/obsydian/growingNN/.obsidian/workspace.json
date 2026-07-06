@@ -6,7 +6,7 @@
       {
         "id": "50a3c76cfef85c02",
         "type": "tabs",
-        "dimension": 72.37261146496814,
+        "dimension": 57.736720554272516,
         "children": [
           {
             "id": "b72e270d2b0f453e",
@@ -28,12 +28,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Reports/Part 1.md",
+                "file": "Actions/Shrink oriented actions/Del Layer Action.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Part 1"
+              "title": "Del Layer Action"
             }
           }
         ],
@@ -42,7 +42,7 @@
       {
         "id": "1bc94f06e7375099",
         "type": "tabs",
-        "dimension": 27.62738853503185,
+        "dimension": 42.263279445727484,
         "children": [
           {
             "id": "7c9c7d5673f234b6",
@@ -113,7 +113,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 256.5026054382324
   },
   "right": {
     "id": "9bb490b9da50c0b1",
@@ -218,13 +218,31 @@
       "graph:Open graph view": false
     }
   },
-  "active": "b21a7027cf935f4b",
+  "active": "7c9c7d5673f234b6",
   "lastOpenFiles": [
-    "Reports/PLAN.md",
-    "Reports/Part 1.md",
-    "Reports/TODO.md",
-    "Plan Prezentacji.md",
+    "Actions/Shrink oriented actions/Del Layer Action.md",
+    "Core/Config.md",
+    "Actions/utils/Layer resize.md",
+    "Actions/utils/Layer Factory.md",
+    "Actions/Shrink oriented actions/Del neurons Action.md",
     "Actions/Grow oriented actions/Sequential Linear Actions.md",
+    "Actions/Grow oriented actions/Sequential Conv Action.md",
+    "Actions/Grow oriented actions/Residual Linear Actions.md",
+    "Actions/Grow oriented actions/Residual Conv Action.md",
+    "Actions/Grow oriented actions/Add Seq Dropout Action.md",
+    "Actions/Grow oriented actions/Add neurons Action.md",
+    "Actions/Registry.md",
+    "Actions/Base action and Layer Type.md",
+    "Actions/Actions.md",
+    "General.md",
+    "Simulation/Simulation hub.md",
+    "Simulation/Simulation.md",
+    "Actions/utils/Seq insertion.md",
+    "Reports/Part 1.md",
+    "Utils/torchFx/Sum nodes.md",
+    "Reports/TODO.md",
+    "Reports/PLAN.md",
+    "Plan Prezentacji.md",
     "references/Pasted image 20260529182135.png",
     "references/Pasted image 20260529182150.png",
     "references/Pasted image 20260529182429.png",
@@ -232,28 +250,10 @@
     "Simulation/Scoring Functions/Scoring function.md",
     "Simulation/Scoring Functions/Score by learning.md",
     "Simulation/Scoring Functions/Score by effitiency.md",
-    "Simulation/Scoring Functions/Untitled.md",
-    "Simulation/Scoring Functions/Untitled 1.md",
     "Simulation/Scoring Functions",
-    "Core/Config.md",
-    "Actions/Registry.md",
-    "Actions/Actions.md",
     "references/addactionproblem.png",
-    "Utils/torchFx/Torch.fx.md",
-    "Utils/torchFx/Node editor.md",
-    "Utils/torchFx/Node analysis.md",
-    "Utils/torchFx/Graph editor.md",
-    "Utils/torchFx/Graph analysis.md",
     "Utils/torchFx",
-    "Utils/Quasi identity.md",
-    "Actions/Shrink oriented actions/Del neurons Action.md",
     "references/Pasted image 20260506222448.png",
-    "Actions/utils/Quasi identity.md",
-    "Actions/utils/Model Transformer.md",
-    "Actions/utils/Model Analyser.md",
-    "Actions/utils/Layer Analyser.md",
-    "Actions/Shrink oriented actions/Delete Neurons action.md",
-    "Actions/Grow oriented actions/Residual Conv Action.md",
     "Untitled",
     "Utils",
     "Training",

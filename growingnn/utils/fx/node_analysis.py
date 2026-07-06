@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
-import operator
-
 import torch.nn as nn
 import torch.fx as fx
 
-from growingnn.core.config import PASSTHROUGH_MODULES, PASSTHROUGH_MODULES_TO_UPDATE, PASSTHROUGH_FUNCTIONS, RESIZE_SAFE_MODULES
+from growingnn.utils.fx.sum_nodes import is_sum_node
+
+from growingnn.core.config import (
+    PASSTHROUGH_MODULES,
+    PASSTHROUGH_MODULES_TO_UPDATE,
+    PASSTHROUGH_FUNCTIONS,
+    PROPAGATION_RESIZABLE_MODULES,
+)
 
 
 class ModuleResolver:
@@ -72,8 +77,8 @@ class NodeTypeChecker:
 
     @staticmethod
     def is_add(n: fx.Node) -> bool:
-        """True for operator.add call_function nodes."""
-        return n.op == "call_function" and n.target == operator.add
+        """True for binary or variadic tensor-sum call_function nodes."""
+        return is_sum_node(n)
 
 
 class NodeWidthAnalyser:
@@ -105,8 +110,18 @@ class NodeWidthAnalyser:
                    for n in gm.graph.nodes if n.op == "call_module" and n.target == module_name)
 
     @staticmethod
+    def _sequential_branch_resizable(mod: nn.Module) -> bool:
+        if isinstance(mod, PROPAGATION_RESIZABLE_MODULES) or isinstance(mod, PASSTHROUGH_MODULES_TO_UPDATE):
+            return True
+        if isinstance(mod, PASSTHROUGH_MODULES):
+            return False
+        if isinstance(mod, nn.Sequential):
+            return any(NodeWidthAnalyser._sequential_branch_resizable(c) for c in mod.children())
+        return False
+
+    @staticmethod
     def branch_has_unsizable_module(gm: fx.GraphModule, node: fx.Node, seen: set[str] | None = None) -> bool:
-        """True when walking backward from node hits a non-resizable call_module."""
+        """True when walking backward from node hits a module propagation cannot resize."""
         local_seen = seen if seen is not None else set()
 
         def _walk(n: fx.Node) -> bool:
@@ -120,7 +135,9 @@ class NodeWidthAnalyser:
                 return any(_walk(inp) for inp in n.all_input_nodes)
             if n.op == "call_module":
                 mod = ModuleResolver.get_layer_module(n.target, gm)
-                return mod is not None and not isinstance(mod, RESIZE_SAFE_MODULES)
+                if isinstance(mod, nn.Sequential):
+                    return not NodeWidthAnalyser._sequential_branch_resizable(mod)
+                return mod is not None and not isinstance(mod, PROPAGATION_RESIZABLE_MODULES)
             if n.op == "placeholder":
                 return False
             return any(_walk(inp) for inp in n.all_input_nodes)
@@ -128,28 +145,9 @@ class NodeWidthAnalyser:
         return _walk(node)
 
     @staticmethod
-    def fork_shrink_blocked_by_conv_add(gm: fx.GraphModule, linear_node: fx.Node, at_add: fx.Node) -> bool:
-        """True when shrinking a fork linear at at_add would break another add with a conv sibling."""
-        if not NodeTypeChecker.is_fork(linear_node):
-            return False
-        for user in linear_node.users:
-            if not NodeTypeChecker.is_add(user) or user is at_add:
-                continue
-            for inp in user.all_input_nodes:
-                if inp is linear_node:
-                    continue
-                if NodeWidthAnalyser.branch_has_unsizable_module(gm, inp):
-                    return True
-        return False
-
-    @staticmethod
     def propagation_hits_unsizable(gm: fx.GraphModule, start_node: fx.Node) -> bool:
-        """True if forward propagation from start_node would reach an add whose
-        sibling branch contains a non-resizable call_module (e.g. Conv2d)."""
+        """True if forward propagation would hit an add whose sibling branch cannot be width-synced."""
         seen: set[str] = set()
-
-        def _check_sibling(node: fx.Node) -> bool:
-            return NodeWidthAnalyser.branch_has_unsizable_module(gm, node, seen)
 
         def _walk(node: fx.Node) -> bool:
             if node.name in seen:
@@ -160,14 +158,7 @@ class NodeWidthAnalyser:
                     continue
                 if NodeTypeChecker.is_add(user):
                     for inp in user.all_input_nodes:
-                        if inp is not node and _check_sibling(inp):
-                            return True
-                        if (
-                            inp is not node
-                            and inp.op == "call_module"
-                            and isinstance(ModuleResolver.get_layer_module(inp.target, gm), nn.Linear)
-                            and NodeWidthAnalyser.fork_shrink_blocked_by_conv_add(gm, inp, user)
-                        ):
+                        if inp is not node and NodeWidthAnalyser.branch_has_unsizable_module(gm, inp, seen):
                             return True
                 if _walk(user):
                     return True

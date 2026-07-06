@@ -18,4 +18,4 @@ The paper speaks about several init modes for new weights. This repo encodes thr
 
 ### Known limitations
 
-The base `generate_all_actions` is not used in production; each action class defines its own. `DelNeurons` in `delete_neurons.py` is still a stub (see [[Del neurons Action]]).
+The base `generate_all_actions` is not used in production; each action class defines its own. Neuron shrink and grow are implemented in `delete_neurons.py` and `add_neurons.py`.

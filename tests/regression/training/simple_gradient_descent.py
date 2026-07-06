@@ -16,7 +16,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from growingnn.actions.add_seq_layer import AddSeqLayer
+from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
 from growingnn.training.gradient_descent import gradient_descent
 from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import StopperMode, TrainingStopper
@@ -96,7 +96,7 @@ if __name__ == "__main__":
             quiet=False,
             print_every=1,
         )
-        actions: List[AddSeqLayer] = AddSeqLayer.generate_all_actions(gm)
+        actions: List[AddSeqLinearLayer] = AddSeqLinearLayer.generate_all_actions(gm)
         idx = rng.randrange(len(actions))
         draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified" + str(id), fmt="pdf")
         draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph" + str(id), fmt="pdf")

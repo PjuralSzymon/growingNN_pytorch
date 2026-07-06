@@ -142,6 +142,36 @@ def test_create_conv_raises_for_random_type():
         ConvFactory.create_conv(3, 3, 3, 1, 1, Layer_Type.RANDOM)
 
 
+def test_create_conv_with_rescaled_output_channels_changes_out_channels():
+    """
+    create_conv_with_rescaled_output_channels should build a conv with fewer outputs.
+    """
+    # Arrange
+    src = ConvFactory.create_zero_conv(3, 8, kernel_size=3, stride=1, padding=1)
+
+    # Act
+    dst = ConvFactory.create_conv_with_rescaled_output_channels(src, 4)
+
+    # Assert
+    assert dst.out_channels == 4
+    assert dst.in_channels == 3
+
+
+def test_create_conv_with_rescaled_input_channels_changes_in_channels():
+    """
+    create_conv_with_rescaled_input_channels should build a conv with fewer inputs.
+    """
+    # Arrange
+    src = ConvFactory.create_zero_conv(8, 6, kernel_size=3, stride=1, padding=1)
+
+    # Act
+    dst = ConvFactory.create_conv_with_rescaled_input_channels(src, 4)
+
+    # Assert
+    assert dst.in_channels == 4
+    assert dst.out_channels == 6
+
+
 def test_create_zero_conv_before_linear_returns_sequential():
     """
     create_zero_conv_before_linear should wrap conv, pool, and flatten.

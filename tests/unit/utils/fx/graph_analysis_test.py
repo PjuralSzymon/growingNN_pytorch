@@ -12,7 +12,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[4]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from growingnn.utils.fx import LayerBridgeFinder, LayerShapeAnalyser, ModuleClassifier, GraphStructureQuery
+from growingnn.utils.fx import LayerBridgeFinder, LayerShapeAnalyser, ModuleClassifier, GraphStructureQuery, GraphConnectivity
 from tests.model_factory import ModelFactory
 
 
@@ -770,6 +770,67 @@ def test_uniform_activation_shape_returns_none_when_shapes_differ():
 
     # Assert
     assert shape is None
+
+
+def test_graph_connectivity_detects_unreachable_modules_after_orphan_branch():
+    """
+    explain_connectivity should report dangling and unreachable modules on dead side branches.
+    """
+
+    # Arrange
+    class DeadBranch(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.stem = nn.Linear(4, 4)
+            self.orphan = nn.Linear(4, 4)
+            self.head = nn.Linear(4, 4)
+
+        def forward(self, x):
+            h = self.stem(x)
+            self.orphan(h)
+            return self.head(h)
+
+    gm = fx.symbolic_trace(DeadBranch())
+
+    # Act
+    issues = GraphConnectivity.explain_connectivity(gm)
+
+    # Assert
+    assert GraphConnectivity.is_connected_to_output(gm) is False
+    assert GraphConnectivity.unreachable_module_ids(gm) == ["orphan"]
+    assert any("dangling leaves" in issue for issue in issues)
+    assert any("unreachable modules" in issue for issue in issues)
+
+
+def test_prune_unreachable_nodes_removes_dangling_branch():
+    """
+    prune_unreachable_nodes should erase side branches that no longer reach the graph output.
+    """
+
+    # Arrange
+    class DeadBranch(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.stem = nn.Linear(4, 4)
+            self.orphan = nn.Linear(4, 4)
+            self.head = nn.Linear(4, 4)
+
+        def forward(self, x):
+            h = self.stem(x)
+            self.orphan(h)
+            return self.head(h)
+
+    gm = fx.symbolic_trace(DeadBranch())
+
+    # Act
+    from growingnn.utils.fx.graph_editor import prune_unreachable_nodes
+    removed = prune_unreachable_nodes(gm)
+
+    # Assert
+    assert "orphan" in removed
+    assert not hasattr(gm, "orphan")
+    assert GraphConnectivity.is_connected_to_output(gm)
+    assert GraphConnectivity.live_module_ids(gm) == ["stem", "head"]
 
 
 if __name__ == "__main__":

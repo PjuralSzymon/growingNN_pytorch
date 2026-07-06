@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import argparse
 import itertools
-import math
-import shutil
 import sys
 from pathlib import Path
 
@@ -39,28 +37,27 @@ from createsummary import (
     HISTORY_FILENAME,
     RunResult,
     build_hyperparameter_folder_name,
-    load_completed_run,
-    load_step_history,
+    collect_run_results,
     run_dir_for_seed,
     write_grid_summary,
 )
 
 # --- Metaparameter grid (one value per list => original single-run behavior) ---
 # ~24 configs x 3 seeds = 72 runs, ~30-44 h on 8 GB GPU
-GENERATIONS = [10]
+GENERATIONS = [10, 20]
 EPOCHS = [30]
 BATCH_SIZE = [64]
 LR_ALPHA = [0.01]
 SIMULATION_TIME = [500.0]
 SIMULATION_EPOCHS = [15]
 SIMULATION_SET_SIZE = [2000]
-TARGET_ACCURACY = [0.99]
-SCORE_WEIGHT_ACC = [1.0]  # ?
-SCORE_WEIGHT_COUNTW = [0.2]  # ?
-AUGMENTATION_FACTOR = [0.1, 0.35, 0.70, 0.75, 0.85]  # 0=none, 1=maximum diversity/strength
+TARGET_ACCURACY = [0.99, 1.0]
+SCORE_WEIGHT_ACC = [1.0, 0.5]  # ?
+SCORE_WEIGHT_COUNTW = [0.2, 0.1]  # ?
+AUGMENTATION_FACTOR = [0.75, 1.0]  # 0=none, 1=maximum diversity/strength
 MODEL_CHANNELS = [32]
-MODEL_HIDDEN_DIM = [256]
-GRID_REPEAT_SEEDS = [0]
+MODEL_HIDDEN_DIM = [1024, 2048]
+GRID_REPEAT_SEEDS = [60,61]
 
 METAPARAM_KEYS = (
     "generations",
@@ -96,7 +93,6 @@ METAPARAM_LISTS = (
 OUT_DIR = _EXPERIMENT_DIR / "output" / "train_cifar10"
 DATA_DIR = OUT_DIR / "data"
 RUNS_DIR = OUT_DIR / "runs"
-HISTORY_PATH = OUT_DIR / HISTORY_FILENAME
 SUMMARY_PATH = OUT_DIR / "grid_search_summary.txt"
 NUM_CLASSES = 10
 METRIC_KEYS = ("train_loss", "train_acc", "val_loss", "val_acc", "lr", "param_count")
@@ -226,7 +222,8 @@ class Cifar10TrainingRun:
 
     def run(self, hyperparameters: dict[str, object], *, seed: int, run_dir: Path) -> RunResult:
         hyperparameter_folder_name = build_hyperparameter_folder_name(hyperparameters)
-        run_dir.mkdir(parents=True, exist_ok=True)
+        if not run_dir.exists():
+            run_dir.mkdir(parents=True, exist_ok=True)
         self._set_seed(seed)
         logger.info("Run %s seed %s -> %s", hyperparameter_folder_name, seed, run_dir)
 
@@ -388,7 +385,7 @@ class Cifar10TrainingRun:
 
 
 class Cifar10Experiment:
-    """Grid-search or single-run orchestration for the CIFAR-10 experiment."""
+    """Run the hyperparameter grid sequentially; skip run dirs that already exist."""
 
     def __init__(self, args: argparse.Namespace, train_device: torch.device) -> None:
         self._args = args
@@ -399,85 +396,36 @@ class Cifar10Experiment:
         )
 
     def run(self) -> None:
-        if self._is_grid_mode():
-            self._run_grid()
+        RUNS_DIR.mkdir(parents=True, exist_ok=True)
+        OUT_DIR.mkdir(parents=True, exist_ok=True)
+        runs_done = 0
+        for hyperparameters in self._iter_hyperparameter_sets():
+            hyperparameter_folder_name = build_hyperparameter_folder_name(hyperparameters)
+            for seed in GRID_REPEAT_SEEDS:
+                run_dir = run_dir_for_seed(RUNS_DIR, hyperparameter_folder_name, seed)
+                if run_dir.exists():
+                    logger.info("Skipping existing %s seed %s", hyperparameter_folder_name, seed)
+                    continue
+                logger.info(
+                    "Starting experiment %s seed %s -> %s",
+                    hyperparameter_folder_name,
+                    seed,
+                    run_dir,
+                )
+                self._trainer.run(hyperparameters, seed=seed, run_dir=run_dir)
+                runs_done += 1
+        if runs_done:
+            print(f"Finished {runs_done} run(s). Summary: {SUMMARY_PATH}")
         else:
-            self._run_single()
-
-    @staticmethod
-    def _is_grid_mode() -> bool:
-        return math.prod(len(values) for values in METAPARAM_LISTS) > 1
+            print("No pending runs.")
 
     @staticmethod
     def _iter_hyperparameter_sets() -> list[dict[str, object]]:
         return [dict(zip(METAPARAM_KEYS, combo)) for combo in itertools.product(*METAPARAM_LISTS)]
 
-    def _run_grid(self) -> None:
-        RUNS_DIR.mkdir(parents=True, exist_ok=True)
-        OUT_DIR.mkdir(parents=True, exist_ok=True)
-
-        results: list[RunResult] = []
-        for hyperparameters in self._iter_hyperparameter_sets():
-            hyperparameter_folder_name = build_hyperparameter_folder_name(hyperparameters)
-            for seed in GRID_REPEAT_SEEDS:
-                run_dir = run_dir_for_seed(RUNS_DIR, hyperparameter_folder_name, seed)
-                result = load_completed_run(
-                    run_dir,
-                    hyperparameters=hyperparameters,
-                    hyperparameter_folder_name=hyperparameter_folder_name,
-                    seed=seed,
-                )
-                if result is not None:
-                    logger.info(
-                        "Skipping completed run %s seed %s -> %s",
-                        hyperparameter_folder_name,
-                        seed,
-                        run_dir,
-                    )
-                elif run_dir.exists():
-                    continue
-                else:
-                    result = self._trainer.run(hyperparameters, seed=seed, run_dir=run_dir)
-                results.append(result)
-                write_grid_summary(results, SUMMARY_PATH)
-        print(f"Grid search finished. Summary: {SUMMARY_PATH}")
-
-    def _run_single(self) -> None:
-        hyperparameters = self._iter_hyperparameter_sets()[0]
-        run_dir = OUT_DIR
-        result = self._trainer.run(hyperparameters, seed=0, run_dir=run_dir)
-        if not result.architecture_changed:
-            raise AssertionError("architecture search did not change the model")
-
-        step_history = load_step_history(run_dir / HISTORY_FILENAME)
-        if self._args.save_output or not HISTORY_PATH.is_file():
-            torch.save(step_history, HISTORY_PATH)
-            if not self._args.save_output:
-                print(f"Baseline missing; wrote {HISTORY_PATH}. Re-run with --save-output true to refresh.")
-        else:
-            baseline = load_step_history(HISTORY_PATH)
-            for key in step_history:
-                assert step_history[key] == baseline[key]
-
-        if not self._args.save_output:
-            self._clear_output_dir()
-
-    @staticmethod
-    def _clear_output_dir() -> None:
-        if OUT_DIR.exists():
-            shutil.rmtree(OUT_DIR)
-        OUT_DIR.mkdir(parents=True, exist_ok=True)
-
 
 def _parse_cli(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="train_cifar10 minimal growingNN experiment")
-    parser.add_argument(
-        "--save-output",
-        "--save_output",
-        choices=("true", "false"),
-        default="false",
-        help="Keep experiments/output/train_cifar10 and refresh baseline (default: false)",
-    )
     parser.add_argument(
         "--board",
         choices=("true", "false"),
@@ -485,7 +433,6 @@ def _parse_cli(argv: list[str] | None = None) -> argparse.Namespace:
         help="Write GrowingNN Board artifacts under each run's board/ folder (default: true)",
     )
     ns = parser.parse_args(argv)
-    ns.save_output = ns.save_output == "true"
     ns.board = ns.board == "true"
     return ns
 

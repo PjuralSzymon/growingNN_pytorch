@@ -14,10 +14,25 @@ One file keeps numbers for init ranges, cache limits, which module types count a
 
 `RES_CONV_TO_LINEAR_GLOBAL_POOL_TYPE` is the string `"max"` at line 13. Allowed values in code are `"avg"` or `"max"`. Used in `ConvFactory.create_zero_conv_before_linear` in `layer_Factory.py` lines 103 to 110.
 
-`EDITABLE_MODULES` is a list `[nn.Linear, nn.Conv2d, nn.Conv1d, nn.Conv3d]` at line 17. [[Torch.fx]] uses it in `ModuleClassifier.is_editable_module` to decide which `call_module` nodes count as editable, it's only sued by neuron delete action. `PASSTHROUGH_MODULES`, `PASSTHROUGH_FUNCTIONS`, and `RESIZE_SAFE_MODULES` (lines 19 to 29) feed `NodeTypeChecker` and `NodeWidthAnalyser` in the same package.
+`EDITABLE_MODULES` is a list `[nn.Linear, nn.Conv2d, nn.Conv1d, nn.Conv3d]` at line 17. [[Torch.fx]] uses it in `ModuleClassifier.is_editable_module` to decide which `call_module` nodes count as editable. `PASSTHROUGH_MODULES`, `PASSTHROUGH_FUNCTIONS`, and `PROPAGATION_RESIZABLE_MODULES` feed `node_analysis.py` and `layer_resize.py`.
 
 Logging block: `ENABLE_LOGGING` `True` line 18. `LOG_LEVEL` `"DEBUG"` line 19. `LOG_TO_FILE` `True` line 20. `LOG_FILE_NAME` `"growingnn.log"` line 21. `LOG_FILE_MAX_BYTES` `100 * 1024 * 1024` line 22. `LOG_FILE_BACKUP_COUNT` `9` line 23. Rough cap near 1 GB total with one active file plus backups.
 
 ### Running config
 
-Running config holds parameters you may want to change at run time, even when they are nested deep inside the training or search algorithms.
+`RunningConfig` in the same file holds per-run training and search wiring. Experiment drivers build one instance and pass it to `train_generations` in `growingnn/training/trainer.py`.
+
+Training fields: `generations`, `epochs`, `lr_scheduler`, `stopper`, `criterion`, `device`, `simulation_set_size`.
+
+Search fields: `simulation_alg`, `simulation_scheduler`, `simulation_score`, `sim_train_loader` / `sim_val_loader` set via `set_simulation_loaders`.
+
+Action enable flags (default all `True` in `__init__`):
+
+| Group | Attributes |
+|-------|------------|
+| Grow | `ACTIONS_ENABLE_ADD_RES_LAYER`, `ADD_RES_CONV`, `ADD_SEQ_LAYER`, `ADD_SEQ_CONV`, `ADD_SEQ_DROPOUT_01/02/05`, `ADD_NEURONS_11/15/20` |
+| Shrink | `ACTIONS_ENABLE_DEL_LAYER`, `DEL_NEURONS_01/05/09` |
+
+Helpers: `update_grow_actions(bool)` and `update_shrink_actions(bool)` flip whole groups. `registry.py` reads these flags when building the move list.
+
+MCTS constants on the module (not on `RunningConfig`): `MCTS_UCB1_C`, `MCTS_ROLLOUT_DEPTH`, `MCTS_ROLLOUT_EPOCHS`, `MCTS_UCB1_USE_SQRT`, `MCTS_PROPAGATE_ROLLOUT_VALUE`.
