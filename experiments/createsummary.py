@@ -453,17 +453,29 @@ def normalize_action_type(action_type: str) -> str:
     return _ACTION_TYPE_ALIASES.get(action_type, action_type)
 
 
+def _as_float(value: object) -> float | None:
+    return float(value) if isinstance(value, (int, float)) else None
+
+
+def _action_type_from_chosen_candidate(candidate: object) -> str | None:
+    if not isinstance(candidate, dict) or not candidate.get("chosen"):
+        return None
+    name = candidate.get("name")
+    if isinstance(name, str) and name:
+        return name
+    action = candidate.get("action")
+    if isinstance(action, str):
+        return action_short_label(action)
+    return None
+
+
 def action_type_from_simulation(simulation: dict[str, object]) -> str | None:
     candidates = simulation.get("candidates")
     if isinstance(candidates, list):
         for candidate in candidates:
-            if isinstance(candidate, dict) and candidate.get("chosen"):
-                name = candidate.get("name")
-                if isinstance(name, str) and name:
-                    return name
-                action = candidate.get("action")
-                if isinstance(action, str):
-                    return action_short_label(action)
+            action_type = _action_type_from_chosen_candidate(candidate)
+            if action_type is not None:
+                return action_type
     action_chosen = simulation.get("actionChosen")
     if isinstance(action_chosen, str) and action_chosen:
         return action_short_label(action_chosen)
@@ -477,24 +489,61 @@ def _load_board_json(path: Path) -> dict[str, object] | None:
     return data if isinstance(data, dict) else None
 
 
+def _train_acc_from_training_epochs(training: dict[str, object], generation: int) -> float | None:
+    epochs = training.get("epochs")
+    if not isinstance(epochs, list):
+        return None
+    for row in epochs:
+        if not isinstance(row, dict):
+            continue
+        if row.get("generation") != generation + 1 or row.get("epochInGeneration") != 0:
+            continue
+        return _as_float(row.get("trainAcc"))
+    return None
+
+
+def _final_train_acc_from_generation(board_dir: Path, generation: int) -> float | None:
+    snapshot = _load_board_json(board_dir / "generations" / f"generation_{generation}.json")
+    return None if snapshot is None else _as_float(snapshot.get("finalTrainAcc"))
+
+
 def _first_train_acc_next_generation(board_dir: Path, generation: int) -> float | None:
     training = _load_board_json(board_dir / "metrics" / "training.json")
     if training is not None:
-        epochs = training.get("epochs")
-        if isinstance(epochs, list):
-            for row in epochs:
-                if not isinstance(row, dict):
-                    continue
-                if row.get("generation") == generation + 1 and row.get("epochInGeneration") == 0:
-                    train_acc = row.get("trainAcc")
-                    if isinstance(train_acc, (int, float)):
-                        return float(train_acc)
+        train_acc = _train_acc_from_training_epochs(training, generation)
+        if train_acc is not None:
+            return train_acc
     next_generation = _load_board_json(board_dir / "generations" / f"generation_{generation + 1}.json")
-    if next_generation is not None:
-        train_acc = next_generation.get("finalTrainAcc")
-        if isinstance(train_acc, (int, float)):
-            return float(train_acc)
-    return None
+    return None if next_generation is None else _as_float(next_generation.get("finalTrainAcc"))
+
+
+def _action_execution_from_simulation(
+    run_dir: Path, board_dir: Path, simulation_path: Path
+) -> ActionExecution | None:
+    match = _SIMULATION_GEN_RE.match(simulation_path.name)
+    if match is None:
+        return None
+    generation = int(match.group("generation"))
+    simulation = _load_board_json(simulation_path)
+    if simulation is None:
+        return None
+    action_type = action_type_from_simulation(simulation)
+    if action_type is None:
+        return None
+    action_type = normalize_action_type(action_type)
+    train_acc_before = _final_train_acc_from_generation(board_dir, generation)
+    train_acc_after = _first_train_acc_next_generation(board_dir, generation)
+    train_acc_delta = None
+    if train_acc_before is not None and train_acc_after is not None:
+        train_acc_delta = train_acc_after - train_acc_before
+    return ActionExecution(
+        run_dir=run_dir,
+        generation=generation,
+        action_type=action_type,
+        train_acc_before=train_acc_before,
+        train_acc_after=train_acc_after,
+        train_acc_delta=train_acc_delta,
+    )
 
 
 def load_board_action_executions(run_dir: Path) -> list[ActionExecution]:
@@ -505,40 +554,9 @@ def load_board_action_executions(run_dir: Path) -> list[ActionExecution]:
 
     executions: list[ActionExecution] = []
     for simulation_path in sorted(simulations_dir.glob("simulation_gen_*.json")):
-        match = _SIMULATION_GEN_RE.match(simulation_path.name)
-        if match is None:
-            continue
-        generation = int(match.group("generation"))
-        simulation = _load_board_json(simulation_path)
-        if simulation is None:
-            continue
-        action_type = action_type_from_simulation(simulation)
-        if action_type is None:
-            continue
-        action_type = normalize_action_type(action_type)
-
-        generation_snapshot = _load_board_json(board_dir / "generations" / f"generation_{generation}.json")
-        train_acc_before = None
-        if generation_snapshot is not None:
-            value = generation_snapshot.get("finalTrainAcc")
-            if isinstance(value, (int, float)):
-                train_acc_before = float(value)
-
-        train_acc_after = _first_train_acc_next_generation(board_dir, generation)
-        train_acc_delta = None
-        if train_acc_before is not None and train_acc_after is not None:
-            train_acc_delta = train_acc_after - train_acc_before
-
-        executions.append(
-            ActionExecution(
-                run_dir=run_dir,
-                generation=generation,
-                action_type=action_type,
-                train_acc_before=train_acc_before,
-                train_acc_after=train_acc_after,
-                train_acc_delta=train_acc_delta,
-            )
-        )
+        execution = _action_execution_from_simulation(run_dir, board_dir, simulation_path)
+        if execution is not None:
+            executions.append(execution)
     return executions
 
 
