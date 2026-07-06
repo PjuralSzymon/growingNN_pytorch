@@ -185,7 +185,7 @@ def test_delete_layer_removes_branch_layer_from_residual_graph():
 
 def test_delete_layer_after_nary_add_residual_passes_lint():
     """
-    delete_layer should rewire safely when the removed layer feeds a nary_add user.
+    delete_layer should remove a residual branch from nary_add without rewiring its source into the sum.
     """
     # Arrange
     gm = fx.symbolic_trace(ModelFactory.simple_chain_2())
@@ -196,6 +196,62 @@ def test_delete_layer_after_nary_add_residual_passes_lint():
 
     # Assert
     gm.graph.lint()
+    assert not hasattr(gm, "res1")
+    nary_nodes = [node for node in gm.graph.nodes if node.op == "call_function" and node.target is nary_add]
+    assert len(nary_nodes) == 0
+
+
+def test_delete_merge_branch_residual_eye_preserves_forward():
+    """
+    A residual EYE branch that only feeds nary_add should be removable without shape bypass.
+    """
+
+    # Arrange
+    class ResEyeBranch(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.l1 = nn.Linear(4, 4)
+            self.l2 = nn.Linear(4, 4)
+            self.l3 = nn.Linear(4, 4)
+
+        def forward(self, x):
+            return self.l3(self.l2(self.l1(x)) + self.l2(self.l1(x)))
+
+    gm = fx.symbolic_trace(ResEyeBranch())
+    eye = nn.Linear(4, 4)
+    eye.weight.data.zero_()
+    eye.bias.data.zero_()
+    ModelStructureEditor.add_new_residual_layer(gm, "l1", "l2", eye, name="res1")
+    x = torch.randn(2, 4)
+    y_before = gm(x)
+
+    # Act
+    ModelStructureEditor.delete_layer(gm, "res1")
+    y_after = gm(x)
+
+    # Assert
+    assert not hasattr(gm, "res1")
+    assert torch.allclose(y_before, y_after)
+
+
+def test_delete_layer_prunes_unreachable_trunk_branches():
+    """
+    delete_layer should remove orphaned subgraphs that no longer reach the graph output.
+    """
+
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_2())
+    ModelStructureEditor.add_new_residual_layer(gm, "l1", "l2", nn.Linear(4, 4), name="res1")
+    x = torch.randn(2, 4)
+
+    # Act
+    ModelStructureEditor.delete_layer(gm, "res1")
+    y = gm(x)
+
+    # Assert
+    from growingnn.utils.fx import GraphConnectivity
+    assert GraphConnectivity.is_connected_to_output(gm)
+    assert y.shape == (2, 4)
     assert not hasattr(gm, "res1")
 
 

@@ -1,15 +1,19 @@
 """Unit tests for delete-layer shape helpers."""
 
+import torch
 import torch.fx as fx
+import torch.nn as nn
 
 from growingnn.actions.delete_layer import (
     DelLayer,
+    can_bypass_delete_layer,
     get_common_input_shape,
     get_common_output_shape,
     has_same_input_shape,
     has_same_output_shape,
 )
-from growingnn.utils.fx import LayerBridgeFinder, LayerShapeAnalyser
+from growingnn.utils.fx import LayerBridgeFinder, LayerShapeAnalyser, ModelStructureEditor
+from growingnn.utils.fx.graph_editor import bypass_shapes_compatible, compute_bypass_matching
 from tests.model_factory import ModelFactory
 
 
@@ -119,3 +123,95 @@ def test_get_common_input_shape_returns_none_for_empty_layers():
 
     # Assert
     assert shape is None
+
+
+def test_compute_bypass_matching_pairs_different_predecessor_shapes():
+    """
+    compute_bypass_matching should pair predecessors to successors individually instead of requiring one uniform width.
+    """
+
+    # Arrange
+    output_shapes = {"a": (1, 8), "b": (1, 16)}
+    input_shapes = {"ca": (1, 8), "cb": (1, 16)}
+
+    # Act
+    matching = compute_bypass_matching(["a", "b"], ["ca", "cb"], output_shapes, input_shapes)
+
+    # Assert
+    assert matching == {"ca": "a", "cb": "b"}
+    assert LayerBridgeFinder.uniform_activation_shape([(1, 8), (1, 16)]) is None
+
+
+def test_can_bypass_delete_layer_true_for_pairwise_branch_mids():
+    """
+    can_bypass_delete_layer should allow deleting one branch middle layer without requiring all predecessors to share one width.
+    """
+
+    # Arrange
+    class PairwiseBranches(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.a = nn.Linear(4, 8)
+            self.b = nn.Linear(4, 16)
+            self.mid_a = nn.Linear(8, 8)
+            self.mid_b = nn.Linear(16, 16)
+            self.ca = nn.Linear(8, 4)
+            self.cb = nn.Linear(16, 4)
+
+        def forward(self, x):
+            return self.ca(self.mid_a(self.a(x))) + self.cb(self.mid_b(self.b(x)))
+
+    gm = fx.symbolic_trace(PairwiseBranches())
+
+    # Act
+    result = can_bypass_delete_layer(gm, "mid_a")
+
+    # Assert
+    assert result is True
+
+
+def test_can_bypass_delete_layer_true_for_merge_branch_residual():
+    """
+    Residual branches that only feed nary_add should be deletable without uniform bypass shapes.
+    """
+
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_2())
+    ModelStructureEditor.add_new_residual_layer(gm, "l1", "l2", nn.Linear(4, 4), name="res1")
+
+    # Act
+    result = can_bypass_delete_layer(gm, "res1")
+
+    # Assert
+    assert result is True
+
+
+def test_delete_pairwise_branch_mid_preserves_forward_shape():
+    """
+    delete_layer should bypass only the compatible predecessor branch instead of summing every input.
+    """
+
+    # Arrange
+    class PairwiseBranches(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.a = nn.Linear(4, 8)
+            self.b = nn.Linear(4, 16)
+            self.mid_a = nn.Linear(8, 8)
+            self.mid_b = nn.Linear(16, 16)
+            self.ca = nn.Linear(8, 4)
+            self.cb = nn.Linear(16, 4)
+
+        def forward(self, x):
+            return self.ca(self.mid_a(self.a(x))) + self.cb(self.mid_b(self.b(x)))
+
+    gm = fx.symbolic_trace(PairwiseBranches())
+    x = torch.randn(2, 4)
+
+    # Act
+    ModelStructureEditor.delete_layer(gm, "mid_a")
+    y = gm(x)
+
+    # Assert
+    assert y.shape == (2, 4)
+    assert not hasattr(gm, "mid_a")
