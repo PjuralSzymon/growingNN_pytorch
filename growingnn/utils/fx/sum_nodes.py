@@ -109,7 +109,7 @@ def is_merge_branch_layer(node: fx.Node) -> bool:
 
 def remove_layer_from_sums(gm: fx.GraphModule, layer_node: fx.Node) -> None:
     """Drop layer_node from every nary_add that consumes it."""
-    for user in list(layer_node.users):
+    for user in layer_node.users.copy():
         if not is_sum_node(user):
             raise ValueError(f"Cannot remove branch layer from non-sum user {user.name!r}")
         terms = _flatten_terms(user)
