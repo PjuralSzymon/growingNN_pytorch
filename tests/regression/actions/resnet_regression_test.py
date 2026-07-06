@@ -81,7 +81,7 @@ def _generate_actions(gm: fx.GraphModule) -> List[Action]:
     if USE_ADD_NEURONS:
         actions += AddNeurons.generate_all_actions(gm)
     if USE_ADD_SEQ_DROPOUT:
-        actions += AddSeqDropoutLayer.generate_all_actions(model, p=0.1)
+        actions += AddSeqDropoutLayer.generate_all_actions(gm, p=0.1)
     return actions
 
 def _generate_only_shrink_actions(gm: fx.GraphModule) -> List[Action]:
