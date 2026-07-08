@@ -1,4 +1,4 @@
-"""CIFAR-10 growingNN run on a tiny two-conv + linear MLP (no ResNet)."""
+"""CIFAR-10 growingNN run on a minimal ResNet-style backbone."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import torch
 import torch.fx as fx
 import torch.nn as nn
+import torch.nn.functional as F
 from torchvision import datasets, transforms
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -104,25 +105,60 @@ CIFAR10_MEAN = (0.4914, 0.4822, 0.4465)
 CIFAR10_STD = (0.2023, 0.1994, 0.2010)
 
 
-class MinimalCifarNet(nn.Module):
-    """Two conv layers, one linear hidden, one linear head."""
+class MinimalBasicBlock(nn.Module):
+    """Single ResNet basic block (3x3 convs + optional 1x1 shortcut)."""
 
-    def __init__(self, num_classes: int = NUM_CLASSES, channels: int = 8, hidden_dim: int = 32):
+    expansion = 1
+
+    def __init__(self, in_planes: int, planes: int, stride: int = 1) -> None:
         super().__init__()
-        self.conv1 = nn.Conv2d(3, channels, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
-        self.pool = nn.AdaptiveAvgPool2d(1)
-        self.flatten = nn.Flatten()
-        self.hidden = nn.Linear(channels, hidden_dim)
-        self.output = nn.Linear(hidden_dim, num_classes)
+        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(planes)
+        if stride != 1 or in_planes != self.expansion * planes:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_planes, self.expansion * planes, kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(self.expansion * planes),
+            )
+        else:
+            self.shortcut = nn.Identity()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.pool(x)
-        x = self.flatten(x)
-        x = self.hidden(x)
-        return self.output(x)
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = self.bn2(self.conv2(out))
+        out += self.shortcut(x)
+        return F.relu(out)
+
+
+class MinimalCifarNet(nn.Module):
+    """Minimal ResNet-18-style network for CIFAR-10 (one block per stage)."""
+
+    def __init__(self, num_classes: int = NUM_CLASSES, channels: int = 8, hidden_dim: int = 32) -> None:
+        super().__init__()
+        self.in_planes = channels
+        self.conv1 = nn.Conv2d(3, channels, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(channels)
+        self.layer1 = self._make_layer(MinimalBasicBlock, channels, stride=1)
+        self.layer2 = self._make_layer(MinimalBasicBlock, channels * 2, stride=2)
+        self.layer3 = self._make_layer(MinimalBasicBlock, channels * 4, stride=2)
+        self.layer4 = self._make_layer(MinimalBasicBlock, hidden_dim, stride=2)
+        self.linear = nn.Linear(hidden_dim * MinimalBasicBlock.expansion, num_classes)
+
+    def _make_layer(self, block: type[MinimalBasicBlock], planes: int, stride: int) -> nn.Sequential:
+        layer = block(self.in_planes, planes, stride)
+        self.in_planes = planes * block.expansion
+        return nn.Sequential(layer)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+        x = F.avg_pool2d(x, 4)
+        x = torch.flatten(x, 1)
+        return self.linear(x)
 
 
 class Cifar10Data:
@@ -326,11 +362,13 @@ class Cifar10TrainingRun:
     ) -> nn.Module:
         model = MinimalCifarNet(num_classes=num_classes, channels=channels, hidden_dim=hidden_dim)
         logger.info(
-            "Built MinimalCifarNet: conv1 3->%s conv2 %s->%s -> pool -> linear %s -> %s",
-            model.conv1.out_channels,
-            model.conv2.in_channels,
-            model.conv2.out_channels,
-            model.hidden.out_features,
+            "Built MinimalCifarNet: stem 3->%s layers [%s, %s, %s, %s] linear %s -> %s",
+            channels,
+            channels,
+            channels * 2,
+            channels * 4,
+            hidden_dim,
+            hidden_dim,
             num_classes,
         )
         return model
