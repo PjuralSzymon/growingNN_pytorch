@@ -58,10 +58,9 @@ SIMULATION_SET_SIZE = [2000]
 TARGET_ACCURACY = [0.99]
 SCORE_WEIGHT_ACC = [1.0]  # ?
 SCORE_WEIGHT_COUNTW = [0.2]  # ?
-AUGMENTATION_FACTOR = [0.1, 0.35, 0.70, 0.75, 0.85]  # 0=none, 1=maximum diversity/strength
 MODEL_CHANNELS = [32]
 MODEL_HIDDEN_DIM = [256]
-GRID_REPEAT_SEEDS = [0]
+GRID_REPEAT_SEEDS = [100]
 
 METAPARAM_KEYS = (
     "generations",
@@ -74,7 +73,6 @@ METAPARAM_KEYS = (
     "target_accuracy",
     "score_weight_acc",
     "score_weight_countw",
-    "augmentation_factor",
     "model_channels",
     "model_hidden_dim",
 )
@@ -89,7 +87,6 @@ METAPARAM_LISTS = (
     TARGET_ACCURACY,
     SCORE_WEIGHT_ACC,
     SCORE_WEIGHT_COUNTW,
-    AUGMENTATION_FACTOR,
     MODEL_CHANNELS,
     MODEL_HIDDEN_DIM,
 )
@@ -162,15 +159,11 @@ class MinimalCifarNet(nn.Module):
 
 
 class Cifar10Data:
-    """CIFAR-10 transforms and DataLoaders for training, validation, and simulation."""
+    """CIFAR-10 loaders matching kuangliu/pytorch-cifar transforms."""
 
     def __init__(self, data_dir: Path, *, num_workers: int = DATALOADER_NUM_WORKERS) -> None:
         self._data_dir = data_dir
         self._num_workers = num_workers
-
-    @staticmethod
-    def clamp_augmentation_factor(augmentation_factor: float) -> float:
-        return max(0.0, min(1.0, float(augmentation_factor)))
 
     @staticmethod
     def eval_transform() -> transforms.Compose:
@@ -182,49 +175,21 @@ class Cifar10Data:
         )
 
     @classmethod
-    def train_transform(cls, augmentation_factor: float) -> transforms.Compose:
-        factor = cls.clamp_augmentation_factor(augmentation_factor)
-        if factor <= 0.0:
-            return cls.eval_transform()
-
-        steps: list[transforms.Transform] = [
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(),
-        ]
-        if factor < 0.35:
-            pass
-        elif factor < 0.70:
-            steps.append(transforms.TrivialAugmentWide())
-        else:
-            steps.append(transforms.AutoAugment(policy=transforms.AutoAugmentPolicy.CIFAR10))
-
-        steps.extend(
+    def train_transform(cls) -> transforms.Compose:
+        return transforms.Compose(
             [
+                transforms.RandomCrop(32, padding=4),
+                transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD),
             ]
         )
-        if factor >= 0.85:
-            steps.append(
-                transforms.RandomErasing(
-                    p=0.25,
-                    scale=(0.02, 0.20),
-                    ratio=(0.3, 3.3),
-                    value="random",
-                )
-            )
-        return transforms.Compose(steps)
 
-    def loaders(self, batch_size: int, augmentation_factor: float):
-        factor = self.clamp_augmentation_factor(augmentation_factor)
-        logger.info(
-            "Loading CIFAR-10, batch_size %s augmentation_factor %s simulation_augment False",
-            batch_size,
-            factor,
-        )
+    def loaders(self, batch_size: int):
+        logger.info("Loading CIFAR-10 (kuangliu recipe), batch_size %s", batch_size)
         self._data_dir.mkdir(parents=True, exist_ok=True)
         eval_transform = self.eval_transform()
-        train_transform = self.train_transform(factor)
+        train_transform = self.train_transform()
         train = datasets.CIFAR10(
             str(self._data_dir), train=True, download=True, transform=train_transform
         )
@@ -289,7 +254,7 @@ class Cifar10TrainingRun:
             hyperparameters, board=board, enable_board=self._enable_board
         )
         train_loader, val_loader, clean_train_loader = self._data.loaders(
-            int(hyperparameters["batch_size"]), float(hyperparameters["augmentation_factor"])
+            int(hyperparameters["batch_size"])
         )
         sim_train_loader, sim_val_loader = sample_loaders(
             clean_train_loader,
@@ -558,8 +523,8 @@ def _eval_transform() -> transforms.Compose:
     return Cifar10Data.eval_transform()
 
 
-def _train_transform(augmentation_factor: float) -> transforms.Compose:
-    return Cifar10Data.train_transform(augmentation_factor)
+def _train_transform() -> transforms.Compose:
+    return Cifar10Data.train_transform()
 
 
 if __name__ == "__main__":
