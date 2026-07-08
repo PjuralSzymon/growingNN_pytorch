@@ -261,16 +261,20 @@ class LayerBridgeFinder:
         return first if all(s == first for s in shapes) else None
 
     @staticmethod
-    def linear_feature_dim(shape: tuple[int, ...]) -> int | None:
+    def linear_feature_dim(shape: tuple[int, ...] | None) -> int | None:
         """Feature dimension from a 2-D (batch, features) shape."""
+        if shape is None:
+            return None
         if len(shape) != 2:
             return None
         features = int(shape[1])
         return features if features > 0 else None
 
     @staticmethod
-    def conv_channels(shape: tuple[int, ...]) -> int | None:
+    def conv_channels(shape: tuple[int, ...] | None) -> int | None:
         """Channel dimension from a 4-D (batch, channels, H, W) shape."""
+        if shape is None:
+            return None
         if len(shape) != 4:
             return None
         channels = int(shape[1])
