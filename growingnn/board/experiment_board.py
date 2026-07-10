@@ -570,13 +570,14 @@ class ExperimentBoard:
             visits = child.visit_counter
             rollout_score = child.value / visits if visits else child.value
             sim_metrics = dict(getattr(child, "rollout_metrics", None) or {})
+            child_gm = child.traced.gm if getattr(child, "traced", None) is not None else child.model
             partial = {
                 "action": action_str,
                 "score": rollout_score,
                 "visits": visits,
                 "ucbScore": ucb,
                 "simulationMetrics": sim_metrics,
-                "paramCount": GraphStructureQuery.get_amount_of_parameters(child.model) if child.model else None,
+                "paramCount": GraphStructureQuery.get_amount_of_parameters(child_gm) if child_gm else None,
             }
             out.append(
                 self.format_candidate_row(
@@ -584,7 +585,7 @@ class ExperimentBoard:
                     config,
                     generation=generation,
                     index=index,
-                    model=child.model,
+                    model=child_gm,
                     chosen=action_str == best_action,
                 )
             )
