@@ -2,6 +2,7 @@ from typing import List
 
 from torch import fx, nn
 
+from growingnn.core.traced_model import TracedModel
 from growingnn.utils.fx import (
     LayerBridgeFinder,
     LayerShapeAnalyser,
@@ -69,6 +70,8 @@ def get_common_output_shape(
     input_layers: list[str],
     output_shapes: dict[str, tuple[int, ...]] | None = None,
 ) -> tuple[int, ...] | None:
+    if not input_layers:
+        return None
     if output_shapes is None:
         if not isinstance(model, fx.GraphModule):
             return None
@@ -81,6 +84,8 @@ def get_common_input_shape(
     output_layers: list[str],
     input_shapes: dict[str, tuple[int, ...]] | None = None,
 ) -> tuple[int, ...] | None:
+    if not output_layers:
+        return None
     if input_shapes is None:
         if not isinstance(model, fx.GraphModule):
             return None
@@ -93,11 +98,14 @@ def can_bypass_delete_layer(
     layer_id: str,
     output_shapes: dict[str, tuple[int, ...]] | None = None,
     input_shapes: dict[str, tuple[int, ...]] | None = None,
+    input_shape: tuple[int, ...] | None = None,
 ) -> bool:
     """Return True when each successor can be fed by one shape-compatible predecessor."""
     gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
     if output_shapes is None or input_shapes is None:
-        output_shapes, input_shapes = LayerShapeAnalyser.collect_layer_shapes(gm)
+        output_shapes, input_shapes = LayerShapeAnalyser.collect_layer_shapes(
+            gm, input_shape=input_shape
+        )
     layer_node = _find_layer_node(gm, layer_id)
     if is_merge_branch_layer(layer_node):
         return bool(layer_node.all_input_nodes)
@@ -111,18 +119,20 @@ def can_bypass_delete_layer(
 
 
 class DelLayer(Action):
-    def execute(self, model: nn.Module | fx.GraphModule):
-        ModelStructureEditor.delete_layer(model, self.params[0])
+    def _execute(self, traced: TracedModel):
+        ModelStructureEditor.delete_layer(
+            traced.gm, self.params[0], input_shape=traced.input_shape
+        )
 
     def can_be_infulenced(self, by_action):
         return False
 
     @staticmethod
-    def generate_all_actions(model: nn.Module | fx.GraphModule) -> List[Action]:
-        gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
-        output_shapes, input_shapes = LayerShapeAnalyser.collect_layer_shapes(gm)
+    def generate_all_actions(traced: TracedModel) -> List[Action]:
+        gm = traced.gm
+        output_shapes, input_shapes = traced.shapes()
         actions: List[Action] = []
-        for layer_id in dict.fromkeys(GraphStructureQuery.get_all_hidden_modules(gm)):
+        for layer_id in dict.fromkeys(traced.hidden_modules()):
             if can_bypass_delete_layer(gm, layer_id, output_shapes, input_shapes):
                 actions.append(DelLayer([layer_id]))
         return actions
@@ -132,12 +142,13 @@ class DelLayer(Action):
 
 
 def explain_delete_layer_blockers(
-    gm: fx.GraphModule,
+    graph: TracedModel,
 ) -> list[tuple[str, str]]:
     """Return (layer_id, reason) for hidden modules that cannot be deleted."""
-    output_shapes, input_shapes = LayerShapeAnalyser.collect_layer_shapes(gm)
+    gm = graph.gm
+    output_shapes, input_shapes = graph.shapes()
     blockers: list[tuple[str, str]] = []
-    for layer_id in dict.fromkeys(GraphStructureQuery.get_all_hidden_modules(gm)):
+    for layer_id in dict.fromkeys(graph.hidden_modules()):
         if can_bypass_delete_layer(gm, layer_id, output_shapes, input_shapes):
             continue
         layer_node = _find_layer_node(gm, layer_id)
