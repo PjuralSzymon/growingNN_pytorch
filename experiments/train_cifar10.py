@@ -536,14 +536,6 @@ def _install_cifar_shape_probe() -> None:
     LayerShapeAnalyser.default_example_input = _cifar_default_example_input
 
 
-def _eval_transform() -> transforms.Compose:
-    return Cifar10Data.eval_transform()
-
-
-def _train_transform() -> transforms.Compose:
-    return Cifar10Data.train_transform()
-
-
 if __name__ == "__main__":
     args = _parse_cli()
     train_device = torch.device("cuda")
