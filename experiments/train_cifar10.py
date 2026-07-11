@@ -1,4 +1,4 @@
-"""CIFAR-10 growingNN run on a tiny two-conv + linear MLP (no ResNet)."""
+"""CIFAR-10 growingNN run on a minimal ResNet-style backbone."""
 
 from __future__ import annotations
 
@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 import torch
 import torch.fx as fx
 import torch.nn as nn
+import torch.nn.functional as F
+from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -51,13 +53,13 @@ LR_ALPHA = [0.01]
 SIMULATION_TIME = [500.0]
 SIMULATION_EPOCHS = [15]
 SIMULATION_SET_SIZE = [2000]
-TARGET_ACCURACY = [0.99, 1.0]
-SCORE_WEIGHT_ACC = [1.0, 0.5]  # ?
-SCORE_WEIGHT_COUNTW = [0.2, 0.1]  # ?
-AUGMENTATION_FACTOR = [0.75, 1.0]  # 0=none, 1=maximum diversity/strength
+TARGET_ACCURACY = [0.99]
+SCORE_WEIGHT_ACC = [1.0]  # ?
+SCORE_WEIGHT_COUNTW = [0.2]  # ?
 MODEL_CHANNELS = [32]
-MODEL_HIDDEN_DIM = [1024, 2048]
-GRID_REPEAT_SEEDS = [60,61]
+MODEL_HIDDEN_DIM = [256]
+MODEL_NUM_BLOCKS = [1]
+GRID_REPEAT_SEEDS = [110]
 
 METAPARAM_KEYS = (
     "generations",
@@ -70,9 +72,9 @@ METAPARAM_KEYS = (
     "target_accuracy",
     "score_weight_acc",
     "score_weight_countw",
-    "augmentation_factor",
     "model_channels",
     "model_hidden_dim",
+    "model_num_blocks",
 )
 METAPARAM_LISTS = (
     GENERATIONS,
@@ -85,52 +87,30 @@ METAPARAM_LISTS = (
     TARGET_ACCURACY,
     SCORE_WEIGHT_ACC,
     SCORE_WEIGHT_COUNTW,
-    AUGMENTATION_FACTOR,
     MODEL_CHANNELS,
     MODEL_HIDDEN_DIM,
+    MODEL_NUM_BLOCKS,
 )
 
 OUT_DIR = _EXPERIMENT_DIR / "output" / "train_cifar10"
-DATA_DIR = OUT_DIR / "data"
+DATA_DIR = _EXPERIMENT_DIR / "data" / "cifar10"
 RUNS_DIR = OUT_DIR / "runs"
 SUMMARY_PATH = OUT_DIR / "grid_search_summary.txt"
 NUM_CLASSES = 10
 METRIC_KEYS = ("train_loss", "train_acc", "val_loss", "val_acc", "lr", "param_count")
 CIFAR10_MEAN = (0.4914, 0.4822, 0.4465)
 CIFAR10_STD = (0.2023, 0.1994, 0.2010)
-
-
-class MinimalCifarNet(nn.Module):
-    """Two conv layers, one linear hidden, one linear head."""
-
-    def __init__(self, num_classes: int = NUM_CLASSES, channels: int = 8, hidden_dim: int = 32):
-        super().__init__()
-        self.conv1 = nn.Conv2d(3, channels, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding=1)
-        self.pool = nn.AdaptiveAvgPool2d(1)
-        self.flatten = nn.Flatten()
-        self.hidden = nn.Linear(channels, hidden_dim)
-        self.output = nn.Linear(hidden_dim, num_classes)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.conv1(x)
-        x = self.conv2(x)
-        x = self.pool(x)
-        x = self.flatten(x)
-        x = self.hidden(x)
-        return self.output(x)
+CIFAR_INPUT_SHAPE = (3, 32, 32)
 
 
 class Cifar10Data:
-    """CIFAR-10 transforms and DataLoaders for training, validation, and simulation."""
+    """CIFAR-10 loaders; datasets and DataLoaders are built once per process."""
 
     def __init__(self, data_dir: Path, *, num_workers: int = DATALOADER_NUM_WORKERS) -> None:
         self._data_dir = data_dir
         self._num_workers = num_workers
-
-    @staticmethod
-    def clamp_augmentation_factor(augmentation_factor: float) -> float:
-        return max(0.0, min(1.0, float(augmentation_factor)))
+        self._datasets: tuple[datasets.CIFAR10, datasets.CIFAR10, datasets.CIFAR10] | None = None
+        self._loader_cache: dict[int, tuple[DataLoader, DataLoader, DataLoader]] = {}
 
     @staticmethod
     def eval_transform() -> transforms.Compose:
@@ -142,68 +122,123 @@ class Cifar10Data:
         )
 
     @classmethod
-    def train_transform(cls, augmentation_factor: float) -> transforms.Compose:
-        factor = cls.clamp_augmentation_factor(augmentation_factor)
-        if factor <= 0.0:
-            return cls.eval_transform()
-
-        steps: list[transforms.Transform] = [
-            transforms.RandomCrop(32, padding=4),
-            transforms.RandomHorizontalFlip(),
-        ]
-        if factor < 0.35:
-            pass
-        elif factor < 0.70:
-            steps.append(transforms.TrivialAugmentWide())
-        else:
-            steps.append(transforms.AutoAugment(policy=transforms.AutoAugmentPolicy.CIFAR10))
-
-        steps.extend(
+    def train_transform(cls) -> transforms.Compose:
+        return transforms.Compose(
             [
+                transforms.RandomCrop(32, padding=4),
+                transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD),
             ]
         )
-        if factor >= 0.85:
-            steps.append(
-                transforms.RandomErasing(
-                    p=0.25,
-                    scale=(0.02, 0.20),
-                    ratio=(0.3, 3.3),
-                    value="random",
-                )
-            )
-        return transforms.Compose(steps)
 
-    def loaders(self, batch_size: int, augmentation_factor: float):
-        factor = self.clamp_augmentation_factor(augmentation_factor)
-        logger.info(
-            "Loading CIFAR-10, batch_size %s augmentation_factor %s simulation_augment False",
-            batch_size,
-            factor,
-        )
+    def prepare(self) -> None:
+        """Load torchvision datasets once (safe to call before the grid loop)."""
+        if self._datasets is not None:
+            return
         self._data_dir.mkdir(parents=True, exist_ok=True)
+        download = not (self._data_dir / "cifar-10-batches-py").is_dir()
+        root = str(self._data_dir)
         eval_transform = self.eval_transform()
-        train_transform = self.train_transform(factor)
-        train = datasets.CIFAR10(
-            str(self._data_dir), train=True, download=True, transform=train_transform
+        train_transform = self.train_transform()
+        self._datasets = (
+            datasets.CIFAR10(root, train=True, download=download, transform=train_transform),
+            datasets.CIFAR10(root, train=True, download=download, transform=eval_transform),
+            datasets.CIFAR10(root, train=False, download=download, transform=eval_transform),
         )
-        train_clean = datasets.CIFAR10(
-            str(self._data_dir), train=True, download=True, transform=eval_transform
+        train, _, val = self._datasets
+        logger.info("Loaded CIFAR-10: %s train, %s val", len(train), len(val))
+
+    def loaders(self, batch_size: int) -> tuple[DataLoader, DataLoader, DataLoader]:
+        self.prepare()
+        if batch_size in self._loader_cache:
+            return self._loader_cache[batch_size]
+        assert self._datasets is not None
+        train, train_clean, val = self._datasets
+        loader_kwargs: dict[str, object] = {
+            "batch_size": batch_size,
+            "num_workers": self._num_workers,
+        }
+        if self._num_workers > 0:
+            loader_kwargs["persistent_workers"] = True
+        pin_memory = torch.cuda.is_available()
+        loaders = (
+            DataLoader(train, shuffle=True, pin_memory=pin_memory, **loader_kwargs),
+            DataLoader(val, pin_memory=pin_memory, **loader_kwargs),
+            DataLoader(train_clean, shuffle=False, pin_memory=pin_memory, **loader_kwargs),
         )
-        val = datasets.CIFAR10(
-            str(self._data_dir), train=False, download=True, transform=eval_transform
-        )
-        loader_kwargs = {"batch_size": batch_size, "num_workers": self._num_workers}
-        train_loader = torch.utils.data.DataLoader(train, shuffle=True, **loader_kwargs)
-        val_loader = torch.utils.data.DataLoader(val, **loader_kwargs)
-        clean_train_loader = torch.utils.data.DataLoader(train_clean, shuffle=False, **loader_kwargs)
-        logger.info(
-            "Loaded CIFAR-10: %s train, %s val; simulation subset uses non-augmented train images",
-            len(train),
-            len(val),
-        )
-        return train_loader, val_loader, clean_train_loader
+        self._loader_cache[batch_size] = loaders
+        return loaders
+
+
+class MinimalBasicBlock(nn.Module):
+    """Single ResNet basic block (3x3 convs + optional 1x1 shortcut)."""
+
+    expansion = 1
+
+    def __init__(self, in_planes: int, planes: int, stride: int = 1) -> None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(planes)
+        if stride != 1 or in_planes != self.expansion * planes:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_planes, self.expansion * planes, kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(self.expansion * planes),
+            )
+        else:
+            self.shortcut = nn.Identity()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = self.bn2(self.conv2(out))
+        out += self.shortcut(x)
+        return F.relu(out)
+
+
+class MinimalCifarNet(nn.Module):
+    """Tiny ResNet for CIFAR-10: stem + 1 or 2 residual blocks."""
+
+    @staticmethod
+    def _block_specs(channels: int, hidden_dim: int, num_blocks: int) -> list[tuple[int, int]]:
+        if num_blocks == 1:
+            return [(hidden_dim, 2)]
+        if num_blocks == 2:
+            return [(channels, 1), (hidden_dim, 2)]
+        raise ValueError(f"model_num_blocks must be 1 or 2, got {num_blocks}")
+
+    def __init__(
+        self,
+        num_classes: int = NUM_CLASSES,
+        channels: int = 8,
+        hidden_dim: int = 32,
+        num_blocks: int = 1,
+    ) -> None:
+        super().__init__()
+        if num_blocks not in (1, 2):
+            raise ValueError(f"model_num_blocks must be 1 or 2, got {num_blocks}")
+        self.num_blocks = num_blocks
+        self.conv1 = nn.Conv2d(3, channels, kernel_size=3, stride=1, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(channels)
+        in_planes = channels
+        pool_size = 32
+        for i, (out_planes, stride) in enumerate(
+            self._block_specs(channels, hidden_dim, num_blocks), start=1
+        ):
+            setattr(self, f"layer{i}", MinimalBasicBlock(in_planes, out_planes, stride))
+            in_planes = out_planes
+            pool_size //= stride
+        self._pool_size = pool_size
+        self.linear = nn.Linear(hidden_dim, num_classes)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = F.relu(self.bn1(self.conv1(x)))
+        for i in range(1, self.num_blocks + 1):
+            x = getattr(self, f"layer{i}")(x)
+        x = F.avg_pool2d(x, self._pool_size)
+        x = torch.flatten(x, 1)
+        return self.linear(x)
 
 
 class Cifar10TrainingRun:
@@ -231,6 +266,7 @@ class Cifar10TrainingRun:
             self._build_model(
                 channels=int(hyperparameters["model_channels"]),
                 hidden_dim=int(hyperparameters["model_hidden_dim"]),
+                num_blocks=int(hyperparameters["model_num_blocks"]),
             )
         )
         params_before = GraphStructureQuery.get_amount_of_parameters(gm)
@@ -250,7 +286,7 @@ class Cifar10TrainingRun:
             hyperparameters, board=board, enable_board=self._enable_board
         )
         train_loader, val_loader, clean_train_loader = self._data.loaders(
-            int(hyperparameters["batch_size"]), float(hyperparameters["augmentation_factor"])
+            int(hyperparameters["batch_size"])
         )
         sim_train_loader, sim_val_loader = sample_loaders(
             clean_train_loader,
@@ -320,14 +356,23 @@ class Cifar10TrainingRun:
         *,
         channels: int = 32,
         hidden_dim: int = 256,
+        num_blocks: int = 1,
     ) -> nn.Module:
-        model = MinimalCifarNet(num_classes=num_classes, channels=channels, hidden_dim=hidden_dim)
+        model = MinimalCifarNet(
+            num_classes=num_classes,
+            channels=channels,
+            hidden_dim=hidden_dim,
+            num_blocks=num_blocks,
+        )
+        widths = [channels] + (
+            [channels, hidden_dim] if num_blocks == 2 else [hidden_dim]
+        )
         logger.info(
-            "Built MinimalCifarNet: conv1 3->%s conv2 %s->%s -> pool -> linear %s -> %s",
-            model.conv1.out_channels,
-            model.conv2.in_channels,
-            model.conv2.out_channels,
-            model.hidden.out_features,
+            "Built MinimalCifarNet: stem 3->%s blocks=%s widths %s linear %s -> %s",
+            channels,
+            num_blocks,
+            widths,
+            hidden_dim,
             num_classes,
         )
         return model
@@ -396,6 +441,7 @@ class Cifar10Experiment:
         )
 
     def run(self) -> None:
+        self._data.prepare()
         RUNS_DIR.mkdir(parents=True, exist_ok=True)
         OUT_DIR.mkdir(parents=True, exist_ok=True)
         runs_done = 0
@@ -450,7 +496,9 @@ def _assert_cuda_ready(train_device: torch.device) -> None:
         torch.__version__,
     )
     try:
-        torch.nn.Conv2d(3, 8, 3).to(train_device)(torch.zeros(1, 3, 32, 32, device=train_device))
+        torch.nn.Conv2d(3, 8, 3).to(train_device)(
+            torch.zeros(1, *CIFAR_INPUT_SHAPE, device=train_device)
+        )
     except RuntimeError as exc:
         if "no kernel image" in str(exc).lower():
             arch = getattr(torch.cuda, "get_arch_list", lambda: [])()
@@ -463,16 +511,34 @@ def _assert_cuda_ready(train_device: torch.device) -> None:
         raise
 
 
-def _eval_transform() -> transforms.Compose:
-    return Cifar10Data.eval_transform()
+def _install_cifar_shape_probe() -> None:
+    """Patch FX ShapeProp fallback probe to match CIFAR-10 (3x32x32), not ImageNet 224."""
+    from growingnn.utils.fx.graph_analysis import LayerShapeAnalyser
 
+    spatial = CIFAR_INPUT_SHAPE[1]
 
-def _train_transform(augmentation_factor: float) -> transforms.Compose:
-    return Cifar10Data.train_transform(augmentation_factor)
+    @staticmethod
+    def _cifar_default_example_input(gm: fx.GraphModule) -> torch.Tensor | None:
+        if not any(n.op == "placeholder" for n in gm.graph.nodes):
+            return None
+        try:
+            p0 = next(gm.parameters())
+            device, dtype = p0.device, p0.dtype
+        except StopIteration:
+            device, dtype = torch.device("cpu"), torch.float32
+        for mod in gm.modules():
+            if isinstance(mod, nn.Linear):
+                return torch.randn(1, mod.in_features, device=device, dtype=dtype)
+            if isinstance(mod, nn.modules.conv._ConvNd):
+                return torch.randn(1, mod.in_channels, spatial, spatial, device=device, dtype=dtype)
+        return torch.randn(1, *CIFAR_INPUT_SHAPE, device=device, dtype=dtype)
+
+    LayerShapeAnalyser.default_example_input = _cifar_default_example_input
 
 
 if __name__ == "__main__":
     args = _parse_cli()
     train_device = torch.device("cuda")
     _assert_cuda_ready(train_device)
+    _install_cifar_shape_probe()
     Cifar10Experiment(args, train_device).run()

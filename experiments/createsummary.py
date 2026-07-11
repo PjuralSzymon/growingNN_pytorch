@@ -74,7 +74,7 @@ _HYPERPARAMETER_FOLDER_NAME_RE = re.compile(
     r"_tgt(?P<target_accuracy>[\d.]+)"
     r"_wacc(?P<score_weight_acc>[\d.]+)"
     r"_wcw(?P<score_weight_countw>[\d.]+)"
-    r"_augf?(?P<augmentation_factor>[\d.]*)"
+    r"(?:_augf?(?P<augmentation_factor>[\d.]*))?"
     r"_ch(?P<model_channels>\d+)"
     r"_hd(?P<model_hidden_dim>\d+)$"
 )
@@ -398,13 +398,16 @@ class GridSummaryWriter:
 
 def build_hyperparameter_folder_name(hyperparameters: Hyperparameters) -> str:
     """Build the runs/ subfolder name that encodes one grid-search configuration."""
+    aug_part = ""
+    if "augmentation_factor" in hyperparameters:
+        aug_part = f"_augf{hyperparameters['augmentation_factor']}"
     return (
         f"g{hyperparameters['generations']}_ep{hyperparameters['epochs']}_bs{hyperparameters['batch_size']}"
         f"_lr{hyperparameters['lr_alpha']}_simt{hyperparameters['simulation_time']}"
         f"_sime{hyperparameters['simulation_epochs']}"
         f"_simsz{hyperparameters['simulation_set_size']}_tgt{hyperparameters['target_accuracy']}"
         f"_wacc{hyperparameters['score_weight_acc']}_wcw{hyperparameters['score_weight_countw']}"
-        f"_augf{hyperparameters['augmentation_factor']}"
+        f"{aug_part}"
         f"_ch{hyperparameters['model_channels']}_hd{hyperparameters['model_hidden_dim']}"
     )
 
@@ -418,7 +421,7 @@ def parse_hyperparameters_from_folder_name(folder_name: str) -> Hyperparameters 
     hyperparameters: Hyperparameters = {}
     for key in CANONICAL_PARAM_KEYS:
         raw = match.group(key)
-        if raw == "":
+        if raw is None or raw == "":
             continue
         hyperparameters[key] = int(raw) if key in _INT_PARAM_KEYS else float(raw)
     return hyperparameters
