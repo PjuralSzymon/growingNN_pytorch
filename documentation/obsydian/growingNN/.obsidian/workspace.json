@@ -28,12 +28,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Reports/Part 1.md",
+                "file": "Reports/PLAN.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Part 1"
+              "title": "PLAN"
             }
           }
         ],
@@ -220,9 +220,9 @@
   },
   "active": "b21a7027cf935f4b",
   "lastOpenFiles": [
-    "Reports/PLAN.md",
-    "Reports/Part 1.md",
     "Reports/TODO.md",
+    "Reports/Part 1.md",
+    "Reports/PLAN.md",
     "Plan Prezentacji.md",
     "Actions/Grow oriented actions/Sequential Linear Actions.md",
     "references/Pasted image 20260529182135.png",
