@@ -161,6 +161,110 @@ class GraphStructureQuery:
         return pred, succ
 
 
+class GraphConnectivity:
+    """Reachability and dangling-branch diagnostics for FX graphs."""
+
+    @staticmethod
+    def nodes_reachable_from_output(gm: fx.GraphModule) -> set[fx.Node]:
+        """Return every FX node on a path to the graph output."""
+        output_nodes = [node for node in gm.graph.nodes if node.op == "output"]
+        if not output_nodes:
+            return set(gm.graph.nodes)
+        live: set[fx.Node] = set()
+        stack = list(output_nodes)
+        while stack:
+            node = stack.pop()
+            if node in live:
+                continue
+            live.add(node)
+            stack.extend(node.all_input_nodes)
+        return live
+
+    @staticmethod
+    def get_output_module_id(gm: fx.GraphModule) -> str | None:
+        """Return the call_module target wired into the graph output node."""
+        output = next((node for node in gm.graph.nodes if node.op == "output"), None)
+        if output is None or not output.args:
+            return None
+        arg = output.args[0]
+        if isinstance(arg, fx.Node) and arg.op == "call_module":
+            return str(arg.target)
+        return None
+
+    @staticmethod
+    def get_input_module_ids(gm: fx.GraphModule) -> list[str]:
+        """Return call_module targets fed directly by graph placeholders."""
+        placeholders = {node for node in gm.graph.nodes if node.op == "placeholder"}
+        ids: list[str] = []
+        for node in gm.graph.nodes:
+            if node.op != "call_module":
+                continue
+            if placeholders.intersection(node.all_input_nodes):
+                ids.append(str(node.target))
+        return list(dict.fromkeys(ids))
+
+    @staticmethod
+    def dangling_leaf_nodes(gm: fx.GraphModule) -> list[fx.Node]:
+        """Return FX nodes with no users that are not placeholders or output."""
+        return [
+            node for node in gm.graph.nodes
+            if len(node.users) == 0 and node.op not in ("placeholder", "output")
+        ]
+
+    @staticmethod
+    def unreachable_module_ids(gm: fx.GraphModule) -> list[str]:
+        """Return call_module targets that do not reach the graph output."""
+        live = GraphConnectivity.nodes_reachable_from_output(gm)
+        return [
+            str(node.target) for node in gm.graph.nodes
+            if node.op == "call_module" and node not in live
+        ]
+
+    @staticmethod
+    def live_module_ids(gm: fx.GraphModule) -> list[str]:
+        """Return call_module targets on a path to the graph output."""
+        live = GraphConnectivity.nodes_reachable_from_output(gm)
+        return [
+            str(node.target) for node in gm.graph.nodes
+            if node.op == "call_module" and node in live
+        ]
+
+    @staticmethod
+    def is_connected_to_output(gm: fx.GraphModule) -> bool:
+        """True when every call_module reaches the output and there are no dangling leaves."""
+        return (
+            not GraphConnectivity.dangling_leaf_nodes(gm)
+            and not GraphConnectivity.unreachable_module_ids(gm)
+        )
+
+    @staticmethod
+    def explain_connectivity(gm: fx.GraphModule) -> list[str]:
+        """Return human-readable connectivity problems for logging and tests."""
+        issues: list[str] = []
+        input_ids = GraphConnectivity.get_input_module_ids(gm)
+        output_id = GraphConnectivity.get_output_module_id(gm)
+        if len(input_ids) != 1:
+            issues.append(f"expected 1 input module, got {len(input_ids)}: {input_ids}")
+        if output_id is None:
+            issues.append("graph output is not wired to a call_module")
+        dangling = GraphConnectivity.dangling_leaf_nodes(gm)
+        if dangling:
+            issues.append(
+                "dangling leaves: "
+                + ", ".join(
+                    f"{node.op}:{getattr(node, 'target', node.name)}"
+                    for node in dangling
+                )
+            )
+        unreachable = GraphConnectivity.unreachable_module_ids(gm)
+        if unreachable:
+            issues.append(f"unreachable modules: {unreachable}")
+        live = GraphConnectivity.live_module_ids(gm)
+        if live:
+            issues.append(f"live path modules: {live}")
+        return issues
+
+
 class LayerShapeAnalyser:
     """Run ShapeProp and read per-layer input/output activation shapes."""
 

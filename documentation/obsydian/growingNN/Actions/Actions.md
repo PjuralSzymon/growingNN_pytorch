@@ -1,17 +1,21 @@
 Actions are the building block of this algorithm those are defining how the model can change on the given simulation and how it will change. Each action inheriths from base Action class (`growingnn/actions/action.py`) which forces the action to implement 2 methods: 
-- `generate_all_actions` which is static and gets the model (`model: nn.Module | fx.GraphModul`)  and returns List of Actions, each action in that list is a copy of the current class with different parameters for example `generate_all_actions` implemented in the [[Sequential Linear Actions]] will return a list of [[Sequential Linear Actions]] but each of those classes will have parameters that will define different sequential linear actions to be added a given moment. Changes generated for a given model won't work for other models.
-- Execute is a function that execute changes on a model it was generated. 
+- `generate_all_actions` is a static method that takes the model (`model: nn.Module | fx.GraphModule`) and returns a list of actions. Each entry is a copy of the same class with different parameters. For example, `generate_all_actions` in [[Sequential Linear Actions]] returns a list of [[Sequential Linear Actions]] instances, each defining a different sequential layer to add at that moment. Actions generated for one model do not apply to another.
+- `execute` applies the change on the model the action was generated for.
 
 ## Action types
-Currently in our algorithm we have 4 action types used to grow the network and 2 action types design to shrink the network (also we have 1 more shrinking action in the design process).
-### Grow oriented actions:
+
+### Grow oriented actions
+
 - [[Sequential Linear Actions]]
 - [[Sequential Conv Action]]
 - [[Residual Linear Actions]]
 - [[Residual Conv Action]]
-### Shrink oriented actions:
+- [[Add neurons Action]]
+- [[Add Seq Dropout Action]]
+
+### Shrink oriented actions
+
 - [[Del Layer Action]]
 - [[Del neurons Action]]
 
-
-
+Shared helpers live in `growingnn/actions/utils/` (`seq_insertion.py`, `layer_resize.py`, `layer_Factory.py`) and `growingnn/actions/registry.py` combines enabled generators into one move list.

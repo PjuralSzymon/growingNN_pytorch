@@ -34,8 +34,16 @@ _SCORE_TERM_LABELS = {
 def _safe_write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    tmp.replace(path)
+    data = json.dumps(payload, indent=2)
+    for attempt in range(5):
+        try:
+            tmp.write_text(data, encoding="utf-8")
+            tmp.replace(path)
+            return
+        except (PermissionError, OSError):
+            if attempt == 4:
+                raise
+            time.sleep(0.05 * (attempt + 1))
 
 
 class ExperimentBoard:
@@ -245,6 +253,8 @@ class ExperimentBoard:
         suffix = f"gen_{generation}" if tag is None else tag
         full = self.root / "graphs" / f"{suffix}_full.pdf"
         simple = self.root / "graphs" / f"{suffix}_simplified.pdf"
+        full.parent.mkdir(parents=True, exist_ok=True)
+        simple.parent.mkdir(parents=True, exist_ok=True)
         draw_torch_fx_graph(gm, str(full.with_suffix("")), fmt="pdf")
         draw_filtered_fx_graph(gm, str(simple.with_suffix("")), fmt="pdf")
 

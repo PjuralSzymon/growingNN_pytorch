@@ -19,6 +19,7 @@ Use this page as the only vault link when an action or core doc needs graph anal
 |--------|------|------|
 | [[Graph analysis]] | `growingnn/utils/fx/graph_analysis.py` | Classify modules, list pairs and hidden layers, run `ShapeProp`, pick bridge sizes |
 | [[Node analysis]] | `growingnn/utils/fx/node_analysis.py` | Resolve dotted submodule names, passthrough/fork/add checks, feature-width on nodes |
+| [[Sum nodes]] | `growingnn/utils/fx/sum_nodes.py` | `nary_add`, residual branch connect, merge-branch delete helpers |
 
 Main entry points actions call:
 
@@ -29,7 +30,7 @@ Main entry points actions call:
 - `LayerBridgeFinder.find_*` — map probed shapes to new layer widths (linear, conv, conv-before-linear)
 - `ModuleResolver.get_layer_module` — `fx.Node` or string target → live `nn.Module` via `get_submodule`
 - `ModuleResolver.unique_call_module_name` — collision-free name for `gm.add_module`
-- `NodeWidthAnalyser` — width checks for [[Del neurons Action]] and `layer_resize.py`
+- `NodeWidthAnalyser` — width checks for neuron actions and `layer_resize.py`
 
 ---
 
@@ -54,4 +55,3 @@ Neuron shrink also walks the graph in `growingnn/actions/utils/layer_resize.py` 
 ## Visualise the graph (debug)
 
 [[FX graph drawer]] — `growingnn/utils/fx_graph_drawer.py`. Writes Graphviz SVG/PNG from a `GraphModule`. Not imported by actions.
-

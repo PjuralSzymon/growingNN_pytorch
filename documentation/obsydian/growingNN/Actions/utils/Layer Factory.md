@@ -12,7 +12,9 @@ Enum at lines 16 to 19: `ZERO`, `RANDOM`, `EYE`. See [[Base action and Layer Typ
 
 `create_random_linear` draws normal weights using mean and std from `ADDING_RES_LAYERS_WEIGHT_INITIALIZATION_RANGE` in [[Config]] (lines 43 to 46).
 
-`create_eye_linear` builds a near-identity map using `quaziIdentity.eye_stretch` from [[Quasi identity]] then transposes to match `nn.Linear` weight layout `(out_features, in_features)` (lines 50 to 55). Used by [[Residual Linear Actions]] when `Layer_Type.EYE` is selected.
+`create_eye_linear` builds a near-identity map using `quaziIdentity.eye_stretch` from [[Quasi identity]] then transposes to match `nn.Linear` weight layout `(out_features, in_features)` (lines 50 to 55). Used when `Layer_Type.EYE` is selected for residual linear grow.
+
+`create_linear_with_rescaled_neurons` and `create_linear_with_rescaled_connections` reproject weights when `layer_resize.py` changes `out_features` or `in_features`. They call `get_reshsper` from [[Quasi identity]].
 
 ### `ConvFactory`
 
@@ -20,6 +22,6 @@ Enum at lines 16 to 19: `ZERO`, `RANDOM`, `EYE`. See [[Base action and Layer Typ
 
 `create_zero_conv` zero initialises weight and bias (lines 70 to 74).
 
-`create_eye_conv` places a 1 on the centre tap of the kernel on the channel diagonal (lines 77 to 91). Used by [[Sequential Conv Action]].
+`create_eye_conv` places a 1 on the centre tap of the kernel on the channel diagonal (lines 77 to 91). Used by sequential conv grow.
 
-`create_zero_conv_before_linear` wraps a zero conv with `AdaptiveMaxPool2d(1)` or `AdaptiveAvgPool2d(1)` depending on `RES_CONV_TO_LINEAR_GLOBAL_POOL_TYPE` in [[Config]], then `Flatten` (lines 95 to 111). Used by [[Residual Conv Action]] for conv-to-linear skips.
+`create_zero_conv_before_linear` wraps a zero conv with `AdaptiveMaxPool2d(1)` or `AdaptiveAvgPool2d(1)` depending on `RES_CONV_TO_LINEAR_GLOBAL_POOL_TYPE` in [[Config]], then `Flatten` (lines 95 to 111). Used for conv-to-linear residual skips.

@@ -1,16 +1,16 @@
-"""Shape-based action generation for ``AddSeqLayer``."""
+"""Shape-based action generation for ``AddSeqLinearLayer``."""
 
 import torch
 import torch.fx as fx
 
-from growingnn.actions.add_seq_layer import AddSeqLayer
+from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
 from growingnn.core import config
 from tests.model_factory import ModelFactory
 
 
 def test_generate_all_actions_uses_shape_bridge_for_linear_chain():
     """
-    AddSeqLayer should propose one action per sequential pair when ShapeProp
+    AddSeqLinearLayer should propose one action per sequential pair when ShapeProp
     reports matching feature sizes along l1 -> l2 -> l3.
     """
 
@@ -19,7 +19,7 @@ def test_generate_all_actions_uses_shape_bridge_for_linear_chain():
     gm = fx.symbolic_trace(model)
 
     # Act
-    actions = AddSeqLayer.generate_all_actions(gm)
+    actions = AddSeqLinearLayer.generate_all_actions(gm)
 
     # Assert
     assert len(actions) == 2
@@ -32,7 +32,7 @@ def test_generate_all_actions_uses_shape_bridge_for_linear_chain():
 
 def test_generate_all_actions_skips_when_weight_matrix_exceeds_config_limit(monkeypatch):
     """
-    AddSeqLayer should skip pairs whose Linear weight matrix in*out exceeds config limit.
+    AddSeqLinearLayer should skip pairs whose Linear weight matrix in*out exceeds config limit.
     """
 
     # Arrange
@@ -40,7 +40,7 @@ def test_generate_all_actions_skips_when_weight_matrix_exceeds_config_limit(monk
     gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
 
     # Act
-    actions = AddSeqLayer.generate_all_actions(gm)
+    actions = AddSeqLinearLayer.generate_all_actions(gm)
 
     # Assert
     assert actions == []
@@ -48,7 +48,7 @@ def test_generate_all_actions_skips_when_weight_matrix_exceeds_config_limit(monk
 
 def test_generate_all_actions_proposes_plain_linear_between_conv_and_linear():
     """
-    AddSeqLayer should propose a bare Linear for conv->linear pairs (pool/flatten remain in the graph).
+    AddSeqLinearLayer should propose a bare Linear for conv->linear pairs (pool/flatten remain in the graph).
     """
 
     # Arrange
@@ -56,7 +56,7 @@ def test_generate_all_actions_proposes_plain_linear_between_conv_and_linear():
     gm = fx.symbolic_trace(model)
 
     # Act
-    actions = AddSeqLayer.generate_all_actions(gm)
+    actions = AddSeqLinearLayer.generate_all_actions(gm)
 
     # Assert
     conv_to_linear = [

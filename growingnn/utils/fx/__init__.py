@@ -5,6 +5,7 @@ from growingnn.utils.fx.node_editor import NodeEditor
 from growingnn.utils.fx.graph_analysis import (
     ModuleClassifier,
     GraphStructureQuery,
+    GraphConnectivity,
     LayerShapeAnalyser,
     LayerBridgeFinder,
 )

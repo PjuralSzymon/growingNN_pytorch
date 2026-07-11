@@ -13,7 +13,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from growingnn.actions.action import Layer_Type
-from growingnn.actions.add_res_layer import AddResLayer
+from growingnn.actions.add_res_linear_layer import AddResLinearLayer
 from growingnn.utils.fx import GraphStructureQuery
 from growingnn.core.logger import logger
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     # Act
     id = 0
     for _ in range(50):
-        actions: List[AddResLayer] = AddResLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])
+        actions: List[AddResLinearLayer] = AddResLinearLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])
         id += 1
         idx = rng.randrange(len(actions))
         logger.info("idx: %s --------------------------------", id)

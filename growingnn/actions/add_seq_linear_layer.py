@@ -12,7 +12,7 @@ from growingnn.core.logger import logger
 from .action import Action, Layer_Type
 
 
-class AddSeqLayer(Action):
+class AddSeqLinearLayer(Action):
 
     def execute(self, model: nn.Module | fx.GraphModule):
         ModelStructureEditor.add_new_seq_layer(model, self.params[0], self.params[1], self.params[2], self.params[3])
@@ -36,7 +36,7 @@ class AddSeqLayer(Action):
                 name = ModuleResolver.unique_call_module_name("seq_linear", gm)
                 layer = LinearFactory.create_linear(sizes[0], sizes[1], Layer_Type.EYE)
                 logger.debug(
-                    "AddSeqLayer %s -> %s: Linear(%d, %d) out=%s in=%s",
+                    "AddSeqLinearLayer %s -> %s: Linear(%d, %d) out=%s in=%s",
                     layer_from_id,
                     layer_to_id,
                     sizes[0],
@@ -44,11 +44,11 @@ class AddSeqLayer(Action):
                     s_out,
                     s_in,
                 )
-                actions.append(AddSeqLayer([layer_from_id, layer_to_id, layer, name]))
+                actions.append(AddSeqLinearLayer([layer_from_id, layer_to_id, layer, name]))
                 continue
             conv_linear_sizes = LayerBridgeFinder.find_seq_linear_after_conv_sizes(s_out, s_in)
             if conv_linear_sizes is None:
-                logger.debug("AddSeqLayer skip %s -> %s", layer_from_id, layer_to_id)
+                logger.debug("AddSeqLinearLayer skip %s -> %s", layer_from_id, layer_to_id)
                 continue
             if conv_linear_sizes[0] * conv_linear_sizes[1] > config.MAX_ADD_SEQ_LAYER_WEIGHT_MATRIX_SIZE:
                 continue
@@ -59,7 +59,7 @@ class AddSeqLayer(Action):
                 Layer_Type.EYE,
             )
             logger.debug(
-                "AddSeqLayer %s -> %s: conv->linear (%d, %d) out=%s in=%s",
+                "AddSeqLinearLayer %s -> %s: conv->linear (%d, %d) out=%s in=%s",
                 layer_from_id,
                 layer_to_id,
                 conv_linear_sizes[0],
@@ -67,8 +67,8 @@ class AddSeqLayer(Action):
                 s_out,
                 s_in,
             )
-            actions.append(AddSeqLayer([layer_from_id, layer_to_id, layer, name]))
+            actions.append(AddSeqLinearLayer([layer_from_id, layer_to_id, layer, name]))
         return actions
 
     def __str__(self):
-        return " ( Add Seq Layer Action: " + str(self.params) + " ) "
+        return " ( Add Seq Linear Layer Action: " + str(self.params) + " ) "

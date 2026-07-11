@@ -1,3 +1,4 @@
+[[Actions]]
 
 This page is about `growingnn/actions/add_res_conv_layer.py` and the class `AddResConvLayer`. It adds a residual branch with a convolutional projection between two FX `call_module` targets, then recompiles the graph.
 
@@ -5,24 +6,25 @@ It depends on [[Torch.fx]]: `GraphStructureQuery.module_dependency_pairs`, `Modu
 
 ---
 
+## Exclusion cases
+
+For each dependency pair from `module_dependency_pairs(gm)`:
+
+1. if `find_equal_conv_output_shapes` is false and `find_conv_before_linear_sizes(..., for_residual=True)` returns `None` then skip (neither identical 4-D conv outputs for a zero conv skip, nor a conv→linear bridge where `linear_in % conv_channels == 0` and linear output width is known)
+2. for the conv→conv path only: `find_equal_conv_output_shapes` is false when probed 4-D shapes differ or are missing (residual add would not broadcast)
+3. for the conv→linear path only: `find_conv_before_linear_sizes` returns `None` when conv channels or linear dims are missing, or `linear_in % channels != 0` (flattened conv features cannot align to linear input)
+
+---
+
 ## Generating actions
 
-`generate_all_actions` builds one `GraphModule` reference `gm` with `model if isinstance(model, fx.GraphModule) else torch.fx.symbolic_trace(model)` so pairs and shape keys match the same graph (see lines 37 to 38 in `add_res_conv_layer.py`).
+`generate_all_actions` probes output and input shapes once, then walks dependency pairs.
 
-It reads pairs from `module_dependency_pairs(gm)`. It reads shapes from `LayerShapeAnalyser.get_layer_output_shapes(gm)`. For each `(layer_from_id, layer_to_id)` it loads modules with `ModuleResolver.get_layer_module(layer_from_id, model)` and `ModuleResolver.get_layer_module(layer_to_id, model)`.
-
-Class constants: `SUPPORTED_MODULES_FROM_LAYER = (nn.modules.conv._ConvNd,)`. `SUPPORTED_MODULES_TO_LAYER = (nn.modules.conv._ConvNd, nn.modules.Linear)`.
-
-If `layer_to` is conv and `out_shapes` is non-empty, it skips the pair unless `out_shapes[layer_from_id] == out_shapes[layer_to_id]` (lines 50 to 54). That removes cross-stage ResNet pairs that would break `torch.add`.
-
-If `layer_to` is conv, it appends `AddResConvLayer([...])` with `ConvFactory.create_zero_conv(..., stride=1, padding=layer_from.padding, kernel_size=layer_from.kernel_size, in_channels=layer_from.out_channels, out_channels=layer_to.out_channels)`.
-
-If `layer_to` is linear, it checks `can_insert_conv_before_linear` from `growingnn/actions/utils/conv_to_linear_adapter.py`, then may append with `ConvFactory.create_zero_conv_before_linear`.
+Equal-shape conv→conv pairs get `ConvFactory.create_zero_conv`. Other conv→linear pairs get `ConvFactory.create_zero_conv_before_linear` when `find_conv_before_linear_sizes` returns sizes.
 
 ---
 
 ## Executing actions
-
 `execute` calls `add_new_residual_layer(model, self.params[0], self.params[1], self.params[2], self.params[3])` with string ids for source and destination modules, the new conv module, and the new submodule name.
 
 ---

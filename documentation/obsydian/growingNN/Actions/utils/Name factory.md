@@ -10,4 +10,4 @@ Collects `model._modules.keys()` and, for `GraphModule`, all `str(n.target)` for
 
 ### Where it is used
 
-`AddResLayer`, `AddResConvLayer`, `AddSeqLayer`, `AddSeqConvLayer` during `generate_all_actions`.
+`AddResLinearLayer`, `AddResConvLayer`, `AddSeqLinearLayer`, `AddSeqConvLayer` during `generate_all_actions`.

@@ -191,9 +191,9 @@ def test_all_sites_match_width_for_single_call_site():
     assert NodeWidthAnalyser.all_sites_match_width(gm, "l2", 4) is True
 
 
-def test_propagation_hits_unsizable_true_when_add_has_conv_sibling():
+def test_propagation_hits_unsizable_false_when_add_has_conv_sibling():
     """
-    propagation_hits_unsizable should be true when forward path reaches add with Conv2d sibling.
+    propagation_hits_unsizable should be false when conv sibling can be width-synced.
     """
     # Arrange
     class LinearConvAdd(nn.Module):
@@ -216,7 +216,7 @@ def test_propagation_hits_unsizable_true_when_add_has_conv_sibling():
     hits = NodeWidthAnalyser.propagation_hits_unsizable(gm, node)
 
     # Assert
-    assert hits is True
+    assert hits is False
 
 
 def test_propagation_hits_unsizable_false_for_plain_linear_chain():

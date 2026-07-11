@@ -13,11 +13,11 @@ if str(_REPO_ROOT) not in sys.path:
 
 from growingnn.actions.action import Action, Layer_Type
 from growingnn.actions.add_res_conv_layer import AddResConvLayer
-from growingnn.actions.add_res_layer import AddResLayer
+from growingnn.actions.add_res_linear_layer import AddResLinearLayer
 from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
-from growingnn.actions.add_seq_layer import AddSeqLayer
-from growingnn.actions.delete_layer import DelLayer
-from growingnn.utils.fx import GraphStructureQuery
+from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
+from growingnn.actions.delete_layer import DelLayer, explain_delete_layer_blockers
+from growingnn.utils.fx import GraphStructureQuery, GraphConnectivity
 from growingnn.core.logger import logger
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from tests.model_factory import ModelFactory
@@ -51,10 +51,10 @@ if __name__ == "__main__":
         logger.info("idx: %s --------------------------------", id)
         actions: List[Action] = []
         if id < grow_iterations:
-            actions += AddResLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])
+            actions += AddResLinearLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])
             actions += AddResConvLayer.generate_all_actions(gm)
             actions += AddSeqConvLayer.generate_all_actions(gm)
-            actions += AddSeqLayer.generate_all_actions(gm)
+            actions += AddSeqLinearLayer.generate_all_actions(gm)
         else:
             actions += DelLayer.generate_all_actions(gm)
         if len(actions) == 0:
@@ -78,6 +78,19 @@ if __name__ == "__main__":
         draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified" + str(id+1), fmt="pdf")
         draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph" + str(id+1), fmt="pdf")
         logger.info("diffrence norm: %s", dn)
+
+    all_modules = sorted({str(n.target) for n in gm.graph.nodes if n.op == "call_module"})
+    hidden_modules = list(dict.fromkeys(GraphStructureQuery.get_all_hidden_modules(gm)))
+    deletable = DelLayer.generate_all_actions(gm)
+    blockers = explain_delete_layer_blockers(gm)
+    logger.info("final parameter count: %s", GraphStructureQuery.get_amount_of_parameters(gm))
+    logger.info("final call_module layers (%s): %s", len(all_modules), all_modules)
+    logger.info("final hidden layers (%s): %s", len(hidden_modules), hidden_modules)
+    logger.info("final deletable layers (%s): %s", len(deletable), [a.params[0] for a in deletable])
+    for layer_id, reason in blockers:
+        logger.info("blocked delete %s: %s", layer_id, reason)
+    for issue in GraphConnectivity.explain_connectivity(gm):
+        logger.info("graph connectivity: %s", issue)
 
     plot_norms_and_parameter_count(norms, parameter_amounts)
 

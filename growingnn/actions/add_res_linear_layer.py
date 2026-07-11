@@ -12,7 +12,7 @@ from growingnn.core.logger import logger
 from .action import Action, Layer_Type
 
 
-class AddResLayer(Action):
+class AddResLinearLayer(Action):
 
     def execute(self, model: nn.Module | fx.GraphModule):
         ModelStructureEditor.add_new_residual_layer(model, self.params[0], self.params[1], self.params[2], self.params[3])
@@ -34,16 +34,16 @@ class AddResLayer(Action):
                 out_shapes.get(layer_to_id),
             )
             if sizes is None:
-                logger.debug("AddResLayer skip %s -> %s", layer_from_id, layer_to_id)
+                logger.debug("AddResLinearLayer skip %s -> %s", layer_from_id, layer_to_id)
                 continue
             if sizes[0] * sizes[1] > config.MAX_ADD_SEQ_LAYER_WEIGHT_MATRIX_SIZE:
                 continue
             for layer_type in layer_types:
                 name = ModuleResolver.unique_call_module_name(f"res_linear_{layer_type.name}", gm)
                 layer = LinearFactory.create_linear(sizes[0], sizes[1], layer_type)
-                logger.debug("AddResLayer %s -> %s: Linear(%d, %d) %s out=%s/%s", layer_from_id, layer_to_id, sizes[0], sizes[1], layer_type.name, out_shapes.get(layer_from_id), out_shapes.get(layer_to_id))
-                actions.append(AddResLayer([layer_from_id, layer_to_id, layer, name]))
+                logger.debug("AddResLinearLayer %s -> %s: Linear(%d, %d) %s out=%s/%s", layer_from_id, layer_to_id, sizes[0], sizes[1], layer_type.name, out_shapes.get(layer_from_id), out_shapes.get(layer_to_id))
+                actions.append(AddResLinearLayer([layer_from_id, layer_to_id, layer, name]))
         return actions
 
     def __str__(self):
-        return " ( Add Res Layer Action: " + str(self.params) + " ) "
+        return " ( Add Res Linear Layer Action: " + str(self.params) + " ) "
