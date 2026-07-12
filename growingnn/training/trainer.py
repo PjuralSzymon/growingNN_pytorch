@@ -92,6 +92,7 @@ def train_generations(
         if config.simulation_scheduler.can_simulate(generation, generation_val_acc, quiet=config.quiet):
             action, _, _ = config.simulation_alg.get_action(copy.deepcopy(traced), config)
             if action is None:
+                logger.warning("Generation %s no action executed", generation)
                 continue
             action.execute(traced)
             logger.info("Generation %s action executed: %s", generation, action)

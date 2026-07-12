@@ -154,6 +154,7 @@ def get_action(
 ) -> tuple[object | None, int, int]:
     actions = generate_all_actions(traced, running_config)
     if not actions:
+        logger.warning("No actions generated for model")
         return None, 0, 0
 
     board = running_config.experiment_board
@@ -175,6 +176,8 @@ def get_action(
 
     best_child = root.get_best_child()
     best_action = best_child.action if best_child is not None else None
+    if best_action is None:
+        logger.warning("No best action found for MCTS simulation")
     candidates = None
     search_tree = None
     generation = getattr(board, "_current_generation", 0) if board is not None else 0
