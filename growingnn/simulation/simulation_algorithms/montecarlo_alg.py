@@ -8,15 +8,12 @@ import random
 import time
 from typing import Any
 
-import torch.fx as fx
-import torch.nn as nn
-
-import growingnn.core.config as project_config
 from growingnn.actions.registry import generate_all_actions
+import growingnn.core.config as project_config
 from growingnn.core.config import RunningConfig
+from growingnn.core.traced_model import TracedModel
 from growingnn.core.logger import logger
 from growingnn.training.gradient_descent import gradient_descent
-from growingnn.utils.fx import GraphStructureQuery
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph
 from growingnn.utils.quaziIdentity import clear_reshepers_cache
 
@@ -31,12 +28,12 @@ class TreeNode:
         self,
         parent: TreeNode | None,
         action,
-        model: nn.Module | fx.GraphModule,
+        traced: TracedModel,
         running_config: RunningConfig,
     ):
         self.parent = parent
         self.action = action
-        self.model = model
+        self.traced = traced
         self.running_config = running_config
         self.child_nodes: list[TreeNode] = []
         self.value = 0.0
@@ -46,12 +43,12 @@ class TreeNode:
 
     def expand(self) -> None:
         cfg = self.running_config
-        for action in generate_all_actions(self.model, cfg):
-            model_copy = copy.deepcopy(self.model)
-            action.execute(model_copy)
+        for action in generate_all_actions(self.traced, cfg):
+            traced_copy = copy.deepcopy(self.traced)
+            action.execute(traced_copy)
             try:
                 gradient_descent(
-                    model_copy,
+                    traced_copy.gm,
                     project_config.MCTS_ROLLOUT_EPOCHS,
                     cfg.sim_train_loader,
                     cfg.sim_val_loader,
@@ -62,25 +59,25 @@ class TreeNode:
                 )
             except Exception as e:
                 logger.error("Error in gradient_descent: %s after executing action %s", e, action)
-                draw_filtered_fx_graph(model_copy, "fx_graph_error_simulation_simplified", fmt="pdf")
+                draw_filtered_fx_graph(traced_copy.gm, "fx_graph_error_simulation_simplified", fmt="pdf")
                 raise
             self.child_nodes.append(
-                TreeNode(self, action, model_copy, cfg)
+                TreeNode(self, action, traced_copy, cfg)
             )
 
     def rollout(self) -> float:
         cfg = self.running_config
-        model_copy = copy.deepcopy(self.model)
+        traced_copy = copy.deepcopy(self.traced)
         depth = project_config.MCTS_ROLLOUT_DEPTH
         while depth > 0:
-            actions = generate_all_actions(model_copy, cfg)
+            actions = generate_all_actions(traced_copy, cfg)
             if not actions:
                 break
             chosen = random.choice(actions)
-            chosen.execute(model_copy)
+            chosen.execute(traced_copy)
             try:
                 gradient_descent(
-                    model_copy,
+                    traced_copy.gm,
                     project_config.MCTS_ROLLOUT_EPOCHS,
                     cfg.sim_train_loader,
                     cfg.sim_val_loader,
@@ -91,10 +88,10 @@ class TreeNode:
                 )
             except Exception as e:
                 logger.error("Error in gradient_descent: %s after executing action %s", e, chosen)
-                draw_filtered_fx_graph(model_copy, "fx_graph_error_simulation_simplified", fmt="pdf")
+                draw_filtered_fx_graph(traced_copy.gm, "fx_graph_error_simulation_simplified", fmt="pdf")
                 raise
             depth -= 1
-        composite = cfg.simulation_score.score(model_copy, cfg)
+        composite = cfg.simulation_score.score(traced_copy.gm, cfg)
         if cfg.experiment_board is not None:
             self.rollout_metrics = dict(cfg.experiment_board.simulation_metrics)
         return composite
@@ -126,7 +123,7 @@ class TreeNode:
         for child in self.child_nodes:
             child.kill()
         self.child_nodes.clear()
-        self.model = None  # type: ignore[assignment]
+        self.traced = None  # type: ignore[assignment]
         self.parent = None
         self._cleaned = True
 
@@ -152,17 +149,17 @@ def _simulate(node: TreeNode, depth: int = 0, rollouts: int = 0) -> tuple[float,
 
 
 def get_action(
-    model: nn.Module | fx.GraphModule,
+    traced: TracedModel,
     running_config: RunningConfig,
 ) -> tuple[object | None, int, int]:
-    actions = generate_all_actions(model, running_config)
+    actions = generate_all_actions(traced, running_config)
     if not actions:
         return None, 0, 0
 
     board = running_config.experiment_board
-    params_before = GraphStructureQuery.get_amount_of_parameters(model) if board is not None else None
+    params_before = traced.param_count() if board is not None else None
 
-    root = TreeNode(None, None, model, running_config)
+    root = TreeNode(None, None, traced, running_config)
     deadline = time.time() + running_config.simulation_scheduler.simulation_time
     t0 = time.time()
     max_depth = 0
