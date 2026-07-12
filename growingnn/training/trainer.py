@@ -10,7 +10,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from growingnn.core.config import RunningConfig
-from growingnn.core.traced_model import TracedModel, batch_input_shape
+from growingnn.core.traced_model import TracedModel
 from growingnn.core.logger import logger
 from growingnn.simulation.simulation_set import sample_loaders
 from growingnn.training.gradient_descent import gradient_descent
@@ -29,7 +29,7 @@ def train_generations(
     logger.info("Training generations started")
 
     inputs, _ = next(iter(train_loader))
-    traced = TracedModel.create(model, batch_input_shape(inputs))
+    traced = TracedModel.create(model, tuple(int(x) for x in inputs[0:1].shape))
 
     board = config.experiment_board
     if board is not None:
@@ -93,8 +93,7 @@ def train_generations(
             action, _, _ = config.simulation_alg.get_action(copy.deepcopy(traced), config)
             if action is None:
                 continue
-            action.execute(traced.gm)
-            traced.invalidate()
+            action.execute(traced)
             logger.info("Generation %s action executed: %s", generation, action)
             if board is not None:
                 board.save_graphs(traced.gm, generation=generation, tag=f"gen_{generation}_simulation")
