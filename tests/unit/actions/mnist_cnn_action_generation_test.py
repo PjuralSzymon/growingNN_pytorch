@@ -25,8 +25,6 @@ def test_simple_mnist_cnn_generates_conv_grow_actions():
     Architecture (input shape N,1,28,28):
       conv1  Conv2d(1->3, k=3)
         -> relu -> max_pool2d
-      conv2  Conv2d(3->3, k=3)
-        -> relu -> max_pool2d
       adaptive_avg_pool2d -> flatten
       linear Linear(3->10)
         -> output (N,10)
@@ -40,6 +38,9 @@ def test_simple_mnist_cnn_generates_conv_grow_actions():
 
     # Act
     actions = generate_all_actions(gm, config)
+    print(f"Available actions ({len(actions)}):")
+    for i, action in enumerate(actions, start=1):
+        print(f"  {i}. {type(action).__name__}: {action}")
     action_types = [type(action).__name__ for action in actions]
     conv_actions = [
         action
