@@ -18,6 +18,34 @@ class ModelFactory:
         return ModelSimpleTest()
 
     @staticmethod
+    def simple_mnist_cnn() -> nn.Module:
+        """
+        MNIST-style CNN: (N,1,28,28) -> conv1 -> relu -> max_pool -> conv2
+        -> relu -> max_pool -> adaptive_avg_pool -> flatten -> linear(3,10) -> (N,10).
+        """
+
+        class SimpleMnistCNN(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.conv1 = nn.Conv2d(1, 3, kernel_size=3)
+                self.relu1 = nn.ReLU()
+                self.pool1 = nn.MaxPool2d(2)
+                self.conv2 = nn.Conv2d(3, 3, kernel_size=3)
+                self.relu2 = nn.ReLU()
+                self.pool2 = nn.MaxPool2d(2)
+                self.adaptive_pool = nn.AdaptiveAvgPool2d(1)
+                self.linear = nn.Linear(3, 10)
+
+            def forward(self, x):
+                x = self.pool1(self.relu1(self.conv1(x)))
+                x = self.pool2(self.relu2(self.conv2(x)))
+                x = self.adaptive_pool(x)
+                x = x.flatten(1)
+                return self.linear(x)
+
+        return SimpleMnistCNN()
+
+    @staticmethod
     def simple_conv_chain_2() -> nn.Module:
         class ModelSimpleConvTest(nn.Module):
             def __init__(self):
