@@ -123,7 +123,7 @@ class TreeNode:
         for child in self.child_nodes:
             child.kill()
         self.child_nodes.clear()
-        self.traced = None  # type: ignore[assignment]
+        self.traced = None
         self.parent = None
         self._cleaned = True
 
