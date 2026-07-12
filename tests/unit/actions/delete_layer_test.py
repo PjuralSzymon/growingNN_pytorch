@@ -15,6 +15,7 @@ from growingnn.actions.delete_layer import (
 from growingnn.utils.fx import LayerBridgeFinder, LayerShapeAnalyser, ModelStructureEditor
 from growingnn.utils.fx.graph_editor import bypass_shapes_compatible, compute_bypass_matching
 from tests.model_factory import ModelFactory
+from growingnn.core.traced_model import TracedModel
 
 
 def test_uniform_activation_shape_rejects_mismatched_rank2_shapes():
@@ -36,7 +37,7 @@ def test_has_same_output_shape_true_for_matching_probed_shapes():
 
     # Arrange
     gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
-    output_shapes = LayerShapeAnalyser.get_layer_output_shapes(gm)
+    output_shapes = LayerShapeAnalyser.get_layer_output_shapes(gm, input_shape=(1, 4))
 
     # Act
     result = has_same_output_shape(gm, ["l1"], output_shapes=output_shapes)
@@ -74,7 +75,7 @@ def test_del_layer_generate_finds_removable_middle_layer():
     gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
 
     # Act
-    actions = DelLayer.generate_all_actions(gm)
+    actions = DelLayer.generate_all_actions(TracedModel.create(gm, (1, 4)))
 
     # Assert
     assert any(action.params == ["l2"] for action in actions)
@@ -86,7 +87,7 @@ def test_has_same_input_shape_true_when_successors_share_input_shape():
     """
     # Arrange
     gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
-    input_shapes = LayerShapeAnalyser.get_layer_input_shapes(gm)
+    input_shapes = LayerShapeAnalyser.get_layer_input_shapes(gm, input_shape=(1, 4))
 
     # Act
     result = has_same_input_shape(gm, ["l3"], input_shapes)
@@ -101,7 +102,7 @@ def test_get_common_output_shape_returns_shape_for_matching_predecessors():
     """
     # Arrange
     gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
-    output_shapes = LayerShapeAnalyser.get_layer_output_shapes(gm)
+    output_shapes = LayerShapeAnalyser.get_layer_output_shapes(gm, input_shape=(1, 4))
 
     # Act
     shape = get_common_output_shape(gm, ["l1"], output_shapes)
@@ -164,7 +165,7 @@ def test_can_bypass_delete_layer_true_for_pairwise_branch_mids():
     gm = fx.symbolic_trace(PairwiseBranches())
 
     # Act
-    result = can_bypass_delete_layer(gm, "mid_a")
+    result = can_bypass_delete_layer(gm, "mid_a", input_shape=(1, 4))
 
     # Assert
     assert result is True
@@ -180,7 +181,7 @@ def test_can_bypass_delete_layer_true_for_merge_branch_residual():
     ModelStructureEditor.add_new_residual_layer(gm, "l1", "l2", nn.Linear(4, 4), name="res1")
 
     # Act
-    result = can_bypass_delete_layer(gm, "res1")
+    result = can_bypass_delete_layer(gm, "res1", input_shape=(1, 4))
 
     # Assert
     assert result is True
@@ -209,7 +210,7 @@ def test_delete_pairwise_branch_mid_preserves_forward_shape():
     x = torch.randn(2, 4)
 
     # Act
-    ModelStructureEditor.delete_layer(gm, "mid_a")
+    ModelStructureEditor.delete_layer(gm, "mid_a", input_shape=(1, 4))
     y = gm(x)
 
     # Assert

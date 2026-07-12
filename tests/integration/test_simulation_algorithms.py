@@ -23,6 +23,7 @@ from growingnn.simulation.score_functions.simulation_score import SimulationScor
 import growingnn.simulation.simulation_algorithms.greedy_alg as greedy_alg
 import growingnn.simulation.simulation_algorithms.random_alg as random_alg
 from growingnn.utils.fx import GraphStructureQuery
+from growingnn.core.traced_model import TracedModel
 
 
 def _running_config(*, simulation_time: float = 1.0, simulation_score=None):
@@ -47,15 +48,19 @@ def test_random_alg_returns_executable_action():
     """
     # Arrange
     gm = fx.symbolic_trace(resnet18(weights=None, num_classes=2))
+    traced = TracedModel.create(gm, (1, 3, 32, 32))
     params_before = GraphStructureQuery.get_amount_of_parameters(gm)
     cfg = _running_config()
+    cfg.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_01 = False
+    cfg.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_02 = False
+    cfg.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_05 = False
 
     # Act
-    action, _, _ = random_alg.get_action(gm, cfg)
+    action, _, _ = random_alg.get_action(traced, cfg)
 
     # Assert
     assert action is not None
-    action.execute(gm)
+    action.execute(traced)
     assert GraphStructureQuery.get_amount_of_parameters(gm) != params_before
 
 
@@ -65,13 +70,14 @@ def test_greedy_alg_returns_action_within_time_budget():
     """
     # Arrange
     gm = fx.symbolic_trace(resnet18(weights=None, num_classes=2))
+    traced = TracedModel.create(gm, (1, 3, 32, 32))
     cfg = _running_config(
         simulation_time=2.0,
         simulation_score=SimulationScore(weight_acc=1.0, weight_countW=0.0),
     )
 
     # Act
-    action, _, rollouts = greedy_alg.get_action(gm, cfg)
+    action, _, rollouts = greedy_alg.get_action(traced, cfg)
 
     # Assert
     assert action is not None

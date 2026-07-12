@@ -6,6 +6,7 @@ import torch.fx as fx
 from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
 from growingnn.core import config
 from tests.model_factory import ModelFactory
+from growingnn.core.traced_model import TracedModel
 
 
 def test_generate_all_actions_uses_shape_bridge_for_linear_chain():
@@ -19,7 +20,7 @@ def test_generate_all_actions_uses_shape_bridge_for_linear_chain():
     gm = fx.symbolic_trace(model)
 
     # Act
-    actions = AddSeqLinearLayer.generate_all_actions(gm)
+    actions = AddSeqLinearLayer.generate_all_actions(TracedModel.create(gm, (1, 4)))
 
     # Assert
     assert len(actions) == 2
@@ -40,7 +41,7 @@ def test_generate_all_actions_skips_when_weight_matrix_exceeds_config_limit(monk
     gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
 
     # Act
-    actions = AddSeqLinearLayer.generate_all_actions(gm)
+    actions = AddSeqLinearLayer.generate_all_actions(TracedModel.create(gm, (1, 4)))
 
     # Assert
     assert actions == []
@@ -56,7 +57,7 @@ def test_generate_all_actions_proposes_plain_linear_between_conv_and_linear():
     gm = fx.symbolic_trace(model)
 
     # Act
-    actions = AddSeqLinearLayer.generate_all_actions(gm)
+    actions = AddSeqLinearLayer.generate_all_actions(TracedModel.create(gm, (1, 4, 32, 32)))
 
     # Assert
     conv_to_linear = [
