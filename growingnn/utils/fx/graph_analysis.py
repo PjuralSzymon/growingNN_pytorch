@@ -316,16 +316,12 @@ class LayerShapeAnalyser:
             probe = LayerShapeAnalyser.make_probe(gm, input_shape)
         else:
             raise ValueError("collect_layer_shapes requires example or input_shape")
+        was_training = gm.training
+        gm.eval()
         try:
-            was_training = gm.training
-            gm.eval()
-            try:
-                ShapeProp(gm).propagate(probe)
-            finally:
-                gm.train(was_training)
-        except Exception as exc:
-            logger.warning("ShapeProp failed: %s", exc)
-            return outputs, inputs
+            ShapeProp(gm).propagate(probe)
+        finally:
+            gm.train(was_training)
         for node in gm.graph.nodes:
             if node.op != "call_module" or not isinstance(node.target, str):
                 continue
