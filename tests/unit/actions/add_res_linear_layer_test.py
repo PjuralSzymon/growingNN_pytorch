@@ -15,6 +15,7 @@ from growingnn.actions.action import Layer_Type
 from growingnn.actions.add_res_linear_layer import AddResLinearLayer
 from growingnn.core import config
 from tests.model_factory import ModelFactory
+from growingnn.core.traced_model import TracedModel
 
 
 def test_generate_all_actions_skips_when_weight_matrix_exceeds_config_limit(monkeypatch):
@@ -27,7 +28,7 @@ def test_generate_all_actions_skips_when_weight_matrix_exceeds_config_limit(monk
     gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
 
     # Act
-    actions = AddResLinearLayer.generate_all_actions(gm)
+    actions = AddResLinearLayer.generate_all_actions(TracedModel.create(gm, (1, 4)))
 
     # Assert
     assert actions == []
@@ -38,7 +39,7 @@ def test_add_res_linear_layer_generate_all_actions_linear_chain():
     model = ModelFactory.simple_chain_3()
     gm = fx.symbolic_trace(model)
 
-    actions = AddResLinearLayer.generate_all_actions(gm)
+    actions = AddResLinearLayer.generate_all_actions(TracedModel.create(gm, (1, 4)))
 
     # For l1->l2->l3, only l1->l2 is an edge into a hidden module; one action per Layer_Type.
     assert len(actions) == len(list(Layer_Type))
@@ -54,9 +55,9 @@ def test_add_res_linear_layer_execute():
 
     # Act
     for _ in range(30):
-        actions: List[AddResLinearLayer] = AddResLinearLayer.generate_all_actions(gm)
+        actions: List[AddResLinearLayer] = AddResLinearLayer.generate_all_actions(TracedModel.create(gm, (1, 4)))
         idx = rng.randrange(len(actions))
-        actions[idx].execute(gm)
+        actions[idx].execute(TracedModel.create(gm, (1, 4)))
     out = gm(x)
 
     # Assert

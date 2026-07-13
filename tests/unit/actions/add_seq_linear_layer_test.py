@@ -14,6 +14,7 @@ if str(_REPO_ROOT) not in sys.path:
 from growingnn.actions.action import Layer_Type
 from tests.model_factory import ModelFactory
 from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
+from growingnn.core.traced_model import TracedModel
 
 
 
@@ -21,7 +22,7 @@ def test_add_seq_linear_layer_generate_all_actions_linear_chain():
     model = ModelFactory.simple_chain_3()
     gm = fx.symbolic_trace(model)
 
-    actions = AddSeqLinearLayer.generate_all_actions(gm)
+    actions = AddSeqLinearLayer.generate_all_actions(TracedModel.create(gm, (1, 4)))
 
     # For l1->l2->l3, module_dependency_pairs yields 3 pairs; we create one action per Layer_Type.
     assert len(actions) == len(list(Layer_Type)) - 1
@@ -37,9 +38,9 @@ def test_add_seq_linear_layer_execute():
 
     # Act
     for _ in range(30):
-        actions: List[AddSeqLinearLayer] = AddSeqLinearLayer.generate_all_actions(gm)
+        actions: List[AddSeqLinearLayer] = AddSeqLinearLayer.generate_all_actions(TracedModel.create(gm, (1, 4)))
         idx = rng.randrange(len(actions))
-        actions[idx].execute(gm)
+        actions[idx].execute(TracedModel.create(gm, (1, 4)))
     out = gm(x)
 
     # Assert

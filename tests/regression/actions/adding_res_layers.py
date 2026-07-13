@@ -18,14 +18,13 @@ from growingnn.utils.fx import GraphStructureQuery
 from growingnn.core.logger import logger
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from tests.model_factory import ModelFactory
+from growingnn.core.traced_model import TracedModel
 from tests.regression.regression_utils import (
     FOLDER_NAME,
     clear_regression_folder,
     parse_regression_cli,
     plot_norms_and_parameter_count,
 )
-
-
 if __name__ == "__main__":
     args = parse_regression_cli()
     model = ModelFactory.complex_residual_many_widths()
@@ -41,14 +40,14 @@ if __name__ == "__main__":
     # Act
     id = 0
     for _ in range(50):
-        actions: List[AddResLinearLayer] = AddResLinearLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])
+        actions: List[AddResLinearLayer] = AddResLinearLayer.generate_all_actions(TracedModel.create(gm, (1, 4)), layer_types=[Layer_Type.EYE])
         id += 1
         idx = rng.randrange(len(actions))
         logger.info("idx: %s --------------------------------", id)
         logger.info("action used: %s", actions[idx])
         draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified" + str(id), fmt="pdf")
         draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph" + str(id), fmt="pdf")
-        actions[idx].execute(gm)
+        actions[idx].execute(TracedModel.create(gm, (1, 4)))
         output_final = gm(x)
         dn = float(torch.norm(output_initial - output_final))
         norms.append(dn)

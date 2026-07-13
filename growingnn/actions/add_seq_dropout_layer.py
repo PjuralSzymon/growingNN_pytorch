@@ -5,6 +5,7 @@ from torch import fx, nn
 from growingnn.actions.utils.regularization_factory import RegularizationFactory
 from growingnn.actions.utils.seq_insertion import iter_seq_shape_matched_pairs
 from growingnn.core import config
+from growingnn.core.traced_model import TracedModel
 from growingnn.core.logger import logger
 from growingnn.utils.fx import ModuleResolver, ModelStructureEditor
 from .action import Action
@@ -19,20 +20,20 @@ def _is_dropout_module(mod: nn.Module | None) -> bool:
 
 class AddSeqDropoutLayer(Action):
 
-    def execute(self, model: nn.Module | fx.GraphModule):
-        ModelStructureEditor.add_new_seq_layer(model, self.params[0], self.params[1], self.params[2], self.params[3])
+    def _execute(self, traced: TracedModel):
+        ModelStructureEditor.add_new_seq_layer(traced.gm, self.params[0], self.params[1], self.params[2], self.params[3])
 
     def can_be_infulenced(self, by_action):
         return False
 
     @staticmethod
     def generate_all_actions(
-        model: nn.Module | fx.GraphModule,
+        traced: TracedModel,
         p: float = config.DEFAULT_DROPOUT_RATE,
     ) -> List[Action]:
-        gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
+        gm = traced.gm
         actions: List[Action] = []
-        for cand in iter_seq_shape_matched_pairs(gm):
+        for cand in iter_seq_shape_matched_pairs(traced):
             from_mod = ModuleResolver.get_layer_module(cand.from_id, gm)
             to_mod = ModuleResolver.get_layer_module(cand.to_id, gm)
             if _is_dropout_module(from_mod) or _is_dropout_module(to_mod):

@@ -10,6 +10,17 @@ from growingnn.core.logger import logger
 FOLDER_NAME = "testResults/regression"
 
 
+def regression_cifar_dir() -> str:
+    """Prefer cached CIFAR under testResults, else experiments download."""
+    for data_dir in (
+        "testResults/regression_cache/cifar10",
+        "experiments/output/train_from_repo/data",
+    ):
+        if os.path.isdir(os.path.join(data_dir, "cifar-10-batches-py")):
+            return data_dir
+    return "testResults/regression_cache/cifar10"
+
+
 def log_regression_action_error(
     gm,
     chosen,
@@ -47,8 +58,8 @@ def log_regression_action_error(
 def clear_regression_folder():
     logger.debug("Clearing regression output folder %s", FOLDER_NAME)
     if os.path.exists(FOLDER_NAME):
-        shutil.rmtree(FOLDER_NAME)
-    os.makedirs(FOLDER_NAME)
+        shutil.rmtree(FOLDER_NAME, ignore_errors=True)
+    os.makedirs(FOLDER_NAME, exist_ok=True)
 
 
 def plot_norms_and_parameter_count(

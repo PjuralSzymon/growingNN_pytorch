@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import copy
-import time
 from typing import Any
 
 import torch.fx as fx
@@ -11,10 +10,10 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 
 from growingnn.core.config import RunningConfig
+from growingnn.core.traced_model import TracedModel
 from growingnn.core.logger import logger
 from growingnn.simulation.simulation_set import sample_loaders
 from growingnn.training.gradient_descent import gradient_descent
-from growingnn.utils.fx import GraphStructureQuery
 from growingnn.utils.quaziIdentity import clear_reshepers_cache
 
 
@@ -29,9 +28,12 @@ def train_generations(
 ) -> tuple[nn.Module | fx.GraphModule, dict[str, list[Any]]]:
     logger.info("Training generations started")
 
+    inputs, _ = next(iter(train_loader))
+    traced = TracedModel.create(model, tuple(int(x) for x in inputs[0:1].shape))
+
     board = config.experiment_board
     if board is not None:
-        board.on_run_start(model, config)
+        board.on_run_start(traced.gm, config)
 
     if sim_train_loader is None or sim_val_loader is None:
         sim_train_loader, sim_val_loader = sample_loaders(
@@ -53,10 +55,10 @@ def train_generations(
     for generation in range(config.generations):
         logger.info("Training generation %s started", generation)
         if board is not None:
-            board.on_generation_start(generation, model)
+            board.on_generation_start(generation, traced.gm)
 
-        model, history = gradient_descent(
-            model,
+        traced.gm, history = gradient_descent(
+            traced.gm,
             config.epochs,
             train_loader,
             val_loader,
@@ -77,28 +79,28 @@ def train_generations(
         combined["val_loss"].extend(history["val_loss"])
         combined["val_acc"].extend(history["val_acc"])
         combined["lr"].extend(history["lr"])
-        param_count = GraphStructureQuery.get_amount_of_parameters(model)
+        param_count = traced.param_count()
         combined["param_count"].extend([param_count] * len(history["train_loss"]))
 
         if board is not None:
-            board.on_generation_end(generation, model, history, param_count)
+            board.on_generation_end(generation, traced.gm, history, param_count)
 
         metrics = {"accuracy": history["train_acc"][-1], "val_acc": val_acc}
-        if config.stopper.check(model, generation, metrics):
+        if config.stopper.check(traced.gm, generation, metrics):
             break
 
         if config.simulation_scheduler.can_simulate(generation, generation_val_acc, quiet=config.quiet):
-            action, _, _ = config.simulation_alg.get_action(copy.deepcopy(model), config)
+            action, _, _ = config.simulation_alg.get_action(copy.deepcopy(traced), config)
             if action is None:
                 logger.warning("Generation %s no action executed", generation)
                 continue
-            action.execute(model)
+            action.execute(traced)
             logger.info("Generation %s action executed: %s", generation, action)
             if board is not None:
-                board.save_graphs(model, generation=generation, tag=f"gen_{generation}_simulation")
+                board.save_graphs(traced.gm, generation=generation, tag=f"gen_{generation}_simulation")
                 board.note_simulation_graph_saved(generation)
 
     clear_reshepers_cache()
     if board is not None:
         board.on_run_finished()
-    return model, combined
+    return traced.gm, combined

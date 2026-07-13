@@ -21,7 +21,7 @@ from growingnn.actions.delete_neurons import DelNeurons
 from growingnn.utils.fx import ModuleResolver, NodeWidthAnalyser
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from tests.regression.regression_utils import FOLDER_NAME, clear_regression_folder, parse_regression_cli
-
+from growingnn.core.traced_model import TracedModel
 BATCH_SIZE = 2
 INPUT_FEATURES = 4
 HIDDEN_WIDTH = 100
@@ -118,7 +118,7 @@ def test_del_neurons_generate_then_execute_aligns_widths_on_residual_model(save_
     probe = _passthrough_fork_residual_model()
     gm = fx.symbolic_trace(probe)
     x = torch.randn(BATCH_SIZE, INPUT_FEATURES)
-    actions = DelNeurons.generate_all_actions(gm)
+    actions = DelNeurons.generate_all_actions(TracedModel.create(gm, (1, 4)))
     output_1 = gm(x)
     if output_1 is None:
         raise ValueError("output is None")
@@ -129,7 +129,7 @@ def test_del_neurons_generate_then_execute_aligns_widths_on_residual_model(save_
     # Act / Assert
     i = 0
     for action in actions:
-        action.execute(gm)
+        action.execute(TracedModel.create(gm, (1, 4)))
         print(action)
         if save_output:
             draw_filtered_fx_graph(gm, FILE_PATH + str(i), fmt="pdf")

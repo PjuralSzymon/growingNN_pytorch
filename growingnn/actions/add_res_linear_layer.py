@@ -4,9 +4,10 @@ from torch import fx, nn
 
 from growingnn.actions.utils.layer_Factory import LinearFactory
 from growingnn.core import config
+from growingnn.core.traced_model import TracedModel
 from growingnn.utils.fx import (
-    LayerBridgeFinder, LayerShapeAnalyser,
-    ModuleResolver, GraphStructureQuery, ModelStructureEditor,
+    LayerBridgeFinder,
+    ModuleResolver, ModelStructureEditor,
 )
 from growingnn.core.logger import logger
 from .action import Action, Layer_Type
@@ -14,21 +15,21 @@ from .action import Action, Layer_Type
 
 class AddResLinearLayer(Action):
 
-    def execute(self, model: nn.Module | fx.GraphModule):
-        ModelStructureEditor.add_new_residual_layer(model, self.params[0], self.params[1], self.params[2], self.params[3])
+    def _execute(self, traced: TracedModel):
+        ModelStructureEditor.add_new_residual_layer(traced.gm, self.params[0], self.params[1], self.params[2], self.params[3])
 
     def can_be_infulenced(self, by_action):
         return False
 
     @staticmethod
     def generate_all_actions(
-        model: nn.Module | fx.GraphModule,
+        traced: TracedModel,
         layer_types: Iterable[Layer_Type] = Layer_Type,
     ) -> List[Action]:
-        gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
-        out_shapes = LayerShapeAnalyser.get_layer_output_shapes(gm)
+        gm = traced.gm
+        out_shapes, _ = traced.shapes()
         actions: List[Action] = []
-        for layer_from_id, layer_to_id in GraphStructureQuery.module_dependency_pairs(gm):
+        for layer_from_id, layer_to_id in traced.dependency_pairs():
             sizes = LayerBridgeFinder.find_bridge_res_linear_sizes(
                 out_shapes.get(layer_from_id),
                 out_shapes.get(layer_to_id),

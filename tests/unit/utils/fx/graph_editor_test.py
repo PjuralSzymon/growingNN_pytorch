@@ -159,7 +159,7 @@ def test_delete_layer_removes_middle_layer_from_linear_chain():
     gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
 
     # Act
-    ModelStructureEditor.delete_layer(gm, "l2")
+    ModelStructureEditor.delete_layer(gm, "l2", input_shape=(1, 4))
     module_names = [str(n.target) for n in gm.graph.nodes if n.op == "call_module"]
 
     # Assert
@@ -175,7 +175,7 @@ def test_delete_layer_removes_branch_layer_from_residual_graph():
     gm = fx.symbolic_trace(ModelFactory.residual_skip())
 
     # Act
-    ModelStructureEditor.delete_layer(gm, "l2")
+    ModelStructureEditor.delete_layer(gm, "l2", input_shape=(1, 4))
     module_names = [str(n.target) for n in gm.graph.nodes if n.op == "call_module"]
 
     # Assert
@@ -192,7 +192,7 @@ def test_delete_layer_after_nary_add_residual_passes_lint():
     ModelStructureEditor.add_new_residual_layer(gm, "l1", "l2", nn.Linear(4, 4), name="res1")
 
     # Act
-    ModelStructureEditor.delete_layer(gm, "res1")
+    ModelStructureEditor.delete_layer(gm, "res1", input_shape=(1, 4))
 
     # Assert
     gm.graph.lint()
@@ -226,7 +226,7 @@ def test_delete_merge_branch_residual_eye_preserves_forward():
     y_before = gm(x)
 
     # Act
-    ModelStructureEditor.delete_layer(gm, "res1")
+    ModelStructureEditor.delete_layer(gm, "res1", input_shape=(1, 4))
     y_after = gm(x)
 
     # Assert
@@ -245,7 +245,7 @@ def test_delete_layer_prunes_unreachable_trunk_branches():
     x = torch.randn(2, 4)
 
     # Act
-    ModelStructureEditor.delete_layer(gm, "res1")
+    ModelStructureEditor.delete_layer(gm, "res1", input_shape=(1, 4))
     y = gm(x)
 
     # Assert

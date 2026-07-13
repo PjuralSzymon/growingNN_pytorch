@@ -60,6 +60,9 @@ def test_train_generations_runs_simulation_between_generations():
         criterion=nn.CrossEntropyLoss(),
         quiet=True,
     )
+    cfg.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_01 = False
+    cfg.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_02 = False
+    cfg.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_05 = False
 
     # Act
     model, summary = train_generations(gm, train_loader, val_loader, cfg)

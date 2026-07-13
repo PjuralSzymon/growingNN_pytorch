@@ -120,7 +120,7 @@ def test_remove_layer_from_sums_keeps_graph_topologically_ordered():
     ModelStructureEditor.add_new_residual_layer(gm, "l1", "l2", nn.Linear(4, 4), name="res")
 
     # Act
-    ModelStructureEditor.delete_layer(gm, "res")
+    ModelStructureEditor.delete_layer(gm, "res", input_shape=(1, 4))
 
     # Assert
     assert not hasattr(gm, "res")
