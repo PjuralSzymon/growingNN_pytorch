@@ -4,7 +4,6 @@ from torch import fx, nn
 
 from growingnn.core.traced_model import TracedModel
 from growingnn.utils.fx import (
-    LayerBridgeFinder,
     LayerShapeAnalyser,
     GraphStructureQuery,
     ModelStructureEditor,
@@ -22,75 +21,6 @@ def _find_layer_node(gm: fx.GraphModule, layer_id: str) -> fx.Node:
         n for n in gm.graph.nodes
         if n.op == "call_module" and n.target == layer_id
     )
-
-
-def _shapes_for_layers(
-    shape_map: dict[str, tuple[int, ...]],
-    layer_ids: list[str],
-) -> list[tuple[int, ...] | None]:
-    return [shape_map.get(layer_id) for layer_id in layer_ids]
-
-
-def has_same_output_shape(
-    model: nn.Module | fx.GraphModule,
-    input_layers: list[str],
-    output_shapes: dict[str, tuple[int, ...]] | None = None,
-) -> bool:
-    if not input_layers:
-        return False
-    if output_shapes is None:
-        if not isinstance(model, fx.GraphModule):
-            return False
-        output_shapes = LayerShapeAnalyser.get_layer_output_shapes(model)
-    return (
-        LayerBridgeFinder.uniform_activation_shape(_shapes_for_layers(output_shapes, input_layers))
-        is not None
-    )
-
-
-def has_same_input_shape(
-    model: nn.Module | fx.GraphModule,
-    output_layers: list[str],
-    input_shapes: dict[str, tuple[int, ...]] | None = None,
-) -> bool:
-    if not output_layers:
-        return False
-    if input_shapes is None:
-        if not isinstance(model, fx.GraphModule):
-            return False
-        input_shapes = LayerShapeAnalyser.get_layer_input_shapes(model)
-    return (
-        LayerBridgeFinder.uniform_activation_shape(_shapes_for_layers(input_shapes, output_layers))
-        is not None
-    )
-
-
-def get_common_output_shape(
-    model: nn.Module | fx.GraphModule,
-    input_layers: list[str],
-    output_shapes: dict[str, tuple[int, ...]] | None = None,
-) -> tuple[int, ...] | None:
-    if not input_layers:
-        return None
-    if output_shapes is None:
-        if not isinstance(model, fx.GraphModule):
-            return None
-        output_shapes = LayerShapeAnalyser.get_layer_output_shapes(model)
-    return LayerBridgeFinder.uniform_activation_shape(_shapes_for_layers(output_shapes, input_layers))
-
-
-def get_common_input_shape(
-    model: nn.Module | fx.GraphModule,
-    output_layers: list[str],
-    input_shapes: dict[str, tuple[int, ...]] | None = None,
-) -> tuple[int, ...] | None:
-    if not output_layers:
-        return None
-    if input_shapes is None:
-        if not isinstance(model, fx.GraphModule):
-            return None
-        input_shapes = LayerShapeAnalyser.get_layer_input_shapes(model)
-    return LayerBridgeFinder.uniform_activation_shape(_shapes_for_layers(input_shapes, output_layers))
 
 
 def can_bypass_delete_layer(

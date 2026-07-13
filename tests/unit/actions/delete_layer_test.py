@@ -3,19 +3,27 @@
 import torch
 import torch.fx as fx
 import torch.nn as nn
+import sys
+from pathlib import Path
 
-from growingnn.actions.delete_layer import (
-    DelLayer,
-    can_bypass_delete_layer,
-    get_common_input_shape,
-    get_common_output_shape,
-    has_same_input_shape,
-    has_same_output_shape,
-)
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+
+from growingnn.actions.delete_layer import DelLayer, can_bypass_delete_layer
 from growingnn.utils.fx import LayerBridgeFinder, LayerShapeAnalyser, ModelStructureEditor
-from growingnn.utils.fx.graph_editor import bypass_shapes_compatible, compute_bypass_matching
+from growingnn.utils.fx.graph_editor import compute_bypass_matching
 from tests.model_factory import ModelFactory
 from growingnn.core.traced_model import TracedModel
+
+
+def _uniform_layer_shape(
+    shape_map: dict[str, tuple[int, ...]],
+    layer_ids: list[str],
+) -> tuple[int, ...] | None:
+    shapes = [shape_map.get(layer_id) for layer_id in layer_ids]
+    return LayerBridgeFinder.uniform_activation_shape(shapes)
 
 
 def test_uniform_activation_shape_rejects_mismatched_rank2_shapes():
@@ -30,9 +38,9 @@ def test_uniform_activation_shape_rejects_mismatched_rank2_shapes():
     assert shape is None
 
 
-def test_has_same_output_shape_true_for_matching_probed_shapes():
+def test_uniform_layer_shape_true_for_matching_probed_outputs():
     """
-    has_same_output_shape should use LayerShapeAnalyser output shapes, not nn.Linear fields.
+    Probed output shapes for predecessors should share one activation tuple when widths match.
     """
 
     # Arrange
@@ -40,30 +48,50 @@ def test_has_same_output_shape_true_for_matching_probed_shapes():
     output_shapes = LayerShapeAnalyser.get_layer_output_shapes(gm, input_shape=(1, 4))
 
     # Act
-    result = has_same_output_shape(gm, ["l1"], output_shapes=output_shapes)
+    shape = _uniform_layer_shape(output_shapes, ["l1"])
 
     # Assert
-    assert result is True
-    assert get_common_output_shape(gm, ["l1"], output_shapes=output_shapes) == output_shapes["l1"]
+    assert shape == output_shapes["l1"]
 
 
-def test_has_same_input_shape_false_when_successors_expect_different_shapes():
+def test_uniform_layer_shape_false_when_successor_inputs_differ():
     """
-    has_same_input_shape should be false when probed input shapes for successors differ.
+    uniform_layer_shape should be None when probed successor input shapes differ.
+    """
+
+    # Arrange / Act
+    shape = _uniform_layer_shape({"l2": (1, 8), "l3": (1, 16)}, ["l2", "l3"])
+
+    # Assert
+    assert shape is None
+
+
+def test_uniform_layer_shape_true_when_successor_inputs_agree():
+    """
+    uniform_layer_shape should return the shared tuple when successor inputs agree.
     """
 
     # Arrange
     gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
+    input_shapes = LayerShapeAnalyser.get_layer_input_shapes(gm, input_shape=(1, 4))
 
     # Act
-    result = has_same_input_shape(
-        gm,
-        ["l2", "l3"],
-        input_shapes={"l2": (1, 8), "l3": (1, 16)},
-    )
+    shape = _uniform_layer_shape(input_shapes, ["l3"])
 
     # Assert
-    assert result is False
+    assert shape == input_shapes["l3"]
+
+
+def test_uniform_layer_shape_returns_none_for_empty_layers():
+    """
+    uniform_layer_shape should return None when no layer ids are given.
+    """
+
+    # Arrange / Act
+    shape = _uniform_layer_shape({}, [])
+
+    # Assert
+    assert shape is None
 
 
 def test_del_layer_generate_finds_removable_middle_layer():
@@ -79,51 +107,6 @@ def test_del_layer_generate_finds_removable_middle_layer():
 
     # Assert
     assert any(action.params == ["l2"] for action in actions)
-
-
-def test_has_same_input_shape_true_when_successors_share_input_shape():
-    """
-    has_same_input_shape should be true when all successor inputs share one probed shape.
-    """
-    # Arrange
-    gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
-    input_shapes = LayerShapeAnalyser.get_layer_input_shapes(gm, input_shape=(1, 4))
-
-    # Act
-    result = has_same_input_shape(gm, ["l3"], input_shapes)
-
-    # Assert
-    assert result is True
-
-
-def test_get_common_output_shape_returns_shape_for_matching_predecessors():
-    """
-    get_common_output_shape should return the shared tuple when all inputs agree.
-    """
-    # Arrange
-    gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
-    output_shapes = LayerShapeAnalyser.get_layer_output_shapes(gm, input_shape=(1, 4))
-
-    # Act
-    shape = get_common_output_shape(gm, ["l1"], output_shapes)
-
-    # Assert
-    assert shape == output_shapes["l1"]
-
-
-def test_get_common_input_shape_returns_none_for_empty_layers():
-    """
-    get_common_input_shape should return None when no successor layers are given.
-    """
-
-    # Arrange
-    gm = fx.symbolic_trace(ModelFactory.simple_chain_3())
-
-    # Act
-    shape = get_common_input_shape(gm, [])
-
-    # Assert
-    assert shape is None
 
 
 def test_compute_bypass_matching_pairs_different_predecessor_shapes():
