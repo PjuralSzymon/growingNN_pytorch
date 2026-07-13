@@ -43,18 +43,15 @@ def test_traced_model_conv_layer_shapes_match_declared_input(input_shape, expect
 )
 def test_traced_model_rejects_mismatched_probe_shapes(wrong_input_shape):
     """
-    Invalid probe shapes should yield empty layer maps instead of silent fallback values.
+    Invalid probe shapes should raise from ShapeProp instead of returning empty layer maps.
     """
     # Arrange
     gm = fx.symbolic_trace(ModelFactory.simple_conv_chain_2())
     traced = TracedModel.create(gm, wrong_input_shape)
 
-    # Act
-    outputs, inputs = traced.shapes()
-
-    # Assert
-    assert outputs == {}
-    assert inputs == {}
+    # Act / Assert
+    with pytest.raises(RuntimeError, match="ShapeProp error"):
+        traced.shapes()
 
 
 def test_traced_model_linear_shapes_use_declared_feature_dim():
@@ -88,7 +85,7 @@ def test_collect_layer_shapes_requires_explicit_probe_source():
 
 def test_add_seq_conv_actions_use_traced_input_shape_not_image_net_default():
     """
-    AddSeqConvLayer should propose actions for dataset-sized probes and none for 224x224 guesses.
+    AddSeqConvLayer should propose actions for dataset-sized probes and raise for 224x224 guesses.
     """
     # Arrange
     gm = fx.symbolic_trace(ModelFactory.simple_conv_chain_2())
@@ -97,8 +94,8 @@ def test_add_seq_conv_actions_use_traced_input_shape_not_image_net_default():
 
     # Act
     cifar_actions = AddSeqConvLayer.generate_all_actions(cifar_traced)
-    wrong_actions = AddSeqConvLayer.generate_all_actions(wrong_traced)
 
     # Assert
     assert len(cifar_actions) >= 1
-    assert wrong_actions == []
+    with pytest.raises(RuntimeError, match="ShapeProp error"):
+        AddSeqConvLayer.generate_all_actions(wrong_traced)
