@@ -8,7 +8,11 @@ class Action:
         self.params = _params
 
     def execute(self, traced: TracedModel) -> None:
-        self._execute(traced)
+        try:
+            self._execute(traced)
+        except Exception:
+            traced.invalidate()
+            raise
         traced.invalidate()
 
     def _execute(self, traced: TracedModel) -> None:
