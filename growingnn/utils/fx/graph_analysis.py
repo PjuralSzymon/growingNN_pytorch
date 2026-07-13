@@ -93,7 +93,7 @@ class GraphStructureQuery:
 
     @staticmethod
     def module_sequential_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str, str]]:
-        """All (ancestor, descendant) pairs that are next to each other in the model."""
+        """All (ancestor, descendant) editable pairs on the forward path (boundaries allowed)."""
         gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
         edges: list[tuple[str, str]] = []
         for n in gm.graph.nodes:
@@ -106,7 +106,7 @@ class GraphStructureQuery:
                 if cur in seen:
                     continue
                 seen.add(cur)
-                if ModuleClassifier.is_editable_module(cur, gm) and ModuleClassifier.is_at_least_one_hidden_module(n, cur):
+                if ModuleClassifier.is_editable_module(cur, gm):
                     edges.append((src, str(cur.target)))
                     continue
                 stack.extend(cur.users)

@@ -340,6 +340,21 @@ def test_module_sequential_pairs_linear_chain():
     assert set(GraphStructureQuery.module_sequential_pairs(gm)) == {("l1", "l2"), ("l2", "l3")}
 
 
+def test_module_sequential_pairs_include_boundary_conv_to_linear():
+    """
+    module_sequential_pairs should connect boundary conv and linear when only they are editable.
+    """
+
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_mnist_cnn())
+
+    # Act
+    pairs = set(GraphStructureQuery.module_sequential_pairs(gm))
+
+    # Assert
+    assert pairs == {("conv1", "linear")}
+
+
 def test_module_sequential_pairs_with_residual_skip():
     """
     Sequential pairs on a residual graph follow the main path and branch merge.
