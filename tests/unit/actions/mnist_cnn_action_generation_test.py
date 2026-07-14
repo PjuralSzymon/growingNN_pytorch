@@ -11,10 +11,22 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from growingnn.actions.add_res_conv_layer import AddResConvLayer
+from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
 from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
-from growingnn.actions.registry import generate_all_actions
-from growingnn.core.config import RunningConfig
 from tests.model_factory import ModelFactory
+
+try:
+    from growingnn.core.traced_model import TracedModel
+except ImportError:
+    TracedModel = None
+
+
+def _action_graph(gm: fx.GraphModule):
+    """Return TracedModel on main; fall back to GraphModule on older branches."""
+    if TracedModel is None:
+        return gm
+    return TracedModel.create(gm, (1, 1, 28, 28))
 
 
 def test_simple_mnist_cnn_generates_seq_linear_between_boundary_conv_and_linear():
@@ -31,16 +43,12 @@ def test_simple_mnist_cnn_generates_seq_linear_between_boundary_conv_and_linear(
 
     # Arrange
     gm = fx.symbolic_trace(ModelFactory.simple_mnist_cnn())
-    config = RunningConfig(generations=1, epochs=1)
+    graph = _action_graph(gm)
 
     # Act
-    actions = generate_all_actions(gm, config)
-    print(f"Available actions ({len(actions)}):")
-    for i, action in enumerate(actions, start=1):
-        print(f"  {i}. {type(action).__name__}: {action}")
-    seq_linear_actions = [
-        action for action in actions if isinstance(action, AddSeqLinearLayer)
-    ]
+    seq_linear_actions = AddSeqLinearLayer.generate_all_actions(graph)
+    seq_conv_actions = AddSeqConvLayer.generate_all_actions(graph)
+    res_conv_actions = AddResConvLayer.generate_all_actions(graph)
 
     # Assert
     assert len(seq_linear_actions) == 1
@@ -50,8 +58,9 @@ def test_simple_mnist_cnn_generates_seq_linear_between_boundary_conv_and_linear(
     assert isinstance(action.params[2], nn.Linear)
     assert action.params[2].in_features == 3
     assert action.params[2].out_features == 3
+    assert seq_conv_actions == []
+    assert res_conv_actions == []
 
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "-s"])
-
