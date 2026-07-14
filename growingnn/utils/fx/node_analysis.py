@@ -91,7 +91,8 @@ class NodeWidthAnalyser:
             m = ModuleResolver.get_layer_module(n.target, gm)
             if isinstance(m, nn.Linear): return m.out_features
             if isinstance(m, nn.Conv2d): return m.out_channels
-            if isinstance(m, PASSTHROUGH_MODULES_TO_UPDATE): return m.num_features
+            if isinstance(m, nn.LayerNorm): return m.normalized_shape[0]
+            if isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d)): return m.num_features
         if (NodeTypeChecker.is_passthrough(gm, n) or NodeTypeChecker.is_add(n)) and n.all_input_nodes:
             return NodeWidthAnalyser.node_output_width(gm, n.all_input_nodes[0])
         return None
