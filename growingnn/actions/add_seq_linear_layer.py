@@ -4,9 +4,10 @@ from torch import fx, nn
 
 from growingnn.actions.utils.layer_Factory import LinearFactory
 from growingnn.core import config
+from growingnn.core.traced_model import TracedModel
 from growingnn.utils.fx import (
-    LayerBridgeFinder, LayerShapeAnalyser,
-    ModuleResolver, GraphStructureQuery, ModelStructureEditor,
+    LayerBridgeFinder,
+    ModuleResolver, ModelStructureEditor,
 )
 from growingnn.core.logger import logger
 from .action import Action, Layer_Type
@@ -14,19 +15,18 @@ from .action import Action, Layer_Type
 
 class AddSeqLinearLayer(Action):
 
-    def execute(self, model: nn.Module | fx.GraphModule):
-        ModelStructureEditor.add_new_seq_layer(model, self.params[0], self.params[1], self.params[2], self.params[3])
+    def _execute(self, traced: TracedModel):
+        ModelStructureEditor.add_new_seq_layer(traced.gm, self.params[0], self.params[1], self.params[2], self.params[3])
 
     def can_be_infulenced(self, by_action):
         return False
 
     @staticmethod
-    def generate_all_actions(model: nn.Module | fx.GraphModule) -> List[Action]:
-        gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
-        out_shapes = LayerShapeAnalyser.get_layer_output_shapes(gm)
-        in_shapes = LayerShapeAnalyser.get_layer_input_shapes(gm)
+    def generate_all_actions(traced: TracedModel) -> List[Action]:
+        gm = traced.gm
+        out_shapes, in_shapes = traced.shapes()
         actions: List[Action] = []
-        for layer_from_id, layer_to_id in GraphStructureQuery.module_sequential_pairs(gm):
+        for layer_from_id, layer_to_id in traced.sequential_pairs():
             s_out = out_shapes.get(layer_from_id)
             s_in = in_shapes.get(layer_to_id)
             sizes = LayerBridgeFinder.find_bridge_linear_sizes(s_out, s_in)

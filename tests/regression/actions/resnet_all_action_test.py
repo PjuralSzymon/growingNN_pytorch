@@ -21,6 +21,7 @@ from growingnn.actions.delete_neurons import DelNeurons
 from growingnn.core.logger import logger
 from growingnn.utils.fx import GraphStructureQuery
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
+from growingnn.core.traced_model import TracedModel
 from tests.regression.regression_utils import (
     FOLDER_NAME,
     clear_regression_folder,
@@ -28,7 +29,6 @@ from tests.regression.regression_utils import (
     parse_regression_cli,
     plot_norms_and_parameter_count,
 )
-
 BATCH_SIZE = 100
 INPUT_SHAPE = (3, 64, 64)
 ITERATIONS = 20
@@ -36,16 +36,20 @@ SEED = 42
 
 ActionGenerator = Tuple[str, Callable[[fx.GraphModule], List[Action]]]
 
+_TRACE_SHAPE = (1, *INPUT_SHAPE)
+
 ACTION_GENERATORS: List[ActionGenerator] = [
     (
         "AddResLinearLayer",
-        lambda gm: AddResLinearLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE]),
+        lambda gm: AddResLinearLayer.generate_all_actions(
+            TracedModel.create(gm, _TRACE_SHAPE), layer_types=[Layer_Type.EYE]
+        ),
     ),
-    ("AddResConvLayer", AddResConvLayer.generate_all_actions),
-    ("AddSeqLinearLayer", AddSeqLinearLayer.generate_all_actions),
-    ("AddSeqConvLayer", AddSeqConvLayer.generate_all_actions),
-    ("DelLayer", DelLayer.generate_all_actions),
-    ("DelNeurons", DelNeurons.generate_all_actions),
+    ("AddResConvLayer", lambda gm: AddResConvLayer.generate_all_actions(TracedModel.create(gm, _TRACE_SHAPE))),
+    ("AddSeqLinearLayer", lambda gm: AddSeqLinearLayer.generate_all_actions(TracedModel.create(gm, _TRACE_SHAPE))),
+    ("AddSeqConvLayer", lambda gm: AddSeqConvLayer.generate_all_actions(TracedModel.create(gm, _TRACE_SHAPE))),
+    ("DelLayer", lambda gm: DelLayer.generate_all_actions(TracedModel.create(gm, _TRACE_SHAPE))),
+    ("DelNeurons", lambda gm: DelNeurons.generate_all_actions(TracedModel.create(gm, _TRACE_SHAPE))),
 ]
 
 
@@ -117,7 +121,7 @@ if __name__ == "__main__":
                 chosen,
             )
             try:
-                chosen.execute(gm)
+                chosen.execute(TracedModel.create(gm, _TRACE_SHAPE))
                 with torch.no_grad():
                     output_final = gm(x)
             except Exception:

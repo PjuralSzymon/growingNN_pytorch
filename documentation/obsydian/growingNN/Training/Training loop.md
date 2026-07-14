@@ -16,8 +16,8 @@ Idea:
    2.2 record metrics and parameter count (`GraphStructureQuery.get_amount_of_parameters`)
    2.3 if early stopper fires then exit the whole run
    2.4 if `simulation_scheduler.can_simulate` is true for this generation then:
-       2.4.1 ask [[Simulation]] for one action (`config.simulation_alg.get_action` on a deep copy of the model)
-       2.4.2 if an action was returned then call `action.execute(model)` on the live model
+       2.4.1 ask [[Simulation]] for one action (`config.simulation_alg.get_action` on a deep copy of the live [[TracedModel]])
+       2.4.2 if an action was returned then call `action.execute(traced)` on the live wrapper (invalidates cached analysis on the graph)
        2.4.3 optional experiment board saves FX graphs after the mutation
 3. clear quasi-identity cache (`clear_reshepers_cache`) after all generations
 

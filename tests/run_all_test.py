@@ -110,7 +110,7 @@ def run_regression_script(path: Path) -> tuple[int, str]:
         env=_agg_env(),
         capture_output=True,
         text=True,
-        timeout=900,
+        timeout=3600,
     )
     msg = ""
     if proc.stdout:

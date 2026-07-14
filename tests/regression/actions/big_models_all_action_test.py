@@ -33,6 +33,7 @@ from growingnn.actions.delete_neurons import DelNeurons
 from growingnn.core.logger import logger
 from growingnn.utils.fx import GraphStructureQuery
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
+from growingnn.core.traced_model import TracedModel
 from tests.regression.regression_utils import (
     FOLDER_NAME,
     clear_regression_folder,
@@ -40,7 +41,6 @@ from tests.regression.regression_utils import (
     parse_regression_cli,
     plot_norms_and_parameter_count,
 )
-
 BATCH_SIZE_VISION = 4
 INPUT_SHAPE = (3, 64, 64)
 BATCH_SIZE_HF_VISION = 2
@@ -141,16 +141,39 @@ MODEL_SPECS: List[ModelSpec] = [
     ("vit-base-patch16-224", _load_vit, _hf_vision_x),
 ]
 
+_HF_MODEL_NAMES = frozenset({"mobilenet_v2_hf", "vit-base-patch16-224"})
+
+
+def _model_specs_for_run() -> List[ModelSpec]:
+    try:
+        import transformers  # noqa: F401
+    except ModuleNotFoundError:
+        skipped = [name for name, _, _ in MODEL_SPECS if name in _HF_MODEL_NAMES]
+        if skipped:
+            logger.warning("transformers not installed; skipping HF models: %s", skipped)
+        return [spec for spec in MODEL_SPECS if spec[0] not in _HF_MODEL_NAMES]
+    return MODEL_SPECS
+
 ActionGenerator = Tuple[str, Callable[[fx.GraphModule], List[Action]]]
 
-ACTION_GENERATORS: List[ActionGenerator] = [
-    ("AddResLinearLayer", lambda gm: AddResLinearLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])),
-    ("AddResConvLayer", AddResConvLayer.generate_all_actions),
-    ("AddSeqLinearLayer", AddSeqLinearLayer.generate_all_actions),
-    ("AddSeqConvLayer", AddSeqConvLayer.generate_all_actions),
-    ("DelLayer", DelLayer.generate_all_actions),
-    ("DelNeurons", DelNeurons.generate_all_actions),
-]
+
+def _action_generators(trace_shape: tuple[int, ...]) -> List[ActionGenerator]:
+    def traced(gm: fx.GraphModule):
+        return TracedModel.create(gm, trace_shape)
+
+    return [
+        (
+            "AddResLinearLayer",
+            lambda gm: AddResLinearLayer.generate_all_actions(
+                traced(gm), layer_types=[Layer_Type.EYE]
+            ),
+        ),
+        ("AddResConvLayer", lambda gm: AddResConvLayer.generate_all_actions(traced(gm))),
+        ("AddSeqLinearLayer", lambda gm: AddSeqLinearLayer.generate_all_actions(traced(gm))),
+        ("AddSeqConvLayer", lambda gm: AddSeqConvLayer.generate_all_actions(traced(gm))),
+        ("DelLayer", lambda gm: DelLayer.generate_all_actions(traced(gm))),
+        ("DelNeurons", lambda gm: DelNeurons.generate_all_actions(traced(gm))),
+    ]
 
 
 def _log_action_summary(model_name: str, action_counts: dict[str, int]) -> None:
@@ -169,7 +192,9 @@ def _run_model(name: str, gm: fx.GraphModule, x: torch.Tensor, args, rng: random
 
     norms: List[float] = []
     parameter_amounts: List[int] = [GraphStructureQuery.get_amount_of_parameters(gm)]
-    action_counts: dict[str, int] = {n: 0 for n, _ in ACTION_GENERATORS}
+    trace_shape = (1, *x.shape[1:])
+    action_generators = _action_generators(trace_shape)
+    action_counts: dict[str, int] = {n: 0 for n, _ in action_generators}
     out_dir = f"{OUT_ROOT}/{name}"
 
     if args.save_output:
@@ -180,7 +205,7 @@ def _run_model(name: str, gm: fx.GraphModule, x: torch.Tensor, args, rng: random
     step = 0
     for iteration in range(ITERATIONS):
         logger.info("[%s] iteration: %s --------------------------------", name, iteration)
-        order = list(ACTION_GENERATORS)
+        order = list(action_generators)
         rng.shuffle(order)
 
         for action_name, generate in order:
@@ -195,7 +220,7 @@ def _run_model(name: str, gm: fx.GraphModule, x: torch.Tensor, args, rng: random
                 name, iteration, action_name, idx, len(actions), chosen,
             )
             try:
-                chosen.execute(gm)
+                chosen.execute(TracedModel.create(gm, trace_shape))
                 with torch.no_grad():
                     output_final = gm(x)
             except Exception:
@@ -238,7 +263,7 @@ if __name__ == "__main__":
     rng = random.Random(SEED)
     data_rng = torch.Generator().manual_seed(SEED)
 
-    for name, load_model, make_x in MODEL_SPECS:
+    for name, load_model, make_x in _model_specs_for_run():
         logger.info("======== model: %s ========", name)
         model = load_model()
         x = make_x(data_rng)
