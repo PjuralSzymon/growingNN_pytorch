@@ -2,6 +2,7 @@
 # Fodlers in project: 
 testResults/
 experiments/output/*
+experiments/data/
 
 # Byte-compiled / optimized
 __pycache__/
