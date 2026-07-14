@@ -21,14 +21,13 @@ from growingnn.utils.fx import GraphStructureQuery, GraphConnectivity
 from growingnn.core.logger import logger
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from tests.model_factory import ModelFactory
+from growingnn.core.traced_model import TracedModel
 from tests.regression.regression_utils import (
     FOLDER_NAME,
     clear_regression_folder,
     parse_regression_cli,
     plot_norms_and_parameter_count,
 )
-
-
 if __name__ == "__main__":
     args = parse_regression_cli()
     model = ModelFactory.complex_residual_many_widths()
@@ -51,18 +50,18 @@ if __name__ == "__main__":
         logger.info("idx: %s --------------------------------", id)
         actions: List[Action] = []
         if id < grow_iterations:
-            actions += AddResLinearLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])
-            actions += AddResConvLayer.generate_all_actions(gm)
-            actions += AddSeqConvLayer.generate_all_actions(gm)
-            actions += AddSeqLinearLayer.generate_all_actions(gm)
+            actions += AddResLinearLayer.generate_all_actions(TracedModel.create(gm, (1, 4)), layer_types=[Layer_Type.EYE])
+            actions += AddResConvLayer.generate_all_actions(TracedModel.create(gm, (1, 4)))
+            actions += AddSeqConvLayer.generate_all_actions(TracedModel.create(gm, (1, 4)))
+            actions += AddSeqLinearLayer.generate_all_actions(TracedModel.create(gm, (1, 4)))
         else:
-            actions += DelLayer.generate_all_actions(gm)
+            actions += DelLayer.generate_all_actions(TracedModel.create(gm, (1, 4)))
         if len(actions) == 0:
             logger.warning("No actions to execute for iteration %s", id)
             break
         idx = rng.randrange(len(actions))
         logger.info("action used: %s", actions[idx])
-        actions[idx].execute(gm)
+        actions[idx].execute(TracedModel.create(gm, (1, 4)))
         try:
             output_final = gm(x)
         except Exception:
@@ -81,8 +80,8 @@ if __name__ == "__main__":
 
     all_modules = sorted({str(n.target) for n in gm.graph.nodes if n.op == "call_module"})
     hidden_modules = list(dict.fromkeys(GraphStructureQuery.get_all_hidden_modules(gm)))
-    deletable = DelLayer.generate_all_actions(gm)
-    blockers = explain_delete_layer_blockers(gm)
+    deletable = DelLayer.generate_all_actions(TracedModel.create(gm, (1, 4)))
+    blockers = explain_delete_layer_blockers(TracedModel.create(gm, (1, 4)))
     logger.info("final parameter count: %s", GraphStructureQuery.get_amount_of_parameters(gm))
     logger.info("final call_module layers (%s): %s", len(all_modules), all_modules)
     logger.info("final hidden layers (%s): %s", len(hidden_modules), hidden_modules)

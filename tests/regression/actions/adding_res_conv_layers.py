@@ -20,14 +20,13 @@ from growingnn.utils.fx import GraphStructureQuery
 from growingnn.core.logger import logger
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from tests.model_factory import ModelFactory
+from growingnn.core.traced_model import TracedModel
 from tests.regression.regression_utils import (
     FOLDER_NAME,
     clear_regression_folder,
     parse_regression_cli,
     plot_norms_and_parameter_count,
 )
-
-
 if __name__ == "__main__":
     args = parse_regression_cli()
     #    model = ModelFactory.simple_conv_chain_2()
@@ -35,6 +34,7 @@ if __name__ == "__main__":
     gm = fx.symbolic_trace(model)
     executed_actions = []
     x = torch.randn(2, 4, 8, 8)
+    trace_shape = (1, *x.shape[1:])
     rng = random.Random(42)
     y = gm(x)
     norms = []
@@ -46,11 +46,11 @@ if __name__ == "__main__":
     draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph0", fmt="pdf")
     for id in range(50):
         logger.info("idx: %s --------------------------------", id)
-        actions: List[AddResConvLayer] = AddResConvLayer.generate_all_actions(gm)
+        actions: List[AddResConvLayer] = AddResConvLayer.generate_all_actions(TracedModel.create(gm, trace_shape))
         idx = rng.randrange(len(actions))
         logger.info("action used: %s", actions[idx])
 
-        actions[idx].execute(gm)
+        actions[idx].execute(TracedModel.create(gm, trace_shape))
 
         draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified" + str(id), fmt="pdf")
         draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph" + str(id), fmt="pdf")

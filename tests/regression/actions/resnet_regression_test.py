@@ -25,6 +25,7 @@ from growingnn.utils.fx import GraphStructureQuery
 from growingnn.core.logger import logger
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from growingnn.actions.delete_neurons import DelNeurons
+from growingnn.core.traced_model import TracedModel
 from tests.regression.regression_utils import (
     FOLDER_NAME,
     clear_regression_folder,
@@ -32,8 +33,6 @@ from tests.regression.regression_utils import (
     parse_regression_cli,
     plot_norms_and_parameter_count,
 )
-
-
 # Which growth actions to consider (delete is always available in the shrink phase).
 USE_ADD_RES_LAYER = False
 USE_ADD_RES_CONV_LAYER = False
@@ -46,6 +45,7 @@ USE_ADD_SEQ_DROPOUT = True
 
 BATCH_SIZE = 2
 INPUT_SHAPE = (3, 64, 64)
+TRACE_SHAPE = (1, *INPUT_SHAPE)
 ITERATIONS = 20
 
 
@@ -67,27 +67,27 @@ def _make_xy(rng: torch.Generator) -> tuple[torch.Tensor, torch.Tensor]:
 def _generate_actions(gm: fx.GraphModule) -> List[Action]:
     actions: List[Action] = []
     if USE_ADD_RES_LAYER:
-        actions += AddResLinearLayer.generate_all_actions(gm, layer_types=[Layer_Type.EYE])
+        actions += AddResLinearLayer.generate_all_actions(TracedModel.create(gm, TRACE_SHAPE), layer_types=[Layer_Type.EYE])
     if USE_ADD_RES_CONV_LAYER:
-        actions += AddResConvLayer.generate_all_actions(gm)
+        actions += AddResConvLayer.generate_all_actions(TracedModel.create(gm, TRACE_SHAPE))
     if USE_ADD_SEQ_LAYER:
-        actions += AddSeqLinearLayer.generate_all_actions(gm)
+        actions += AddSeqLinearLayer.generate_all_actions(TracedModel.create(gm, TRACE_SHAPE))
     if USE_ADD_SEQ_CONV_LAYER:
-        actions += AddSeqConvLayer.generate_all_actions(gm)
+        actions += AddSeqConvLayer.generate_all_actions(TracedModel.create(gm, TRACE_SHAPE))
     if USE_DEL_LAYER:
-        actions += DelLayer.generate_all_actions(gm)
+        actions += DelLayer.generate_all_actions(TracedModel.create(gm, TRACE_SHAPE))
     if USE_DEL_NEURONS:
-        actions += DelNeurons.generate_all_actions(gm)
+        actions += DelNeurons.generate_all_actions(TracedModel.create(gm, TRACE_SHAPE))
     if USE_ADD_NEURONS:
-        actions += AddNeurons.generate_all_actions(gm)
+        actions += AddNeurons.generate_all_actions(TracedModel.create(gm, TRACE_SHAPE))
     if USE_ADD_SEQ_DROPOUT:
-        actions += AddSeqDropoutLayer.generate_all_actions(gm, p=0.1)
+        actions += AddSeqDropoutLayer.generate_all_actions(TracedModel.create(gm, TRACE_SHAPE), p=0.1)
     return actions
 
 def _generate_only_shrink_actions(gm: fx.GraphModule) -> List[Action]:
     actions: List[Action] = []
     if USE_DEL_NEURONS:
-        actions += DelNeurons.generate_all_actions(gm)
+        actions += DelNeurons.generate_all_actions(TracedModel.create(gm, TRACE_SHAPE))
     return actions
 
 if __name__ == "__main__":
@@ -130,7 +130,7 @@ if __name__ == "__main__":
         logger.info("action type: %s", type(chosen).__name__)
         logger.info("action used idx: %s [%s]: %s", idx, used_action_types[-1], chosen)
         try:
-            chosen.execute(gm)
+            chosen.execute(TracedModel.create(gm, TRACE_SHAPE))
             with torch.no_grad():
                 output_final = gm(x)
         except Exception:

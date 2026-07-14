@@ -5,25 +5,22 @@ from __future__ import annotations
 import random
 import time
 
-import torch.fx as fx
-import torch.nn as nn
-
 from growingnn.actions.registry import generate_all_actions
 from growingnn.core.config import RunningConfig
-from growingnn.utils.fx import GraphStructureQuery
+from growingnn.core.traced_model import TracedModel
 from growingnn.utils.quaziIdentity import clear_reshepers_cache
 
 
 def get_action(
-    model: nn.Module | fx.GraphModule,
+    traced: TracedModel,
     running_config: RunningConfig,
 ) -> tuple[object | None, int, int]:
-    actions = generate_all_actions(model, running_config)
+    actions = generate_all_actions(traced, running_config)
     if not actions:
         return None, 0, 0
 
     board = running_config.experiment_board
-    params_before = GraphStructureQuery.get_amount_of_parameters(model) if board else None
+    params_before = traced.param_count() if board else None
     t0 = time.time()
     action = random.choice(actions)
     clear_reshepers_cache()

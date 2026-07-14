@@ -17,12 +17,14 @@ from growingnn.utils.fx import GraphStructureQuery
 from growingnn.core.logger import logger
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from tests.model_factory import ModelFactory
+from growingnn.core.traced_model import TracedModel
 from tests.regression.regression_utils import (
     FOLDER_NAME,
     clear_regression_folder,
     parse_regression_cli,
     plot_norms_and_parameter_count,
 )
+_CONV_TRACE_SHAPE = (1, 4, 8, 8)
 
 
 if __name__ == "__main__":
@@ -41,13 +43,13 @@ if __name__ == "__main__":
 
     for id in range(iterations):
         logger.info("idx: %s --------------------------------", id)
-        actions: List[Action] = AddNeurons.generate_all_actions(gm)
+        actions: List[Action] = AddNeurons.generate_all_actions(TracedModel.create(gm, _CONV_TRACE_SHAPE))
         if len(actions) == 0:
             logger.warning("No actions to execute for iteration %s", id)
             break
         idx = rng.randrange(len(actions))
         logger.info("action used: %s", actions[idx])
-        actions[idx].execute(gm)
+        actions[idx].execute(TracedModel.create(gm, _CONV_TRACE_SHAPE))
         try:
             output_final = gm(x)
         except Exception:

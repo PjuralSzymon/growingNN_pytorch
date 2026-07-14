@@ -2,7 +2,8 @@ from typing import List
 
 from torch import fx, nn
 
-from growingnn.utils.fx import ModuleResolver, GraphStructureQuery
+from growingnn.core.traced_model import TracedModel
+from growingnn.utils.fx import ModuleResolver
 from growingnn.actions.utils.layer_resize import can_resize_linear_output, resize_layer_output
 from growingnn.core import config
 from .action import Action
@@ -21,22 +22,22 @@ def shrink_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, ratio: fl
 
 
 class DelNeurons(Action):
-    def execute(self, model: nn.Module | fx.GraphModule):
+    def _execute(self, traced: TracedModel):
         layer_id = self.params[0]
         ratio = self.params[1] if len(self.params) > 1 else config.DEFAULT_NEURONS_SHRINK_RATIO
-        shrink_layer_output(model, layer_id, ratio)
+        shrink_layer_output(traced.gm, layer_id, ratio)
 
     def can_be_infulenced(self, by_action):
         return False
 
     @staticmethod
     def generate_all_actions(
-        model: nn.Module | fx.GraphModule,
+        traced: TracedModel,
         ratio: float = config.DEFAULT_NEURONS_SHRINK_RATIO,
     ) -> List[Action]:
-        gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
+        gm = traced.gm
         actions: List[Action] = []
-        for layer_id in GraphStructureQuery.get_all_hidden_modules(gm):
+        for layer_id in traced.hidden_modules():
             mod = ModuleResolver.get_layer_module(layer_id, gm)
             if not isinstance(mod, nn.Linear):
                 continue

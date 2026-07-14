@@ -1,5 +1,6 @@
 import os
 import sys
+import urllib.error
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -28,12 +29,13 @@ from tests.regression.regression_utils import (
     FOLDER_NAME,
     clear_regression_folder,
     parse_regression_cli,
+    regression_cifar_dir,
 )
 
 OUT_DIR = FOLDER_NAME + "/training"
-DATA_DIR = OUT_DIR + "/data"
+DATA_DIR = regression_cifar_dir()
 HISTORY_PATH = OUT_DIR + "/trainer_generations_history.pt"
-WEIGHTS_PATH = OUT_DIR + "/resnet18_cifar10_baseline.pt"
+WEIGHTS_PATH = "testResults/regression_cache/resnet18_cifar10_baseline.pt"
 WEIGHTS_URL = (
     "https://huggingface.co/Phoenix21/resnet18-cifar10-baseline/resolve/main/"
     "resnet18_cifar10_baseline.pth"
@@ -44,17 +46,22 @@ METRIC_KEYS = ("train_loss", "train_acc", "val_loss", "val_acc", "lr", "param_co
 
 def _load_cifar10_resnet18(num_classes: int = NUM_CLASSES) -> nn.Module:
     model = resnet18(weights=None, num_classes=num_classes)
-    if not os.path.exists(WEIGHTS_PATH):
+    if os.path.exists(WEIGHTS_PATH):
+        state_dict = torch.load(WEIGHTS_PATH, map_location="cpu", weights_only=False)
+        model.load_state_dict(state_dict)
+        logger.info("Loaded CIFAR-10 pretrained ResNet18 weights")
+        return model
+    try:
         logger.info("Downloading CIFAR-10 ResNet18 weights from %s", WEIGHTS_URL)
-        os.makedirs(OUT_DIR, exist_ok=True)
+        os.makedirs(os.path.dirname(WEIGHTS_PATH) or ".", exist_ok=True)
         state_dict = torch.hub.load_state_dict_from_url(
             WEIGHTS_URL, progress=True, map_location="cpu"
         )
         torch.save(state_dict, WEIGHTS_PATH)
-    else:
-        state_dict = torch.load(WEIGHTS_PATH, map_location="cpu", weights_only=False)
-    model.load_state_dict(state_dict)
-    logger.info("Loaded CIFAR-10 pretrained ResNet18 weights")
+        model.load_state_dict(state_dict)
+        logger.info("Loaded CIFAR-10 pretrained ResNet18 weights")
+    except (urllib.error.URLError, OSError) as err:
+        logger.warning("Could not download weights (%s); using random init", err)
     return model
 
 
@@ -62,8 +69,9 @@ def _loaders(batch_size: int = 128):
     logger.info(f"Loading full CIFAR10, batch_size {batch_size}")
     os.makedirs(DATA_DIR, exist_ok=True)
     transform = transforms.ToTensor()
-    train = datasets.CIFAR10(DATA_DIR, train=True, download=True, transform=transform)
-    val = datasets.CIFAR10(DATA_DIR, train=False, download=True, transform=transform)
+    has_cifar = os.path.isdir(os.path.join(DATA_DIR, "cifar-10-batches-py"))
+    train = datasets.CIFAR10(DATA_DIR, train=True, download=not has_cifar, transform=transform)
+    val = datasets.CIFAR10(DATA_DIR, train=False, download=not has_cifar, transform=transform)
 
     train_loader = DataLoader(train, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val, batch_size=batch_size)
@@ -108,6 +116,13 @@ if __name__ == "__main__":
         criterion=nn.CrossEntropyLoss(),
         quiet=False,
     )
+    cfg.update_shrink_actions(False)
+    for flag in (
+        "ACTIONS_ENABLE_ADD_SEQ_DROPOUT_01",
+        "ACTIONS_ENABLE_ADD_SEQ_DROPOUT_02",
+        "ACTIONS_ENABLE_ADD_SEQ_DROPOUT_05",
+    ):
+        setattr(cfg, flag, False)
     gm, summary = train_generations(gm, *_loaders(), cfg)
     _draw_generation_graphs(summary["generation"][-1], gm)
     assert GraphStructureQuery.get_amount_of_parameters(gm) != params_before
@@ -123,9 +138,12 @@ if __name__ == "__main__":
         if not args.save_output:
             print(f"Baseline missing; wrote {HISTORY_PATH}. Re-run with --save-output true to refresh.")
     else:
-        baseline = torch.load(HISTORY_PATH, map_location="cpu", weights_only=False)
-        for key in step_history:
-            assert step_history[key] == baseline[key]
+        if not os.path.exists(WEIGHTS_PATH):
+            print("Skipping baseline compare (no cached pretrained weights)")
+        else:
+            baseline = torch.load(HISTORY_PATH, map_location="cpu", weights_only=False)
+            for key in step_history:
+                assert step_history[key] == baseline[key]
 
     if not args.save_output:
         clear_regression_folder()

@@ -14,6 +14,7 @@ if str(_REPO_ROOT) not in sys.path:
 from growingnn.actions.add_seq_dropout_layer import AddSeqDropoutLayer
 from growingnn.actions.utils.seq_insertion import iter_seq_shape_matched_pairs
 from tests.model_factory import ModelFactory
+from growingnn.core.traced_model import TracedModel
 
 
 def test_iter_seq_shape_matched_pairs_finds_linear_chain_edges():
@@ -24,7 +25,7 @@ def test_iter_seq_shape_matched_pairs_finds_linear_chain_edges():
     gm = fx.symbolic_trace(ModelFactory.simple_chain_3(neurons=10))
 
     # Act
-    pairs = {(cand.from_id, cand.to_id) for cand in iter_seq_shape_matched_pairs(gm)}
+    pairs = {(cand.from_id, cand.to_id) for cand in iter_seq_shape_matched_pairs(TracedModel.create(gm, (1, 4)))}
 
     # Assert
     assert ("l1", "l2") in pairs
@@ -39,7 +40,7 @@ def test_generate_all_actions_proposes_dropout_on_linear_chain():
     gm = fx.symbolic_trace(ModelFactory.simple_chain_3(neurons=10))
 
     # Act
-    actions = AddSeqDropoutLayer.generate_all_actions(gm, p=0.2)
+    actions = AddSeqDropoutLayer.generate_all_actions(TracedModel.create(gm, (1, 4)), p=0.2)
 
     # Assert
     assert len(actions) >= 2
@@ -56,11 +57,11 @@ def test_execute_inserts_dropout_without_changing_eval_output_shape():
     gm.eval()
     x = torch.randn(2, 4)
     y0 = gm(x)
-    actions = AddSeqDropoutLayer.generate_all_actions(gm, p=0.5)
+    actions = AddSeqDropoutLayer.generate_all_actions(TracedModel.create(gm, (1, 4)), p=0.5)
     action = next(a for a in actions if a.params[0] == "l1" and a.params[1] == "l2")
 
     # Act
-    action.execute(gm)
+    action.execute(TracedModel.create(gm, (1, 4)))
     y1 = gm(x)
 
     # Assert
@@ -76,7 +77,7 @@ def test_generate_all_actions_uses_dropout2d_on_conv_chain():
     gm = fx.symbolic_trace(ModelFactory.simple_conv_chain_2())
 
     # Act
-    actions = AddSeqDropoutLayer.generate_all_actions(gm, p=0.1)
+    actions = AddSeqDropoutLayer.generate_all_actions(TracedModel.create(gm, (1, 4, 32, 32)), p=0.1)
     conv_actions = [a for a in actions if a.params[0] == "c1" and a.params[1] == "c2"]
 
     # Assert
@@ -91,17 +92,17 @@ def test_generate_all_actions_skips_pairs_adjacent_to_existing_dropout():
     # Arrange
     gm = fx.symbolic_trace(ModelFactory.simple_chain_3(neurons=10))
     first = next(
-        a for a in AddSeqDropoutLayer.generate_all_actions(gm, p=0.2)
+        a for a in AddSeqDropoutLayer.generate_all_actions(TracedModel.create(gm, (1, 4)), p=0.2)
         if a.params[0] == "l1" and a.params[1] == "l2"
     )
-    first.execute(gm)
+    first.execute(TracedModel.create(gm, (1, 4)))
     dropout_ids = {
         name for name, mod in gm.named_modules()
         if isinstance(mod, (nn.Dropout, nn.Dropout2d))
     }
 
     # Act
-    actions = AddSeqDropoutLayer.generate_all_actions(gm, p=0.2)
+    actions = AddSeqDropoutLayer.generate_all_actions(TracedModel.create(gm, (1, 4)), p=0.2)
 
     # Assert
     assert len(dropout_ids) == 1

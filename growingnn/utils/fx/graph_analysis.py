@@ -281,22 +281,14 @@ class LayerShapeAnalyser:
         return None
 
     @staticmethod
-    def default_example_input(gm: fx.GraphModule) -> torch.Tensor | None:
-        """Guess a suitable example input tensor from the first layer found."""
-        placeholders = [n for n in gm.graph.nodes if n.op == "placeholder"]
-        if not placeholders:
-            return None
+    def make_probe(gm: fx.GraphModule, input_shape: tuple[int, ...]) -> torch.Tensor:
+        """Build a random probe tensor for ShapeProp."""
         try:
             p0 = next(gm.parameters())
             device, dtype = p0.device, p0.dtype
         except StopIteration:
             device, dtype = torch.device("cpu"), torch.float32
-        for mod in gm.modules():
-            if isinstance(mod, nn.Linear):
-                return torch.randn(1, mod.in_features, device=device, dtype=dtype)
-            if isinstance(mod, nn.modules.conv._ConvNd):
-                return torch.randn(1, mod.in_channels, 224, 224, device=device, dtype=dtype)
-        return torch.randn(1, 3, 224, 224, device=device, dtype=dtype)
+        return torch.randn(*input_shape, device=device, dtype=dtype)
 
     @staticmethod
     def input_shape_for_layer(node: fx.Node) -> tuple[int, ...] | None:
@@ -312,17 +304,24 @@ class LayerShapeAnalyser:
     def collect_layer_shapes(
         gm: fx.GraphModule,
         example: torch.Tensor | None = None,
+        *,
+        input_shape: tuple[int, ...] | None = None,
     ) -> tuple[dict[str, tuple[int, ...]], dict[str, tuple[int, ...]]]:
         """Run ShapeProp and return (output_shapes, input_shapes) dicts keyed by module target."""
         outputs: dict[str, tuple[int, ...]] = {}
         inputs: dict[str, tuple[int, ...]] = {}
-        probe = example if example is not None else LayerShapeAnalyser.default_example_input(gm)
-        if probe is None:
-            return outputs, inputs
+        if example is not None:
+            probe = example
+        elif input_shape is not None:
+            probe = LayerShapeAnalyser.make_probe(gm, input_shape)
+        else:
+            raise ValueError("collect_layer_shapes requires example or input_shape")
+        was_training = gm.training
+        gm.eval()
         try:
             ShapeProp(gm).propagate(probe)
-        except Exception:
-            return outputs, inputs
+        finally:
+            gm.train(was_training)
         for node in gm.graph.nodes:
             if node.op != "call_module" or not isinstance(node.target, str):
                 continue
@@ -338,17 +337,21 @@ class LayerShapeAnalyser:
     def get_layer_output_shapes(
         gm: fx.GraphModule,
         example: torch.Tensor | None = None,
+        *,
+        input_shape: tuple[int, ...] | None = None,
     ) -> dict[str, tuple[int, ...]]:
         """Output activation shapes for every call_module node."""
-        return LayerShapeAnalyser.collect_layer_shapes(gm, example)[0]
+        return LayerShapeAnalyser.collect_layer_shapes(gm, example, input_shape=input_shape)[0]
 
     @staticmethod
     def get_layer_input_shapes(
         gm: fx.GraphModule,
         example: torch.Tensor | None = None,
+        *,
+        input_shape: tuple[int, ...] | None = None,
     ) -> dict[str, tuple[int, ...]]:
         """Input activation shapes for every call_module node."""
-        return LayerShapeAnalyser.collect_layer_shapes(gm, example)[1]
+        return LayerShapeAnalyser.collect_layer_shapes(gm, example, input_shape=input_shape)[1]
 
 
 class LayerBridgeFinder:
