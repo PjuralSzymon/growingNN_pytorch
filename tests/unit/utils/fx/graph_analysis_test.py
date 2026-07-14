@@ -680,18 +680,17 @@ def test_node_shape_reads_shape_from_shapeprop_metadata():
     assert shape == (1, 4)
 
 
-def test_default_example_input_uses_first_linear_in_features():
+def test_make_probe_builds_tensor_from_input_shape():
     """
-    default_example_input should build a probe tensor from the first Linear in_features.
+    make_probe should build a tensor with the given input shape on the graph device.
     """
     # Arrange
     gm = fx.symbolic_trace(ModelFactory.simple_chain_2())
 
     # Act
-    probe = LayerShapeAnalyser.default_example_input(gm)
+    probe = LayerShapeAnalyser.make_probe(gm, (1, 4))
 
     # Assert
-    assert probe is not None
     assert tuple(probe.shape) == (1, 4)
 
 

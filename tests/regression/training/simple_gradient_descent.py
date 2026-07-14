@@ -21,14 +21,15 @@ from growingnn.training.gradient_descent import gradient_descent
 from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import StopperMode, TrainingStopper
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
+from growingnn.core.traced_model import TracedModel
 from tests.regression.regression_utils import (
     FOLDER_NAME,
     clear_regression_folder,
     parse_regression_cli,
+    regression_cifar_dir,
 )
-
 OUT_DIR = FOLDER_NAME + "/training"
-DATA_DIR = OUT_DIR + "/data"
+DATA_DIR = regression_cifar_dir()
 HISTORY_PATH = OUT_DIR + "/simple_gradient_descent_history.pt"
 NUM_CLASSES = 10
 METRIC_KEYS = ("train_loss", "train_acc", "val_loss", "val_acc", "lr")
@@ -37,8 +38,9 @@ METRIC_KEYS = ("train_loss", "train_acc", "val_loss", "val_acc", "lr")
 def _loaders(seed: int = 0, train_n: int = 128, val_n: int = 32, batch_size: int = 8):
     os.makedirs(DATA_DIR, exist_ok=True)
     transform = transforms.ToTensor()
-    train_full = datasets.CIFAR10(DATA_DIR, train=True, download=True, transform=transform)
-    val_full = datasets.CIFAR10(DATA_DIR, train=False, download=True, transform=transform)
+    has_cifar = os.path.isdir(os.path.join(DATA_DIR, "cifar-10-batches-py"))
+    train_full = datasets.CIFAR10(DATA_DIR, train=True, download=not has_cifar, transform=transform)
+    val_full = datasets.CIFAR10(DATA_DIR, train=False, download=not has_cifar, transform=transform)
 
     generator = torch.Generator().manual_seed(seed)
     train_idx = torch.randperm(len(train_full), generator=generator)[:train_n].tolist()
@@ -96,11 +98,11 @@ if __name__ == "__main__":
             quiet=False,
             print_every=1,
         )
-        actions: List[AddSeqLinearLayer] = AddSeqLinearLayer.generate_all_actions(gm)
+        actions: List[AddSeqLinearLayer] = AddSeqLinearLayer.generate_all_actions(TracedModel.create(gm, (1, 3, 32, 32)))
         idx = rng.randrange(len(actions))
         draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified" + str(id), fmt="pdf")
         draw_torch_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph" + str(id), fmt="pdf")
-        actions[idx].execute(gm)
+        actions[idx].execute(TracedModel.create(gm, (1, 3, 32, 32)))
         all_histories.append(history)
         print(f"generation: {id} action executed: {actions[idx]}")
         assert history["train_acc"][0] >= previous_acc * 0.9

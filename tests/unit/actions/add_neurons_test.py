@@ -15,6 +15,7 @@ if str(_REPO_ROOT) not in sys.path:
 from growingnn.actions.add_neurons import AddNeurons, expand_layer_output
 from growingnn.core import config
 from tests.model_factory import ModelFactory
+from growingnn.core.traced_model import TracedModel
 
 
 def test_expand_linear_chain_updates_downstream_input():
@@ -75,7 +76,7 @@ def test_generate_actions_skips_layer_when_matrix_limit_exceeded(monkeypatch):
     gm = fx.symbolic_trace(ModelFactory.simple_chain_3(neurons=1000))
 
     # Act
-    actions = AddNeurons.generate_all_actions(gm)
+    actions = AddNeurons.generate_all_actions(TracedModel.create(gm, (1, 3, 32, 32)))
 
     # Assert
     assert all(action.params[0] != "l2" for action in actions)
@@ -102,7 +103,7 @@ def test_generate_actions_allows_linear_with_conv_sibling_at_add():
     gm = fx.symbolic_trace(LinearConvAdd())
 
     # Act
-    actions = AddNeurons.generate_all_actions(gm)
+    actions = AddNeurons.generate_all_actions(TracedModel.create(gm, (1, 3, 32, 32)))
 
     # Assert
     layer_ids = [action.params[0] for action in actions]
@@ -131,7 +132,7 @@ def test_grow_linear_with_conv_sibling_resizes_conv_output():
     x = torch.randn(2, 3, 8, 8)
 
     # Act
-    AddNeurons(["linear_hidden", 1.5]).execute(gm)
+    AddNeurons(["linear_hidden", 1.5]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
     y = gm(x)
 
     # Assert
@@ -150,7 +151,7 @@ def test_add_neurons_execute_grows_hidden_layer():
     x = torch.randn(2, 4)
 
     # Act
-    AddNeurons(["l2", 1.5]).execute(gm)
+    AddNeurons(["l2", 1.5]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
     y = gm(x)
 
     # Assert
@@ -168,7 +169,7 @@ def test_grow_residual_branch_updates_skip_and_fork_inputs():
     x = torch.randn(2, 4)
 
     # Act
-    AddNeurons(["r4_b", 1.5]).execute(gm)
+    AddNeurons(["r4_b", 1.5]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
     y = gm(x)
 
     # Assert
@@ -204,7 +205,7 @@ def test_grow_hidden_on_cuda_cifar_style_net():
     x = torch.randn(2, 3, 32, 32, device="cuda")
 
     # Act
-    AddNeurons(["hidden", 1.5]).execute(gm)
+    AddNeurons(["hidden", 1.5]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
     y = gm(x)
 
     # Assert

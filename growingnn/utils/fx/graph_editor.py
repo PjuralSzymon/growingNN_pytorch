@@ -213,7 +213,11 @@ class ModelStructureEditor:
         gm.recompile()
 
     @staticmethod
-    def delete_layer(gm: fx.GraphModule, layer_id: str) -> fx.GraphModule:
+    def delete_layer(
+        gm: fx.GraphModule,
+        layer_id: str,
+        input_shape: tuple[int, ...] | None = None,
+    ) -> fx.GraphModule:
         """Remove *layer_id* and wire shape-compatible predecessor branches to successors only."""
         layer_node = next(
             n for n in gm.graph.nodes
@@ -221,7 +225,9 @@ class ModelStructureEditor:
         )
         input_layers = GraphStructureQuery.get_input_layers(layer_id, gm)
         output_layers = GraphStructureQuery.get_output_layers(layer_id, gm)
-        output_shapes, input_shapes = LayerShapeAnalyser.collect_layer_shapes(gm)
+        output_shapes, input_shapes = LayerShapeAnalyser.collect_layer_shapes(
+            gm, input_shape=input_shape
+        )
         if is_merge_branch_layer(layer_node):
             remove_layer_from_sums(gm, layer_node)
         else:

@@ -24,8 +24,7 @@ from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import StopperMode, TrainingStopper
 from growingnn.utils.fx import GraphStructureQuery
 from tests.regression.regression_utils import FOLDER_NAME
-
-
+from growingnn.core.traced_model import TracedModel
 def _loaders(seed: int = 0, n: int = 64, batch_size: int = 8, num_classes: int = 2):
     torch.manual_seed(seed)
     x = torch.randn(n, 3, 32, 32)
@@ -60,9 +59,9 @@ def _train(
 
 
 def _first_grow_action(gm: fx.GraphModule):
-    actions = AddSeqConvLayer.generate_all_actions(gm)
+    actions = AddSeqConvLayer.generate_all_actions(TracedModel.create(gm, (1, 3, 32, 32)))
     if not actions:
-        actions = AddSeqLinearLayer.generate_all_actions(gm)
+        actions = AddSeqLinearLayer.generate_all_actions(TracedModel.create(gm, (1, 3, 32, 32)))
     assert actions, "expected at least one grow action on ResNet-18"
     return actions[0]
 
@@ -79,7 +78,7 @@ def test_train_grow_train_resnet18_still_learns():
 
     # Act
     history_before = _train(gm, train_loader, val_loader, epochs=1)
-    _first_grow_action(gm).execute(gm)
+    _first_grow_action(gm).execute(TracedModel.create(gm, (1, 3, 32, 32)))
     params_after_grow = GraphStructureQuery.get_amount_of_parameters(gm)
     history_after = _train(gm, train_loader, val_loader, epochs=1)
 
@@ -103,9 +102,9 @@ def test_train_shrink_train_resnet18_still_learns():
     # Act
     draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified_init", fmt="pdf")
     history_before = _train(gm, train_loader, val_loader, epochs=1)
-    shrink_actions = DelLayer.generate_all_actions(gm)
+    shrink_actions = DelLayer.generate_all_actions(TracedModel.create(gm, (1, 3, 32, 32)))
     assert shrink_actions, "expected at least one shrink action on ResNet-18"
-    shrink_actions[0].execute(gm)
+    shrink_actions[0].execute(TracedModel.create(gm, (1, 3, 32, 32)))
     print(f"shrink action executed: {shrink_actions[0]}")
     draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified_shrink", fmt="pdf")
     params_after_shrink = GraphStructureQuery.get_amount_of_parameters(gm)
