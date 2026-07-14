@@ -1,19 +1,22 @@
-"""MNIST growingNN experiment — extend DATASETS and GRID lists to add more runs."""
+"""MNIST-like growingNN benchmark — extend DATASET_ORDER and GRID lists to add more runs."""
 
 from __future__ import annotations
 
 import argparse
+import importlib
 import itertools
 import sys
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Callable
+from urllib.error import URLError
 
 import matplotlib.pyplot as plt
 import torch
 import torch.fx as fx
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from torchvision import datasets, transforms
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -33,18 +36,30 @@ from growingnn.training.stoppers import AccuracyStopper
 from growingnn.training.trainer import train_generations
 from growingnn.utils.fx import GraphStructureQuery
 
+# MedMNIST: pip install medmnist
+# EM = EMNIST (balanced); OrganM = OrganAMNIST (axial CT slices).
+DATASET_ORDER = (
+    "breastm",
+    "em",
+    "fashionm",
+    "mnist",
+    "kmnist",
+    "organm",
+    "pneumoniam",
+)
+
 # model_channels sets initial size (~9c²+19c params): 2~74, 3~138, 5~320, 10~1090
 GENERATIONS = [10, 20]
 EPOCHS = [30]
 BATCH_SIZE = [64]
 LR_ALPHA = [0.01]
-SIMULATION_TIME = [50.0]
+SIMULATION_TIME = [500.0]
 SIMULATION_EPOCHS = [15]
 SIMULATION_SET_SIZE = [2000]
 TARGET_ACCURACY = [0.99]
 SCORE_WEIGHT_ACC = [1.0]
 SCORE_WEIGHT_COUNTW = [0.1, 0.2]
-MODEL_CHANNELS = [3]
+MODEL_CHANNELS = [3,4]
 GRID_SEEDS = [0]
 
 METAPARAM_KEYS = (
@@ -61,8 +76,9 @@ METAPARAM_KEYS = (
     "score_weight_countw",
     "model_channels",
 )
-METAPARAM_LISTS = (
-    ["mnist"],
+# Grid sweeps hyperparameters outermost, datasets innermost (all datasets per config).
+GRID_PARAM_KEYS = METAPARAM_KEYS[1:]
+GRID_PARAM_LISTS = (
     GENERATIONS,
     EPOCHS,
     BATCH_SIZE,
@@ -81,59 +97,245 @@ DATA_ROOT = _EXPERIMENT_DIR / "data"
 RUNS_DIR = OUT_DIR / "runs"
 HISTORY_FILE = "train_mnist_history.pt"
 METRIC_KEYS = ("train_loss", "train_acc", "val_loss", "val_acc", "lr", "param_count")
-MNIST_MEAN, MNIST_STD = 0.1307, 0.3081
-MNIST_INPUT_SHAPE = (1, 28, 28)
+SPATIAL = 28
 
 
 @dataclass(frozen=True)
 class DatasetSpec:
-    name: str
+    key: str
     num_classes: int
-    input_shape: tuple[int, int, int]
-    mean: float
-    std: float
-
-    @property
-    def in_channels(self) -> int:
-        return self.input_shape[0]
-
-    @property
-    def spatial(self) -> int:
-        return self.input_shape[1]
+    in_channels: int
+    spatial: int
+    mean: tuple[float, ...]
+    std: tuple[float, ...]
+    build_train: Callable[[Path, bool, bool], Dataset]
+    build_eval: Callable[[Path], Dataset]
+    is_cached: Callable[[Path], bool]
 
 
-DATASETS: dict[str, DatasetSpec] = {
-    "mnist": DatasetSpec("mnist", 10, MNIST_INPUT_SHAPE, MNIST_MEAN, MNIST_STD),
-}
+def _tv_cache_ready(root: Path, torchvision_name: str) -> bool:
+    raw = root / torchvision_name / "raw"
+    return raw.is_dir() and any(raw.iterdir())
 
 
-class MnistData:
+def _medmnist_cache_ready(root: Path, npz_name: str) -> bool:
+    return (root / npz_name).is_file()
+
+
+def _gray_norm(mean: float, std: float) -> tuple[tuple[float, ...], tuple[float, ...]]:
+    return (mean,), (std,)
+
+
+def _rgb_norm() -> tuple[tuple[float, ...], tuple[float, ...]]:
+    return (0.5, 0.5, 0.5), (0.5, 0.5, 0.5)
+
+
+def _torchvision_transform(
+    mean: tuple[float, ...], std: tuple[float, ...], *, train: bool
+) -> transforms.Compose:
+    steps: list[Any] = []
+    if train:
+        steps.append(transforms.RandomAffine(degrees=10, translate=(0.1, 0.1)))
+    steps.extend([transforms.ToTensor(), transforms.Normalize(mean, std)])
+    return transforms.Compose(steps)
+
+
+def _tv_builder(
+    dataset_cls: type,
+    mean: tuple[float, ...],
+    std: tuple[float, ...],
+    *,
+    emnist_split: str | None = None,
+) -> tuple[Callable[[Path, bool, bool], Dataset], Callable[[Path], Dataset]]:
+    def build_train(root: Path, download: bool, augment: bool) -> Dataset:
+        kwargs: dict[str, Any] = {
+            "root": str(root),
+            "train": True,
+            "download": download,
+            "transform": _torchvision_transform(mean, std, train=augment),
+        }
+        if emnist_split is not None:
+            kwargs["split"] = emnist_split
+        return dataset_cls(**kwargs)
+
+    def build_eval(root: Path) -> Dataset:
+        kwargs = {
+            "root": str(root),
+            "train": False,
+            "download": False,
+            "transform": _torchvision_transform(mean, std, train=False),
+        }
+        if emnist_split is not None:
+            kwargs["split"] = emnist_split
+        return dataset_cls(**kwargs)
+
+    return build_train, build_eval
+
+
+def _medmnist_builder(
+    dataset_cls: type,
+    mean: tuple[float, ...],
+    std: tuple[float, ...],
+) -> tuple[Callable[[Path, bool, bool], Dataset], Callable[[Path], Dataset]]:
+    def _transform(augment: bool) -> transforms.Compose:
+        return _torchvision_transform(mean, std, train=augment)
+
+    def _wrap(dataset: Dataset) -> Dataset:
+        return _ScalarLabelDataset(dataset)
+
+    def build_train(root: Path, download: bool, augment: bool) -> Dataset:
+        return _wrap(
+            dataset_cls(
+                split="train",
+                root=str(root),
+                download=download,
+                size=SPATIAL,
+                transform=_transform(augment),
+            )
+        )
+
+    def build_eval(root: Path) -> Dataset:
+        return _wrap(
+            dataset_cls(
+                split="test",
+                root=str(root),
+                download=False,
+                size=SPATIAL,
+                transform=_transform(False),
+            )
+        )
+
+    return build_train, build_eval
+
+
+class _ScalarLabelDataset(Dataset):
+    """MedMNIST returns shape-(1,) labels; CrossEntropyLoss needs scalar class indices."""
+
+    def __init__(self, base: Dataset) -> None:
+        self._base = base
+
+    def __len__(self) -> int:
+        return len(self._base)
+
+    def __getitem__(self, index: int) -> tuple[Any, int]:
+        image, label = self._base[index]
+        if hasattr(label, "__len__") and not isinstance(label, (str, bytes)):
+            return image, int(label[0])
+        return image, int(label)
+
+
+def _register_torchvision(
+    specs: dict[str, DatasetSpec],
+    key: str,
+    dataset_cls: type,
+    num_classes: int,
+    mean: tuple[float, ...],
+    std: tuple[float, ...],
+    *,
+    torchvision_name: str,
+    emnist_split: str | None = None,
+) -> None:
+    build_train, build_eval = _tv_builder(dataset_cls, mean, std, emnist_split=emnist_split)
+    specs[key] = DatasetSpec(
+        key,
+        num_classes,
+        1,
+        SPATIAL,
+        mean,
+        std,
+        build_train,
+        build_eval,
+        is_cached=lambda root, name=torchvision_name: _tv_cache_ready(root, name),
+    )
+
+
+def _build_dataset_registry() -> dict[str, DatasetSpec]:
+    specs: dict[str, DatasetSpec] = {}
+    _register_torchvision(
+        specs, "mnist", datasets.MNIST, 10, *_gray_norm(0.1307, 0.3081), torchvision_name="MNIST"
+    )
+    _register_torchvision(
+        specs,
+        "fashionm",
+        datasets.FashionMNIST,
+        10,
+        *_gray_norm(0.2860, 0.3530),
+        torchvision_name="FashionMNIST",
+    )
+    _register_torchvision(
+        specs, "kmnist", datasets.KMNIST, 10, *_gray_norm(0.1904, 0.3355), torchvision_name="KMNIST"
+    )
+    _register_torchvision(
+        specs,
+        "em",
+        datasets.EMNIST,
+        47,
+        *_gray_norm(0.1751, 0.3332),
+        torchvision_name="EMNIST",
+        emnist_split="balanced",
+    )
+
+    medmnist = importlib.import_module("medmnist")
+    info = medmnist.INFO
+    for key, info_key in (
+        ("breastm", "breastmnist"),
+        ("organm", "organamnist"),
+        ("pneumoniam", "pneumoniamnist"),
+        ("retinam", "retinamnist"),
+    ):
+        meta = info[info_key]
+        dataset_cls = getattr(medmnist, meta["python_class"])
+        channels = int(meta["n_channels"])
+        num_classes = len(meta["label"])
+        mean, std = _rgb_norm() if channels == 3 else _gray_norm(0.5, 0.5)
+        build_train, build_eval = _medmnist_builder(dataset_cls, mean, std)
+        npz_name = f"{info_key}.npz"
+        specs[key] = DatasetSpec(
+            key,
+            num_classes,
+            channels,
+            SPATIAL,
+            mean,
+            std,
+            build_train,
+            build_eval,
+            is_cached=lambda root, npz=npz_name: _medmnist_cache_ready(root, npz),
+        )
+    return specs
+
+
+DATASETS = _build_dataset_registry()
+
+
+class BenchmarkData:
     """Load one registered dataset once; reuse DataLoaders per batch size."""
 
     def __init__(self, spec: DatasetSpec, root: Path, *, num_workers: int = DATALOADER_NUM_WORKERS) -> None:
         self._spec = spec
-        self._root = root / spec.name
+        self._root = root / spec.key
         self._num_workers = num_workers
-        self._datasets: tuple[datasets.MNIST, datasets.MNIST] | None = None
+        self._datasets: tuple[Dataset, Dataset] | None = None
         self._loader_cache: dict[int, tuple[DataLoader, DataLoader, DataLoader]] = {}
-
-    def _transform(self, train: bool) -> transforms.Compose:
-        steps = [transforms.ToTensor()]
-        if train:
-            steps.insert(0, transforms.RandomAffine(degrees=10, translate=(0.1, 0.1)))
-        steps.append(transforms.Normalize((self._spec.mean,), (self._spec.std,)))
-        return transforms.Compose(steps)
 
     def prepare(self) -> None:
         if self._datasets is not None:
             return
         self._root.mkdir(parents=True, exist_ok=True)
-        download = not (self._root / "MNIST" / "raw").is_dir()
-        root = str(self._root)
-        train = datasets.MNIST(root, train=True, download=download, transform=self._transform(True))
-        val = datasets.MNIST(root, train=False, download=download, transform=self._transform(False))
+        download = not self._spec.is_cached(self._root)
+        if download:
+            logger.info("Downloading %s into %s", self._spec.key, self._root)
+        try:
+            train = self._spec.build_train(self._root, download, augment=True)
+            val = self._spec.build_eval(self._root)
+        except URLError as exc:
+            raise RuntimeError(
+                f"Cannot download dataset '{self._spec.key}' (network/DNS error). "
+                f"Connect to the internet and re-run, or place cached files under {self._root}. "
+                f"Torchvision sets need {self._root}/<Name>/raw/*.ubyte; "
+                f"MedMNIST sets need {self._root}/*.npz."
+            ) from exc
         self._datasets = (train, val)
-        logger.info("Loaded %s: %s train, %s val", self._spec.name, len(train), len(val))
+        logger.info("Loaded %s: %s train, %s val", self._spec.key, len(train), len(val))
 
     def loaders(self, batch_size: int) -> tuple[DataLoader, DataLoader, DataLoader]:
         self.prepare()
@@ -142,12 +344,7 @@ class MnistData:
         train, val = self._datasets
         kwargs: dict[str, object] = {"batch_size": batch_size, "num_workers": self._num_workers}
         pin = torch.cuda.is_available()
-        clean_train = datasets.MNIST(
-            str(self._root),
-            train=True,
-            download=False,
-            transform=self._transform(False),
-        )
+        clean_train = self._spec.build_train(self._root, download=False, augment=False)
         loaders = (
             DataLoader(train, shuffle=True, pin_memory=pin, **kwargs),
             DataLoader(val, pin_memory=pin, **kwargs),
@@ -165,9 +362,9 @@ def estimate_small_mnist_params(channels: int, num_classes: int = 10) -> int:
 class SmallMnistNet(nn.Module):
     """Stem conv + one hidden conv so FX actions can attach (~138 params at channels=3)."""
 
-    def __init__(self, num_classes: int = 10, channels: int = 3) -> None:
+    def __init__(self, num_classes: int, channels: int, in_channels: int = 1) -> None:
         super().__init__()
-        self.conv1 = nn.Conv2d(1, channels, 3, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(in_channels, channels, 3, padding=1, bias=False)
         self.conv2 = nn.Conv2d(channels, channels, 3, padding=1, bias=False)
         self.linear = nn.Linear(channels, num_classes, bias=False)
 
@@ -220,8 +417,12 @@ def _install_shape_probe(spec: DatasetSpec) -> None:
             if isinstance(mod, nn.Linear):
                 return torch.randn(1, mod.in_features, device=device, dtype=dtype)
             if isinstance(mod, nn.modules.conv._ConvNd):
-                return torch.randn(1, mod.in_channels, spatial, spatial, device=device, dtype=dtype)
-        return torch.randn(1, *spec.input_shape, device=device, dtype=dtype)
+                return torch.randn(
+                    1, mod.in_channels, spatial, spatial, device=device, dtype=dtype
+                )
+        return torch.randn(
+            1, spec.in_channels, spatial, spatial, device=device, dtype=dtype
+        )
 
     LayerShapeAnalyser.default_example_input = _probe
 
@@ -239,8 +440,12 @@ def _run_once(hp: dict[str, object], *, seed: int, device: torch.device, board: 
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
 
-    data = MnistData(spec, DATA_ROOT)
-    model = SmallMnistNet(spec.num_classes, int(hp["model_channels"]))
+    data = BenchmarkData(spec, DATA_ROOT)
+    model = SmallMnistNet(
+        spec.num_classes,
+        int(hp["model_channels"]),
+        in_channels=spec.in_channels,
+    )
     gm = fx.symbolic_trace(model)
     params_before = GraphStructureQuery.get_amount_of_parameters(gm)
     logger.info(
@@ -254,8 +459,8 @@ def _run_once(hp: dict[str, object], *, seed: int, device: torch.device, board: 
     board_writer = (
         ExperimentBoard(
             run_dir / "board",
-            experiment_name=f"MNIST | {_folder_name(hp)} | seed {seed}",
-            dataset=spec.name.upper(),
+            experiment_name=f"{spec.key.upper()} | {_folder_name(hp)} | seed {seed}",
+            dataset=spec.key.upper(),
             device=str(device),
         )
         if board
@@ -320,13 +525,22 @@ def _parse_cli() -> argparse.Namespace:
     return ns
 
 
+def _iter_grid_hyperparameters() -> list[dict[str, object]]:
+    """One hyperparameter config, then every dataset; repeat for next config."""
+    grid: list[dict[str, object]] = []
+    for combo in itertools.product(*GRID_PARAM_LISTS):
+        base = dict(zip(GRID_PARAM_KEYS, combo))
+        for dataset in DATASET_ORDER:
+            grid.append({"dataset": dataset, **base})
+    return grid
+
+
 if __name__ == "__main__":
     args = _parse_cli()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
-    grid = [dict(zip(METAPARAM_KEYS, combo)) for combo in itertools.product(*METAPARAM_LISTS)]
     done = 0
-    for hp in grid:
+    for hp in _iter_grid_hyperparameters():
         for seed in GRID_SEEDS:
             _run_once(hp, seed=seed, device=device, board=args.board)
             done += 1
