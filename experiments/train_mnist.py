@@ -105,7 +105,6 @@ class DatasetSpec:
     key: str
     num_classes: int
     in_channels: int
-    spatial: int
     mean: tuple[float, ...]
     std: tuple[float, ...]
     build_train: Callable[[Path, bool, bool], Dataset]
@@ -240,7 +239,6 @@ def _register_torchvision(
         key,
         num_classes,
         1,
-        SPATIAL,
         mean,
         std,
         build_train,
@@ -294,7 +292,6 @@ def _build_dataset_registry() -> dict[str, DatasetSpec]:
             key,
             num_classes,
             channels,
-            SPATIAL,
             mean,
             std,
             build_train,
@@ -399,37 +396,8 @@ def _plot_metric(values: list[float], name: str, path: Path) -> None:
     plt.close(fig)
 
 
-def _install_shape_probe(spec: DatasetSpec) -> None:
-    from growingnn.utils.fx.graph_analysis import LayerShapeAnalyser
-
-    spatial = spec.spatial
-
-    @staticmethod
-    def _probe(gm: fx.GraphModule) -> torch.Tensor | None:
-        if not any(n.op == "placeholder" for n in gm.graph.nodes):
-            return None
-        try:
-            p0 = next(gm.parameters())
-            device, dtype = p0.device, p0.dtype
-        except StopIteration:
-            device, dtype = torch.device("cpu"), torch.float32
-        for mod in gm.modules():
-            if isinstance(mod, nn.Linear):
-                return torch.randn(1, mod.in_features, device=device, dtype=dtype)
-            if isinstance(mod, nn.modules.conv._ConvNd):
-                return torch.randn(
-                    1, mod.in_channels, spatial, spatial, device=device, dtype=dtype
-                )
-        return torch.randn(
-            1, spec.in_channels, spatial, spatial, device=device, dtype=dtype
-        )
-
-    LayerShapeAnalyser.default_example_input = _probe
-
-
 def _run_once(hp: dict[str, object], *, seed: int, device: torch.device, board: bool) -> None:
     spec = DATASETS[str(hp["dataset"])]
-    _install_shape_probe(spec)
     run_dir = _run_dir(hp, seed)
     if run_dir.exists():
         logger.info("Skip existing %s seed %s", _folder_name(hp), seed)

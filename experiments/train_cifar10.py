@@ -511,34 +511,8 @@ def _assert_cuda_ready(train_device: torch.device) -> None:
         raise
 
 
-def _install_cifar_shape_probe() -> None:
-    """Patch FX ShapeProp fallback probe to match CIFAR-10 (3x32x32), not ImageNet 224."""
-    from growingnn.utils.fx.graph_analysis import LayerShapeAnalyser
-
-    spatial = CIFAR_INPUT_SHAPE[1]
-
-    @staticmethod
-    def _cifar_default_example_input(gm: fx.GraphModule) -> torch.Tensor | None:
-        if not any(n.op == "placeholder" for n in gm.graph.nodes):
-            return None
-        try:
-            p0 = next(gm.parameters())
-            device, dtype = p0.device, p0.dtype
-        except StopIteration:
-            device, dtype = torch.device("cpu"), torch.float32
-        for mod in gm.modules():
-            if isinstance(mod, nn.Linear):
-                return torch.randn(1, mod.in_features, device=device, dtype=dtype)
-            if isinstance(mod, nn.modules.conv._ConvNd):
-                return torch.randn(1, mod.in_channels, spatial, spatial, device=device, dtype=dtype)
-        return torch.randn(1, *CIFAR_INPUT_SHAPE, device=device, dtype=dtype)
-
-    LayerShapeAnalyser.default_example_input = _cifar_default_example_input
-
-
 if __name__ == "__main__":
     args = _parse_cli()
     train_device = torch.device("cuda")
     _assert_cuda_ready(train_device)
-    _install_cifar_shape_probe()
     Cifar10Experiment(args, train_device).run()
