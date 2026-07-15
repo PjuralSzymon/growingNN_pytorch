@@ -28,12 +28,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Reports/PLAN.md",
+                "file": "Actions/Actions.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "PLAN"
+              "title": "Actions"
             }
           }
         ],
@@ -218,8 +218,10 @@
       "graph:Open graph view": false
     }
   },
-  "active": "7c9c7d5673f234b6",
+  "active": "b21a7027cf935f4b",
   "lastOpenFiles": [
+    "Core/TracedModel.md",
+    "Actions/utils/Layer Factory.md",
     "Reports/TODO.md",
     "Reports/Part 1.md",
     "Reports/PLAN.md",
@@ -248,7 +250,6 @@
     "references/Pasted image 20260529182440.png",
     "Simulation/Scoring Functions/Scoring function.md",
     "Simulation/Scoring Functions/Score by learning.md",
-    "Simulation/Scoring Functions/Score by effitiency.md",
     "Simulation/Scoring Functions",
     "references/addactionproblem.png",
     "Utils/torchFx",
