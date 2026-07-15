@@ -41,15 +41,22 @@ def read_training_metrics(path: Path) -> TrainingMetrics | None:
 
 
 def resolve_experiment_directory(path: str, *, root: Path) -> Path:
-    """Resolve an experiment directory under root; reject paths outside root."""
-    experiments_root = root.resolve()
+    """Resolve any experiment path and search below it for a valid main.json."""
     candidate = Path(path)
-    resolved = candidate.resolve() if candidate.is_absolute() else (experiments_root / candidate).resolve()
-    try:
-        resolved.relative_to(experiments_root)
-    except ValueError as exc:
-        raise ValueError("Experiment path outside allowed root") from exc
-    return resolved
+    resolved = candidate.resolve() if candidate.is_absolute() else (root.resolve() / candidate).resolve()
+    if resolved.is_file():
+        return resolved.parent if resolved.name == "main.json" and read_main(resolved) is not None else resolved
+    if not resolved.is_dir() or read_main(resolved / "main.json") is not None:
+        return resolved
+    experiment_definitions = [
+        main_path
+        for main_path in resolved.rglob("main.json")
+        if read_main(main_path) is not None
+    ]
+    if not experiment_definitions:
+        return resolved
+    newest_definition = max(experiment_definitions, key=lambda main_path: main_path.stat().st_mtime)
+    return newest_definition.parent
 
 
 def directory_status(last_update_iso: str) -> str:

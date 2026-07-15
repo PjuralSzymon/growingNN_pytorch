@@ -1,9 +1,8 @@
 """Unit tests for safe experiment path resolution."""
 
+import json
 import sys
 from pathlib import Path
-
-import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(_REPO_ROOT) not in sys.path:
@@ -28,9 +27,9 @@ def test_resolve_experiment_directory_accepts_relative_path_under_root(tmp_path)
     assert resolved == experiment.resolve()
 
 
-def test_resolve_experiment_directory_rejects_path_outside_root(tmp_path):
+def test_resolve_experiment_directory_accepts_absolute_path_outside_root(tmp_path):
     """
-    resolve_experiment_directory should reject traversal outside the experiments root.
+    resolve_experiment_directory should accept an absolute directory outside the recent-experiments root.
     """
     # Arrange
     root = tmp_path / "experiments"
@@ -38,19 +37,37 @@ def test_resolve_experiment_directory_rejects_path_outside_root(tmp_path):
     outside = tmp_path / "outside"
     outside.mkdir()
 
-    # Act / Assert
-    with pytest.raises(ValueError, match="outside allowed root"):
-        resolve_experiment_directory(str(outside), root=root)
+    # Act
+    resolved = resolve_experiment_directory(str(outside), root=root)
+
+    # Assert
+    assert resolved == outside.resolve()
 
 
-def test_resolve_experiment_directory_rejects_parent_traversal(tmp_path):
+def test_resolve_experiment_directory_searches_for_valid_main_json(tmp_path):
     """
-    resolve_experiment_directory should reject .. segments that escape the root.
+    resolve_experiment_directory should find a nested experiment definition below the supplied directory.
     """
     # Arrange
     root = tmp_path / "experiments"
     root.mkdir()
+    experiment = tmp_path / "selected" / "run_a" / "board"
+    experiment.mkdir(parents=True)
+    (experiment / "main.json").write_text(
+        json.dumps(
+            {
+                "experimentId": "run-a-id",
+                "experimentName": "run_a",
+                "experimentStartedOn": "2026-07-15T19:00:00Z",
+                "status": "running",
+                "lastUpdate": "2026-07-15T20:00:00Z",
+            }
+        ),
+        encoding="utf-8",
+    )
 
-    # Act / Assert
-    with pytest.raises(ValueError, match="outside allowed root"):
-        resolve_experiment_directory("../outside", root=root)
+    # Act
+    resolved = resolve_experiment_directory(str(tmp_path / "selected"), root=root)
+
+    # Assert
+    assert resolved == experiment.resolve()

@@ -79,7 +79,9 @@ graphs/*.pdf
 ## Load an experiment in the board
 
 1. Start the server (see above).
-2. Point the board at a directory that contains `main.json`:
+2. Point the board at any directory. The board uses `main.json` in that directory. If it is not
+   present, the board searches subdirectories and loads the most recently modified valid
+   `main.json`. Absolute paths may be outside `GROWINGNN_EXPERIMENTS_ROOT`:
 
 ```bash
 curl -X POST "http://127.0.0.1:8765/api/experiment/load?path=D:/repos/growingNN_pytorch/experiments/output/train_cifar10/board"

@@ -52,10 +52,7 @@ def recent_experiments():
 
 @router.post("/experiment/load")
 def load_experiment(path: str):
-    try:
-        experiment_path = resolve_experiment_directory(path, root=settings.experiments_root)
-    except ValueError as exc:
-        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    experiment_path = resolve_experiment_directory(path, root=settings.experiments_root)
     if not experiment_path.is_dir():
         raise HTTPException(status_code=404, detail="Directory not found")
     _cache.load(experiment_path)
