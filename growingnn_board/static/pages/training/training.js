@@ -60,7 +60,7 @@ function renderTrainingSidebar(main) {
   if (gotoSim && gotoSimulationHandler) gotoSim.onclick = gotoSimulationHandler;
 }
 
-function plotChart(canvasId, key, rows, xKey, yKey, color, yScale) {
+function plotChart(canvasId, key, rows, xKey, yKey, color, yScale, datasetOptions = {}) {
   const canvas = $(canvasId);
   if (!canvas || !rows.length) return;
   const labels = rows.map((r) => r[xKey]);
@@ -80,7 +80,7 @@ function plotChart(canvasId, key, rows, xKey, yKey, color, yScale) {
     type: "line",
     data: {
       labels,
-      datasets: [{ data: values, borderColor: color, tension: 0.25, pointRadius: 2 }],
+      datasets: [{ data: values, borderColor: color, tension: 0.25, pointRadius: 2, ...datasetOptions }],
     },
     options: {
       responsive: true,
@@ -134,6 +134,8 @@ function trainingMetricsSnapshot(training) {
     lastTrainLoss: last.trainLoss,
     lastValAcc: last.valAcc,
     lastValLoss: last.valLoss,
+    lastParamCount: last.paramCount,
+    lastLearningRate: last.lr,
   };
 }
 
@@ -171,9 +173,28 @@ function renderTrainingCharts(training) {
   const epochs = training.epochs;
   const accScale = { min: 0, max: 1 };
   plotChart("chart-train-acc", "trainAcc", epochs, "globalEpoch", "trainAcc", "#16a34a", accScale);
-  plotChart("chart-train-loss", "trainLoss", epochs, "globalEpoch", "trainLoss", "#2563eb");
   plotChart("chart-val-acc", "valAcc", epochs, "globalEpoch", "valAcc", "#7c3aed", accScale);
+  plotChart(
+    "chart-param-count",
+    "paramCount",
+    epochs,
+    "globalEpoch",
+    "paramCount",
+    "#db2777",
+    { beginAtZero: true, ticks: { precision: 0 } },
+    { stepped: true, pointRadius: 0 },
+  );
+  plotChart("chart-train-loss", "trainLoss", epochs, "globalEpoch", "trainLoss", "#2563eb");
   plotChart("chart-val-loss", "valLoss", epochs, "globalEpoch", "valLoss", "#0ea5e9");
+  plotChart(
+    "chart-learning-rate",
+    "learningRate",
+    epochs,
+    "globalEpoch",
+    "lr",
+    "#d97706",
+    { beginAtZero: true },
+  );
 }
 
 const TIMELINE_PX_PER_EPOCH = 6;
