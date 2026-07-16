@@ -57,7 +57,7 @@ TARGET_ACCURACY = [0.99]
 SCORE_WEIGHT_ACC = [1.0]
 SCORE_WEIGHT_COUNTW = [0.1]     # +8% mean val_acc vs 0.2 (70.6% vs 62.5%)
 MODEL_CHANNELS = [4]            # best mean val_acc across datasets (69.5%); ch3 wins MNIST only
-HIDDEN_LINEAR_SIZE = [8, 16, 32, 64, 128]
+HIDDEN_LINEAR_SIZE = [16]
 GRID_SEEDS = [0]
 
 METAPARAM_KEYS = (

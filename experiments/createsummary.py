@@ -421,6 +421,48 @@ class GridSummaryWriter:
             lines.append("")
         return lines, param_spread
 
+    def _parameter_sweep_result_lines(self, results: list[RunResult]) -> list[str]:
+        """Summarize the winning value for each tested hyperparameter sweep."""
+        sweep_keys = [key for key in self._varying_param_keys(results) if key != "dataset"]
+        lines = ["Parameter sweep result:"]
+        if not sweep_keys:
+            return [*lines, "  (no varying hyperparameters)"]
+
+        datasets = sorted(
+            {str(result.hyperparameters["dataset"]) for result in results if "dataset" in result.hyperparameters}
+        )
+        for key in sweep_keys:
+            value_accs: dict[object, list[float]] = defaultdict(list)
+            for result in results:
+                if key in result.hyperparameters:
+                    value_accs[result.hyperparameters[key]].append(result.best_val_acc)
+            tested_values = sorted(value_accs, key=lambda value: (isinstance(value, str), value))
+            best_value = max(tested_values, key=lambda value: statistics.mean(value_accs[value]))
+            lines.append(
+                f"  {key}: best overall={best_value} "
+                f"(mean_val={statistics.mean(value_accs[best_value]):.4f}); tested={tested_values}"
+            )
+
+            if len(datasets) > 1:
+                lines.append("    Best by dataset:")
+                for dataset in datasets:
+                    dataset_accs: dict[object, list[float]] = defaultdict(list)
+                    for result in results:
+                        if result.hyperparameters.get("dataset") == dataset and key in result.hyperparameters:
+                            dataset_accs[result.hyperparameters[key]].append(result.best_val_acc)
+                    means = {value: statistics.mean(accs) for value, accs in dataset_accs.items()}
+                    best_mean = max(means.values())
+                    best_values = sorted(
+                        (value for value, mean in means.items() if mean == best_mean),
+                        key=lambda value: (isinstance(value, str), value),
+                    )
+                    best_label = ", ".join(str(value) for value in best_values)
+                    tie_note = " (tie)" if len(best_values) > 1 else ""
+                    lines.append(
+                        f"      {dataset}: {best_label} (mean_val={best_mean:.4f}){tie_note}"
+                    )
+        return lines
+
     @staticmethod
     def _tuning_priority_lines(param_spread: list[ParamSpread]) -> list[str]:
         lines = ["Suggested tuning priority (largest val_acc spread across tested values):"]
@@ -661,6 +703,8 @@ class GridSummaryWriter:
             "Parameter sensitivity (mean val_acc and final params per value):",
             *sensitivity_lines,
             *self._tuning_priority_lines(param_spread),
+            "",
+            *self._parameter_sweep_result_lines(results),
             *self._action_analysis_section(action_analysis, results),
         ]
 
