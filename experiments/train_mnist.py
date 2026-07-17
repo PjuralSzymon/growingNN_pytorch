@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import importlib
 import itertools
 import sys
 from dataclasses import dataclass
@@ -33,16 +32,12 @@ from experiments.experiments_common import (
 from growingnn.core.config import DATALOADER_NUM_WORKERS
 from growingnn.core.logger import logger
 
-# MedMNIST: pip install medmnist
-# EM = EMNIST (balanced); OrganM = OrganAMNIST (axial CT slices).
+# EM = EMNIST (balanced).
 DATASET_ORDER = (
-    "breastm",
     "em",
     "fashionm",
     "mnist",
     "kmnist",
-    "organm",
-    "pneumoniam",
 )
 
 # Locked from 28-run grid summary (Jul 2026): accuracy-first defaults; sweep hidden_linear_size only.
@@ -94,7 +89,6 @@ GRID_PARAM_LISTS = (
 OUT_DIR = _EXPERIMENT_DIR / "output" / "train_mnist"
 DATA_ROOT = _EXPERIMENT_DIR / "data"
 RUNS_DIR = OUT_DIR / "runs"
-MEDMNIST_SIZE = 28
 
 
 @dataclass(frozen=True)
@@ -121,22 +115,6 @@ def _create_image_transform(
         steps.append(transforms.RandomAffine(degrees=10, translate=(0.1, 0.1)))
     steps.extend([transforms.ToTensor(), transforms.Normalize(mean, std)])
     return transforms.Compose(steps)
-
-
-class _ScalarLabelDataset(Dataset):
-    """MedMNIST returns shape-(1,) labels; CrossEntropyLoss needs scalar class indices."""
-
-    def __init__(self, base: Dataset) -> None:
-        self._base = base
-
-    def __len__(self) -> int:
-        return len(self._base)
-
-    def __getitem__(self, index: int) -> tuple[Any, int]:
-        image, label = self._base[index]
-        if hasattr(label, "__len__") and not isinstance(label, (str, bytes)):
-            return image, int(label[0])
-        return image, int(label)
 
 
 class TorchvisionDatasetSource:
@@ -204,66 +182,6 @@ class TorchvisionDatasetSource:
         )
 
 
-class MedMnistDatasetSource:
-    """Create dataset configurations for datasets provided by MedMNIST."""
-
-    @staticmethod
-    def is_downloaded(root: Path, dataset_name: str) -> bool:
-        return (root / f"{dataset_name}.npz").is_file()
-
-    @staticmethod
-    def builders(
-        dataset_cls: type,
-        mean: tuple[float, ...],
-        std: tuple[float, ...],
-    ) -> tuple[Callable[[Path, bool, bool], Dataset], Callable[[Path], Dataset]]:
-        def build_train(root: Path, download: bool, augment: bool) -> Dataset:
-            return _ScalarLabelDataset(
-                dataset_cls(
-                    split="train",
-                    root=str(root),
-                    download=download,
-                    size=MEDMNIST_SIZE,
-                    transform=_create_image_transform(mean, std, augment=augment),
-                )
-            )
-
-        def build_eval(root: Path) -> Dataset:
-            return _ScalarLabelDataset(
-                dataset_cls(
-                    split="test",
-                    root=str(root),
-                    download=False,
-                    size=MEDMNIST_SIZE,
-                    transform=_create_image_transform(mean, std, augment=False),
-                )
-            )
-
-        return build_train, build_eval
-
-    @classmethod
-    def create_spec(
-        cls,
-        key: str,
-        dataset_cls: type,
-        num_classes: int,
-        in_channels: int,
-        mean: tuple[float, ...],
-        std: tuple[float, ...],
-        *,
-        dataset_name: str,
-    ) -> DatasetConfiguration:
-        build_train, build_eval = cls.builders(dataset_cls, mean, std)
-        return DatasetConfiguration(
-            key,
-            num_classes,
-            in_channels,
-            build_train,
-            build_eval,
-            is_cached=lambda root: cls.is_downloaded(root, dataset_name),
-        )
-
-
 def _create_dataset_configurations() -> dict[str, DatasetConfiguration]:
     """Create the runtime loading configuration for every selected benchmark dataset."""
     configurations: dict[str, DatasetConfiguration] = {}
@@ -290,26 +208,6 @@ def _create_dataset_configurations() -> dict[str, DatasetConfiguration]:
         emnist_split="balanced",
     )
 
-    medmnist = importlib.import_module("medmnist")
-    rgb = ((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-    for key, info_key in (
-        ("breastm", "breastmnist"),
-        ("organm", "organamnist"),
-        ("pneumoniam", "pneumoniamnist"),
-    ):
-        meta = medmnist.INFO[info_key]
-        dataset_cls = getattr(medmnist, meta["python_class"])
-        channels = int(meta["n_channels"])
-        mean, std = rgb if channels == 3 else gray(0.5, 0.5)
-        configurations[key] = MedMnistDatasetSource.create_spec(
-            key,
-            dataset_cls,
-            len(meta["label"]),
-            channels,
-            mean,
-            std,
-            dataset_name=info_key,
-        )
     return configurations
 
 
@@ -343,8 +241,7 @@ class BenchmarkData:
             raise RuntimeError(
                 f"Cannot download dataset '{self._spec.key}' (network/DNS error). "
                 f"Connect to the internet and re-run, or place cached files under {self._root}. "
-                f"Torchvision sets need {self._root}/<Name>/raw/*.ubyte; "
-                f"MedMNIST sets need {self._root}/*.npz."
+                f"Torchvision sets need {self._root}/<Name>/raw/*.ubyte."
             ) from exc
         self._datasets = (train, val)
         logger.info("Loaded %s: %s train, %s val", self._spec.key, len(train), len(val))
