@@ -1,18 +1,15 @@
-"""MNIST-like growingNN benchmark — extend DATASET_ORDER and GRID lists to add more runs."""
+"""MNIST growingNN run on a minimal convolutional network."""
 
 from __future__ import annotations
 
 import itertools
 import sys
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable
-from urllib.error import URLError
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -32,26 +29,18 @@ from experiments.experiments_common import (
 from growingnn.core.config import DATALOADER_NUM_WORKERS
 from growingnn.core.logger import logger
 
-# EM = EMNIST (balanced).
-DATASET_ORDER = (
-    "em",
-    "fashionm",
-    "mnist",
-    "kmnist",
-)
-
-# Locked from 28-run grid summary (Jul 2026): accuracy-first defaults; sweep hidden_linear_size only.
-GENERATIONS = [10]              # g10 in all top MNIST/Pneumoniam runs; g20 helped only one BreastM config
-EPOCHS = [30]                   # only value tested
-BATCH_SIZE = [64]               # only value tested
-LR_ALPHA = [0.01]               # all best configs used 0.01; 0.003 not yet validated
+# MNIST grid defaults.
+GENERATIONS = [10]
+EPOCHS = [30]
+BATCH_SIZE = [64]
+LR_ALPHA = [0.01]
 SIMULATION_TIME = [500.0]
 SIMULATION_EPOCHS = [15]
 SIMULATION_SET_SIZE = [2000]
 TARGET_ACCURACY = [0.99]
 SCORE_WEIGHT_ACC = [1.0]
-SCORE_WEIGHT_COUNTW = [0.1]     # +8% mean val_acc vs 0.2 (70.6% vs 62.5%)
-MODEL_CHANNELS = [4]            # best mean val_acc across datasets (69.5%); ch3 wins MNIST only
+SCORE_WEIGHT_COUNTW = [0.1]
+MODEL_CHANNELS = [4]
 HIDDEN_LINEAR_SIZE = [16]
 GRID_SEEDS = [0]
 
@@ -70,8 +59,8 @@ METAPARAM_KEYS = (
     "model_channels",
     "hidden_linear_size",
 )
-GRID_PARAM_KEYS = METAPARAM_KEYS[1:]
-GRID_PARAM_LISTS = (
+METAPARAM_LISTS = (
+    ["mnist"],
     GENERATIONS,
     EPOCHS,
     BATCH_SIZE,
@@ -87,188 +76,106 @@ GRID_PARAM_LISTS = (
 )
 
 OUT_DIR = _EXPERIMENT_DIR / "output" / "train_mnist"
-DATA_ROOT = _EXPERIMENT_DIR / "data"
+DATA_DIR = _EXPERIMENT_DIR / "data" / "mnist"
 RUNS_DIR = OUT_DIR / "runs"
+NUM_CLASSES = 10
+MNIST_MEAN = (0.1307,)
+MNIST_STD = (0.3081,)
 
 
-@dataclass(frozen=True)
-class DatasetConfiguration:
-    """Metadata and factory functions needed to load one benchmark dataset."""
-
-    key: str
-    num_classes: int
-    in_channels: int
-    build_train: Callable[[Path, bool, bool], Dataset]
-    build_eval: Callable[[Path], Dataset]
-    is_cached: Callable[[Path], bool]
-
-
-def _create_image_transform(
-    mean: tuple[float, ...],
-    std: tuple[float, ...],
-    *,
-    augment: bool,
-) -> transforms.Compose:
-    """Create normalization steps with optional training-image augmentation."""
-    steps: list[Any] = []
-    if augment:
-        steps.append(transforms.RandomAffine(degrees=10, translate=(0.1, 0.1)))
-    steps.extend([transforms.ToTensor(), transforms.Normalize(mean, std)])
-    return transforms.Compose(steps)
-
-
-class TorchvisionDatasetSource:
-    """Create dataset configurations for datasets provided by torchvision."""
-
-    @staticmethod
-    def is_downloaded(root: Path, dataset_name: str) -> bool:
-        raw = root / dataset_name / "raw"
-        return raw.is_dir() and any(raw.iterdir())
-
-    @staticmethod
-    def builders(
-        dataset_cls: type,
-        mean: tuple[float, ...],
-        std: tuple[float, ...],
-        *,
-        emnist_split: str | None = None,
-    ) -> tuple[Callable[[Path, bool, bool], Dataset], Callable[[Path], Dataset]]:
-        def build_train(root: Path, download: bool, augment: bool) -> Dataset:
-            kwargs: dict[str, Any] = {
-                "root": str(root),
-                "train": True,
-                "download": download,
-                "transform": _create_image_transform(mean, std, augment=augment),
-            }
-            if emnist_split is not None:
-                kwargs["split"] = emnist_split
-            return dataset_cls(**kwargs)
-
-        def build_eval(root: Path) -> Dataset:
-            kwargs = {
-                "root": str(root),
-                "train": False,
-                "download": False,
-                "transform": _create_image_transform(mean, std, augment=False),
-            }
-            if emnist_split is not None:
-                kwargs["split"] = emnist_split
-            return dataset_cls(**kwargs)
-
-        return build_train, build_eval
-
-    @classmethod
-    def create_spec(
-        cls,
-        key: str,
-        dataset_cls: type,
-        num_classes: int,
-        mean: tuple[float, ...],
-        std: tuple[float, ...],
-        *,
-        dataset_name: str,
-        emnist_split: str | None = None,
-    ) -> DatasetConfiguration:
-        build_train, build_eval = cls.builders(
-            dataset_cls, mean, std, emnist_split=emnist_split
-        )
-        return DatasetConfiguration(
-            key,
-            num_classes,
-            1,
-            build_train,
-            build_eval,
-            is_cached=lambda root: cls.is_downloaded(root, dataset_name),
-        )
-
-
-def _create_dataset_configurations() -> dict[str, DatasetConfiguration]:
-    """Create the runtime loading configuration for every selected benchmark dataset."""
-    configurations: dict[str, DatasetConfiguration] = {}
-    gray = lambda m, s: ((m,), (s,))
-    configurations["mnist"] = TorchvisionDatasetSource.create_spec(
-        "mnist", datasets.MNIST, 10, *gray(0.1307, 0.3081), dataset_name="MNIST"
-    )
-    configurations["fashionm"] = TorchvisionDatasetSource.create_spec(
-        "fashionm",
-        datasets.FashionMNIST,
-        10,
-        *gray(0.2860, 0.3530),
-        dataset_name="FashionMNIST",
-    )
-    configurations["kmnist"] = TorchvisionDatasetSource.create_spec(
-        "kmnist", datasets.KMNIST, 10, *gray(0.1904, 0.3355), dataset_name="KMNIST"
-    )
-    configurations["em"] = TorchvisionDatasetSource.create_spec(
-        "em",
-        datasets.EMNIST,
-        47,
-        *gray(0.1751, 0.3332),
-        dataset_name="EMNIST",
-        emnist_split="balanced",
-    )
-
-    return configurations
-
-
-class BenchmarkData:
-    """Load one registered dataset once; reuse DataLoaders per batch size."""
+class MNISTData:
+    """MNIST loaders; datasets and DataLoaders are built once per process."""
 
     def __init__(
-        self,
-        spec: DatasetConfiguration,
-        root: Path,
-        *,
-        num_workers: int = DATALOADER_NUM_WORKERS,
+        self, data_dir: Path, *, num_workers: int = DATALOADER_NUM_WORKERS
     ) -> None:
-        self._spec = spec
-        self._root = root / spec.key
+        self._data_dir = data_dir
         self._num_workers = num_workers
-        self._datasets: tuple[Dataset, Dataset] | None = None
+        self._datasets: (
+            tuple[datasets.MNIST, datasets.MNIST, datasets.MNIST] | None
+        ) = None
         self._loader_cache: dict[int, tuple[DataLoader, DataLoader, DataLoader]] = {}
+
+    @staticmethod
+    def _eval_transform() -> transforms.Compose:
+        return transforms.Compose(
+            [
+                transforms.ToTensor(),
+                transforms.Normalize(MNIST_MEAN, MNIST_STD),
+            ]
+        )
+
+    @classmethod
+    def _train_transform(cls) -> transforms.Compose:
+        return transforms.Compose(
+            [
+                transforms.RandomAffine(degrees=10, translate=(0.1, 0.1)),
+                transforms.ToTensor(),
+                transforms.Normalize(MNIST_MEAN, MNIST_STD),
+            ]
+        )
 
     def prepare(self) -> None:
         if self._datasets is not None:
             return
-        self._root.mkdir(parents=True, exist_ok=True)
-        download = not self._spec.is_cached(self._root)
-        if download:
-            logger.info("Downloading %s into %s", self._spec.key, self._root)
-        try:
-            train = self._spec.build_train(self._root, download, augment=True)
-            val = self._spec.build_eval(self._root)
-        except URLError as exc:
-            raise RuntimeError(
-                f"Cannot download dataset '{self._spec.key}' (network/DNS error). "
-                f"Connect to the internet and re-run, or place cached files under {self._root}. "
-                f"Torchvision sets need {self._root}/<Name>/raw/*.ubyte."
-            ) from exc
-        self._datasets = (train, val)
-        logger.info("Loaded %s: %s train, %s val", self._spec.key, len(train), len(val))
+        self._data_dir.mkdir(parents=True, exist_ok=True)
+        download = not (self._data_dir / "MNIST" / "raw").is_dir()
+        root = str(self._data_dir)
+        self._datasets = (
+            datasets.MNIST(
+                root,
+                train=True,
+                download=download,
+                transform=self._train_transform(),
+            ),
+            datasets.MNIST(
+                root,
+                train=True,
+                download=download,
+                transform=self._eval_transform(),
+            ),
+            datasets.MNIST(
+                root,
+                train=False,
+                download=download,
+                transform=self._eval_transform(),
+            ),
+        )
+        train, _, val = self._datasets
+        logger.info("Loaded MNIST: %s train, %s val", len(train), len(val))
 
     def loaders(self, batch_size: int) -> tuple[DataLoader, DataLoader, DataLoader]:
         self.prepare()
         if batch_size in self._loader_cache:
             return self._loader_cache[batch_size]
-        train, val = self._datasets
-        kwargs: dict[str, object] = {"batch_size": batch_size, "num_workers": self._num_workers}
-        pin = torch.cuda.is_available()
-        clean_train = self._spec.build_train(self._root, download=False, augment=False)
+        train, train_clean, val = self._datasets
+        kwargs: dict[str, object] = {
+            "batch_size": batch_size,
+            "num_workers": self._num_workers,
+        }
+        if self._num_workers > 0:
+            kwargs["persistent_workers"] = True
+        pin_memory = torch.cuda.is_available()
         loaders = (
-            DataLoader(train, shuffle=True, pin_memory=pin, **kwargs),
-            DataLoader(val, pin_memory=pin, **kwargs),
-            DataLoader(clean_train, shuffle=False, pin_memory=pin, **kwargs),
+            DataLoader(train, shuffle=True, pin_memory=pin_memory, **kwargs),
+            DataLoader(val, pin_memory=pin_memory, **kwargs),
+            DataLoader(train_clean, shuffle=False, pin_memory=pin_memory, **kwargs),
         )
         self._loader_cache[batch_size] = loaders
         return loaders
 
 
-class SmallMnistNet(nn.Module):
+class MinimalMnistNet(nn.Module):
     """Stem conv + one hidden conv + two-layer linear head for FX growth actions."""
 
-    def __init__(self, num_classes: int, channels: int, in_channels: int = 1, hidden_linear_size: int = 16) -> None:
+    def __init__(
+        self,
+        num_classes: int = NUM_CLASSES,
+        channels: int = 4,
+        hidden_linear_size: int = 16,
+    ) -> None:
         super().__init__()
-        self.conv1 = nn.Conv2d(in_channels, channels, 3, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(1, channels, 3, padding=1, bias=False)
         self.conv2 = nn.Conv2d(channels, channels, 3, padding=1, bias=False)
         self.linear = nn.Linear(channels, hidden_linear_size, bias=True)
         self.linear2 = nn.Linear(hidden_linear_size, num_classes, bias=False)
@@ -283,43 +190,41 @@ class SmallMnistNet(nn.Module):
         return self.linear2(x)
 
 
-def _iter_grid_hyperparameters() -> list[dict[str, object]]:
-    grid: list[dict[str, object]] = []
-    for combo in itertools.product(*GRID_PARAM_LISTS):
-        base = dict(zip(GRID_PARAM_KEYS, combo))
-        for dataset in DATASET_ORDER:
-            grid.append({"dataset": dataset, **base})
-    return grid
+def _build_model(hp: dict[str, object]) -> nn.Module:
+    return MinimalMnistNet(
+        channels=int(hp["model_channels"]),
+        hidden_linear_size=int(hp["hidden_linear_size"]),
+    )
 
 
 if __name__ == "__main__":
     args = parse_board_cli("train_mnist growingNN experiment")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    dataset_configurations = _create_dataset_configurations()
+    data = MNISTData(DATA_DIR)
+    data.prepare()
     definition = ExperimentDefinition(
-        name="MNIST benchmarks",
+        name="MNIST",
         runs_dir=RUNS_DIR,
         history_filename=MNIST_HISTORY_FILENAME,
         seeds=GRID_SEEDS,
         folder_name=build_mnist_hyperparameter_folder_name,
-        model_factory=lambda hp: SmallMnistNet(
-            dataset_configurations[str(hp["dataset"])].num_classes,
-            int(hp["model_channels"]),
-            in_channels=dataset_configurations[str(hp["dataset"])].in_channels,
-            hidden_linear_size=int(hp["hidden_linear_size"]),
-        ),
-        loader_factory=lambda hp: BenchmarkData(
-            dataset_configurations[str(hp["dataset"])], DATA_ROOT
-        ).loaders(int(hp["batch_size"])),
+        model_factory=_build_model,
+        loader_factory=lambda hp: data.loaders(int(hp["batch_size"])),
         board_metadata=lambda hp, folder, seed: (
-            f"{str(hp['dataset']).upper()} | {folder} | seed {seed}",
-            str(hp["dataset"]).upper(),
+            f"MNIST minimal | {folder} | seed {seed}",
+            "MNIST",
         ),
+    )
+    grid = (
+        dict(zip(METAPARAM_KEYS, combo))
+        for combo in itertools.product(*METAPARAM_LISTS)
     )
     executed, skipped = run_experiment_grid(
         definition,
-        _iter_grid_hyperparameters(),
+        grid,
         device=device,
         board=args.board,
     )
-    print(f"Finished {executed} run(s), skipped {skipped} existing run(s) under {RUNS_DIR}")
+    print(
+        f"Finished {executed} run(s), skipped {skipped} existing run(s) under {RUNS_DIR}"
+    )

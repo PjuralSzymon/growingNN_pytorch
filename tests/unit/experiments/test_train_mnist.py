@@ -1,64 +1,85 @@
-"""Unit tests for dataset-source organization in train_mnist."""
+"""Unit tests for the minimal MNIST experiment."""
+
+import torch
+from torch.utils.data import Dataset
+from torchvision import transforms
 
 from experiments import train_mnist
 
 
-def test_create_dataset_configurations_covers_selected_datasets():
-    """
-    Runtime dataset configuration should contain every dataset selected by the grid.
-    """
+class _FakeMNIST(Dataset):
+    """Small deterministic replacement for torchvision MNIST."""
+
+    calls: list[dict[str, object]] = []
+
+    def __init__(self, root, train, download, transform):
+        self.calls.append({
+            "root": root,
+            "train": train,
+            "download": download,
+            "transform": transform,
+        })
+
+    def __len__(self) -> int:
+        return 2
+
+    def __getitem__(self, index: int) -> tuple[torch.Tensor, int]:
+        return torch.zeros(1, 28, 28), index
+
+
+def test_mnist_data_prepare_builds_augmented_clean_and_validation_sets(
+    tmp_path, monkeypatch
+):
+    """MNISTData should build augmented training, clean training, and validation sets."""
     # Arrange
-    expected_datasets = set(train_mnist.DATASET_ORDER)
+    _FakeMNIST.calls.clear()
+    monkeypatch.setattr(train_mnist.datasets, "MNIST", _FakeMNIST)
+    data = train_mnist.MNISTData(tmp_path, num_workers=0)
 
     # Act
-    configurations = train_mnist._create_dataset_configurations()
+    data.prepare()
 
     # Assert
-    assert set(configurations) == expected_datasets
+    assert [call["train"] for call in _FakeMNIST.calls] == [True, True, False]
+    assert isinstance(_FakeMNIST.calls[0]["transform"].transforms[0], transforms.RandomAffine)
 
 
-def test_torchvision_source_detects_downloaded_raw_data(tmp_path):
-    """
-    TorchvisionDatasetSource should detect a dataset with files in its raw directory.
-    """
+def test_mnist_data_loaders_are_cached(tmp_path, monkeypatch):
+    """MNISTData should reuse DataLoaders for the same batch size."""
     # Arrange
-    raw_dir = tmp_path / "MNIST" / "raw"
-    raw_dir.mkdir(parents=True)
-    (raw_dir / "data.gz").write_bytes(b"cached")
+    _FakeMNIST.calls.clear()
+    monkeypatch.setattr(train_mnist.datasets, "MNIST", _FakeMNIST)
+    data = train_mnist.MNISTData(tmp_path, num_workers=0)
 
     # Act
-    downloaded = train_mnist.TorchvisionDatasetSource.is_downloaded(tmp_path, "MNIST")
+    first = data.loaders(2)
+    second = data.loaders(2)
 
     # Assert
-    assert downloaded is True
+    assert first is second
 
 
-def test_torchvision_source_creates_training_dataset_with_split(tmp_path):
-    """
-    TorchvisionDatasetSource should create a training builder with download and split settings.
-    """
+def test_build_model_uses_grid_dimensions():
+    """_build_model should apply channel and hidden-linear dimensions from the grid."""
     # Arrange
-    calls = []
-
-    def dataset_factory(**kwargs):
-        calls.append(kwargs)
-        return kwargs
-
-    spec = train_mnist.TorchvisionDatasetSource.create_spec(
-        "em",
-        dataset_factory,
-        47,
-        (0.1,),
-        (0.2,),
-        dataset_name="EMNIST",
-        emnist_split="balanced",
-    )
+    hp = {"model_channels": 6, "hidden_linear_size": 12}
 
     # Act
-    result = spec.build_train(tmp_path, True, False)
+    model = train_mnist._build_model(hp)
 
     # Assert
-    assert result == calls[0]
-    assert calls[0]["train"] is True
-    assert calls[0]["download"] is True
-    assert calls[0]["split"] == "balanced"
+    assert model.conv1.out_channels == 6
+    assert model.linear.out_features == 12
+
+
+def test_minimal_mnist_net_outputs_class_logits():
+    """MinimalMnistNet should produce one class-logit vector per input image."""
+    # Arrange
+    model = train_mnist.MinimalMnistNet()
+    images = torch.zeros(2, 1, 28, 28)
+
+    # Act
+    output = model(images)
+
+    # Assert
+    assert output.shape == (2, train_mnist.NUM_CLASSES)

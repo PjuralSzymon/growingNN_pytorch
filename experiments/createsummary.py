@@ -145,7 +145,7 @@ MNIST_SPEC = ExperimentSummarySpec(
     int_param_keys=_MNIST_INT_PARAM_KEYS,
     string_param_keys=frozenset({"dataset"}),
     folder_name_re=_MNIST_FOLDER_NAME_RE,
-    test_acc_note="(MedMNIST/MNIST validation split is logged as val_acc during training.)",
+    test_acc_note="(MNIST test split is logged as val_acc during training.)",
 )
 DEFAULT_EXPERIMENT_SPECS = (CIFAR10_SPEC, MNIST_SPEC)
 
@@ -1079,7 +1079,7 @@ def mnist_dataset_summary_path(dataset: str) -> Path:
 
 
 def mnist_dataset_summary_spec(dataset: str, *, base_spec: ExperimentSummarySpec = MNIST_SPEC) -> ExperimentSummarySpec:
-    """Build a summary spec scoped to one MNIST/MedMNIST dataset."""
+    """Build a summary spec scoped to one MNIST dataset key."""
     return replace(
         base_spec,
         key=f"mnist_{dataset}",
