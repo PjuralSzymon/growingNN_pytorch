@@ -13,6 +13,7 @@ class _FakeMNIST(Dataset):
     calls: list[dict[str, object]] = []
 
     def __init__(self, root, train, download, transform):
+        self.train = train
         self.calls.append({
             "root": root,
             "train": train,
@@ -21,7 +22,7 @@ class _FakeMNIST(Dataset):
         })
 
     def __len__(self) -> int:
-        return 2
+        return 60_000 if self.train else 10_000
 
     def __getitem__(self, index: int) -> tuple[torch.Tensor, int]:
         return torch.zeros(1, 28, 28), index
@@ -40,8 +41,31 @@ def test_mnist_data_prepare_builds_augmented_clean_and_validation_sets(
     data.prepare()
 
     # Assert
-    assert [call["train"] for call in _FakeMNIST.calls] == [True, True, False]
+    train, val, clean_train = data._datasets
+    assert [call["train"] for call in _FakeMNIST.calls] == [True, True]
+    assert len(train) == train_mnist.TRAIN_SIZE
+    assert len(val) == train_mnist.VAL_SIZE
+    assert train.indices == clean_train.indices
+    assert set(train.indices).isdisjoint(val.indices)
     assert isinstance(_FakeMNIST.calls[0]["transform"].transforms[0], transforms.RandomAffine)
+
+
+def test_mnist_data_loads_test_only_when_requested(tmp_path, monkeypatch):
+    """MNISTData should keep the official test split out of training loaders."""
+    # Arrange
+    _FakeMNIST.calls.clear()
+    monkeypatch.setattr(train_mnist.datasets, "MNIST", _FakeMNIST)
+    data = train_mnist.MNISTData(tmp_path, num_workers=0)
+
+    # Act
+    data.loaders(64)
+    calls_before_test = list(_FakeMNIST.calls)
+    test_loader = data.test_loader(64)
+
+    # Assert
+    assert [call["train"] for call in calls_before_test] == [True, True]
+    assert [call["train"] for call in _FakeMNIST.calls] == [True, True, False]
+    assert len(test_loader.dataset) == 10_000
 
 
 def test_mnist_data_loaders_are_cached(tmp_path, monkeypatch):

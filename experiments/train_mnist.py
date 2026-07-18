@@ -9,7 +9,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset, random_split
 from torchvision import datasets, transforms
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -42,7 +42,7 @@ SCORE_WEIGHT_ACC = [1.0]
 SCORE_WEIGHT_COUNTW = [0.1]
 MODEL_CHANNELS = [4]
 HIDDEN_LINEAR_SIZE = [16]
-GRID_SEEDS = [0]
+GRID_SEEDS = [0,1]
 
 METAPARAM_KEYS = (
     "dataset",
@@ -81,6 +81,8 @@ RUNS_DIR = OUT_DIR / "runs"
 NUM_CLASSES = 10
 MNIST_MEAN = (0.1307,)
 MNIST_STD = (0.3081,)
+TRAIN_SIZE = 50_000
+VAL_SIZE = 10_000
 
 
 class MNISTData:
@@ -91,9 +93,7 @@ class MNISTData:
     ) -> None:
         self._data_dir = data_dir
         self._num_workers = num_workers
-        self._datasets: (
-            tuple[datasets.MNIST, datasets.MNIST, datasets.MNIST] | None
-        ) = None
+        self._datasets: tuple[Subset, Subset, Subset] | None = None
         self._loader_cache: dict[int, tuple[DataLoader, DataLoader, DataLoader]] = {}
 
     @staticmethod
@@ -121,34 +121,36 @@ class MNISTData:
         self._data_dir.mkdir(parents=True, exist_ok=True)
         download = not (self._data_dir / "MNIST" / "raw").is_dir()
         root = str(self._data_dir)
-        self._datasets = (
-            datasets.MNIST(
-                root,
-                train=True,
-                download=download,
-                transform=self._train_transform(),
-            ),
-            datasets.MNIST(
-                root,
-                train=True,
-                download=download,
-                transform=self._eval_transform(),
-            ),
-            datasets.MNIST(
-                root,
-                train=False,
-                download=download,
-                transform=self._eval_transform(),
-            ),
+        augmented = datasets.MNIST(
+            root,
+            train=True,
+            download=download,
+            transform=self._train_transform(),
         )
-        train, _, val = self._datasets
+        clean = datasets.MNIST(
+            root,
+            train=True,
+            download=download,
+            transform=self._eval_transform(),
+        )
+        clean_train, val = random_split(
+            clean,
+            [TRAIN_SIZE, VAL_SIZE],
+            generator=torch.Generator().manual_seed(0),
+        )
+        self._datasets = (
+            Subset(augmented, clean_train.indices),
+            val,
+            clean_train,
+        )
+        train, val, _ = self._datasets
         logger.info("Loaded MNIST: %s train, %s val", len(train), len(val))
 
     def loaders(self, batch_size: int) -> tuple[DataLoader, DataLoader, DataLoader]:
         self.prepare()
         if batch_size in self._loader_cache:
             return self._loader_cache[batch_size]
-        train, train_clean, val = self._datasets
+        train, val, train_clean = self._datasets
         kwargs: dict[str, object] = {
             "batch_size": batch_size,
             "num_workers": self._num_workers,
@@ -163,6 +165,17 @@ class MNISTData:
         )
         self._loader_cache[batch_size] = loaders
         return loaders
+
+    def test_loader(self, batch_size: int) -> DataLoader:
+        """Load the official test split only for final evaluation."""
+        self.prepare()
+        test = datasets.MNIST(
+            str(self._data_dir),
+            train=False,
+            download=False,
+            transform=self._eval_transform(),
+        )
+        return DataLoader(test, batch_size=batch_size, num_workers=self._num_workers)
 
 
 class MinimalMnistNet(nn.Module):
