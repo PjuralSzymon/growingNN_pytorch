@@ -18,7 +18,7 @@ if str(_REPO_ROOT) not in sys.path:
 from growingnn.core.config import RunningConfig
 from growingnn.simulation.score_functions.simulation_score import SimulationScore
 import growingnn.simulation.simulation_algorithms.montecarlo_alg as montecarlo_alg
-from growingnn.simulation.simulation_scheduler import SchedulerMode, SimulationScheduler
+from growingnn.simulation.simulation_schedulers import AlwaysSimulationScheduler
 from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
 from growingnn.training.trainer import train_generations
 from growingnn.utils.fx import GraphStructureQuery
@@ -108,8 +108,8 @@ if __name__ == "__main__":
         lr_scheduler=LearningRateScheduler(ScheduleMode.PROGRESSIVE, alpha=0.01, steepness=0.5),
         print_every=1,
         simulation_alg=montecarlo_alg,
-        simulation_scheduler=SimulationScheduler(
-            SchedulerMode.ALWAYS, simulation_time=120.0, simulation_epochs=10
+        simulation_scheduler=AlwaysSimulationScheduler(
+            simulation_time=120.0, simulation_epochs=10
         ),
         simulation_score=SimulationScore(weight_acc=0.0, weight_countW=1.0),
         simulation_set_size=100,

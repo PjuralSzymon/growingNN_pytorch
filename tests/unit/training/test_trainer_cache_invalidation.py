@@ -21,7 +21,10 @@ growingnn.core.config.ENABLE_LOGGING = False
 from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
 from growingnn.core.config import RunningConfig
 from growingnn.core.traced_model import TracedModel
-from growingnn.simulation.simulation_scheduler import SchedulerMode, SimulationScheduler
+from growingnn.simulation.simulation_schedulers import (
+    AlwaysSimulationScheduler,
+    NeverSimulationScheduler,
+)
 from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import StopperMode, TrainingStopper
 from growingnn.training.trainer import train_generations
@@ -44,7 +47,7 @@ def _grow_only_config(*, generations: int = 3) -> RunningConfig:
         epochs=1,
         lr_scheduler=LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
         stopper=TrainingStopper(StopperMode.EMPTY),
-        simulation_scheduler=SimulationScheduler(SchedulerMode.ALWAYS, simulation_time=0.01),
+        simulation_scheduler=AlwaysSimulationScheduler(simulation_time=0.01),
         simulation_set_size=8,
         criterion=nn.CrossEntropyLoss(),
         quiet=True,
@@ -102,7 +105,7 @@ def test_train_generations_skips_invalidate_when_simulation_disabled():
     gm = _chain_model()
     train_loader, val_loader = _linear_loaders()
     cfg = _grow_only_config(generations=2)
-    cfg.simulation_scheduler = SimulationScheduler(SchedulerMode.NEVER)
+    cfg.simulation_scheduler = NeverSimulationScheduler()
     invalidate_calls: list[int] = []
     original_invalidate = TracedModel.invalidate
 
