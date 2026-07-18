@@ -134,6 +134,7 @@ def gradient_descent(
         history["val_loss"].append(val_loss)
         history["val_acc"].append(val_acc)
         history["lr"].append(applied_lr)
+        metrics = {"accuracy": train_acc, "val_acc": val_acc, "loss": train_loss}
 
         if experiment_board is not None:
             experiment_board.on_epoch_end(
@@ -154,7 +155,6 @@ def gradient_descent(
                 f"val_acc: {val_acc:.3f} val_loss: {val_loss:.3f} "
                 f"lr: {applied_lr:.3f} param_count: {param_count}"
             )
-            metrics = {"accuracy": train_acc, "val_acc": val_acc, "loss": train_loss}
         if stopper.check(model, epoch, metrics):
             print(f"Stopping at epoch {epoch}")
             break
