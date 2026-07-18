@@ -155,7 +155,8 @@ def gradient_descent(
                 f"lr: {applied_lr:.3f} param_count: {param_count}"
             )
             metrics = {"accuracy": train_acc, "val_acc": val_acc, "loss": train_loss}
-            if stopper.check(model, epoch, metrics):
-                break
+        if stopper.check(model, epoch, metrics):
+            print(f"Stopping at epoch {epoch}")
+            break
 
     return model, history
