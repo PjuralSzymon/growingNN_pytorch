@@ -65,3 +65,24 @@ def test_loaders_reuses_cached_loaders_for_same_batch_size(tmp_path, monkeypatch
 
     # Assert
     assert train_loader_a is train_loader_b
+
+
+def test_build_model_uses_grid_architecture_values():
+    """
+    _build_model should create the CIFAR model from architecture values in the grid entry.
+    """
+    # Arrange
+    module = _load_train_cifar10_module()
+    hyperparameters = {
+        "model_channels": 8,
+        "model_hidden_dim": 16,
+        "model_num_blocks": 2,
+    }
+
+    # Act
+    model = module._build_model(hyperparameters)
+
+    # Assert
+    assert model.conv1.out_channels == 8
+    assert model.linear.in_features == 16
+    assert model.num_blocks == 2

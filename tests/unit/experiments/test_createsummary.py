@@ -115,6 +115,34 @@ def test_build_hyperparameter_folder_name_round_trips_with_parser():
     assert parsed == hyperparameters
 
 
+def test_build_mnist_folder_name_round_trips_with_parser():
+    """
+    The MNIST folder builder should produce names understood by the MNIST summary parser.
+    """
+    # Arrange
+    module = _load_createsummary_module()
+    hyperparameters = {
+        "dataset": "fashionm",
+        "generations": 10,
+        "epochs": 30,
+        "batch_size": 64,
+        "lr_alpha": 0.01,
+        "score_weight_countw": 0.1,
+        "model_channels": 4,
+        "hidden_linear_size": 32,
+    }
+
+    # Act
+    folder_name = module.build_mnist_hyperparameter_folder_name(hyperparameters)
+    parsed = module.parse_hyperparameters_from_folder_name(
+        folder_name,
+        spec=module.MNIST_SPEC,
+    )
+
+    # Assert
+    assert parsed == hyperparameters
+
+
 def test_parse_hyperparameters_from_folder_name_supports_legacy_aug_token_without_f():
     """
     parse_hyperparameters_from_folder_name should accept older folder names that used _aug.
@@ -283,9 +311,9 @@ def test_write_grid_summary_skips_runs_missing_optional_param(tmp_path):
 
     # Assert
     assert "augmentation_factor:" in text
-    assert "  0.0: mean=0.6000 (n=1)" in text
-    assert "  0.5: mean=0.7000 (n=1)" in text
-    assert "augmentation_factor: spread=0.1000" in text
+    assert "  0.0: mean_val=0.6000 mean_params=100 (n=1)" in text
+    assert "  0.5: mean_val=0.7000 mean_params=100 (n=1)" in text
+    assert "augmentation_factor: spread=0.1000 (best=0.5, worst=0.0)" in text
 
 
 def test_write_grid_summary_only_reports_varying_parameters(tmp_path):
@@ -334,7 +362,7 @@ def test_write_grid_summary_only_reports_varying_parameters(tmp_path):
     assert "augmentation_factor:" in text
     assert "batch_size:" not in text
     assert "Suggested tuning priority" in text
-    assert "augmentation_factor: spread=0.1000" in text
+    assert "augmentation_factor: spread=0.1000 (best=0.5, worst=0.0)" in text
 
 
 def test_write_grid_summary_rejects_path_outside_allowed_root(tmp_path):

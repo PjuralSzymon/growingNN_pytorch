@@ -1,4 +1,4 @@
-"""Collect CIFAR-10 grid run artifacts from disk and write a grid search summary."""
+"""Collect grid run artifacts from disk and write grid search summaries."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import re
 import statistics
 import sys
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import TypeAlias
 
@@ -20,17 +20,17 @@ _EXPERIMENT_DIR = Path(__file__).resolve().parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from growingnn.core.config import WEIGHT_COUNT_WEIGHT
 from growingnn.core.logger import logger
 
-DEFAULT_RUNS_DIR = _EXPERIMENT_DIR / "output" / "train_cifar10" / "runs"
-DEFAULT_SUMMARY_PATH = _EXPERIMENT_DIR / "output" / "train_cifar10" / "grid_search_summary.txt"
 EXPERIMENT_OUTPUT_ROOT = _EXPERIMENT_DIR / "output"
 HISTORY_FILENAME = "train_cifar10_history.pt"
+MNIST_HISTORY_FILENAME = "train_mnist_history.pt"
 RUN_LOCK_FILENAME = ".running.lock"
 
 Hyperparameters: TypeAlias = dict[str, object]
 
-# Hyperparameter names used when building or reading result folder names.
+# Hyperparameter names used when building or reading CIFAR-10 result folder names.
 CANONICAL_PARAM_KEYS = (
     "generations",
     "epochs",
@@ -47,6 +47,21 @@ CANONICAL_PARAM_KEYS = (
     "model_hidden_dim",
 )
 
+MNIST_CANONICAL_PARAM_KEYS = (
+    "dataset",
+    "generations",
+    "epochs",
+    "batch_size",
+    "lr_alpha",
+    "score_weight_countw",
+    "model_channels",
+    "hidden_linear_size",
+)
+
+MNIST_GRID_PARAM_KEYS = tuple(key for key in MNIST_CANONICAL_PARAM_KEYS if key != "dataset")
+MNIST_DATASET_SUMMARY_DIR = EXPERIMENT_OUTPUT_ROOT / "train_mnist" / "summaries"
+MNIST_DEFAULT_HIDDEN_LINEAR_SIZE = 16
+
 # These values are stored as whole numbers in folder names (the rest use decimals).
 _INT_PARAM_KEYS = frozenset(
     {
@@ -60,10 +75,12 @@ _INT_PARAM_KEYS = frozenset(
     }
 )
 
-# Each result folder is named from the hyperparameters used in that run, for example:
+_MNIST_INT_PARAM_KEYS = frozenset({"generations", "epochs", "batch_size", "model_channels", "hidden_linear_size"})
+
+# Each CIFAR-10 result folder is named from the hyperparameters used in that run, for example:
 #   g10_ep30_bs64_lr0.01_simt500.0_sime15_simsz2000_tgt0.9_wacc1.0_wcw0.2_augf0.5_ch32_hd256
 # This regex reads those short codes back into a hyperparameter dictionary.
-_HYPERPARAMETER_FOLDER_NAME_RE = re.compile(
+_CIFAR10_FOLDER_NAME_RE = re.compile(
     r"^g(?P<generations>\d+)"
     r"_ep(?P<epochs>\d+)"
     r"_bs(?P<batch_size>\d+)"
@@ -78,6 +95,62 @@ _HYPERPARAMETER_FOLDER_NAME_RE = re.compile(
     r"_ch(?P<model_channels>\d+)"
     r"_hd(?P<model_hidden_dim>\d+)$"
 )
+# MNIST folders encode dataset plus a subset of grid params, for example:
+#   dsmnist_g10_ep30_bs64_lr0.01_wcw0.2_ch4_hl16
+_MNIST_FOLDER_NAME_RE = re.compile(
+    r"^ds(?P<dataset>[a-z]+)"
+    r"_g(?P<generations>\d+)"
+    r"_ep(?P<epochs>\d+)"
+    r"_bs(?P<batch_size>\d+)"
+    r"_lr(?P<lr_alpha>[\d.]+)"
+    r"_wcw(?P<score_weight_countw>[\d.]+)"
+    r"_ch(?P<model_channels>\d+)"
+    r"(?:_hl(?P<hidden_linear_size>\d+))?$"
+)
+
+
+@dataclass(frozen=True)
+class ExperimentSummarySpec:
+    key: str
+    title: str
+    runs_dir: Path
+    summary_path: Path
+    history_filename: str
+    canonical_param_keys: tuple[str, ...]
+    int_param_keys: frozenset[str]
+    string_param_keys: frozenset[str]
+    folder_name_re: re.Pattern[str]
+    test_acc_note: str
+
+
+CIFAR10_SPEC = ExperimentSummarySpec(
+    key="cifar10",
+    title="GrowingNN CIFAR-10 grid search summary",
+    runs_dir=EXPERIMENT_OUTPUT_ROOT / "train_cifar10" / "runs",
+    summary_path=EXPERIMENT_OUTPUT_ROOT / "train_cifar10" / "grid_search_summary.txt",
+    history_filename=HISTORY_FILENAME,
+    canonical_param_keys=CANONICAL_PARAM_KEYS,
+    int_param_keys=_INT_PARAM_KEYS,
+    string_param_keys=frozenset(),
+    folder_name_re=_CIFAR10_FOLDER_NAME_RE,
+    test_acc_note="(CIFAR-10 test split is logged as val_acc during training.)",
+)
+MNIST_SPEC = ExperimentSummarySpec(
+    key="mnist",
+    title="GrowingNN MNIST grid search summary",
+    runs_dir=EXPERIMENT_OUTPUT_ROOT / "train_mnist" / "runs",
+    summary_path=EXPERIMENT_OUTPUT_ROOT / "train_mnist" / "grid_search_summary.txt",
+    history_filename=MNIST_HISTORY_FILENAME,
+    canonical_param_keys=MNIST_CANONICAL_PARAM_KEYS,
+    int_param_keys=_MNIST_INT_PARAM_KEYS,
+    string_param_keys=frozenset({"dataset"}),
+    folder_name_re=_MNIST_FOLDER_NAME_RE,
+    test_acc_note="(MNIST test split is logged as val_acc during training.)",
+)
+DEFAULT_EXPERIMENT_SPECS = (CIFAR10_SPEC, MNIST_SPEC)
+
+DEFAULT_RUNS_DIR = CIFAR10_SPEC.runs_dir
+DEFAULT_SUMMARY_PATH = CIFAR10_SPEC.summary_path
 # Inside each hyperparameter folder, repeated runs use subfolders like seed_0, seed_1, ...
 _SEED_DIR_RE = re.compile(r"^seed_(?P<seed>\d+)$")
 _ACTION_SHORT_LABEL_RE = re.compile(r"\(\s*([^:(]+)")
@@ -88,6 +161,18 @@ _ACTION_TYPE_ALIASES: dict[str, str] = {
 
 ConfigStats = tuple[float, float, str, Hyperparameters, list["RunResult"]]
 ParamSpread = tuple[str, float, object, object]
+HIGH_ACCURACY_MARGIN = 0.02
+
+
+@dataclass(frozen=True)
+class ConfigEfficiencyStats:
+    folder_name: str
+    hyperparameters: Hyperparameters
+    runs: tuple[RunResult, ...]
+    mean_acc: float
+    std_acc: float
+    mean_params: float
+    mean_composite: float
 
 
 @dataclass(frozen=True)
@@ -101,6 +186,77 @@ class RunResult:
     params_before: int
     params_after: int
     architecture_changed: bool
+
+
+def param_efficiency_term(param_count: int) -> float:
+    """Same param-size term used by SimulationScore.score_count_weights."""
+    return 1.0 / (float(param_count) * WEIGHT_COUNT_WEIGHT + 1.0)
+
+
+def composite_efficiency_score(result: RunResult) -> float:
+    """Mirror SimulationScore weighting using best val_acc and final parameter count."""
+    weight_acc = float(result.hyperparameters.get("score_weight_acc", 1.0))
+    weight_countw = float(result.hyperparameters.get("score_weight_countw", 0.0))
+    weight_sum = weight_acc + weight_countw
+    if weight_sum <= 0.0:
+        return result.best_val_acc
+    acc_term = result.best_val_acc
+    size_term = param_efficiency_term(result.params_after)
+    return (weight_acc * acc_term + weight_countw * size_term) / weight_sum
+
+
+def build_config_efficiency_stats(by_folder_name: dict[str, list[RunResult]]) -> list[ConfigEfficiencyStats]:
+    """Aggregate validation accuracy and final parameter count per config folder."""
+    stats: list[ConfigEfficiencyStats] = []
+    for folder_name, runs in by_folder_name.items():
+        accs = [run.best_val_acc for run in runs]
+        params = [run.params_after for run in runs]
+        composites = [composite_efficiency_score(run) for run in runs]
+        stats.append(
+            ConfigEfficiencyStats(
+                folder_name=folder_name,
+                hyperparameters=runs[0].hyperparameters,
+                runs=tuple(runs),
+                mean_acc=statistics.mean(accs),
+                std_acc=statistics.pstdev(accs) if len(accs) > 1 else 0.0,
+                mean_params=statistics.mean(params),
+                mean_composite=statistics.mean(composites),
+            )
+        )
+    return stats
+
+
+def _config_dominates(other: ConfigEfficiencyStats, candidate: ConfigEfficiencyStats) -> bool:
+    """Return True when other is at least as good on both axes and strictly better on one."""
+    if other.mean_acc < candidate.mean_acc or other.mean_params > candidate.mean_params:
+        return False
+    return other.mean_acc > candidate.mean_acc or other.mean_params < candidate.mean_params
+
+
+def pareto_efficient_config_stats(stats: list[ConfigEfficiencyStats]) -> list[ConfigEfficiencyStats]:
+    """Keep configs that are not dominated on val_acc (maximize) and params (minimize)."""
+    efficient = [
+        stat
+        for stat in stats
+        if not any(_config_dominates(other, stat) for other in stats if other.folder_name != stat.folder_name)
+    ]
+    efficient.sort(key=lambda item: (-item.mean_acc, item.mean_params))
+    return efficient
+
+
+def compact_high_accuracy_config_stats(
+    stats: list[ConfigEfficiencyStats],
+    *,
+    acc_margin: float = HIGH_ACCURACY_MARGIN,
+) -> list[ConfigEfficiencyStats]:
+    """Return near-best accuracy configs ranked by smallest final parameter count."""
+    if not stats:
+        return []
+    best_acc = max(stat.mean_acc for stat in stats)
+    threshold = best_acc - acc_margin
+    compact = [stat for stat in stats if stat.mean_acc >= threshold]
+    compact.sort(key=lambda item: (item.mean_params, -item.mean_acc))
+    return compact
 
 
 @dataclass(frozen=True)
@@ -123,8 +279,14 @@ class ActionAnalysis:
 class GridSummaryWriter:
     """Build and write the text report that ranks grid-search runs."""
 
-    def __init__(self, allowed_output_root: Path = EXPERIMENT_OUTPUT_ROOT) -> None:
+    def __init__(
+        self,
+        allowed_output_root: Path = EXPERIMENT_OUTPUT_ROOT,
+        *,
+        spec: ExperimentSummarySpec = CIFAR10_SPEC,
+    ) -> None:
         self._allowed_output_root = allowed_output_root
+        self._spec = spec
 
     def write(self, results: list[RunResult], path: Path) -> None:
         if not results:
@@ -174,14 +336,14 @@ class GridSummaryWriter:
             return f"{seed_counts[0]} seeds each"
         return f"seeds per config: {seed_counts[0]}-{seed_counts[-1]}"
 
-    @staticmethod
-    def _format_hyperparameters(hyperparameters: Hyperparameters) -> str:
-        extra = sorted(key for key in hyperparameters if key not in CANONICAL_PARAM_KEYS)
-        ordered = tuple(key for key in CANONICAL_PARAM_KEYS if key in hyperparameters) + tuple(extra)
+    def _format_hyperparameters(self, hyperparameters: Hyperparameters) -> str:
+        extra = sorted(key for key in hyperparameters if key not in self._spec.canonical_param_keys)
+        ordered = (
+            tuple(key for key in self._spec.canonical_param_keys if key in hyperparameters) + tuple(extra)
+        )
         return ", ".join(f"{key}={hyperparameters[key]}" for key in ordered)
 
-    @classmethod
-    def _ranked_config_lines(cls, config_stats: list[ConfigStats]) -> list[str]:
+    def _ranked_config_lines(self, config_stats: list[ConfigStats]) -> list[str]:
         lines: list[str] = []
         for rank, (mean_acc, std_acc, folder_name, hyperparameters, runs) in enumerate(
             config_stats, start=1
@@ -190,18 +352,18 @@ class GridSummaryWriter:
             acc_list = ", ".join(
                 f"{run.best_val_acc:.4f}" for run in sorted(runs, key=lambda run: run.seed)
             )
+            mean_params = statistics.mean(run.params_after for run in runs)
             lines.append(
-                f"{rank:>2}. {folder_name} | mean={mean_acc:.4f} std={std_acc:.4f} | "
-                f"seeds=[{seeds}] acc=[{acc_list}]"
+                f"{rank:>2}. {folder_name} | mean_val={mean_acc:.4f} std={std_acc:.4f} | "
+                f"mean_params={mean_params:.0f} | seeds=[{seeds}] acc=[{acc_list}]"
             )
-            lines.append(f"    {cls._format_hyperparameters(hyperparameters)}")
+            lines.append(f"    {self._format_hyperparameters(hyperparameters)}")
         return lines
 
-    @classmethod
-    def _all_hyperparameter_keys(cls, results: list[RunResult]) -> tuple[str, ...]:
+    def _all_hyperparameter_keys(self, results: list[RunResult]) -> tuple[str, ...]:
         keys: list[str] = []
         seen: set[str] = set()
-        for key in CANONICAL_PARAM_KEYS:
+        for key in self._spec.canonical_param_keys:
             if any(key in result.hyperparameters for result in results):
                 keys.append(key)
                 seen.add(key)
@@ -212,46 +374,94 @@ class GridSummaryWriter:
                     seen.add(key)
         return tuple(keys)
 
-    @classmethod
-    def _varying_param_keys(cls, results: list[RunResult]) -> tuple[str, ...]:
+    def _varying_param_keys(self, results: list[RunResult]) -> tuple[str, ...]:
         seen: dict[str, set[object]] = defaultdict(set)
         for result in results:
             for key, value in result.hyperparameters.items():
                 seen[key].add(value)
         return tuple(
             key
-            for key in cls._all_hyperparameter_keys(results)
+            for key in self._all_hyperparameter_keys(results)
             if key in seen and len(seen[key]) > 1
         )
 
-    @classmethod
     def _sensitivity_section(
-        cls, results: list[RunResult]
+        self, results: list[RunResult]
     ) -> tuple[list[str], list[ParamSpread]]:
         lines: list[str] = []
         param_spread: list[ParamSpread] = []
-        sensitivity_keys = cls._varying_param_keys(results)
+        sensitivity_keys = self._varying_param_keys(results)
         if not sensitivity_keys:
             lines.append("  (all runs share the same hyperparameter values)")
             return lines, param_spread
 
         for key in sensitivity_keys:
-            grouped: dict[object, list[float]] = defaultdict(list)
+            grouped_acc: dict[object, list[float]] = defaultdict(list)
+            grouped_params: dict[object, list[float]] = defaultdict(list)
             for result in results:
                 if key in result.hyperparameters:
-                    grouped[result.hyperparameters[key]].append(result.best_val_acc)
+                    value = result.hyperparameters[key]
+                    grouped_acc[value].append(result.best_val_acc)
+                    grouped_params[value].append(float(result.params_after))
             lines.append(f"{key}:")
             value_stats = []
-            for value, accs in sorted(grouped.items(), key=lambda item: str(item[0])):
+            for value in sorted(grouped_acc, key=lambda item: str(item)):
+                accs = grouped_acc[value]
+                params = grouped_params[value]
                 mean_acc = statistics.mean(accs)
+                mean_params = statistics.mean(params)
                 value_stats.append((value, mean_acc))
-                lines.append(f"  {value}: mean={mean_acc:.4f} (n={len(accs)})")
+                lines.append(
+                    f"  {value}: mean_val={mean_acc:.4f} mean_params={mean_params:.0f} (n={len(accs)})"
+                )
             if len(value_stats) > 1:
                 best_value, best_value_acc = max(value_stats, key=lambda item: item[1])
                 worst_value, worst_value_acc = min(value_stats, key=lambda item: item[1])
                 param_spread.append((key, best_value_acc - worst_value_acc, best_value, worst_value))
             lines.append("")
         return lines, param_spread
+
+    def _parameter_sweep_result_lines(self, results: list[RunResult]) -> list[str]:
+        """Summarize the winning value for each tested hyperparameter sweep."""
+        sweep_keys = [key for key in self._varying_param_keys(results) if key != "dataset"]
+        lines = ["Parameter sweep result:"]
+        if not sweep_keys:
+            return [*lines, "  (no varying hyperparameters)"]
+
+        datasets = sorted(
+            {str(result.hyperparameters["dataset"]) for result in results if "dataset" in result.hyperparameters}
+        )
+        for key in sweep_keys:
+            value_accs: dict[object, list[float]] = defaultdict(list)
+            for result in results:
+                if key in result.hyperparameters:
+                    value_accs[result.hyperparameters[key]].append(result.best_val_acc)
+            tested_values = sorted(value_accs, key=lambda value: (isinstance(value, str), value))
+            best_value = max(tested_values, key=lambda value: statistics.mean(value_accs[value]))
+            lines.append(
+                f"  {key}: best overall={best_value} "
+                f"(mean_val={statistics.mean(value_accs[best_value]):.4f}); tested={tested_values}"
+            )
+
+            if len(datasets) > 1:
+                lines.append("    Best by dataset:")
+                for dataset in datasets:
+                    dataset_accs: dict[object, list[float]] = defaultdict(list)
+                    for result in results:
+                        if result.hyperparameters.get("dataset") == dataset and key in result.hyperparameters:
+                            dataset_accs[result.hyperparameters[key]].append(result.best_val_acc)
+                    means = {value: statistics.mean(accs) for value, accs in dataset_accs.items()}
+                    best_mean = max(means.values())
+                    best_values = sorted(
+                        (value for value, mean in means.items() if mean == best_mean),
+                        key=lambda value: (isinstance(value, str), value),
+                    )
+                    best_label = ", ".join(str(value) for value in best_values)
+                    tie_note = " (tie)" if len(best_values) > 1 else ""
+                    lines.append(
+                        f"      {dataset}: {best_label} (mean_val={best_mean:.4f}){tie_note}"
+                    )
+        return lines
 
     @staticmethod
     def _tuning_priority_lines(param_spread: list[ParamSpread]) -> list[str]:
@@ -278,8 +488,83 @@ class GridSummaryWriter:
             lines.append("  ".join(cell.rjust(widths[index]) for index, cell in enumerate(row)))
         return lines
 
-    @classmethod
-    def _action_analysis_section(cls, analysis: ActionAnalysis, results: list[RunResult]) -> list[str]:
+    def _ranked_efficiency_lines(self, efficiency_stats: list[ConfigEfficiencyStats]) -> list[str]:
+        lines: list[str] = []
+        ranked = sorted(efficiency_stats, key=lambda item: item.mean_composite, reverse=True)
+        for rank, stat in enumerate(ranked, start=1):
+            lines.append(
+                f"{rank:>2}. {stat.folder_name} | composite={stat.mean_composite:.4f} | "
+                f"mean_val={stat.mean_acc:.4f} mean_params={stat.mean_params:.0f}"
+            )
+            lines.append(f"    {self._format_hyperparameters(stat.hyperparameters)}")
+        return lines
+
+    def _compact_config_lines(
+        self,
+        compact_stats: list[ConfigEfficiencyStats],
+        *,
+        acc_margin: float,
+        best_acc: float,
+    ) -> list[str]:
+        if not compact_stats:
+            return ["  (no configs within accuracy margin)"]
+        threshold = best_acc - acc_margin
+        lines = [
+            f"  Threshold: mean_val >= {threshold:.4f} (best {best_acc:.4f} - {acc_margin:.4f})",
+        ]
+        for rank, stat in enumerate(compact_stats, start=1):
+            lines.append(
+                f"{rank:>2}. {stat.folder_name} | mean_val={stat.mean_acc:.4f} | "
+                f"mean_params={stat.mean_params:.0f} | composite={stat.mean_composite:.4f}"
+            )
+            lines.append(f"    {self._format_hyperparameters(stat.hyperparameters)}")
+        return lines
+
+    def _pareto_config_lines(self, pareto_stats: list[ConfigEfficiencyStats]) -> list[str]:
+        if not pareto_stats:
+            return ["  (no configs)"]
+        lines: list[str] = []
+        for rank, stat in enumerate(pareto_stats, start=1):
+            lines.append(
+                f"{rank:>2}. {stat.folder_name} | mean_val={stat.mean_acc:.4f} | "
+                f"mean_params={stat.mean_params:.0f} | composite={stat.mean_composite:.4f}"
+            )
+            lines.append(f"    {self._format_hyperparameters(stat.hyperparameters)}")
+        return lines
+
+    def _efficiency_goal_section(self, efficiency_stats: list[ConfigEfficiencyStats]) -> list[str]:
+        if not efficiency_stats:
+            return []
+        best_acc_stat = max(efficiency_stats, key=lambda item: item.mean_acc)
+        best_composite_stat = max(efficiency_stats, key=lambda item: item.mean_composite)
+        smallest_high_acc = compact_high_accuracy_config_stats(efficiency_stats)[0]
+        return [
+            "",
+            "Experiment goal: maximize validation accuracy while minimizing final parameter count.",
+            (
+                "Composite score mirrors SimulationScore: "
+                "(w_acc*val_acc + w_countW/(params*WEIGHT_COUNT_WEIGHT+1)) / (w_acc+w_countW) "
+                "using each run's grid weights."
+            ),
+            "",
+            "Key picks:",
+            (
+                f"  Highest val_acc: {best_acc_stat.folder_name} "
+                f"(mean_val={best_acc_stat.mean_acc:.4f}, mean_params={best_acc_stat.mean_params:.0f})"
+            ),
+            (
+                f"  Best composite: {best_composite_stat.folder_name} "
+                f"(composite={best_composite_stat.mean_composite:.4f}, "
+                f"mean_val={best_composite_stat.mean_acc:.4f}, "
+                f"mean_params={best_composite_stat.mean_params:.0f})"
+            ),
+            (
+                f"  Smallest near-best model: {smallest_high_acc.folder_name} "
+                f"(mean_val={smallest_high_acc.mean_acc:.4f}, mean_params={smallest_high_acc.mean_params:.0f})"
+            ),
+        ]
+
+    def _action_analysis_section(self, analysis: ActionAnalysis, results: list[RunResult]) -> list[str]:
         if not analysis.executions and analysis.runs_without_board == len(results):
             return [
                 "",
@@ -287,7 +572,12 @@ class GridSummaryWriter:
                 "  (no board artifacts found under completed runs)",
             ]
 
-        run_metrics = {result.run_dir.resolve(): load_run_accuracy_metrics(result.run_dir) for result in results}
+        run_metrics = {
+            result.run_dir.resolve(): load_run_accuracy_metrics(
+                result.run_dir, history_filename=self._spec.history_filename
+            )
+            for result in results
+        }
         actions_per_run: dict[Path, set[str]] = defaultdict(set)
         usage_count: dict[str, int] = defaultdict(int)
         train_deltas: dict[str, list[float]] = defaultdict(list)
@@ -352,47 +642,70 @@ class GridSummaryWriter:
             f"  {board_note}",
             "",
             "1. Action usage count:",
-            *cls._format_table(("action_type", "count"), usage_rows),
+            *self._format_table(("action_type", "count"), usage_rows),
             "",
             "2. Mean best train accuracy by action type (runs that used the action):",
-            *cls._format_table(("action_type", "mean_train_acc", "runs"), train_rows),
+            *self._format_table(("action_type", "mean_train_acc", "runs"), train_rows),
             "",
             "3. Mean best test accuracy by action type (runs that used the action):",
-            "  (CIFAR-10 test split is logged as val_acc during training.)",
-            *cls._format_table(("action_type", "mean_test_acc", "runs"), test_rows),
+            f"  {self._spec.test_acc_note}",
+            *self._format_table(("action_type", "mean_test_acc", "runs"), test_rows),
             "",
             "4. Mean train accuracy change after action execution:",
             "  (delta = first train_acc in next generation minus final train_acc before the action.)",
-            *cls._format_table(("action_type", "mean_delta", "executions"), delta_rows),
+            *self._format_table(("action_type", "mean_delta", "executions"), delta_rows),
         ]
 
-    @classmethod
     def _build_summary_lines(
-        cls,
+        self,
         results: list[RunResult],
         by_folder_name: dict[str, list[RunResult]],
         config_stats: list[ConfigStats],
         action_analysis: ActionAnalysis,
     ) -> list[str]:
-        best_mean, best_std, best_folder_name, best_hyperparameters, _best_runs = config_stats[0]
-        sensitivity_lines, param_spread = cls._sensitivity_section(results)
+        best_mean, best_std, best_folder_name, best_hyperparameters, best_runs = config_stats[0]
+        efficiency_stats = build_config_efficiency_stats(by_folder_name)
+        pareto_stats = pareto_efficient_config_stats(efficiency_stats)
+        compact_stats = compact_high_accuracy_config_stats(efficiency_stats)
+        best_efficiency = max(efficiency_stats, key=lambda item: item.mean_composite)
+        sensitivity_lines, param_spread = self._sensitivity_section(results)
         return [
-            "GrowingNN CIFAR-10 grid search summary",
+            self._spec.title,
             "=" * 72,
-            f"Total runs: {len(results)} ({len(by_folder_name)} configs, {cls._seed_count_note(by_folder_name)})",
+            f"Total runs: {len(results)} ({len(by_folder_name)} configs, {self._seed_count_note(by_folder_name)})",
+            *self._efficiency_goal_section(efficiency_stats),
             "",
             "Configs ranked by mean best validation accuracy:",
-            *cls._ranked_config_lines(config_stats),
+            *self._ranked_config_lines(config_stats),
             "",
             "Best configuration (by mean best val_acc):",
             f"  folder: {best_folder_name}",
             f"  mean best val_acc: {best_mean:.4f} (std={best_std:.4f})",
-            f"  {cls._format_hyperparameters(best_hyperparameters)}",
+            f"  mean final params: {statistics.mean(run.params_after for run in best_runs):.0f}",
+            f"  {self._format_hyperparameters(best_hyperparameters)}",
             "",
-            "Parameter sensitivity (mean best val_acc per value):",
+            "Configs ranked by composite efficiency (accuracy + small model):",
+            *self._ranked_efficiency_lines(efficiency_stats),
+            "",
+            "Best configuration (by composite efficiency):",
+            f"  folder: {best_efficiency.folder_name}",
+            f"  composite: {best_efficiency.mean_composite:.4f}",
+            f"  mean best val_acc: {best_efficiency.mean_acc:.4f}",
+            f"  mean final params: {best_efficiency.mean_params:.0f}",
+            f"  {self._format_hyperparameters(best_efficiency.hyperparameters)}",
+            "",
+            f"Best high-accuracy compact configs (val_acc within {HIGH_ACCURACY_MARGIN:.2f} of best, smallest params first):",
+            *self._compact_config_lines(compact_stats, acc_margin=HIGH_ACCURACY_MARGIN, best_acc=best_mean),
+            "",
+            "Pareto-efficient configs (no other config is both more accurate and smaller):",
+            *self._pareto_config_lines(pareto_stats),
+            "",
+            "Parameter sensitivity (mean val_acc and final params per value):",
             *sensitivity_lines,
-            *cls._tuning_priority_lines(param_spread),
-            *cls._action_analysis_section(action_analysis, results),
+            *self._tuning_priority_lines(param_spread),
+            "",
+            *self._parameter_sweep_result_lines(results),
+            *self._action_analysis_section(action_analysis, results),
         ]
 
 
@@ -412,18 +725,42 @@ def build_hyperparameter_folder_name(hyperparameters: Hyperparameters) -> str:
     )
 
 
-def parse_hyperparameters_from_folder_name(folder_name: str) -> Hyperparameters | None:
+def build_mnist_hyperparameter_folder_name(hyperparameters: Hyperparameters) -> str:
+    """Build the train_mnist runs/ subfolder name that encodes one grid-search configuration."""
+    return (
+        f"ds{hyperparameters['dataset']}_g{hyperparameters['generations']}_ep{hyperparameters['epochs']}"
+        f"_bs{hyperparameters['batch_size']}_lr{hyperparameters['lr_alpha']}"
+        f"_wcw{hyperparameters['score_weight_countw']}_ch{hyperparameters['model_channels']}"
+        f"_hl{hyperparameters['hidden_linear_size']}"
+    )
+
+
+def parse_hyperparameters_from_folder_name(
+    folder_name: str,
+    *,
+    spec: ExperimentSummarySpec = CIFAR10_SPEC,
+) -> Hyperparameters | None:
     """Read hyperparameters from a result folder name; return None if the name does not match."""
-    match = _HYPERPARAMETER_FOLDER_NAME_RE.match(folder_name)
+    match = spec.folder_name_re.match(folder_name)
     if match is None:
         return None
 
     hyperparameters: Hyperparameters = {}
-    for key in CANONICAL_PARAM_KEYS:
-        raw = match.group(key)
+    for key in spec.canonical_param_keys:
+        raw = match.groupdict().get(key)
         if raw is None or raw == "":
             continue
-        hyperparameters[key] = int(raw) if key in _INT_PARAM_KEYS else float(raw)
+        if key in spec.string_param_keys:
+            hyperparameters[key] = raw
+        elif key in spec.int_param_keys:
+            hyperparameters[key] = int(raw)
+        else:
+            hyperparameters[key] = float(raw)
+    if (
+        "hidden_linear_size" in spec.canonical_param_keys
+        and "hidden_linear_size" not in hyperparameters
+    ):
+        hyperparameters["hidden_linear_size"] = MNIST_DEFAULT_HIDDEN_LINEAR_SIZE
     return hyperparameters
 
 
@@ -563,8 +900,8 @@ def load_board_action_executions(run_dir: Path) -> list[ActionExecution]:
     return executions
 
 
-def load_run_accuracy_metrics(run_dir: Path) -> tuple[float, float] | None:
-    history_path = run_dir / HISTORY_FILENAME
+def load_run_accuracy_metrics(run_dir: Path, *, history_filename: str = HISTORY_FILENAME) -> tuple[float, float] | None:
+    history_path = run_dir / history_filename
     if not history_path.is_file():
         return None
     step_history = load_step_history(history_path)
@@ -598,8 +935,9 @@ def load_run_result_from_dir(
     hyperparameters: Hyperparameters,
     hyperparameter_folder_name: str,
     seed: int,
+    history_filename: str = HISTORY_FILENAME,
 ) -> RunResult | None:
-    history_path = run_dir / HISTORY_FILENAME
+    history_path = run_dir / history_filename
     if not history_path.is_file():
         return None
 
@@ -682,6 +1020,7 @@ def load_completed_run(
     hyperparameters: Hyperparameters,
     hyperparameter_folder_name: str,
     seed: int,
+    history_filename: str = HISTORY_FILENAME,
 ) -> RunResult | None:
     """Load a finished run from disk; log and return None when the folder exists without history."""
     if not run_dir.is_dir():
@@ -691,6 +1030,7 @@ def load_completed_run(
         hyperparameters=hyperparameters,
         hyperparameter_folder_name=hyperparameter_folder_name,
         seed=seed,
+        history_filename=history_filename,
     )
     if result is None:
         logger.info(
@@ -701,13 +1041,17 @@ def load_completed_run(
     return result
 
 
-def collect_run_results(runs_dir: Path) -> list[RunResult]:
+def collect_run_results(
+    runs_dir: Path,
+    *,
+    spec: ExperimentSummarySpec = CIFAR10_SPEC,
+) -> list[RunResult]:
     if not runs_dir.is_dir():
         raise FileNotFoundError(f"Runs directory not found: {runs_dir}")
 
     results: list[RunResult] = []
     for config_dir in sorted(path for path in runs_dir.iterdir() if path.is_dir()):
-        hyperparameters = parse_hyperparameters_from_folder_name(config_dir.name)
+        hyperparameters = parse_hyperparameters_from_folder_name(config_dir.name, spec=spec)
         if hyperparameters is None:
             logger.warning("Skipping folder with unparseable name %s", config_dir)
             continue
@@ -721,6 +1065,7 @@ def collect_run_results(runs_dir: Path) -> list[RunResult]:
                 hyperparameters=hyperparameters,
                 hyperparameter_folder_name=config_dir.name,
                 seed=seed,
+                history_filename=spec.history_filename,
             )
             if result is None:
                 continue
@@ -728,46 +1073,127 @@ def collect_run_results(runs_dir: Path) -> list[RunResult]:
     return results
 
 
+def mnist_dataset_summary_path(dataset: str) -> Path:
+    """Path to the per-dataset MNIST grid summary file."""
+    return MNIST_DATASET_SUMMARY_DIR / dataset / "grid_search_summary.txt"
+
+
+def mnist_dataset_summary_spec(dataset: str, *, base_spec: ExperimentSummarySpec = MNIST_SPEC) -> ExperimentSummarySpec:
+    """Build a summary spec scoped to one MNIST dataset key."""
+    return replace(
+        base_spec,
+        key=f"mnist_{dataset}",
+        title=f"GrowingNN MNIST grid search summary — {dataset}",
+        summary_path=mnist_dataset_summary_path(dataset),
+        canonical_param_keys=MNIST_GRID_PARAM_KEYS,
+        string_param_keys=frozenset(),
+    )
+
+
+def group_results_by_dataset(results: list[RunResult]) -> dict[str, list[RunResult]]:
+    """Group completed MNIST runs by dataset key parsed from folder names."""
+    grouped: dict[str, list[RunResult]] = defaultdict(list)
+    for result in results:
+        dataset = result.hyperparameters.get("dataset")
+        if not isinstance(dataset, str) or not dataset:
+            logger.warning("Skipping run with missing dataset in %s", result.run_dir)
+            continue
+        grouped[dataset].append(result)
+    return dict(grouped)
+
+
 def write_grid_summary(
     results: list[RunResult],
     path: Path,
     *,
     allowed_output_root: Path = EXPERIMENT_OUTPUT_ROOT,
+    spec: ExperimentSummarySpec = CIFAR10_SPEC,
 ) -> None:
-    GridSummaryWriter(allowed_output_root).write(results, path)
+    GridSummaryWriter(allowed_output_root, spec=spec).write(results, path)
+
+
+def write_mnist_summaries(spec: ExperimentSummarySpec = MNIST_SPEC) -> list[tuple[Path, int]]:
+    """Write the global MNIST summary plus one summary file per dataset."""
+    if not spec.runs_dir.is_dir():
+        logger.warning("Skipping %s summary: runs directory not found: %s", spec.key, spec.runs_dir)
+        return []
+
+    results = collect_run_results(spec.runs_dir, spec=spec)
+    if not results:
+        logger.warning("Skipping %s summary: no completed runs in %s", spec.key, spec.runs_dir)
+        return []
+
+    written: list[tuple[Path, int]] = []
+    write_grid_summary(results, spec.summary_path, spec=spec, allowed_output_root=EXPERIMENT_OUTPUT_ROOT)
+    written.append((spec.summary_path, len(results)))
+
+    for dataset, dataset_results in sorted(group_results_by_dataset(results).items()):
+        dataset_spec = mnist_dataset_summary_spec(dataset, base_spec=spec)
+        write_grid_summary(
+            dataset_results,
+            dataset_spec.summary_path,
+            spec=dataset_spec,
+            allowed_output_root=EXPERIMENT_OUTPUT_ROOT,
+        )
+        written.append((dataset_spec.summary_path, len(dataset_results)))
+    return written
+
+
+def write_experiment_summaries(spec: ExperimentSummarySpec) -> list[tuple[Path, int]]:
+    """Collect completed runs and write summary file(s); return written (path, run_count) pairs."""
+    if spec.key == "mnist":
+        return write_mnist_summaries(spec)
+
+    if not spec.runs_dir.is_dir():
+        logger.warning("Skipping %s summary: runs directory not found: %s", spec.key, spec.runs_dir)
+        return []
+
+    results = collect_run_results(spec.runs_dir, spec=spec)
+    if not results:
+        logger.warning("Skipping %s summary: no completed runs in %s", spec.key, spec.runs_dir)
+        return []
+
+    write_grid_summary(results, spec.summary_path, spec=spec, allowed_output_root=EXPERIMENT_OUTPUT_ROOT)
+    return [(spec.summary_path, len(results))]
+
+
+def write_experiment_summary(spec: ExperimentSummarySpec) -> int:
+    """Collect completed runs for one experiment and write its summary; return total run count."""
+    return sum(count for _, count in write_experiment_summaries(spec))
+
+
+def experiment_spec_for_key(key: str) -> ExperimentSummarySpec:
+    for spec in DEFAULT_EXPERIMENT_SPECS:
+        if spec.key == key:
+            return spec
+    raise ValueError(f"Unknown experiment key: {key}")
 
 
 def _parse_cli(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Summarize completed CIFAR-10 grid runs from experiments/output/train_cifar10/runs"
+        description="Summarize completed grid runs under experiments/output/train_cifar10 and train_mnist"
     )
     parser.add_argument(
-        "runs_dir",
-        nargs="?",
-        type=Path,
-        default=DEFAULT_RUNS_DIR,
-        help=(
-            "Directory containing hyperparameter_folder_name/seed_N run folders "
-            f"(default: {DEFAULT_RUNS_DIR})"
-        ),
-    )
-    parser.add_argument(
-        "-o",
-        "--output",
-        type=Path,
-        default=DEFAULT_SUMMARY_PATH,
-        help=f"Summary output path (default: {DEFAULT_SUMMARY_PATH})",
+        "--experiment",
+        choices=("all", "cifar10", "mnist"),
+        default="all",
+        help="Which experiment summaries to write (default: all)",
     )
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> None:
     args = _parse_cli(argv)
-    runs_dir = _resolve_path_under_root(args.runs_dir, EXPERIMENT_OUTPUT_ROOT)
-    output_path = _resolve_path_under_root(args.output, EXPERIMENT_OUTPUT_ROOT)
-    results = collect_run_results(runs_dir)
-    write_grid_summary(results, output_path)
-    print(f"Summary written to {output_path} ({len(results)} runs)")
+    specs = DEFAULT_EXPERIMENT_SPECS if args.experiment == "all" else (experiment_spec_for_key(args.experiment),)
+
+    written = 0
+    for spec in specs:
+        for path, count in write_experiment_summaries(spec):
+            print(f"Summary written to {path} ({count} runs)")
+            written += 1
+
+    if not written:
+        print("No summaries written (missing runs directories or no completed runs).")
 
 
 if __name__ == "__main__":
