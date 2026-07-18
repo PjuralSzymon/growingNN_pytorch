@@ -18,7 +18,7 @@ from growingnn.core.config import RunningConfig
 from growingnn.core.logger import logger
 import growingnn.simulation.simulation_algorithms.montecarlo_alg as montecarlo_alg
 from growingnn.simulation.score_functions.simulation_score import SimulationScore
-from growingnn.simulation.simulation_scheduler import SchedulerMode, SimulationScheduler
+from growingnn.simulation.simulation_schedulers import AlwaysSimulationScheduler
 from growingnn.simulation.simulation_set import sample_loaders
 from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import AccuracyStopper
@@ -99,8 +99,7 @@ def _running_config(
             ScheduleMode.PROGRESSIVE_PARABOLIC, alpha=float(hp["lr_alpha"])
         ),
         simulation_alg=montecarlo_alg,
-        simulation_scheduler=SimulationScheduler(
-            SchedulerMode.ALWAYS,
+        simulation_scheduler=AlwaysSimulationScheduler(
             simulation_time=float(hp["simulation_time"]),
             simulation_epochs=int(hp["simulation_epochs"]),
         ),

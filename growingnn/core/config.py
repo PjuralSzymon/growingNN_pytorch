@@ -10,7 +10,10 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 FLOAT_TYPE = np.float32
-from growingnn.simulation.simulation_scheduler import SchedulerMode, SimulationScheduler
+from growingnn.simulation.simulation_schedulers import (
+    NeverSimulationScheduler,
+    SimulationScheduler,
+)
 from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import StopperMode, TrainingStopper
 
@@ -83,7 +86,7 @@ class RunningConfig:
         stopper: TrainingStopper = TrainingStopper(StopperMode.EMPTY),
         #TODO: simualtion algs should also have parent type
         simulation_alg: Any | None = None,
-        simulation_scheduler: SimulationScheduler = SimulationScheduler(SchedulerMode.NEVER),
+        simulation_scheduler: SimulationScheduler = NeverSimulationScheduler(),
         simulation_score: Any | None = None,
         simulation_set_size: int = 32,
         criterion: nn.Module | None = None,
