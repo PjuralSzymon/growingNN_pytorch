@@ -45,7 +45,7 @@ function clearSearchTreeFrame(message = "") {
   }
 }
 
-function renderSearchTree(gen, sim) {
+function renderSearchTree(gen, sim, previewWeights = null) {
   const frame = $("search-tree-frame");
   const box = $("search-tree-viewport");
   if (!frame || !box) return;
@@ -58,10 +58,16 @@ function renderSearchTree(gen, sim) {
     }
     return;
   }
-  if (Board.lastSearchTreeGen === gen) return;
-  Board.lastSearchTreeGen = gen;
+  const previewKey = previewWeights
+    ? `${gen}:${previewWeights.accuracy}:${previewWeights.paramCount}`
+    : String(gen);
+  if (Board.lastSearchTreeGen === previewKey) return;
+  Board.lastSearchTreeGen = previewKey;
   frame.classList.remove("hidden");
-  frame.src = `/api/simulation/${gen}/search-tree`;
+  const query = previewWeights
+    ? `?accuracy_weight=${encodeURIComponent(previewWeights.accuracy)}&param_count_weight=${encodeURIComponent(previewWeights.paramCount)}`
+    : "";
+  frame.src = `/api/simulation/${gen}/search-tree${query}`;
 }
 
 function simulationSidebarSnapshot(main, sim) {
@@ -134,13 +140,19 @@ function renderSimulationEmptyState(
   Board.selectedCandidateIndex = null;
   Board.lastSearchTreeGen = null;
   Board.lastSimulationPdfPath = "";
+  Board.simulationWeightPreview = null;
+  $("recalculation-popup")?.classList.add("hidden");
   clearSearchTreeFrame(message);
 }
 
-function renderSimulationSidebar(main, sim) {
+function renderSimulationSidebar(main, sim, gen, onRecalculate) {
   const tp = main?.trainingParameters || {};
   const settings = sim?.settings || {};
   const results = sim?.results || {};
+  const savedWeights = sim?.scoreWeights || tp.scoreWeights || {};
+  const preview = Board.simulationWeightPreview?.gen === gen ? Board.simulationWeightPreview : null;
+  const accuracyWeight = preview?.weights?.accuracy ?? savedWeights.weight_acc ?? 1;
+  const paramCountWeight = preview?.weights?.paramCount ?? savedWeights.weight_countW ?? 0;
   $("simulation-sidebar").innerHTML = `
     <button type="button" class="nav-link-btn" id="goto-training">← Go to the overview board</button>
     <h2>Simulation</h2>
@@ -167,8 +179,19 @@ function renderSimulationSidebar(main, sim) {
         ["Action chosen", results.chosenAction ?? sim?.actionChosen ?? "—"],
         ["Score of action chosen", results.chosenActionScore ?? sim?.scoreChosen ?? "—"],
       ])}</dl>
+    </div>
+    <div class="sidebar-section settings-preview">
+      <h3>Check other settings</h3>
+      <p class="helper-text">Change only the multipliers. Saved accuracy and parameter results stay unchanged.</p>
+      <label for="preview-accuracy-weight">Accuracy weight</label>
+      <input id="preview-accuracy-weight" type="number" min="0" step="0.01" value="${accuracyWeight}">
+      <label for="preview-param-weight">Parameter count weight</label>
+      <input id="preview-param-weight" type="number" min="0" step="0.01" value="${paramCountWeight}">
+      <button type="button" class="preview-recalculate-btn" id="preview-recalculate">Recalculate</button>
+      <p class="preview-error hidden" id="preview-error"></p>
     </div>`;
   $("goto-training").onclick = () => navigateTo("training");
+  $("preview-recalculate").onclick = onRecalculate;
 }
 
 function normalizeCandidates(sim) {
@@ -191,6 +214,38 @@ function normalizeCandidates(sim) {
   }));
 }
 
+function candidatesWithPreview(candidates, preview) {
+  if (!preview) return candidates;
+  const rows = new Map(preview.result.candidates.map((row) => [row.index, row]));
+  return candidates.map((candidate) => {
+    const row = rows.get(candidate.index);
+    if (!row) return candidate;
+    return {
+      ...candidate,
+      score: row.score,
+      compositeScore: row.score,
+      scoreMetric: "recalculated composite",
+      scoreBreakdown: row.scoreBreakdown,
+      isProjectedChoice: row.action === preview.result.projectedAction,
+    };
+  });
+}
+
+function showRecalculationPopup(result) {
+  const popup = $("recalculation-popup");
+  if (!popup) return;
+  $("recalculation-action").textContent = result.projectedName || "Unavailable";
+  $("recalculation-same-action").textContent = result.sameAction ? "Yes" : "No";
+  const unavailable = $("recalculation-unavailable");
+  if (result.unavailableActions.length) {
+    unavailable.textContent = `${result.unavailableActions.length} action(s) could not be recalculated because saved score terms are missing.`;
+    unavailable.classList.remove("hidden");
+  } else {
+    unavailable.classList.add("hidden");
+  }
+  popup.classList.remove("hidden");
+}
+
 function renderCandidateActions(candidates, onSelect) {
   const box = $("candidates");
   box.innerHTML = "";
@@ -202,7 +257,10 @@ function renderCandidateActions(candidates, onSelect) {
     const card = document.createElement("button");
     card.type = "button";
     const selected = Board.selectedCandidateIndex === idx;
-    card.className = "candidate-card" + (c.isChosen ? " chosen" : "") + (selected ? " selected" : "");
+    card.className = "candidate-card"
+      + (c.isChosen ? " chosen" : "")
+      + (c.isProjectedChoice ? " projected" : "")
+      + (selected ? " selected" : "");
     card.innerHTML = `
       <div class="candidate-header">
         <div class="candidate-icon">${c.isChosen ? "✓" : "⬡"}</div>
@@ -269,6 +327,7 @@ export async function loadSimulation(gen, { updatePicker = true, fromPoll = fals
   if (prevGen !== gen) {
     Board.lastSearchTreeGen = null;
     Board.lastSimulationPdfPath = "";
+    Board.simulationWeightPreview = null;
     delete Board.snapshots[`simulation:content:${prevGen}`];
     delete Board.snapshots[`simulation:sidebar:${prevGen}`];
   }
@@ -286,7 +345,10 @@ export async function loadSimulation(gen, { updatePicker = true, fromPoll = fals
     clearSearchTreeFrame(msg);
     return;
   }
-  const candidates = normalizeCandidates(sim);
+  const activePreview = Board.simulationWeightPreview?.gen === gen
+    ? Board.simulationWeightPreview
+    : null;
+  let candidates = candidatesWithPreview(normalizeCandidates(sim), activePreview);
   const defaultPdf = sim.files?.simulationGraphPdf || `graphs/gen_${gen}_simulation_simplified.pdf`;
   const fallbackPdfs = [
     `graphs/gen_${gen}_simulation_full.pdf`,
@@ -301,6 +363,41 @@ export async function loadSimulation(gen, { updatePicker = true, fromPoll = fals
     Board.lastSimulationPdfPath = c.graphPdf;
     renderPdfViewer("simulation", c.graphPdf, [defaultPdf, ...fallbackPdfs]);
   };
+  const recalculate = async () => {
+    const button = $("preview-recalculate");
+    const error = $("preview-error");
+    const accuracyWeight = Number($("preview-accuracy-weight").value);
+    const paramCountWeight = Number($("preview-param-weight").value);
+    if (
+      !Number.isFinite(accuracyWeight)
+      || !Number.isFinite(paramCountWeight)
+      || accuracyWeight < 0
+      || paramCountWeight < 0
+      || accuracyWeight + paramCountWeight <= 0
+    ) {
+      error.textContent = "Use non-negative weights with at least one value greater than zero.";
+      error.classList.remove("hidden");
+      return;
+    }
+    button.disabled = true;
+    error.classList.add("hidden");
+    try {
+      const query = `accuracy_weight=${encodeURIComponent(accuracyWeight)}&param_count_weight=${encodeURIComponent(paramCountWeight)}`;
+      const result = await api(`/api/simulation/${gen}/recalculate?${query}`);
+      const preview = { gen, weights: result.weights, result };
+      Board.simulationWeightPreview = preview;
+      candidates = candidatesWithPreview(normalizeCandidates(sim), preview);
+      renderCandidateActions(candidates, showCandidatePdf);
+      Board.lastSearchTreeGen = null;
+      renderSearchTree(gen, sim, result.weights);
+      showRecalculationPopup(result);
+    } catch (err) {
+      error.textContent = err.message || "Could not recalculate the saved scores.";
+      error.classList.remove("hidden");
+    } finally {
+      button.disabled = false;
+    }
+  };
 
   const contentKey = `simulation:content:${gen}`;
   const sidebarKey = `simulation:sidebar:${gen}`;
@@ -308,9 +405,9 @@ export async function loadSimulation(gen, { updatePicker = true, fromPoll = fals
   const contentChanged = snapshotChanged(contentKey, contentSnap);
   const sidebarChanged = snapshotChanged(sidebarKey, simulationSidebarSnapshot(main, sim));
 
-  if (sidebarChanged) renderSimulationSidebar(main, sim);
+  if (sidebarChanged) renderSimulationSidebar(main, sim, gen, recalculate);
   if (contentChanged) renderCandidateActions(candidates, showCandidatePdf);
-  renderSearchTree(gen, sim);
+  renderSearchTree(gen, sim, activePreview?.weights);
 
   const chosen = candidates.find((c) => c.isChosen);
   const defaultTitle = chosen
@@ -331,4 +428,5 @@ export function initSimulation() {
     await refreshSimulationBoard();
   });
   bindPdfToolbar("sim-pdf-toolbar", "simulation");
+  $("recalculation-popup-close").onclick = () => $("recalculation-popup").classList.add("hidden");
 }

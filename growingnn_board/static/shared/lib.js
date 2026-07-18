@@ -15,6 +15,7 @@ export const Board = {
   snapshots: {},
   lastSearchTreeGen: null,
   lastSimulationPdfPath: "",
+  simulationWeightPreview: null,
 };
 
 export function $(id) {
@@ -111,6 +112,7 @@ export function snapshotChanged(key, nextValue) {
 
 export function resetSnapshots() {
   Board.snapshots = {};
+  Board.simulationWeightPreview = null;
 }
 
 export function startPoll() {

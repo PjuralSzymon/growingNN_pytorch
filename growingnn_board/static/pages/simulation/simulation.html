@@ -39,3 +39,13 @@
   <strong>Pick generation number:</strong>
   <div id="generation-buttons" class="generation-scroll-row"></div>
 </footer>
+<div class="recalculation-popup hidden" id="recalculation-popup" role="dialog" aria-modal="true" aria-labelledby="recalculation-popup-title">
+  <div class="recalculation-popup-card">
+    <h2 id="recalculation-popup-title">Actions were recalculated</h2>
+    <p>With your settings, the action that would have been chosen is:</p>
+    <p class="recalculation-action" id="recalculation-action"></p>
+    <p>After your settings change, would the same action be chosen? <strong id="recalculation-same-action"></strong></p>
+    <p class="helper-text hidden" id="recalculation-unavailable"></p>
+    <button type="button" class="preview-recalculate-btn" id="recalculation-popup-close">Close</button>
+  </div>
+</div>

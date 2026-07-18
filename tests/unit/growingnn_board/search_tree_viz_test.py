@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
+import pytest
+
 from growingnn_board.search_tree_viz import (
+    _node_color,
     _render_search_tree_html_fallback,
     render_search_tree_html,
     resolve_search_tree,
@@ -94,6 +97,42 @@ def test_resolve_search_tree_falls_back_to_candidates():
     assert len(tree["children"]) == 1
 
 
+@pytest.mark.parametrize(
+    ("final_score", "expected_color"),
+    [
+        (0.0, "hsl(0, 70%, 88%)"),
+        (0.5, "hsl(60, 70%, 88%)"),
+        (1.0, "hsl(120, 70%, 88%)"),
+    ],
+)
+def test_node_color_maps_final_score_to_red_yellow_green(final_score, expected_color):
+    """
+    _node_color should map the 0–1 final score range from red through yellow to green.
+    """
+    # Arrange
+    node = {"id": "0-0", "depth": 1, "finalScore": final_score}
+
+    # Act
+    color = _node_color(node)
+
+    # Assert
+    assert color == expected_color
+
+
+def test_node_color_keeps_nodes_without_final_score_neutral():
+    """
+    _node_color should keep a non-root node neutral when its final score is unavailable.
+    """
+    # Arrange
+    node = {"id": "0-0", "depth": 1, "finalScore": None}
+
+    # Act
+    color = _node_color(node)
+
+    # Assert
+    assert color == "#ffffff"
+
+
 def test_render_search_tree_html_fallback_without_pyvis():
     """
     render_search_tree_html should use plain HTML when pyvis is unavailable.
@@ -129,13 +168,13 @@ def test_render_search_tree_html_fallback_direct():
     assert 'data-depth="1"' in html
     assert 'data-depth="2"' in html
     assert "Delete Neurons Action" in html
+    assert 'style="background:hsl(78, 70%, 88%)"' in html
 
 
 def test_render_search_tree_html_returns_vis_network_when_pyvis_available():
     """
     render_search_tree_html should return vis.js HTML when pyvis is installed.
     """
-    pytest = __import__("pytest")
     pytest.importorskip("pyvis")
     # Arrange
     tree = _sample_tree()

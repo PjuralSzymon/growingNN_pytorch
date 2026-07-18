@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import html
 import json
+import math
 import re
 import textwrap
 from typing import Any
@@ -99,9 +100,14 @@ def _node_tooltip(node: dict[str, Any]) -> str:
 def _node_color(node: dict[str, Any]) -> str:
     if node.get("id") == "0" or (node.get("depth") == 0 and not node.get("action")):
         return "#e2e8f0"
-    if node.get("chosen"):
-        return "#dbeafe"
-    return "#ffffff"
+    try:
+        score = float(node.get("finalScore"))
+    except (TypeError, ValueError):
+        return "#ffffff"
+    if not math.isfinite(score):
+        return "#ffffff"
+    hue = round(max(0.0, min(1.0, score)) * 120)
+    return f"hsl({hue}, 70%, 88%)"
 
 
 def _collect_details(node: dict[str, Any], out: dict[str, dict[str, Any]]) -> None:
@@ -330,11 +336,12 @@ def _render_depth_node_html(node: dict[str, Any]) -> str:
     is_root = node_id == "0" and not node.get("action")
     name = html.escape(str(node.get("name") or "—"))
     score = html.escape(_fmt(node.get("finalScore")))
+    color = _node_color(node)
     chosen = " chosen" if node.get("chosen") else ""
     if is_root:
         return f'<div class="tree-node root" data-id="{node_id}"><div class="title">Start</div></div>'
     return (
-        f'<div class="tree-node{chosen}" data-id="{node_id}">'
+        f'<div class="tree-node{chosen}" data-id="{node_id}" style="background:{color}">'
         f'<div class="title">{name}</div><div class="score">{score}</div></div>'
     )
 
@@ -353,11 +360,12 @@ def _render_tree_node_html(node: dict[str, Any]) -> str:
     is_root = node_id == "0" and not node.get("action")
     name = html.escape(str(node.get("name") or "—"))
     score = html.escape(_fmt(node.get("finalScore")))
+    color = _node_color(node)
     chosen = " chosen" if node.get("chosen") else ""
     body = (
         f'<div class="tree-node root" data-id="{node_id}"><div class="title">Start</div></div>'
         if is_root
-        else f'<div class="tree-node{chosen}" data-id="{node_id}"><div class="title">{name}</div><div class="score">{score}</div></div>'
+        else f'<div class="tree-node{chosen}" data-id="{node_id}" style="background:{color}"><div class="title">{name}</div><div class="score">{score}</div></div>'
     )
     children = node.get("children") or []
     if not children:

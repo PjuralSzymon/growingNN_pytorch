@@ -2,10 +2,6 @@
   <aside class="sidebar-card" id="training-sidebar"></aside>
   <div class="board-main">
     <div class="content-card pdf-card">
-      <div class="toggle-row">
-        <input type="checkbox" id="simplified-toggle" checked />
-        <label for="simplified-toggle">Simplified graph look</label>
-      </div>
       <h2 id="training-pdf-title">Architecture Graph (PDF)</h2>
       <p class="pdf-meta" id="training-pdf-path"></p>
       <div class="pdf-toolbar" id="training-pdf-toolbar">
@@ -26,20 +22,28 @@
 
     <div class="metrics-charts">
       <div class="metric-card">
-        <h3>Global train accuracy</h3>
+        <h3>Train accuracy</h3>
         <div class="chart-wrap"><canvas id="chart-train-acc"></canvas></div>
+      </div>
+      <div class="metric-card">
+        <h3>Val accuracy</h3>
+        <div class="chart-wrap"><canvas id="chart-val-acc"></canvas></div>
+      </div>
+      <div class="metric-card">
+        <h3>Parameter count</h3>
+        <div class="chart-wrap"><canvas id="chart-param-count"></canvas></div>
       </div>
       <div class="metric-card">
         <h3>Global train loss</h3>
         <div class="chart-wrap"><canvas id="chart-train-loss"></canvas></div>
       </div>
       <div class="metric-card">
-        <h3>Global val accuracy</h3>
-        <div class="chart-wrap"><canvas id="chart-val-acc"></canvas></div>
-      </div>
-      <div class="metric-card">
         <h3>Global val loss</h3>
         <div class="chart-wrap"><canvas id="chart-val-loss"></canvas></div>
+      </div>
+      <div class="metric-card">
+        <h3>Learning rate</h3>
+        <div class="chart-wrap"><canvas id="chart-learning-rate"></canvas></div>
       </div>
     </div>
 

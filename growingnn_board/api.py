@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from growingnn_board.cache import ExperimentCache
 from growingnn_board.config import settings
 from growingnn_board.file_reader import directory_status, resolve_experiment_directory
+from growingnn_board.score_recalculation import apply_recalculated_scores, recalculate_simulation
 from growingnn_board.search_tree_viz import render_search_tree_html, resolve_search_tree
 
 router = APIRouter(prefix="/api")
@@ -52,10 +53,7 @@ def recent_experiments():
 
 @router.post("/experiment/load")
 def load_experiment(path: str):
-    try:
-        experiment_path = resolve_experiment_directory(path, root=settings.experiments_root)
-    except ValueError as exc:
-        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    experiment_path = resolve_experiment_directory(path, root=settings.experiments_root)
     if not experiment_path.is_dir():
         raise HTTPException(status_code=404, detail="Directory not found")
     _cache.load(experiment_path)
@@ -104,8 +102,27 @@ def get_simulation(generation_number: int):
     return data
 
 
+@router.get("/simulation/{generation_number}/recalculate")
+def recalculate_simulation_scores(
+    generation_number: int,
+    accuracy_weight: float = Query(..., ge=0),
+    param_count_weight: float = Query(..., ge=0),
+):
+    data = _cache.simulations.get(generation_number)
+    if data is None:
+        raise HTTPException(status_code=404, detail="Simulation not found")
+    try:
+        return recalculate_simulation(data, accuracy_weight, param_count_weight)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
 @router.get("/simulation/{generation_number}/search-tree", response_class=HTMLResponse)
-def get_simulation_search_tree(generation_number: int):
+def get_simulation_search_tree(
+    generation_number: int,
+    accuracy_weight: float | None = Query(None, ge=0),
+    param_count_weight: float | None = Query(None, ge=0),
+):
     if _cache.path is None:
         raise HTTPException(status_code=404, detail="No experiment loaded")
     data = _cache.simulations.get(generation_number)
@@ -114,6 +131,14 @@ def get_simulation_search_tree(generation_number: int):
     tree = resolve_search_tree(data)
     if tree is None:
         raise HTTPException(status_code=404, detail="Search tree data not available")
+    if (accuracy_weight is None) != (param_count_weight is None):
+        raise HTTPException(status_code=422, detail="Both preview weights are required")
+    if accuracy_weight is not None and param_count_weight is not None:
+        try:
+            recalculation = recalculate_simulation(data, accuracy_weight, param_count_weight)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+        tree = apply_recalculated_scores(tree, recalculation)
     try:
         html = render_search_tree_html(
             tree,
