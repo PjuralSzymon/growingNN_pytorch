@@ -1,33 +1,42 @@
-# GrowingNN documentation website
+# GrowingNN Angular documentation
 
-This folder builds the Obsidian vault and experiment reports into a static website. PyVis generates the interactive knowledge graph during the build. Hostinger only serves the static files created in `dist`, so it needs no Python runtime.
+This website is an Angular 22 standalone application. Angular prerenders every route into static HTML, so Hostinger does not need Node.js or Python.
 
-## View it locally
+Python runs only before the Angular build. It converts the Obsidian vault to typed Angular content and generates the self-contained PyVis knowledge graph.
+
+## View locally
 
 Double-click `view_local.bat`.
 
-The script builds the website, opens `http://localhost:8000`, and starts a local server. Stop it with `Ctrl+C`.
+The script installs portable Node.js, Angular dependencies, and PyVis when they are missing. It then opens `http://localhost:4200`.
 
-You can also run:
+Manual commands:
 
 ```text
 python -m pip install -r documentation/website/requirements.txt
-python documentation/website/build.py
-python -m http.server 8000 --directory documentation/website/dist
+cd documentation/website/app
+npm ci
+npm start
 ```
 
-## Edit the website
+`npm start` runs `scripts/generate_content.py` before Angular starts.
 
-- Edit the main algorithm introduction in `content/guides/algorithm-overview.md`.
-- Edit normal technical pages in `documentation/obsydian/growingNN`.
-- Add experiment reports in `content/experiments`.
-- Change the visual style in `assets/site.css`.
+## Project structure
 
-Obsidian links such as `[[MCTS]]` become normal website links during the build. Every Markdown page in the vault is included automatically.
+- `app/src/app/` contains Angular components and services.
+- `app/src/styles.css` loads the shared visual design.
+- `scripts/generate_content.py` converts Markdown and builds PyVis.
+- `content/guides/` contains the algorithm introduction.
+- `content/experiments/` contains sequential experiment reports.
+- `../obsydian/growingNN/` contains all technical documentation.
+- `app/src/app/generated/content.ts` is generated. Do not edit it.
+- `app/public/assets/knowledge-graph.html` is generated. Do not edit it.
 
-The documentation directory groups pages by their first Obsidian folder. The knowledge graph is generated from wiki links. It supports zooming, dragging, inspecting, and opening linked pages.
+## Add an experiment
 
-To add an experiment, copy the latest experiment file. Use the next three-digit number in its filename and title. Keep these short sections:
+Copy the latest file under `content/experiments`. Give it the next three-digit number, for example `experiment-004-score-ablation.md`.
+
+Use these sections:
 
 1. Goal
 2. Setup
@@ -35,28 +44,33 @@ To add an experiment, copy the latest experiment file. Use the next three-digit 
 4. Finding
 5. Next step
 
-The filename controls the order. For example, `experiment-004-score-ablation.md` follows Experiment 003.
+The next Angular build adds the page, route, navigation, search result, and prerendered HTML automatically.
+
+## Production build
+
+```text
+cd documentation/website/app
+npm run build
+```
+
+Static output is written to:
+
+```text
+documentation/website/app/dist/growingnn-docs/browser/
+```
+
+The build currently creates 53 routes: the homepage, documentation directory, graph, 45 vault pages, one algorithm guide, and four experiments.
 
 ## Deploy to Hostinger
 
-The repository includes `.github/workflows/deploy-documentation.yml`. It builds and uploads the website after a documentation change is merged or pushed to `main`.
+`.github/workflows/deploy-documentation.yml` builds Angular and uploads the static browser output after documentation changes reach `main`.
 
-One-time setup:
+Add these GitHub Actions repository secrets:
 
-1. In Hostinger hPanel, open `Websites`, choose the domain, then open `Files` and `FTP Accounts`.
-2. Copy the FTP host and username. Set or copy the FTP password.
-3. In GitHub, open the repository. Go to `Settings`, `Secrets and variables`, `Actions`.
-4. Add these three repository secrets:
-   - `HOSTINGER_FTP_SERVER`
-   - `HOSTINGER_FTP_USERNAME`
-   - `HOSTINGER_FTP_PASSWORD`
-5. Under the `Variables` tab, add `HOSTINGER_DIRECTORY` only when the domain uses a different folder. Its usual value is `./public_html/`.
-6. Open the GitHub `Actions` tab and run `Deploy documentation` once with `Run workflow`.
+- `HOSTINGER_FTP_SERVER`
+- `HOSTINGER_FTP_USERNAME`
+- `HOSTINGER_FTP_PASSWORD`
 
-After this setup, each relevant merge to `main` deploys the current site. No cron job is required.
+Set the optional repository variable `HOSTINGER_DIRECTORY` when the site does not use `./public_html/`.
 
-## Domain folder
-
-The website expects to be served from the root of a domain or subdomain. A clean option is to create a documentation subdomain such as `docs.example.com` in Hostinger and deploy to that subdomain's `public_html` folder.
-
-Do not point the workflow at a folder that contains another live website. Use the correct domain or subdomain folder in `HOSTINGER_DIRECTORY`.
+Use a dedicated domain or subdomain folder. Do not deploy over another live website.

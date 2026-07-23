@@ -98,9 +98,9 @@ button, input { font: inherit; }
 .nav-subgroup > span { color: var(--muted); font: 9px "DM Mono"; letter-spacing: .08em; padding: 3px 10px 5px; text-transform: uppercase; }
 
 .home { margin-left: 260px; overflow: hidden; }
-.hero { display: grid; grid-template-columns: 1fr minmax(400px, .9fr); min-height: 650px; padding: 82px max(5vw, 60px) 70px; position: relative; }
+.hero { min-height: 650px; padding: 82px max(3vw, 36px) 70px; position: relative; }
 .hero::before { background-image: radial-gradient(var(--border) 1px, transparent 1px); background-size: 24px 24px; content: ""; inset: 0; mask-image: linear-gradient(to right, transparent, #000); opacity: .65; pointer-events: none; position: absolute; }
-.hero-copy { align-self: center; max-width: 670px; position: relative; z-index: 1; }
+.hero-copy { max-width: 670px; position: relative; width: 58%; z-index: 2; }
 .eyebrow { align-items: center; color: var(--accent); display: flex; font: 11px "DM Mono"; gap: 9px; letter-spacing: .08em; margin-bottom: 23px; text-transform: uppercase; }
 .eyebrow i { background: var(--accent); border-radius: 50%; box-shadow: 0 0 0 5px var(--accent-soft); height: 6px; width: 6px; }
 .hero h1 { font-size: clamp(46px, 5.2vw, 74px); letter-spacing: -.065em; line-height: 1.02; margin: 0 0 25px; }
@@ -115,8 +115,8 @@ button, input { font: inherit; }
 .hero-stats span { color: var(--muted); font: 10px "DM Mono"; text-transform: uppercase; }
 .hero-stats b { color: var(--text); font-weight: 500; margin-right: 4px; }
 
-.hero-visual { align-self: center; height: 470px; margin-left: 3vw; position: relative; width: 100%; z-index: 1; }
-.hero-graph-stage { background: transparent; border: 0; height: 100%; min-height: 0; overflow: visible; }
+.hero-visual { height: 610px; left: 0; position: absolute; right: 0; top: 20px; width: auto; z-index: 1; }
+.graph-stage.hero-graph-stage { background: transparent; border: 0; border-radius: 0; height: 100%; min-height: 0; overflow: visible; }
 .knowledge-graph-frame { border: 0; display: block; height: 100%; width: 100%; }
 .hero-graph-link { background: color-mix(in srgb, var(--panel) 84%, transparent); border: 1px solid var(--border); border-radius: 7px; color: var(--accent); font: 8px "DM Mono"; padding: 6px 9px; position: absolute; right: 10px; top: 10px; text-transform: uppercase; z-index: 2; }
 
@@ -236,8 +236,8 @@ pre code { background: none; color: inherit; padding: 0; }
 .search-result span { color: var(--muted); display: block; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 @media (max-width: 1100px) {
-  .hero { grid-template-columns: 1fr; }
-  .hero-visual { margin: 55px 0 0; max-width: 620px; transform: none; }
+  .hero-copy { width: 100%; }
+  .hero-visual { height: 470px; left: auto; margin: 55px 0 0; max-width: 620px; position: relative; right: auto; top: auto; width: 100%; }
   .doc-layout { grid-template-columns: minmax(0, 1fr); }
   .toc { display: none; }
 }
