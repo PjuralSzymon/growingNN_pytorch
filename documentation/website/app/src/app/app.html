@@ -1,0 +1,73 @@
+<header class="topbar">
+  <a class="brand" routerLink="/" aria-label="GrowingNN home" (click)="closeSidebar()">
+    <span class="brand-mark">G</span><span>Growing<span>NN</span></span>
+  </a>
+  <nav class="topnav" aria-label="Primary navigation">
+    <a routerLink="/guides/algorithm-overview/">Algorithm</a>
+    <a routerLink="/docs/">Docs</a>
+    <a routerLink="/graph/">Graph</a>
+    <a routerLink="/experiments/experiment-000-previous-numpy-work/">Experiments</a>
+  </nav>
+  <div class="top-actions">
+    <button class="search-trigger" type="button" aria-label="Search documentation" (click)="searchDialog.open()">
+      <span>⌕</span><span>Search</span><kbd>Ctrl K</kbd>
+    </button>
+    <button class="theme-toggle" type="button" aria-label="Toggle color theme" (click)="theme.toggle()">◐</button>
+    <button class="menu-toggle" type="button" aria-label="Open navigation" (click)="sidebarOpen.set(!sidebarOpen())">☰</button>
+  </div>
+</header>
+
+<div class="page-frame">
+  <aside class="sidebar" [class.open]="sidebarOpen()">
+    <div class="sidebar-scroll">
+      <div class="nav-group">
+        <button type="button" [attr.aria-expanded]="!collapsed()['Algorithm']" (click)="toggleGroup('Algorithm')">
+          <span>Algorithm</span><span class="chevron">⌄</span>
+        </button>
+        @if (!collapsed()['Algorithm']) {
+          <div>
+            @for (page of algorithmPages; track page.slug) {
+              <a [routerLink]="'/' + page.slug + '/'" routerLinkActive="active" (click)="closeSidebar()">{{ page.title }}</a>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="nav-group">
+        <button type="button" [attr.aria-expanded]="!collapsed()['Documentation']" (click)="toggleGroup('Documentation')">
+          <span>Documentation</span><span class="chevron">⌄</span>
+        </button>
+        @if (!collapsed()['Documentation']) {
+          <div>
+            <a class="nav-special" routerLink="/docs/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" (click)="closeSidebar()">All sections</a>
+            <a class="nav-special" routerLink="/graph/" routerLinkActive="active" (click)="closeSidebar()">Knowledge graph</a>
+            @for (group of documentationGroups(); track group.category) {
+              <div class="nav-subgroup">
+                <span>{{ group.category }}</span>
+                @for (page of group.pages; track page.slug) {
+                  <a [routerLink]="'/' + page.slug + '/'" routerLinkActive="active" (click)="closeSidebar()">{{ page.title }}</a>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="nav-group">
+        <button type="button" [attr.aria-expanded]="!collapsed()['Experiments']" (click)="toggleGroup('Experiments')">
+          <span>Experiments</span><span class="chevron">⌄</span>
+        </button>
+        @if (!collapsed()['Experiments']) {
+          <div>
+            @for (page of experimentPages; track page.slug) {
+              <a [routerLink]="'/' + page.slug + '/'" routerLinkActive="active" (click)="closeSidebar()">{{ page.title }}</a>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </aside>
+  <router-outlet />
+</div>
+
+<app-search-dialog #searchDialog />
