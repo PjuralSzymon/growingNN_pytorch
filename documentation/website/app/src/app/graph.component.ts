@@ -30,6 +30,6 @@ export class GraphComponent {
   protected readonly stats = GRAPH_STATS;
   protected readonly categories = [
     ...new Set(CONTENT_PAGES.filter((page) => page.section === 'Documentation').map((page) => page.category)),
-  ].sort();
+  ].sort((left, right) => left.localeCompare(right));
   protected readonly colors = ['#7968ee', '#4f8cff', '#35b996', '#e99546', '#db6487', '#9b72cf', '#51a9ba', '#a4a942'];
 }

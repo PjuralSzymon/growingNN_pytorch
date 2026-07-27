@@ -69,19 +69,7 @@ export class DocumentPageComponent implements AfterViewChecked {
   ngAfterViewChecked(): void {
     if (!this.browser) return;
     const blocks = this.host.nativeElement.querySelectorAll('pre:not([data-copy-ready])') as NodeListOf<HTMLPreElement>;
-    blocks.forEach((block: HTMLPreElement) => {
-      block.dataset['copyReady'] = 'true';
-      const button = this.renderer.createElement('button') as HTMLButtonElement;
-      button.className = 'copy-code';
-      button.textContent = 'Copy';
-      this.renderer.listen(button, 'click', () => {
-        void navigator.clipboard.writeText(block.querySelector('code')?.textContent ?? '').then(() => {
-          button.textContent = 'Copied';
-          window.setTimeout(() => (button.textContent = 'Copy'), 1200);
-        });
-      });
-      this.renderer.appendChild(block, button);
-    });
+    blocks.forEach((block) => this.initializeCopyButton(block));
   }
 
   protected editUrl(page: ContentPage): string {
@@ -100,5 +88,26 @@ export class DocumentPageComponent implements AfterViewChecked {
 
   private find(slug: string | null | undefined): ContentPage | undefined {
     return slug ? CONTENT_PAGES.find((page) => page.slug === slug) : undefined;
+  }
+
+  private initializeCopyButton(block: HTMLPreElement): void {
+    block.dataset['copyReady'] = 'true';
+    const button = this.renderer.createElement('button') as HTMLButtonElement;
+    button.className = 'copy-code';
+    button.textContent = 'Copy';
+    this.renderer.listen(button, 'click', () => this.copyCode(block, button));
+    this.renderer.appendChild(block, button);
+  }
+
+  private copyCode(block: HTMLPreElement, button: HTMLButtonElement): void {
+    const code = block.querySelector('code')?.textContent ?? '';
+    void navigator.clipboard.writeText(code).then(() => this.showCopiedState(button));
+  }
+
+  private showCopiedState(button: HTMLButtonElement): void {
+    button.textContent = 'Copied';
+    window.setTimeout(() => {
+      button.textContent = 'Copy';
+    }, 1200);
   }
 }

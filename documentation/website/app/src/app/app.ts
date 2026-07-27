@@ -1,4 +1,4 @@
-import { Component, HostListener, ViewChild, computed, signal } from '@angular/core';
+import { Component, HostListener, computed, signal, viewChild } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CONTENT_PAGES } from './generated/content';
 import { SearchDialogComponent } from './search-dialog.component';
@@ -8,10 +8,9 @@ import { ThemeService } from './theme.service';
   selector: 'app-root',
   imports: [RouterOutlet, RouterLink, RouterLinkActive, SearchDialogComponent],
   templateUrl: './app.html',
-  styleUrl: './app.css',
 })
 export class App {
-  @ViewChild(SearchDialogComponent) private searchDialog?: SearchDialogComponent;
+  private readonly searchDialog = viewChild(SearchDialogComponent);
 
   protected readonly sidebarOpen = signal(false);
   protected readonly collapsed = signal<Record<string, boolean>>({});
@@ -31,7 +30,7 @@ export class App {
   protected handleShortcut(event: KeyboardEvent): void {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
       event.preventDefault();
-      this.searchDialog?.open();
+      this.searchDialog()?.open();
     }
   }
 

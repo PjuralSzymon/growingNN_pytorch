@@ -28,16 +28,28 @@ class Page:
     description: str = ""
 
 
+def strip_frontmatter(text: str) -> str:
+    """Remove a complete YAML frontmatter block from the start of text."""
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].strip() != "---":
+        return text
+    for index, line in enumerate(lines[1:], start=1):
+        if line.strip() == "---":
+            return "".join(lines[index + 1 :])
+    return text
+
+
 def clean_title(path: Path, text: str) -> str:
     """Return the first level-one heading or the source filename."""
-    frontmatter_free = re.sub(r"\A---\s*\n.*?\n---\s*\n", "", text, flags=re.S)
-    heading = re.search(r"^#\s+(.+)$", frontmatter_free, re.M)
-    return heading.group(1).strip() if heading else path.stem
+    for line in strip_frontmatter(text).splitlines():
+        if line[:1] == "#" and line[1:2].isspace():
+            return line[2:].strip()
+    return path.stem
 
 
 def description(text: str) -> str:
     """Create a short plain-text page summary."""
-    plain = re.sub(r"\A---\s*\n.*?\n---\s*\n", "", text, flags=re.S)
+    plain = strip_frontmatter(text)
     plain = re.sub(r"!?\[\[([^\]|]+)(?:\|[^\]]+)?\]\]", r"\1", plain)
     plain = re.sub(r"[#>*_`~\[\]()-]", " ", plain)
     return re.sub(r"\s+", " ", plain).strip()[:180]
@@ -137,103 +149,149 @@ def inline_markup(value: str, pages: list[Page]) -> str:
     return value
 
 
-def markdown_to_html(markdown: str, pages: list[Page]) -> tuple[str, list[dict[str, str | int]]]:
-    """Render supported Markdown blocks and collect heading metadata."""
-    markdown = re.sub(r"\A---\s*\n.*?\n---\s*\n", "", markdown, flags=re.S)
-    markdown = re.sub(
-        r"!\[\[([^\]|]+)(?:\|([^\]]+))?\]\]",
-        lambda match: (
+class MarkdownRenderer:
+    """Render the supported Markdown subset with explicit parser state."""
+
+    def __init__(self, pages: list[Page]) -> None:
+        self.pages = pages
+        self.output: list[str] = []
+        self.headings: list[dict[str, str | int]] = []
+        self.paragraph: list[str] = []
+        self.list_type: str | None = None
+        self.in_code = False
+        self.code_lines: list[str] = []
+        self.callout: list[str] = []
+        self.callout_kind = "NOTE"
+
+    def render(self, markdown: str) -> tuple[str, list[dict[str, str | int]]]:
+        """Render Markdown and return HTML with heading metadata."""
+        markdown = re.sub(
+            r"!\[\[([^\]|]+)(?:\|([^\]]+))?\]\]",
+            self._missing_image,
+            strip_frontmatter(markdown),
+        )
+        for raw_line in markdown.splitlines():
+            self._render_line(raw_line)
+        self._finish()
+        return "\n".join(self.output), self.headings
+
+    @staticmethod
+    def _missing_image(match: re.Match[str]) -> str:
+        """Replace a missing Obsidian image with a visible note."""
+        return (
             "\n> [!NOTE] Image reference\n"
             f"> `{match.group(1)}` is referenced by the Obsidian page but is not stored in the repository.\n"
-        ),
-        markdown,
-    )
-    output: list[str] = []
-    headings: list[dict[str, str | int]] = []
-    paragraph: list[str] = []
-    list_type: str | None = None
-    in_code = False
-    code_lines: list[str] = []
-    callout: list[str] = []
-    callout_kind = "NOTE"
+        )
 
-    def flush_paragraph() -> None:
-        if paragraph:
-            output.append(f"<p>{inline_markup(' '.join(paragraph), pages)}</p>")
-            paragraph.clear()
-
-    def close_list() -> None:
-        nonlocal list_type
-        if list_type:
-            output.append(f"</{list_type}>")
-            list_type = None
-
-    def flush_callout() -> None:
-        nonlocal callout
-        if callout:
-            output.append(
-                f'<aside class="callout"><span>{html.escape(callout_kind.title())}</span>'
-                f"<p>{inline_markup(' '.join(callout), pages)}</p></aside>"
-            )
-            callout = []
-
-    for raw_line in markdown.splitlines():
+    def _render_line(self, raw_line: str) -> None:
+        """Route one source line to the matching block handler."""
         line = raw_line.rstrip()
         if line.startswith("```"):
-            flush_paragraph()
-            close_list()
-            if in_code:
-                output.append(f"<pre><code>{html.escape(chr(10).join(code_lines))}</code></pre>")
-                code_lines = []
-            in_code = not in_code
-            continue
-        if in_code:
-            code_lines.append(line)
-            continue
+            self._toggle_code_block()
+            return
+        if self.in_code:
+            self.code_lines.append(line)
+            return
         if not line.strip():
-            flush_paragraph()
-            close_list()
-            flush_callout()
-            continue
+            self._handle_blank_line()
+            return
         callout_match = re.match(r">\s*\[!(\w+)\]\s*(.*)", line)
         if callout_match:
-            flush_paragraph()
-            close_list()
-            callout_kind = callout_match.group(1)
-            if callout_match.group(2):
-                callout.append(callout_match.group(2))
-            continue
-        if line.startswith(">") and callout:
-            callout.append(line.removeprefix(">").strip())
-            continue
+            self._start_callout(callout_match)
+            return
+        if line.startswith(">") and self.callout:
+            self.callout.append(line.removeprefix(">").strip())
+            return
         heading = re.match(r"^(#{1,4})\s+(.+)", line)
         if heading:
-            flush_paragraph()
-            close_list()
-            level = len(heading.group(1))
-            title = re.sub(r"`([^`]+)`", r"\1", heading.group(2))
-            anchor = slugify(title)
-            headings.append({"level": level, "title": title, "anchor": anchor})
-            output.append(f'<h{level} id="{anchor}">{inline_markup(heading.group(2), pages)}</h{level}>')
-            continue
+            self._handle_heading(heading)
+            return
         item = re.match(r"^\s*(?:[-+*]|\d+[.)])\s+(.+)", line)
         if item:
-            flush_paragraph()
-            ordered = bool(re.match(r"^\s*\d+", line))
-            wanted = "ol" if ordered else "ul"
-            if list_type != wanted:
-                close_list()
-                output.append(f"<{wanted}>")
-                list_type = wanted
-            output.append(f"<li>{inline_markup(item.group(1), pages)}</li>")
-            continue
-        paragraph.append(line.strip())
-    flush_paragraph()
-    close_list()
-    flush_callout()
-    if in_code:
-        output.append(f"<pre><code>{html.escape(chr(10).join(code_lines))}</code></pre>")
-    return "\n".join(output), headings
+            self._handle_list_item(item, line)
+            return
+        self.paragraph.append(line.strip())
+
+    def _toggle_code_block(self) -> None:
+        """Open or close a fenced code block."""
+        self._flush_paragraph()
+        self._close_list()
+        if self.in_code:
+            self._append_code_block()
+        self.in_code = not self.in_code
+
+    def _handle_blank_line(self) -> None:
+        """Close all blocks that end at a blank line."""
+        self._flush_paragraph()
+        self._close_list()
+        self._flush_callout()
+
+    def _start_callout(self, match: re.Match[str]) -> None:
+        """Start an Obsidian callout block."""
+        self._flush_paragraph()
+        self._close_list()
+        self.callout_kind = match.group(1)
+        if match.group(2):
+            self.callout.append(match.group(2))
+
+    def _handle_heading(self, match: re.Match[str]) -> None:
+        """Render a heading and record its navigation metadata."""
+        self._flush_paragraph()
+        self._close_list()
+        level = len(match.group(1))
+        title = re.sub(r"`([^`]+)`", r"\1", match.group(2))
+        anchor = slugify(title)
+        self.headings.append({"level": level, "title": title, "anchor": anchor})
+        self.output.append(f'<h{level} id="{anchor}">{inline_markup(match.group(2), self.pages)}</h{level}>')
+
+    def _handle_list_item(self, match: re.Match[str], line: str) -> None:
+        """Render one ordered or unordered list item."""
+        self._flush_paragraph()
+        wanted = "ol" if re.match(r"^\s*\d+", line) else "ul"
+        if self.list_type != wanted:
+            self._close_list()
+            self.output.append(f"<{wanted}>")
+            self.list_type = wanted
+        self.output.append(f"<li>{inline_markup(match.group(1), self.pages)}</li>")
+
+    def _flush_paragraph(self) -> None:
+        """Render and clear the current paragraph buffer."""
+        if self.paragraph:
+            self.output.append(f"<p>{inline_markup(' '.join(self.paragraph), self.pages)}</p>")
+            self.paragraph.clear()
+
+    def _close_list(self) -> None:
+        """Close the active list."""
+        if self.list_type:
+            self.output.append(f"</{self.list_type}>")
+            self.list_type = None
+
+    def _flush_callout(self) -> None:
+        """Render and clear the current callout buffer."""
+        if self.callout:
+            self.output.append(
+                f'<aside class="callout"><span>{html.escape(self.callout_kind.title())}</span>'
+                f"<p>{inline_markup(' '.join(self.callout), self.pages)}</p></aside>"
+            )
+            self.callout.clear()
+
+    def _append_code_block(self) -> None:
+        """Render and clear buffered code lines."""
+        self.output.append(f"<pre><code>{html.escape(chr(10).join(self.code_lines))}</code></pre>")
+        self.code_lines.clear()
+
+    def _finish(self) -> None:
+        """Flush all blocks left open at the end of input."""
+        self._flush_paragraph()
+        self._close_list()
+        self._flush_callout()
+        if self.in_code:
+            self._append_code_block()
+
+
+def markdown_to_html(markdown: str, pages: list[Page]) -> tuple[str, list[dict[str, str | int]]]:
+    """Render supported Markdown blocks and collect heading metadata."""
+    return MarkdownRenderer(pages).render(markdown)
 
 
 def documentation_category(page: Page) -> str:

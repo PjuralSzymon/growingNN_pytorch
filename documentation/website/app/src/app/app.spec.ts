@@ -11,6 +11,8 @@ describe('App', () => {
   });
 
   it('should render the GrowingNN brand', async () => {
+    // The application shell should always show the project brand.
+
     // Arrange
     const fixture = TestBed.createComponent(App);
     
@@ -21,5 +23,20 @@ describe('App', () => {
 
     // Assert
     expect(compiled.querySelector('.brand')?.textContent).toContain('GrowingNN');
+  });
+
+  it('should open search when Control K is pressed', () => {
+    // The global shortcut should call the readonly search view query.
+
+    // Arrange
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    // Act
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
+    fixture.detectChanges();
+
+    // Assert
+    expect((fixture.nativeElement as HTMLElement).querySelector('.search-dialog.open')).not.toBeNull();
   });
 });
