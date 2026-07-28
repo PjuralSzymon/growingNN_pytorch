@@ -31,16 +31,30 @@ def test_base_scheduler_cannot_be_created_directly():
 
 def test_always_mode_permits_simulation():
     """
-    AlwaysSimulationScheduler should permit simulation for every metric history.
+    AlwaysSimulationScheduler should permit simulation before the last generation.
     """
     # Arrange
     scheduler = AlwaysSimulationScheduler()
 
     # Act
-    result = scheduler.can_simulate(0, [])
+    result = scheduler.can_simulate(0, [], generations=10)
 
     # Assert
     assert result is True
+
+
+def test_always_mode_skips_last_generation():
+    """
+    AlwaysSimulationScheduler should refuse simulation on the last generation.
+    """
+    # Arrange
+    scheduler = AlwaysSimulationScheduler()
+
+    # Act
+    result = scheduler.can_simulate(9, [], generations=10)
+
+    # Assert
+    assert result is False
 
 
 def test_progress_check_triggers_on_stagnation():
@@ -51,7 +65,7 @@ def test_progress_check_triggers_on_stagnation():
     scheduler = ProgressCheckSimulationScheduler(stagnation_window=1)
 
     # Act
-    result = scheduler.can_simulate(1, [0.4, 0.4])
+    result = scheduler.can_simulate(1, [0.4, 0.4], generations=10)
 
     # Assert
     assert result is True
@@ -65,7 +79,7 @@ def test_never_mode_skips_simulation():
     scheduler = NeverSimulationScheduler()
 
     # Act
-    result = scheduler.can_simulate(1, [0.2, 0.5])
+    result = scheduler.can_simulate(1, [0.2, 0.5], generations=10)
 
     # Assert
     assert result is False
@@ -98,6 +112,7 @@ def test_slope_estimation_triggers_on_flat_generation_training_accuracy():
     result = scheduler.can_simulate(
         3,
         [0.91, 0.91, 0.91, 0.91],
+        generations=10,
     )
 
     # Assert
@@ -117,6 +132,7 @@ def test_slope_estimation_skips_rising_generation_training_accuracy():
     result = scheduler.can_simulate(
         3,
         [0.70, 0.75, 0.80, 0.85],
+        generations=10,
     )
 
     # Assert
@@ -136,6 +152,7 @@ def test_slope_estimation_skips_strongly_falling_generation_training_accuracy():
     result = scheduler.can_simulate(
         3,
         [0.85, 0.80, 0.75, 0.70],
+        generations=10,
     )
 
     # Assert
@@ -153,6 +170,7 @@ def test_slope_estimation_requires_two_generations():
     result = scheduler.can_simulate(
         0,
         [0.80],
+        generations=10,
     )
 
     # Assert
@@ -170,6 +188,25 @@ def test_slope_estimation_rejects_non_finite_accuracy():
     result = scheduler.can_simulate(
         3,
         [0.80, 0.81, float("nan"), 0.82],
+        generations=10,
+    )
+
+    # Assert
+    assert result is False
+
+
+def test_slope_estimation_skips_last_generation_even_when_flat():
+    """
+    SLOPE_ESTIMATION should refuse simulation on the last generation despite flat accuracy.
+    """
+    # Arrange
+    scheduler = SlopeEstimationSimulationScheduler(angle_threshold=1.0)
+
+    # Act
+    result = scheduler.can_simulate(
+        9,
+        [0.91, 0.91, 0.91, 0.91],
+        generations=10,
     )
 
     # Assert
@@ -187,6 +224,7 @@ def test_mean_standard_deviation_stagnation_triggers_on_constant_accuracy():
     result = scheduler.can_simulate(
         3,
         [0.91, 0.91, 0.91, 0.91],
+        generations=10,
     )
 
     # Assert
@@ -207,6 +245,7 @@ def test_mean_standard_deviation_stagnation_triggers_on_flat_noise():
     result = scheduler.can_simulate(
         5,
         [0.910, 0.912, 0.911, 0.911, 0.912, 0.910],
+        generations=10,
     )
 
     # Assert
@@ -227,6 +266,7 @@ def test_mean_standard_deviation_stagnation_skips_rising_accuracy():
     result = scheduler.can_simulate(
         5,
         [0.70, 0.72, 0.74, 0.76, 0.78, 0.80],
+        generations=10,
     )
 
     # Assert
