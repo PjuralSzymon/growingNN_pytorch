@@ -25,6 +25,7 @@ from growingnn.training.stoppers import AccuracyStopper
 from growingnn.training.trainer import train_generations
 from growingnn.utils.fx import GraphStructureQuery
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
+from growingnn.utils.seed import seed_all
 
 METRIC_KEYS = ("train_loss", "train_acc", "val_loss", "val_acc", "lr", "param_count")
 Hyperparameters = dict[str, object]
@@ -153,9 +154,7 @@ def _train_run(
     device: torch.device,
     board_enabled: bool,
 ) -> None:
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
+    seed_all(seed)
 
     gm = fx.symbolic_trace(definition.model_factory(hp))
     params_before = GraphStructureQuery.get_amount_of_parameters(gm)
