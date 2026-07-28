@@ -31,7 +31,7 @@ class SlopeEstimationSimulationScheduler(SimulationScheduler):
             raise ValueError("angle_threshold must be between 0 and 90 degrees")
         self.angle_threshold = angle_threshold
 
-    def can_simulate(
+    def _should_simulate(
         self,
         generation: int,
         generation_train_acc: Sequence[float],

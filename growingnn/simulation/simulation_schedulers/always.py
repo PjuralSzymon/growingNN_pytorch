@@ -10,7 +10,7 @@ from .base import SchedulerMode, SimulationScheduler
 class AlwaysSimulationScheduler(SimulationScheduler):
     mode = SchedulerMode.ALWAYS
 
-    def can_simulate(
+    def _should_simulate(
         self,
         generation: int,
         generation_val_acc: Sequence[float],

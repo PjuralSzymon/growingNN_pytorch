@@ -48,11 +48,32 @@ class SimulationScheduler(ABC):
         self.simulation_time = simulation_time
         self.simulation_epochs = simulation_epochs
 
-    @abstractmethod
+    @staticmethod
+    def _is_last_generation(generation: int, generations: int) -> bool:
+        """Return True when no later generation remains to recover from a mutation."""
+        return generation >= generations - 1
+
     def can_simulate(
         self,
         generation: int,
         generation_val_acc: Sequence[float],
         quiet: bool = False,
+        *,
+        generations: int,
     ) -> bool:
-        """Return whether architecture simulation should run."""
+        """Return whether architecture simulation should run.
+
+        Never allows simulation on the last generation, including Always mode.
+        """
+        if self._is_last_generation(generation, generations):
+            return False
+        return self._should_simulate(generation, generation_val_acc, quiet=quiet)
+
+    @abstractmethod
+    def _should_simulate(
+        self,
+        generation: int,
+        generation_val_acc: Sequence[float],
+        quiet: bool = False,
+    ) -> bool:
+        """Policy-specific decision after the terminal-generation guard."""

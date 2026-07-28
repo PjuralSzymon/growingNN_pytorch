@@ -31,7 +31,7 @@ class MeanStandardDeviationStagnationSimulationScheduler(SimulationScheduler):
         self.slope_epsilon = slope_epsilon
         self.standard_deviation_multiplier = standard_deviation_multiplier
 
-    def can_simulate(
+    def _should_simulate(
         self,
         generation: int,
         generation_val_acc: Sequence[float],

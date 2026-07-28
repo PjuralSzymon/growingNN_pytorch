@@ -21,7 +21,7 @@ class ProgressCheckSimulationScheduler(SimulationScheduler):
             raise ValueError("stagnation_window must be at least 1")
         self.stagnation_window = stagnation_window
 
-    def can_simulate(
+    def _should_simulate(
         self,
         generation: int,
         generation_val_acc: Sequence[float],

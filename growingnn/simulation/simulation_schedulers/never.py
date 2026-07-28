@@ -10,7 +10,7 @@ from .base import SchedulerMode, SimulationScheduler
 class NeverSimulationScheduler(SimulationScheduler):
     mode = SchedulerMode.NEVER
 
-    def can_simulate(
+    def _should_simulate(
         self,
         generation: int,
         generation_val_acc: Sequence[float],
