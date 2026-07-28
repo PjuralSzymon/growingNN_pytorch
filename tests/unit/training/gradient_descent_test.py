@@ -47,11 +47,11 @@ def test_gradient_descent_records_history_for_each_epoch():
 
     # Assert
     assert trained_model is model
-    assert len(history["train_loss"]) == epochs + 1
-    assert len(history["train_acc"]) == epochs + 1
-    assert len(history["val_loss"]) == epochs + 1
-    assert len(history["val_acc"]) == epochs + 1
-    assert history["lr"] == [0.1, 0.1, 0.1]
+    assert len(history["train_loss"]) == epochs
+    assert len(history["train_acc"]) == epochs
+    assert len(history["val_loss"]) == epochs
+    assert len(history["val_acc"]) == epochs
+    assert history["lr"] == [0.1, 0.1]
 
 
 def test_gradient_descent_stops_when_stopper_triggers():
@@ -117,8 +117,8 @@ def test_gradient_descent_accepts_custom_optimizer():
     )
 
     # Assert
-    assert len(history["train_loss"]) == 2
-    assert history["lr"] == [0.05, 0.05]
+    assert len(history["train_loss"]) == 1
+    assert history["lr"] == [0.05]
 
 
 if __name__ == "__main__":

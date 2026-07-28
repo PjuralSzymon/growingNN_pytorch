@@ -110,22 +110,17 @@ def test_progressive_parabolic_schedule_peaks_before_threshold():
     assert result_mid < result_late_ramp
 
 
-def test_learning_rate_scheduler_clamps_negative_values_to_zero():
+def test_learning_rate_scheduler_rejects_negative_alpha():
     """
-    LearningRateScheduler should never return a negative learning rate.
+    LearningRateScheduler should reject a negative base learning rate.
     """
     # Arrange
-    scheduler = LearningRateScheduler(ScheduleMode.CONSTANT, alpha=-0.5)
-    iterations = 100.0
+    mode = ScheduleMode.CONSTANT
+    alpha = -0.5
 
-    # Act
-    result_early = scheduler.alpha_scheduler(int(iterations * 0.1), int(iterations))
-    result_late = scheduler.alpha_scheduler(int(iterations * 0.9), int(iterations))
-
-    # Assert
-    assert result_early == 0.0
-    assert result_late == 0.0
-    assert result_early == result_late
+    # Act / Assert
+    with pytest.raises(ValueError, match="Alpha must be non-negative"):
+        LearningRateScheduler(mode, alpha=alpha)
 
 
 def test_learning_rate_scheduler_picks_schedule_from_mode():

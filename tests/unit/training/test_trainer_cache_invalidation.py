@@ -94,7 +94,7 @@ def test_train_generations_invalidates_after_each_simulation_action():
         train_generations(gm, train_loader, val_loader, cfg)
 
     # Assert
-    assert len(invalidate_calls) == 3
+    assert len(invalidate_calls) == 2
 
 
 def test_train_generations_skips_invalidate_when_simulation_disabled():
@@ -145,7 +145,7 @@ def test_train_generations_recomputes_param_count_after_each_invalidate():
 
     # Assert
     assert recomputed_counts == [params_before, params_before + 20, params_before + 40]
-    assert GraphStructureQuery.get_amount_of_parameters(gm) == params_before + 60
+    assert GraphStructureQuery.get_amount_of_parameters(gm) == params_before + 40
 
 
 def test_train_generations_runs_back_to_back_with_fresh_cache_each_run():
@@ -166,5 +166,5 @@ def test_train_generations_runs_back_to_back_with_fresh_cache_each_run():
     params_after_second_run = GraphStructureQuery.get_amount_of_parameters(gm)
 
     # Assert
-    assert params_after_first_run == params_before + 40
-    assert params_after_second_run == params_before + 80
+    assert params_after_first_run == params_before + 20
+    assert params_after_second_run == params_before + 40

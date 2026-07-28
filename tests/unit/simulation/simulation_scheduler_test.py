@@ -85,13 +85,13 @@ def test_least_squares_slope_returns_linear_rate():
     assert result == pytest.approx(0.1)
 
 
-def test_slope_estimation_triggers_on_flat_generation_validation_accuracy():
+def test_slope_estimation_triggers_on_flat_generation_training_accuracy():
     """
-    SLOPE_ESTIMATION should simulate when final generation validation accuracy is flat.
+    SLOPE_ESTIMATION should simulate when current-generation training accuracy is flat.
     """
     # Arrange
     scheduler = SlopeEstimationSimulationScheduler(
-        slope_epsilon=1e-4,
+        angle_threshold=1.0,
     )
 
     # Act
@@ -104,13 +104,13 @@ def test_slope_estimation_triggers_on_flat_generation_validation_accuracy():
     assert result is True
 
 
-def test_slope_estimation_skips_rising_generation_validation_accuracy():
+def test_slope_estimation_skips_rising_generation_training_accuracy():
     """
-    SLOPE_ESTIMATION should not simulate while generation validation accuracy is rising.
+    SLOPE_ESTIMATION should not simulate while current-generation training accuracy is rising.
     """
     # Arrange
     scheduler = SlopeEstimationSimulationScheduler(
-        slope_epsilon=1e-4,
+        angle_threshold=1.0,
     )
 
     # Act
@@ -123,13 +123,13 @@ def test_slope_estimation_skips_rising_generation_validation_accuracy():
     assert result is False
 
 
-def test_slope_estimation_skips_strongly_falling_generation_validation_accuracy():
+def test_slope_estimation_skips_strongly_falling_generation_training_accuracy():
     """
-    SLOPE_ESTIMATION should apply its absolute-slope rule to falling generation accuracy.
+    SLOPE_ESTIMATION should apply its absolute-angle rule to falling training accuracy.
     """
     # Arrange
     scheduler = SlopeEstimationSimulationScheduler(
-        slope_epsilon=1e-4,
+        angle_threshold=1.0,
     )
 
     # Act
@@ -236,7 +236,7 @@ def test_mean_standard_deviation_stagnation_skips_rising_accuracy():
 @pytest.mark.parametrize(
     ("scheduler_type", "kwargs"),
     [
-        (SlopeEstimationSimulationScheduler, {"slope_epsilon": -0.1}),
+        (SlopeEstimationSimulationScheduler, {"angle_threshold": -0.1}),
         (
             MeanStandardDeviationStagnationSimulationScheduler,
             {"standard_deviation_multiplier": 0.0},
