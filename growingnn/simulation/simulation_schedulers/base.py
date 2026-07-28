@@ -38,6 +38,7 @@ def finite_values(history: Sequence[float] | None) -> list[float] | None:
 
 class SimulationScheduler(ABC):
     mode: SchedulerMode
+    uses_current_generation_values = False
 
     def __init__(
         self,
