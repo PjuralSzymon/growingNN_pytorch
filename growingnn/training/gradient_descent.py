@@ -104,7 +104,7 @@ def gradient_descent(
         "lr": [],
     }
 
-    for epoch in range(epochs + 1):
+    for epoch in range(epochs):
         scheduled_lr = lr_scheduler.alpha_scheduler(epoch, epochs)
         _set_optimizer_lr(optimizer, scheduled_lr)
 
@@ -148,7 +148,7 @@ def gradient_descent(
                 param_count=sum(p.numel() for p in model.parameters()),
             )
 
-        if not quiet and (epoch % print_every == 0 or epoch == epochs):
+        if not quiet and (epoch % print_every == 0 or epoch == epochs - 1):
             param_count = sum(p.numel() for p in model.parameters())
             print(
                 f"Epoch: {epoch} Accuracy: {train_acc:.3f} loss: {train_loss:.3f} "
