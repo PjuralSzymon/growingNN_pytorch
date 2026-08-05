@@ -25,30 +25,36 @@ DEFAULT_RUNS = (
 DEFAULT_OUTPUT = SITE / "app" / "public" / "assets" / "experiments"
 DEFAULT_SNAPSHOT = SITE / "data" / "experiments" / "experiment-002-initial-architectures.json"
 
-# Script order from train_mnist_exp002_initial_architectures.py.
+# Prefer known names for stable ordering; unknown models fall back to start params.
 MODELS = (
     "big",
     "medium",
-    "very_small",
-    "medium_h4",
-    "medium_ch2_h8",
-    "big_ch2_h8",
-    "very_small_ch2",
-    "medium_max_pool_only",
     "medium_avg_pool_only",
-    "medium_no_pool",
+    "medium_max_pool_only",
+    "small_avg_pool_only",
+    "small_max_pool_only",
+    "big_ch2_h8",
+    "medium_ch2_h8",
+    "medium_h4",
+    "very_small",
+    "very_small_ch2",
+    "very_small_avg_pool_only",
+    "very_small_max_pool_only",
 )
 MODEL_COLORS = {
     "big": "#3568a8",
     "medium": "#4f8a63",
-    "very_small": "#d18b2c",
-    "medium_h4": "#7a5a9a",
-    "medium_ch2_h8": "#2a8a8a",
-    "big_ch2_h8": "#8a4a3a",
-    "very_small_ch2": "#a07030",
-    "medium_max_pool_only": "#556070",
     "medium_avg_pool_only": "#708050",
-    "medium_no_pool": "#905070",
+    "medium_max_pool_only": "#5a7a40",
+    "small_avg_pool_only": "#3a6a8a",
+    "small_max_pool_only": "#2a5a7a",
+    "big_ch2_h8": "#8a4a3a",
+    "medium_ch2_h8": "#2a8a8a",
+    "medium_h4": "#7a5a9a",
+    "very_small": "#d18b2c",
+    "very_small_ch2": "#a07030",
+    "very_small_avg_pool_only": "#c08020",
+    "very_small_max_pool_only": "#906018",
 }
 SEED_COLORS = {100: "#3568a8", 101: "#4f8a63", 102: "#d18b2c", 103: "#7a5a9a"}
 ORDER_LABELS = ("1st", "2nd", "3rd", "4th", "5th+")
@@ -147,6 +153,20 @@ def write_snapshot(runs: list[dict[str, object]], snapshot_path: Path) -> None:
     snapshot_path.write_text(json.dumps({"runs": compact}, indent=2), encoding="utf-8")
 
 
+# Old flatten controls start far above compact stems (~12k / ~50k params).
+# The revised Exp 002 `medium_max_pool_only` is compact (~276 params) and stays in charts.
+OVERSIZED_START_PARAMS = 1000
+
+
+def _is_oversized_flatten_control(run: dict[str, object]) -> bool:
+    """True for starters that flatten a large spatial map into the first linear."""
+    model = str(run["model"])
+    start_params = int(run["start_params"])
+    if model == "medium_no_pool":
+        return True
+    return model == "medium_max_pool_only" and start_params > OVERSIZED_START_PARAMS
+
+
 def _mean(values: list[float]) -> float:
     return sum(values) / len(values) if values else 0.0
 
@@ -155,17 +175,36 @@ def _completed(runs: list[dict[str, object]]) -> list[dict[str, object]]:
     return [run for run in runs if run["status"] == "completed"]
 
 
-def _models_by_start_params(runs: list[dict[str, object]]) -> list[str]:
+def _analysis_runs(runs: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Completed runs used for ranking and action charts."""
+    return [
+        run
+        for run in _completed(runs)
+        if not _is_oversized_flatten_control(run)
+    ]
+
+
+def _models_by_start_params(
+    runs: list[dict[str, object]],
+    *,
+    descending: bool = True,
+) -> list[str]:
     """Order present architectures by mean starting parameter count."""
     present = {str(run["model"]) for run in runs}
     start_by_model: dict[str, list[float]] = defaultdict(list)
     for run in runs:
         start_by_model[str(run["model"])].append(float(run["start_params"]))
-    ordered = sorted(present, key=lambda model: (_mean(start_by_model[model]), model))
-    # Keep unknown models after the script list order for stability.
-    known = [model for model in MODELS if model in present]
-    extras = [model for model in ordered if model not in known]
-    return sorted(known + extras, key=lambda model: (_mean(start_by_model[model]), model))
+    model_rank = {model: index for index, model in enumerate(MODELS)}
+    candidates = [model for model in present]
+    # Largest start params first; ties keep the script MODEL_VARIANTS order.
+    return sorted(
+        candidates,
+        key=lambda model: (
+            -_mean(start_by_model[model]) if descending else _mean(start_by_model[model]),
+            model_rank.get(model, len(MODELS)),
+            model,
+        ),
+    )
 
 
 def _generations(run: dict[str, object]) -> dict[int, list[dict[str, object]]]:
@@ -248,11 +287,17 @@ def generate_charts(
 
     output_dir.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"figure.dpi": 120, "font.size": 9})
-    completed = _completed(runs)
+    completed = _analysis_runs(runs)
     models = _models_by_start_params(completed) if completed else _models_by_start_params(runs)
     n_complete = len(completed)
+    n_loaded_complete = len(_completed(runs))
     n_total = len(runs)
-    note = f"Source: {n_complete}/{n_total} completed runs"
+    note = (
+        f"Source: {n_complete} compact completed runs"
+        f" ({n_loaded_complete}/{n_total} loaded; "
+        "oversized flatten controls ignored)"
+    )
+    order_note = "largest starting parameters first"
     written: list[Path] = []
 
     def save(figure: plt.Figure, name: str) -> Path:
@@ -295,7 +340,7 @@ def generate_charts(
             )
     axis.set(
         title="Mean final training and validation accuracy by initial architecture",
-        xlabel="Initial architecture (ordered by starting parameters)",
+        xlabel=f"Initial architecture ({order_note})",
         ylabel="Mean final accuracy across completed seeds (%)",
         xticks=positions,
         xticklabels=[_short_model(model) for model in models],
@@ -304,32 +349,32 @@ def generate_charts(
     axis.tick_params(axis="x", rotation=25)
     axis.legend()
     axis.grid(axis="y", alpha=0.25)
-    figure.text(0.99, 0.01, f"{note} · dots are final validation per seed", ha="right", fontsize=7)
+    figure.text(0.99, 0.01, f"{note} · {order_note} · dots are final validation per seed", ha="right", fontsize=7)
     figure.tight_layout(rect=(0, 0.03, 1, 1))
     save(figure, "002-final-accuracy-by-architecture.png")
 
-    # Peak vs final validation.
-    figure, axis = plt.subplots(figsize=(11.5, 5.0))
+    # Best-seed envelope: avoids averaging in collapsed outlier seeds.
+    figure, axis = plt.subplots(figsize=(11.5, 5.2))
     for metric, offset, color, label in (
-        ("best_acc", -0.18, "#7a5a9a", "Peak validation"),
-        ("final_acc", 0.18, "#4f8a63", "Final validation"),
+        ("final_train_acc", -0.18, "#3568a8", "Best-seed final training"),
+        ("final_acc", 0.18, "#4f8a63", "Best-seed final validation"),
     ):
-        means = [
-            _mean([float(run[metric]) * 100 for run in completed if run["model"] == model])
-            for model in models
-        ]
+        peaks = []
+        for model in models:
+            values = [float(run[metric]) * 100 for run in completed if run["model"] == model]
+            peaks.append(max(values) if values else 0.0)
         bars = axis.bar(
             [position + offset for position in positions],
-            means,
+            peaks,
             width=0.36,
             color=color,
             label=label,
         )
         axis.bar_label(bars, fmt="%.1f", fontsize=7, padding=2)
     axis.set(
-        title="Peak versus final validation accuracy by initial architecture",
-        xlabel="Initial architecture (ordered by starting parameters)",
-        ylabel="Validation accuracy (%)",
+        title="Best-seed final training and validation accuracy by initial architecture",
+        xlabel=f"Initial architecture ({order_note})",
+        ylabel="Best final accuracy among completed seeds (%)",
         xticks=positions,
         xticklabels=[_short_model(model) for model in models],
         ylim=(0, 100),
@@ -340,12 +385,61 @@ def generate_charts(
     figure.text(
         0.99,
         0.01,
-        f"{note} · a large gap means late actions destroyed an earlier peak",
+        f"{note} · {order_note} · each bar is the best seed, not the mean",
         ha="right",
         fontsize=7,
     )
     figure.tight_layout(rect=(0, 0.03, 1, 1))
-    save(figure, "002-peak-vs-final.png")
+    save(figure, "002-best-seed-accuracy-by-architecture.png")
+
+    # Mean end-of-generation training accuracy: find when runs near the strong band.
+    figure, axis = plt.subplots(figsize=(12.0, 5.2))
+    width = min(0.8 / max(len(models), 1), 0.12)
+    strong_band = 91.0
+    for model_index, model in enumerate(models):
+        group = [run for run in completed if run["model"] == model]
+        means = []
+        for generation in range(10):
+            values = []
+            for run in group:
+                generations = _generations(run)
+                if generation not in generations:
+                    continue
+                values.append(float(generations[generation][-1]["trainAcc"]) * 100)
+            means.append(_mean(values))
+        offset = (model_index - (len(models) - 1) / 2) * width
+        axis.bar(
+            [generation + offset for generation in range(10)],
+            means,
+            width=width,
+            color=MODEL_COLORS.get(model, "#3568a8"),
+            label=_short_model(model),
+        )
+    axis.axhline(
+        strong_band,
+        color="#a65353",
+        linestyle="--",
+        linewidth=1.4,
+        label=f"{strong_band:.0f}% strong band",
+    )
+    axis.set(
+        title="Mean end-of-generation training accuracy by architecture",
+        xlabel="Generation",
+        ylabel="Mean training accuracy (%)",
+        xticks=list(range(10)),
+        ylim=(0, 100),
+    )
+    axis.legend(fontsize=7, ncol=2)
+    axis.grid(axis="y", alpha=0.25)
+    figure.text(
+        0.99,
+        0.01,
+        f"{note} · dashed line marks {strong_band:.0f}% training accuracy",
+        ha="right",
+        fontsize=7,
+    )
+    figure.tight_layout(rect=(0, 0.03, 1, 1))
+    save(figure, "002-train-acc-by-generation.png")
 
     # Parameter growth ordered by starting size.
     figure, axis = plt.subplots(figsize=(11.5, 4.8))
@@ -375,7 +469,7 @@ def generate_charts(
             )
     axis.set(
         title="Starting and final parameter counts",
-        xlabel="Initial architecture (ordered by starting parameters)",
+        xlabel=f"Initial architecture ({order_note})",
         ylabel="Parameter count",
         xticks=positions,
         xticklabels=[_short_model(model) for model in models],
@@ -383,7 +477,13 @@ def generate_charts(
     axis.tick_params(axis="x", rotation=25)
     axis.legend()
     axis.grid(axis="y", alpha=0.25)
-    figure.text(0.99, 0.01, f"{note} · dots show final parameters per completed seed", ha="right", fontsize=7)
+    figure.text(
+        0.99,
+        0.01,
+        f"{note} · {order_note} · dots show final parameters per completed seed",
+        ha="right",
+        fontsize=7,
+    )
     figure.tight_layout(rect=(0, 0.03, 1, 1))
     save(figure, "002-param-growth.png")
 

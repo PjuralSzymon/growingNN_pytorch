@@ -144,19 +144,20 @@ def test_generate_charts_writes_core_figures_and_snapshot(tmp_path: Path) -> Non
 
     # Assert
     names = {path.name for path in written}
+    assert "002-train-acc-by-generation.png" in names
+    assert "002-best-seed-accuracy-by-architecture.png" in names
     assert "002-final-accuracy-by-architecture.png" in names
-    assert "002-actions-by-phase.png" in names
-    assert "002-action-order.png" in names
-    assert "002-action-types.png" in names
-    assert "002-param-growth.png" in names
-    assert "002-peak-vs-final.png" in names
-    assert "002-training-curves.png" in names
-    assert "002-representative-timeline.png" not in names
-    assert "002-slope-decisions.png" not in names
+    assert "002-peak-vs-final.png" not in names
     assert snapshot.exists()
     payload = json.loads(snapshot.read_text(encoding="utf-8"))
     assert len(payload["runs"]) == 5
+    # Snapshot keeps all runs, including any excluded capacity controls.
     assert DEFAULT_SNAPSHOT.name.endswith(".json")
+    from generate_experiment_002_charts import _models_by_start_params, load_runs
+
+    ordered = _models_by_start_params(load_runs(runs_dir))
+    assert ordered[0] == "big"
+    assert ordered[-1] == "very_small"
 
 
 def test_generate_charts_falls_back_to_snapshot_when_raw_missing(tmp_path: Path) -> None:

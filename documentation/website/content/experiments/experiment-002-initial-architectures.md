@@ -4,24 +4,71 @@ GrowingNN changes the network while it is training. Experiment 000 chose action-
 
 Experiment 001 also showed that the accuracy gain from architecture actions was not spread evenly across generations. Most useful gain came from the first action. Later actions added noise. The main structural cause was incomplete sequential-convolution insertion: thin starters could not rebuild a missing stem convolution in the natural sequential way, so search used residual workarounds, deletes, and stacked dropouts instead.
 
-That insertion path is now fixed through `AddSeqConvLayer.try_build_eye_convolution_for_insert_before_flatten`. Experiment 002 keeps the Experiment 001 scheduler pair fixed and varies only the starting architecture. The goal is to see which initial graphs grow usefully for later experiments.
+That insertion path is now fixed through `AddSeqConvLayer`. Experiment 002 keeps the Experiment 001 scheduler pair fixed and varies only the starting architecture. The goal is to see which initial graphs grow usefully for later experiments.
 
 Raw output:
 
 `experiments/output/train_mnist/runs/exp002_initial_architectures`
 
-Script: `experiments/train_mnist_exp002_initial_architectures.py` — created 2026-08-04 14:38.
+Script: `experiments/train_mnist_exp002_initial_architectures.py` — created 2026-08-04 14:38; revised after this report’s design findings.
 
-Experiment runtime so far: oldest board start `2026-08-04T12:40:26Z`, newest update among available boards `2026-08-04T19:48:29Z`. Recorded training time across the loaded runs is about `14 hours`. The grid is not finished.
+Experiment runtime so far: oldest board start `2026-08-04T12:40:26Z`, newest update among available boards `2026-08-05T19:55:41Z`. Recorded training time across the loaded runs is about `53 hours`. The first grid is almost finished.
+
+## Mistakes in initial architecture design
+
+This section must be read before the result tables. The first grid mixed useful growth signals with bad stem designs, so architecture ranking is hard to trust as a final choice.
+
+### Wrong starters: max pool and adaptive average pool stacked
+
+Several starters put `max_pool2d` and then `adaptive_avg_pool2d` next to each other. That is a bad initial design. One stem should use one pooling style, not both in a row.
+
+| Architecture | Start params | Pooling in the starter | Status |
+| --- | ---: | --- | --- |
+| `big` | `420` | `max_pool` → `max_pool` → `adaptive_avg_pool` | wrong |
+| `big_ch2_h8` | `158` | same as `big` | wrong |
+| `medium` | `276` | `max_pool` → `adaptive_avg_pool` | wrong |
+| `medium_ch2_h8` | `122` | `max_pool` → `adaptive_avg_pool` | wrong |
+| `medium_h4` | `96` | `max_pool` → `adaptive_avg_pool` | wrong |
+| `very_small` | `76` | `max_pool` → `adaptive_avg_pool` | wrong |
+| `very_small_ch2` | `38` | `max_pool` → `adaptive_avg_pool` | wrong |
+
+### Starter that can stay from the first grid
+
+| Architecture | Start params | Pooling in the starter | Status |
+| --- | ---: | --- | --- |
+| `medium_avg_pool_only` | `276` | only `adaptive_avg_pool` | valid compact starter |
+
+So after checking the graphs, only one compact starter in this grid has a clean pooling design: `medium_avg_pool_only`.
+
+### Completely neglected oversized controls
+
+`medium_no_pool` and the old flatten-style `medium_max_pool_only` were also run, but they are removed from every table and chart on this page. Removing adaptive global pooling makes the first linear layer flatten a large spatial map, so they start at `50388` and `12756` parameters. That is a different capacity class. They are neglected completely in these results.
+
+### Script update after these findings
+
+The experiment script is already updated for the next grid. New runs write under `experiments/output/train_mnist/runs/exp002_initial_architectures_after_fix_1` so they stay separate from this first-grid folder. The revised grid compares topology only: same channels (`4`), same hidden size when a hidden linear exists (`16`), and the same pooling (`adaptive_avg_pool2d`) for every starter. Adaptive average pooling is used because it is the usual compact MNIST classification head and matched the only clean starter in this first grid.
+
+| Name | Modules | Start params | Shared width |
+| --- | --- | ---: | --- |
+| `big` | `2×Conv2d` + `2×Linear` | `420` | channels `4`, hidden `16`, adaptive avg |
+| `medium_1conv_2linear` | `1×Conv2d` + `2×Linear` | `276` | same |
+| `medium_2conv_1linear` | `2×Conv2d` + `1×Linear` | `220` | same channels/pool |
+| `small` | `1×Conv2d` + `1×Linear` | `76` | same channels/pool |
+
+Order is largest start params first. `medium_1conv_2linear` is above `medium_2conv_1linear` because the hidden linear (`4→16` plus bias, then `16→10`) costs more than the second convolution (`4→4` kernels) plus a direct `4→10` classifier.
+
+Revised grid constants: `GENERATIONS = 5`, `SIMULATION_TIME_SEC = 120`, seeds `100–103`. Width and pooling style are no longer experimental factors.
+
+The tables and charts below still describe the first grid. They remain useful for growth-shape signals, but not as a clean architecture ranking.
 
 ## Experiment parameters
 
-One parameter changes across the grid. Schedulers stay fixed from Experiment 001.
+One parameter changes across the first grid. Schedulers stay fixed from Experiment 001.
 
 | Parameter | Tested values | Purpose |
 | --- | --- | --- |
-| Initial architecture | ten starters (see table below) | Measures growth under the same search/LR settings |
-| Random seed | `100`, `101`, `102`, `103` | Matched seeds; the script now plans four seeds per architecture |
+| Initial architecture | eight compact starters below | Measures growth under the same search/LR settings |
+| Random seed | `100`, `101`, `102`, `103` | Four matched seeds per architecture |
 
 | Fixed parameter | Value | Explanation |
 | --- | ---: | --- |
@@ -29,45 +76,44 @@ One parameter changes across the grid. Schedulers stay fixed from Experiment 001
 | LR warmup | logistic | Kept from Experiments 000/001 |
 | Warmup length | `10` | Same as Experiment 001 |
 | Dataset | MNIST | Classification task |
-| Planned runs | `40` | `10` architectures × `4` seeds |
-| Loaded runs so far | `12` | Six architectures present on disk |
-| Completed runs so far | `10` | Charts below use completed seeds only |
-| Generations | `10` | Ten training and architecture-decision cycles |
+| Compact starters in this report | `8` | Wrong oversized flatten controls are ignored |
+| Generations | `10` | First grid used ten cycles; revised script uses `5` |
 | Epochs per generation | `10` | Exactly `10` recorded epochs per generation |
 | Target LR | `0.01` | Same as Experiment 001 |
 | Batch size | `64` | Same as Experiment 001 |
-| Simulation time limit | `500 s` | MCTS time budget |
+| Simulation time limit | `500 s` | First grid MCTS budget; revised script uses `120 s` |
 | Simulation training epochs | `15` | Training budget inside simulation |
 | Simulation set size | `2000` | Samples used by simulation |
 
 ### Starting graphs
 
-| Name | Initial layers / pooling | Starting parameters | Why it is in the grid |
-| --- | --- | ---: | --- |
-| `big` | `conv1`, `conv2`, `linear`, `linear2` | `420` | Experiment 000/001 baseline |
-| `medium` | `conv1`, `linear`, `linear2` | `276` | Needs sequential conv to rebuild the second stem conv |
-| `very_small` | `conv1`, `linear2` | `76` | Needs sequential conv, then linear growth |
-| `medium_h4` | medium depth, hidden size `4` | `96` | Weaker first residual / linear attachment |
-| `medium_ch2_h8` | medium depth, channels `2`, hidden `8` | `122` | Width versus depth |
-| `big_ch2_h8` | big depth, channels `2`, hidden `8` | `158` | Thin big stem |
-| `very_small_ch2` | very small, channels `2` | not started | Thinner single-conv starter |
-| `medium_max_pool_only` | medium depth, max pool only | not started | Pooling comparison |
-| `medium_avg_pool_only` | medium depth, adaptive avg only | not started | Pooling comparison |
-| `medium_no_pool` | medium depth, no pool | not started | Control without Rule-B seq-conv site |
+All lists and charts are ordered by starting parameter count, largest first.
 
-### Progress of the grid
+| Name | Start params | Initial layers / pooling | Design note |
+| --- | ---: | --- | --- |
+| `big` | `420` | two convs + linear head; max pools then adaptive avg | wrong double pooling |
+| `medium` | `276` | one conv + linear head; max then adaptive avg | wrong double pooling |
+| `medium_avg_pool_only` | `276` | one conv + linear head; adaptive avg only | valid |
+| `big_ch2_h8` | `158` | two thin convs + small head; same pooling as `big` | wrong double pooling; name is misleading |
+| `medium_ch2_h8` | `122` | thin medium; max then adaptive avg | wrong double pooling |
+| `medium_h4` | `96` | medium with hidden `4`; max then adaptive avg | wrong double pooling |
+| `very_small` | `76` | one conv to logits; max then adaptive avg | wrong double pooling |
+| `very_small_ch2` | `38` | thinner very small; max then adaptive avg | wrong double pooling |
 
-| Architecture | Seed `100` | Seed `101` | Seeds `102`–`103` |
-| --- | --- | --- | --- |
-| `big` | completed | completed | not started |
-| `medium` | completed | completed | not started |
-| `very_small` | completed | completed | not started |
-| `medium_h4` | completed | completed | not started |
-| `medium_ch2_h8` | completed | completed | not started |
-| `big_ch2_h8` | running | running | not started |
-| pooling / `very_small_ch2` | not started | not started | not started |
+### Progress of the first grid
 
-Current tables use the completed first-script architectures only. Re-run `python experiments/train_mnist_exp002_initial_architectures.py --board true` to skip completed seeds and continue. The script now also schedules seeds `102` and `103`, because two seeds are not enough for a stable ranking.
+Statuses below are read from each run’s `board/main.json` on disk.
+
+| Architecture | Start params | Seed `100` | Seed `101` | Seed `102` | Seed `103` |
+| --- | ---: | --- | --- | --- | --- |
+| `big` | `420` | completed | completed | completed | completed |
+| `medium` | `276` | completed | completed | completed | completed |
+| `medium_avg_pool_only` | `276` | completed | completed | running | not started |
+| `big_ch2_h8` | `158` | completed | completed | completed | completed |
+| `medium_ch2_h8` | `122` | completed | completed | completed | completed |
+| `medium_h4` | `96` | completed | completed | completed | completed |
+| `very_small` | `76` | completed | completed | completed | completed |
+| `very_small_ch2` | `38` | completed | completed | completed | completed |
 
 ## Why this experiment exists
 
@@ -77,11 +123,11 @@ Experiment 001 left three linked problems:
 2. Very small finished near `49%` validation and could not take a natural sequential-convolution rebuild step.
 3. Medium spent generations faking that rebuild with residual adds and deletes.
 
-This experiment checks whether fixed schedulers plus legal sequential convolution produce healthier growth across many starters, and which starters are useful defaults for later work.
+After Experiment 001, sequential convolution was fixed so a convolution can be inserted before the flatten into a linear layer. Experiment 002 tests many initial architectures after that fix, under the same schedulers, to see which starters grow usefully.
 
 ## Actions by training phase
 
-The question is not only how many actions occur, but when they occur. Generations are grouped into three phases:
+Generations are grouped into three phases:
 
 - early: generations `0–3`
 - middle: generations `4–6`
@@ -89,53 +135,59 @@ The question is not only how many actions occur, but when they occur. Generation
 
 ![Mean executed actions by training phase](/assets/experiments/002-actions-by-phase.png)
 
-> [!CAPTION] Figure 1. Each phase has one bar per completed architecture. Values are mean action counts across completed seeds.
+> [!CAPTION] Figure 1. Each phase has one bar per architecture. Values are mean action counts across completed seeds. Leftmost architecture is the largest starter.
 
-| Architecture | Completed seeds | Mean actions early `0–3` | Mean actions middle `4–6` | Mean actions late `7–9` | Mean total |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| `very_small` | `2` | `2.50` | `3.00` | `2.00` | `7.50` |
-| `medium_h4` | `2` | `3.00` | `2.00` | `2.00` | `7.00` |
-| `medium_ch2_h8` | `2` | `2.50` | `3.00` | `2.00` | `7.50` |
-| `medium` | `2` | `2.00` | `3.00` | `1.50` | `6.50` |
-| `big` | `2` | `1.50` | `2.50` | `2.00` | `6.00` |
+| Architecture | Start params | Seeds | Mean early `0–3` | Mean middle `4–6` | Mean late `7–9` | Mean total |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `big` | `420` | `4` | `1.75` | `2.50` | `2.00` | `6.25` |
+| `medium` | `276` | `4` | `2.00` | `3.00` | `1.75` | `6.75` |
+| `medium_avg_pool_only` | `276` | `2` | `3.00` | `3.00` | `2.00` | `8.00` |
+| `big_ch2_h8` | `158` | `4` | `2.25` | `2.75` | `1.75` | `6.75` |
+| `medium_ch2_h8` | `122` | `4` | `2.75` | `2.75` | `2.00` | `7.50` |
+| `medium_h4` | `96` | `4` | `3.00` | `2.50` | `2.00` | `7.50` |
+| `very_small` | `76` | `4` | `2.75` | `3.00` | `2.00` | `7.75` |
+| `very_small_ch2` | `38` | `4` | `3.50` | `3.00` | `2.00` | `8.50` |
 
-Thinner starters act more in the early phase. Big waits longer. All completed starters still execute many middle and late actions. High late counts do not prove those late actions help. The recovery-window sections below test that.
+Thinner starters act more in the early phase. Big waits longer. All compact starters also change structure in the middle and late phases. A large number of late actions does not mean those late actions were useful. Many late actions still hurt accuracy. Ten generations plus a `500 s` simulation budget made late noise hard to ignore; that is why the revised script cuts both.
 
 ## Accuracy gain after architecture actions
 
-For each observable action, compare validation accuracy immediately before the action with validation accuracy at the end of the next generation. This gives the changed graph one generation to recover.
+For each observable action, compare validation accuracy immediately before the action with validation accuracy at the end of the next generation.
 
-### Action order across completed runs
+### Action order across completed compact runs
 
 ![Validation change by action order](/assets/experiments/002-action-order.png)
 
-> [!CAPTION] Figure 2. Bars show the mean validation-accuracy change after the first, second, third, fourth, and fifth-or-later action. Dots show individual actions from all `10` completed runs. Values are percentage-point changes.
+> [!CAPTION] Figure 2. Bars show the mean validation-accuracy change after the first, second, third, fourth, and fifth-or-later action. Dots show individual actions. Values are percentage-point changes.
 
 | Action order | Observed actions | Mean next-generation validation change |
 | --- | ---: | ---: |
-| First | `10` | `+17.80 percentage points` |
-| Second | `10` | `+6.74 percentage points` |
-| Third | `10` | `+2.33 percentage points` |
-| Fourth | `10` | `+4.00 percentage points` |
-| Fifth or later | `29` | `-0.12 percentage points` |
+| First | `30` | `+20.43 percentage points` |
+| Second | `30` | `+7.27 percentage points` |
+| Third | `30` | `+1.54 percentage points` |
+| Fourth | `30` | `+1.13 percentage points` |
+| Fifth or later | `100` | `+0.94 percentage points` |
 
-The first action is still the largest. The second through fourth actions stay positive on average, which is healthier than Experiment 001. From the fifth action onward, the mean is near zero or negative.
+The first action is still the largest gain. The second action still helps on average. Later actions are small on average and often noisy.
 
 ### Action order by architecture
 
 ![Validation change by action order and architecture](/assets/experiments/002-action-order-by-architecture.png)
 
-> [!CAPTION] Figure 3. Each panel uses the same next-generation validation change as Figure 2. One panel is one completed architecture.
+> [!CAPTION] Figure 3. Each panel uses the same next-generation validation change as Figure 2. Panels follow largest-to-smallest starting size.
 
-| Architecture | First-action mean | Second-action mean | Later-action pattern |
-| --- | ---: | ---: | --- |
-| `big` | `+25.19 percentage points` (`n=2`) | `-2.30 percentage points` (`n=2`) | First action still dominates |
-| `medium` | `+40.57 percentage points` (`n=2`) | `+0.63 percentage points` (`n=2`) | Huge first residual-conv jump; late delete can destroy the run |
-| `very_small` | `+12.33 percentage points` (`n=2`) | `+1.38 percentage points` (`n=2`) | First and third actions help; both first actions are sequential convolution |
-| `medium_h4` | `+2.09 percentage points` (`n=2`) | `+4.80 percentage points` (`n=2`) | Early gains are spread; fourth action mean is about `+15.79` percentage points |
-| `medium_ch2_h8` | `+8.85 percentage points` (`n=2`) | `+29.20 percentage points` (`n=2`) | First sequential linear, then residual convolution does the large climb |
+| Architecture | Start params | First-action mean | Second-action mean | Later-action pattern |
+| --- | ---: | ---: | ---: | --- |
+| `big` | `420` | `+34.86 percentage points` (`n=4`) | `-1.31 percentage points` (`n=4`) | First residual-conv jump dominates |
+| `medium` | `276` | `+28.62 percentage points` (`n=4`) | `-1.19 percentage points` (`n=4`) | Large first jump; finals remain unstable |
+| `medium_avg_pool_only` | `276` | `+48.06 percentage points` (`n=2`) | `+4.82 percentage points` (`n=2`) | Very large first residual jump |
+| `big_ch2_h8` | `158` | `+35.62 percentage points` (`n=4`) | `+0.34 percentage points` (`n=4`) | Same one-jump shape as `big` |
+| `medium_ch2_h8` | `122` | `+7.74 percentage points` (`n=4`) | `+35.22 percentage points` (`n=4`) | Clearest multi-step ladder |
+| `medium_h4` | `96` | `+4.47 percentage points` (`n=4`) | `+13.25 percentage points` (`n=4`) | Early gains spread across first actions |
+| `very_small` | `76` | `+10.06 percentage points` (`n=4`) | `+2.35 percentage points` (`n=4`) | First action is sequential convolution |
+| `very_small_ch2` | `38` | `+7.86 percentage points` (`n=4`) | `+3.43 percentage points` (`n=4`) | Sequential convolution early, still weak finals |
 
-`medium_h4` and `medium_ch2_h8` are the clearest multi-step starters so far. Plain `medium` still looks like Experiment 001: one large residual jump, then noisy later search.
+`medium_ch2_h8` and `medium_h4` show the best multi-step early gains. They still use the wrong double-pooling stem, so treat that result as a growth-shape signal, not as a final architecture choice.
 
 ### Action type
 
@@ -145,169 +197,199 @@ The first action is still the largest. The second through fourth actions stay po
 
 | Action type | Observed actions | Mean training change | Mean validation change |
 | --- | ---: | ---: | ---: |
-| Add residual convolution | `17` | `+17.78 percentage points` | `+15.34 percentage points` |
-| Add residual linear | `2` | `+5.54 percentage points` | `+11.03 percentage points` |
-| Add sequential convolution | `4` | `+6.60 percentage points` | `+6.30 percentage points` |
-| Add sequential linear | `24` | `+1.67 percentage points` | `+2.73 percentage points` |
-| Add sequential dropout | `12` | `-5.63 percentage points` | `+0.90 percentage points` |
-| Delete layer | `10` | `-4.61 percentage points` | `-7.90 percentage points` |
+| Add residual convolution | `54` | `+16.44 percentage points` | `+15.26 percentage points` |
+| Add sequential convolution | `11` | `+7.04 percentage points` | `+6.07 percentage points` |
+| Add residual linear | `10` | `+2.55 percentage points` | `+4.18 percentage points` |
+| Add sequential linear | `77` | `+1.63 percentage points` | `+2.49 percentage points` |
+| Add sequential dropout | `35` | `-3.58 percentage points` | `-0.89 percentage points` |
+| Delete layer | `33` | `-1.57 percentage points` | `-2.66 percentage points` |
 
-Residual convolution remains strongest. Sequential convolution now appears and helps on average. Deletion remains harmful on average.
+Residual convolution remains strongest. Sequential convolution is used and helps on average. Dropout and deletion remain weak or harmful on average.
 
 ![Executed action counts by type and architecture](/assets/experiments/002-action-composition.png)
 
-> [!CAPTION] Figure 5. Counts show what each starter actually executed across completed seeds, not only the mean accuracy effect.
-
-Sequential convolution is present in the executed set, especially on `very_small`. Residual convolution and sequential linear still dominate the counts.
+> [!CAPTION] Figure 5. Counts show what each starter actually executed across completed seeds.
 
 ## Final results
 
-### Result grouped by initial architecture
-
-Architectures are ordered by starting parameter count.
+Order is largest starting parameters first. Mean charts include collapsed seeds. The best-seed chart below shows the optimistic envelope without those outliers.
 
 ![Mean final training and validation accuracy by architecture](/assets/experiments/002-final-accuracy-by-architecture.png)
 
-> [!CAPTION] Figure 6. Each pair of bars is one architecture averaged across its completed seeds. Black dots are final validation for each seed. Architectures are ordered by starting parameters.
+> [!CAPTION] Figure 6. Mean final training and validation accuracy. Black dots are final validation for each seed.
 
-| Architecture | Completed seeds | Start params | Mean final training | Mean final validation | Mean peak validation | Mean actions | Mean final parameters |
+| Architecture | Start params | Seeds | Mean final training | Mean final validation | Mean peak validation | Mean actions | Mean final parameters |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `very_small` | `2` | `76` | `53.41%` | `56.45%` | `57.22%` | `7.50` | `516` |
-| `medium_h4` | `2` | `96` | `52.25%` | `57.05%` | `64.02%` | `7.00` | `412` |
-| `medium_ch2_h8` | `2` | `122` | `65.94%` | `78.45%` | `82.05%` | `7.50` | `542` |
-| `medium` | `2` | `276` | `52.03%` | `56.48%` | `85.89%` | `6.50` | `1372` |
-| `big` | `2` | `420` | `82.55%` | `84.68%` | `85.38%` | `6.00` | `1182` |
+| `big` | `420` | `4` | `86.30%` | `85.58%` | `89.63%` | `6.25` | `1497` |
+| `medium` | `276` | `4` | `57.44%` | `60.17%` | `75.91%` | `6.75` | `1428` |
+| `medium_avg_pool_only` | `276` | `2` | `78.14%` | `84.30%` | `87.33%` | `8.00` | `2220` |
+| `big_ch2_h8` | `158` | `4` | `83.47%` | `81.24%` | `87.05%` | `6.75` | `655` |
+| `medium_ch2_h8` | `122` | `4` | `71.58%` | `78.43%` | `81.26%` | `7.50` | `568` |
+| `medium_h4` | `96` | `4` | `57.15%` | `59.66%` | `64.35%` | `7.50` | `432` |
+| `very_small` | `76` | `4` | `40.75%` | `46.01%` | `47.28%` | `7.75` | `427` |
+| `very_small_ch2` | `38` | `4` | `31.04%` | `31.67%` | `33.45%` | `8.50` | `122` |
 
-Final means are lower than the matching Experiment 001 `3°` logistic cells for `big` and `medium`. Part of that is seed noise. With only two completed seeds, one bad path can move the mean a lot.
+### Best-seed finals
 
-The important change versus Experiment 001 is the gap between medium and very small. In Experiment 001 under `3°`, medium finished near `81.84%` and very small near `51.50%`. Here their final means are almost the same (`56.48%` and `56.45%`). Very small rose a little because sequential convolution is legal. Medium fell a lot on the final mean because seed `100` collapsed. Peak validation still shows medium can reach the mid-`80%` range.
+This chart ignores bad outlier seeds. For each architecture it keeps only the best completed seed.
 
-`medium_ch2_h8` is now the strongest completed thin starter on finals (`78.45%` mean). That supports keeping width-reduced medium variants in later experiments.
+![Best-seed final training and validation accuracy](/assets/experiments/002-best-seed-accuracy-by-architecture.png)
 
-`big` remains best on average, but `84.68%` is also weaker than Experiment 001’s `92.06%` under the same schedulers. Seed `101` on big finished at only `75.18%`. More seeds are required before ranking these starters firmly.
+> [!CAPTION] Figure 7. Best-seed final training and validation accuracy. Each bar is the strongest seed, not the mean.
+
+| Architecture | Start params | Best seed | Best final training | Best final validation | Final parameters |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `big` | `420` | `102` | `90.36%` | `94.67%` | `2068` |
+| `medium` | `276` | `101` | `79.34%` | `83.81%` | `1924` |
+| `medium_avg_pool_only` | `276` | `101` | `89.23%` | `91.44%` | `3108` |
+| `big_ch2_h8` | `158` | `100` | `90.08%` | `88.68%` | `886` |
+| `medium_ch2_h8` | `122` | `101` | `81.08%` | `84.57%` | `690` |
+| `medium_h4` | `96` | `101` | `57.04%` | `64.26%` | `580` |
+| `very_small` | `76` | `100` | `63.13%` | `67.17%` | `492` |
+| `very_small_ch2` | `38` | `103` | `34.62%` | `35.60%` | `76` |
+
+Why medium looks weak on the mean chart: two of four seeds went badly. Seed `100` collapsed after a late delete. Seed `102` stayed near `45%`. Seeds `101` and `103` reached the mid-`80%` range. So the mean is pulled down by bad paths, while the best-seed chart still shows a usable medium path. The deeper issue remains the wrong double-pooling stem.
+
+`medium_avg_pool_only` is both cleaner in design and stronger on the seeds available so far (`84.30%` mean, `91.44%` best). Best-seed finals also show that stronger paths grow larger: valid medium ends at `3108` parameters, while the best thin multi-step path (`medium_ch2_h8`) ends at `690`.
 
 ### Comparison with Experiment 001 under the same schedulers
 
-| Starter | Exp 001 `3°` mean final validation | Exp 002 mean final validation | Notes |
-| --- | ---: | ---: | --- |
-| `big` | `92.06%` | `84.68%` | Lower mean; large seed spread |
-| `medium` | `81.84%` | `56.48%` | Final mean pulled down by one collapse |
-| `very_small` | `51.50%` | `56.45%` | Higher; both seeds start with sequential convolution |
-
-### Peak versus final validation
-
-![Peak versus final validation](/assets/experiments/002-peak-vs-final.png)
-
-> [!CAPTION] Figure 7. Purple is mean peak validation. Green is mean final validation. A large gap means late actions destroyed an earlier peak.
-
-| Architecture | Seed | Peak validation | Final validation | Drop |
+| Starter | Start params | Exp 001 `3°` mean final validation | Exp 002 four-seed mean final validation | Notes |
 | --- | ---: | ---: | ---: | ---: |
-| `medium` | `100` | `83.75%` | `29.15%` | `54.60 percentage points` |
-| `medium_h4` | `100` | `63.48%` | `49.84%` | `13.64 percentage points` |
-| `medium_ch2_h8` | `100` | `78.89%` | `72.33%` | `6.56 percentage points` |
-| `medium` | `101` | `88.02%` | `83.81%` | `4.21 percentage points` |
-| other completed seeds | — | — | — | under `2 percentage points` |
-
-Peak versus final is the key warning chart. Medium seed `100` proves that a strong run can still be destroyed late. Until more seeds finish, peak validation and seed-level curves matter more than the medium final mean.
+| `big` | `420` | `92.06%` | `85.58%` | Lower mean; large seed spread |
+| `medium` | `276` | `81.84%` | `60.17%` | Final mean hurt by collapses and weak seeds |
+| `very_small` | `76` | `51.50%` | `46.01%` | Seq-conv appears, but four-seed mean falls |
 
 ### Parameter growth
 
-Architectures are ordered by starting parameter count: `very_small` (`76`), `medium_h4` (`96`), `medium_ch2_h8` (`122`), `medium` (`276`), `big` (`420`).
-
 ![Starting and final parameter counts](/assets/experiments/002-param-growth.png)
 
-> [!CAPTION] Figure 8. Gray bars are starting parameters. Colored bars are mean final parameters. Dots are final counts per completed seed. Order follows starting size.
+> [!CAPTION] Figure 8. Gray bars are starting parameters. Colored bars are mean final parameters. Dots are final counts per completed seed.
 
 | Architecture | Start parameters | Mean final parameters | Mean growth |
 | --- | ---: | ---: | ---: |
-| `very_small` | `76` | `516` | `+440` |
-| `medium_h4` | `96` | `412` | `+316` |
-| `medium_ch2_h8` | `122` | `542` | `+420` |
-| `medium` | `276` | `1372` | `+1096` |
-| `big` | `420` | `1182` | `+762` |
+| `big` | `420` | `1497` | `+1077` |
+| `medium` | `276` | `1428` | `+1152` |
+| `medium_avg_pool_only` | `276` | `2220` | `+1944` |
+| `big_ch2_h8` | `158` | `655` | `+497` |
+| `medium_ch2_h8` | `122` | `568` | `+446` |
+| `medium_h4` | `96` | `432` | `+336` |
+| `very_small` | `76` | `427` | `+351` |
+| `very_small_ch2` | `38` | `122` | `+84` |
 
-Size alone does not decide accuracy. Medium can finish larger than big and still end weaker on the collapsed seed. Very small grows more than `medium_h4` on average, but both stay far below a strong MNIST solution.
+This table is the compact place to compare initial structure size. `big_ch2_h8` starts smaller than `medium`, so the “big” label is misleading.
 
-## Final graph comparison
+## Training accuracy by generation
 
-The board stores graphs as simplified PDFs. The images below are PNG renders. Originals are in `documentation/website/app/public/assets/experiments/exp002-graphs/`.
+The question is whether longer runs still push training accuracy into a strong band, or whether later generations mostly rearrange weak models.
 
-### Starting graphs before growth
+![Mean training accuracy by generation](/assets/experiments/002-train-acc-by-generation.png)
 
-![Very small starter](/assets/experiments/exp002-graphs/start-very_small-seed100.png)
+> [!CAPTION] Figure 9. Each bar group is one generation. Colors are architectures ordered by starting size. The dashed line marks `91%` training accuracy.
 
-> [!CAPTION] Figure 9. Very small starter: `conv1` then pooling into `linear2`. Starting parameters `76`.
+No compact starter reaches a mean end-of-generation training accuracy of `91%`. The strongest means stay in the mid-`80%` range late in training (`big` about `86%` at generation `9`). Several thin or double-pooling stems plateau far below that band. Ten generations therefore buy more late actions without delivering a clear strong-training finish. That supports cutting the revised grid to five generations.
 
-![Medium h4 starter](/assets/experiments/exp002-graphs/start-medium_h4-seed101.png)
+## Starting graph comparison
 
-> [!CAPTION] Figure 10. `medium_h4` starter: medium depth with hidden size `4`. Starting parameters `96`.
+Initial simplified graphs before growth. Order is largest starting parameters first. Captions mark the double-pooling mistake where it appears.
 
-![Medium starter](/assets/experiments/exp002-graphs/start-medium-seed101.png)
+![big starter](/assets/experiments/exp002-graphs/start-big-seed100.png)
 
-> [!CAPTION] Figure 11. Medium starter: `conv1`, `linear`, `linear2`. Starting parameters `276`.
+> [!CAPTION] Figure 10. `big` starter, `420` parameters. It uses max pooling and then adaptive average pooling. That stacked pooling is wrong.
 
-![Big starter](/assets/experiments/exp002-graphs/start-big-seed100.png)
+![medium starter](/assets/experiments/exp002-graphs/start-medium-seed101.png)
 
-> [!CAPTION] Figure 12. Big starter: `conv1`, `conv2`, `linear`, `linear2`. Starting parameters `420`.
+> [!CAPTION] Figure 11. `medium` starter, `276` parameters. It also stacks max pooling and adaptive average pooling. That is wrong.
 
-### Best completed final graph for each architecture
+![medium_avg_pool_only starter](/assets/experiments/exp002-graphs/start-medium_avg_pool_only-seed101.png)
 
-![Best very small final graph](/assets/experiments/exp002-graphs/final-very_small-seed100-val67.png)
+> [!CAPTION] Figure 12. `medium_avg_pool_only` starter, `276` parameters. Only adaptive average pooling. This is the valid compact medium design in this grid.
 
-> [!CAPTION] Figure 13. Best very small final graph: seed `100`, final validation `67.17%`. The first action was sequential convolution.
+![big_ch2_h8 starter](/assets/experiments/exp002-graphs/start-big_ch2_h8-seed100.png)
 
-![Best medium_h4 final graph](/assets/experiments/exp002-graphs/final-medium_h4-seed101-val64.png)
+> [!CAPTION] Figure 13. `big_ch2_h8` starter, `158` parameters. Same stacked pooling as `big`. The name “big” is misleading because it starts smaller than `medium`.
 
-> [!CAPTION] Figure 14. Best `medium_h4` final graph: seed `101`, final validation `64.26%`. Early sequential convolution appears on this seed.
+![medium_ch2_h8 starter](/assets/experiments/exp002-graphs/start-medium_ch2_h8-seed100.png)
 
-![Best medium_ch2_h8 final graph](/assets/experiments/exp002-graphs/final-medium_ch2_h8-seed101-val85.png)
+> [!CAPTION] Figure 14. `medium_ch2_h8` starter, `122` parameters. Stacked max pool and adaptive average pool. Wrong design.
 
-> [!CAPTION] Figure 15. Best completed `medium_ch2_h8` final graph: seed `101`, final validation `84.57%`.
+![medium_h4 starter](/assets/experiments/exp002-graphs/start-medium_h4-seed101.png)
 
-![Best medium final graph](/assets/experiments/exp002-graphs/final-medium-seed101-val84.png)
+> [!CAPTION] Figure 15. `medium_h4` starter, `96` parameters. Same stacked pooling mistake.
 
-> [!CAPTION] Figure 16. Best medium final graph: seed `101`, final validation `83.81%`. This is the healthy medium path.
+![very_small starter](/assets/experiments/exp002-graphs/start-very_small-seed100.png)
 
-![Best big final graph](/assets/experiments/exp002-graphs/final-big-seed100-val94.png)
+> [!CAPTION] Figure 16. `very_small` starter, `76` parameters. Max pool then adaptive average pool. Wrong design.
 
-> [!CAPTION] Figure 17. Best big final graph: seed `100`, final validation `94.18%`.
+![very_small_ch2 starter](/assets/experiments/exp002-graphs/start-very_small_ch2-seed103.png)
 
-### Collapsed medium seed `100`
+> [!CAPTION] Figure 17. `very_small_ch2` starter, `38` parameters. Same stacked pooling mistake.
+
+## Architecture comparisons
+
+### Medium family versus big family
+
+Compare the main depth cut: two-convolution stems versus one-convolution stems.
+
+![big starter](/assets/experiments/exp002-graphs/start-big-seed100.png)
+
+> [!CAPTION] Figure 18. Big family base: two convolutions before the linear head. Start params `420`.
+
+![medium_avg_pool_only starter](/assets/experiments/exp002-graphs/start-medium_avg_pool_only-seed101.png)
+
+> [!CAPTION] Figure 19. Valid medium family base: one convolution and one adaptive average pool. Start params `276`.
+
+![Best big final graph](/assets/experiments/exp002-graphs/final-big-seed102-val95.png)
+
+> [!CAPTION] Figure 20. Best big final graph: seed `102`, final validation `94.67%`.
+
+![Best medium_avg_pool_only final graph](/assets/experiments/exp002-graphs/final-medium_avg_pool_only-seed101-val91.png)
+
+> [!CAPTION] Figure 21. Best valid-medium final graph: `medium_avg_pool_only` seed `101`, final validation `91.44%`.
+
+The old double-pooling `medium` should not be used as the medium side of this comparison. Its best seed still reaches `83.81%`, but the stem design is wrong.
 
 ![Collapsed medium final graph](/assets/experiments/exp002-graphs/final-medium-seed100-collapsed.png)
 
-> [!CAPTION] Figure 18. Medium seed `100` after the late collapse. Final validation `29.15%`. The residual convolution that carried most of the accuracy is gone.
+> [!CAPTION] Figure 22. Old double-pooling `medium` seed `100` after collapse. Final validation `29.15%`.
 
-This graph is the end of a strong run that failed late. Peak validation was `83.75%`. The last two executed actions were:
+### Very small versus medium
 
-1. Generation `6`: `Add Seq Dropout Layer Action` between `linear` and `seq_linear_0` (`p=0.2`). Validation moved from `81.61%` to `77.09%` over the next generation. Training accuracy fell hard at the generation boundary.
-2. Generation `8`: `Delete Layer Action` on `res_conv__0`. That residual convolution was the main early gain. After the delete, validation fell from `77.07%` to `29.15%`.
+![very_small starter](/assets/experiments/exp002-graphs/start-very_small-seed100.png)
 
-So the collapse is not mysterious. The run deleted the residual path that had rebuilt capacity, and left a thinner sequential linear/dropout chain.
+> [!CAPTION] Figure 23. Very small starter. Start params `76`. Missing the hidden linear and using stacked pooling.
+
+![medium_avg_pool_only starter](/assets/experiments/exp002-graphs/start-medium_avg_pool_only-seed101.png)
+
+> [!CAPTION] Figure 24. Valid medium starter. Start params `276`. One hidden linear and one adaptive average pool.
+
+![Best very small final graph](/assets/experiments/exp002-graphs/final-very_small-seed100-val67.png)
+
+> [!CAPTION] Figure 25. Best very small final graph: seed `100`, final validation `67.17%`. Sequential convolution appears, but the run stays far below the valid medium.
+
+Very small can take the sequential-convolution rebuild step. It still does not catch the valid medium starter. Also, the very-small stem itself still has the stacked pooling mistake, so a future very-small design should keep only one pooling style.
 
 ## Training histories
 
 ![Training-accuracy curves by architecture](/assets/experiments/002-training-curves.png)
 
-> [!CAPTION] Figure 19. Each panel is one architecture with completed seeds. Line color marks the seed.
+> [!CAPTION] Figure 26. Each panel is one architecture, ordered largest starting size first. Line color marks the seed.
 
 Visible shapes:
 
-1. `big` seed `100` rises into the high-accuracy region after the first residual convolution. Seed `101` stays lower after early dropout actions.
-2. `medium` seed `101` rises and holds near the high-`70%` to mid-`80%` training region. Seed `100` rises, then collapses after the late delete of `res_conv__0`.
-3. `very_small` seed `100` climbs in several steps after sequential convolution and later residual convolution. Seed `101` stays near `45%`.
-4. `medium_h4` rises more slowly and stays below about `65%` peak validation.
-5. `medium_ch2_h8` shows a clear two-step climb on both seeds: sequential linear, then residual convolution. Seed `101` finishes strongest among the thin medium variants.
-
-The medium seed `100` curve is the reason the medium final mean looks almost identical to very small. Without that one collapse, medium would still look clearly stronger on finals.
+1. `big` splits into strong seeds (`100`, `102`) and weaker seeds (`101`, `103`).
+2. Old `medium` has one collapse (`100`) and one weak path (`102`). That is why the mean looks bad.
+3. `medium_avg_pool_only` stays high on the seeds completed so far.
+4. `medium_ch2_h8` climbs in two steps and stays useful, but its stem still has stacked pooling.
+5. `very_small` and `very_small_ch2` stay low.
 
 ## Seed effects and limitations
 
-- Only `10` completed runs are available. Pooling starters and several width variants are unfinished. Seeds `102` and `103` are not started yet.
-- Two seeds are not enough. The script now plans four seeds per architecture. Re-running the same command will fill the missing seeds without other script changes.
-- Medium’s final mean is misleading until the collapsed seed is counted as a late-delete failure, not as a normal medium outcome.
-- Sequential convolution helps early rebuild on `very_small`, but residual convolution still creates larger average gains.
-- Stacked dropout and late deletion still appear.
+- Most starters in this grid use a wrong stacked pooling design. Only `medium_avg_pool_only` is clean.
+- Old oversized flatten controls are ignored completely on this page.
+- Medium means are sensitive to late deletes. Use the best-seed chart together with the mean chart.
+- Sequential convolution helps thin rebuild, but it does not fix a bad pooling stem.
+- Ten generations and a long simulation budget make late actions hard to interpret. Architecture comparisons are therefore noisy.
 
 ## How the report is preserved
 
@@ -318,26 +400,22 @@ The raw `experiments/output/` folder is ignored by Git. The report keeps:
 - graph PDF/PNG copies under `documentation/website/app/public/assets/experiments/exp002-graphs/`
 - a normalized data snapshot at `documentation/website/data/experiments/experiment-002-initial-architectures.json`
 
-`generate_experiment_002_charts.py` updates the snapshot when raw output exists. If raw output is missing, it reads the snapshot instead.
-
-These documentation artifacts must be committed before the raw experiment folder is removed from this machine. After more seeds finish, re-run the chart script and refresh the tables on this page.
+`generate_experiment_002_charts.py` ignores oversized flatten controls by starting parameter count. Ranking charts use the remaining compact starters only.
 
 ## Conclusions
 
-1. Experiment 002 is an initial-architecture survey under fixed Experiment 001 schedulers. The scheduler pair is not the variable under test.
-2. Sequential convolution is now used. Both completed `very_small` seeds take it as the first action.
-3. Very small improves versus Experiment 001 (`51.50%` to `56.45%` mean final validation). Medium and very small finals are now almost equal, mainly because medium seed `100` collapsed after deleting `res_conv__0`.
-4. Peak validation still separates medium from very small. Medium can reach the mid-`80%` range. The final mean cannot be trusted yet.
-5. Early action gains are more multi-step than in Experiment 001. The first four action orders stay positive on average. Later actions remain risky.
-6. `medium_h4` and `medium_ch2_h8` show the healthier early-gain shape. `medium_ch2_h8` currently has the strongest thin-starter finals (`78.45%` mean).
-7. `big` remains strongest on average, but current means are lower and more seed-sensitive than Experiment 001. More seeds are required.
-8. Late deletion after a high peak is unsafe. Medium seed `100` lost `54.60` percentage points after deleting the residual convolution that carried the earlier gain.
+1. Most starters in this first grid are wrong because they stack max pooling and adaptive average pooling. That makes clean ranking hard.
+2. Only `medium_avg_pool_only` is a valid compact starter design in this experiment.
+3. Oversized flatten controls are neglected completely because they are a different capacity class.
+4. After the sequential-convolution fix, thin starters can insert convolution before flatten. That is visible on `very_small`.
+5. Mean medium results look weak because of bad seeds. Best-seed medium still reaches `83.81%`, and valid `medium_avg_pool_only` reaches `91.44%` with `3108` final parameters.
+6. `medium_ch2_h8` still shows the best multi-step early-gain shape, but it should not be kept as-is until its pooling stem is fixed.
+7. `big_ch2_h8` should not be named as a “big” model. It starts with fewer parameters than `medium`.
+8. No compact starter reaches a mean generation training accuracy of `91%`. Later generations mostly add noise. The revised script therefore uses `5` generations and `120 s` simulation time.
 
 ## Next steps
 
-1. Finish the remaining architectures and the new seeds `102` and `103`, then regenerate charts and refresh this page.
-2. Keep the Experiment 001 scheduler pair fixed while reading the finished architecture ranking.
-3. Block or heavily penalize late deletion after a high validation peak.
+1. Run the revised Exp 002 grid from `experiments/train_mnist_exp002_initial_architectures.py` into `exp002_initial_architectures_after_fix_1`.
+2. Regenerate charts after the new runs land under that after-fix output root.
+3. Keep blocking late deletion after a high validation peak.
 4. Keep blocking stacked dropout on the same edge.
-5. After the pooling starters finish, compare only max pool, only average pool, and no pool.
-6. Prefer `medium_h4` or `medium_ch2_h8` when testing multi-step growth, because their early action-order curves are healthier than plain `medium`.
