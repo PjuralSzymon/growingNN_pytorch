@@ -1,19 +1,22 @@
 """
-Experiment 002 driver — initial architecture survey under fixed Exp 001 schedulers.
+Experiment 002 driver — initial architecture survey (revised after report analysis).
 
-Experiment 001 fixed the practical scheduler pair at 3° slope + logistic LR warmup.
-This follow-up keeps that pair constant and varies only the starting MNIST graph.
+Lessons from the first Exp 002 grid:
+- Do not stack pooling ops next to each other.
+- Keep one pooling style, and keep the first linear compact via global pooling.
+- Compare topology only: same channels, same hidden size, same pooling for every starter.
+- Fewer generations and a shorter MCTS budget reduce late random actions.
 
-Research question: with sequential-convolution rebuild edges legal, which initial
-architectures grow usefully under the same search/LR settings as Experiment 001?
-
-Grid: many starters x two matched seeds (100, 101). Slope is fixed at 3°.
-LR warmup is fixed to logistic. Other MNIST hyperparameters match Experiments 000/001.
+Research question: with sequential-convolution rebuild edges legal, which starting
+layer layouts grow usefully under fixed 3° logistic schedulers when width is held fixed?
 
 Published report target:
 documentation/website/content/experiments/experiment-002-initial-architectures.md
 
-Raw output:
+Raw output (revised grid after stem/pool fixes):
+experiments/output/train_mnist/runs/exp002_initial_architectures_after_fix_1
+
+First-grid output (unchanged, kept for the published report):
 experiments/output/train_mnist/runs/exp002_initial_architectures
 """
 
@@ -36,59 +39,59 @@ if str(_REPO_ROOT) not in sys.path:
 
 from experiments import experiments_common as common
 from experiments import train_mnist
-from experiments.train_mnist_exp001_slope_model_depth import (
-    MediumMnistNet,
-    VerySmallMnistNet,
-    configure_deterministic_seeding,
-)
+from experiments.train_mnist_exp001_slope_model_depth import configure_deterministic_seeding
 from growingnn.simulation.simulation_schedulers import SlopeEstimationSimulationScheduler
 from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
 
-RUNS_DIR = train_mnist.RUNS_DIR / "exp002_initial_architectures"
+RUNS_DIR = train_mnist.RUNS_DIR / "exp002_initial_architectures_after_fix_1"
 EPOCHS_PER_GENERATION = 10
+GENERATIONS = 5
+SIMULATION_TIME_SEC = 120.0
 WARMUP_ITERATIONS = 10
 WARMUP_STEEPNESS = 10.0
 SLOPE_ANGLE_THRESHOLD = 3.0
 LR_MODE = ScheduleMode.WARMUP_LOGISTIC
 
 SEED_BASE = 100
-SEED_COUNT = 2
+SEED_COUNT = 4
 SEEDS = tuple(SEED_BASE + offset for offset in range(SEED_COUNT))
 
-MNIST_SPATIAL = 28
-MAX_POOL_KERNEL = 2
+# Shared width for every starter. Topology is the only intentional difference.
+CHANNELS = 4
+HIDDEN_LINEAR_SIZE = 16
 
 
-class MediumMaxPoolOnlyMnistNet(nn.Module):
-    """Medium depth with max-pool only (no adaptive global pool)."""
+class BigAvgPoolMnistNet(nn.Module):
+    """2×Conv2d + 2×Linear; one adaptive average pool before the hidden linear."""
 
     def __init__(
         self,
         num_classes: int = train_mnist.NUM_CLASSES,
-        channels: int = 4,
-        hidden_linear_size: int = 16,
+        channels: int = CHANNELS,
+        hidden_linear_size: int = HIDDEN_LINEAR_SIZE,
     ) -> None:
         super().__init__()
-        spatial_after_pool = MNIST_SPATIAL // MAX_POOL_KERNEL
         self.conv1 = nn.Conv2d(1, channels, 3, padding=1, bias=False)
-        self.linear = nn.Linear(channels * spatial_after_pool * spatial_after_pool, hidden_linear_size, bias=True)
+        self.conv2 = nn.Conv2d(channels, channels, 3, padding=1, bias=False)
+        self.linear = nn.Linear(channels, hidden_linear_size, bias=True)
         self.linear2 = nn.Linear(hidden_linear_size, num_classes, bias=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = F.relu(self.conv1(x))
-        x = F.max_pool2d(x, MAX_POOL_KERNEL)
+        x = F.relu(self.conv2(x))
+        x = F.adaptive_avg_pool2d(x, 1)
         x = F.relu(self.linear(x.flatten(1)))
         return self.linear2(x)
 
 
-class MediumAvgPoolOnlyMnistNet(nn.Module):
-    """Medium depth with adaptive average pool only (no max pool)."""
+class Medium1Conv2LinearMnistNet(nn.Module):
+    """1×Conv2d + 2×Linear; one adaptive average pool before the hidden linear."""
 
     def __init__(
         self,
         num_classes: int = train_mnist.NUM_CLASSES,
-        channels: int = 4,
-        hidden_linear_size: int = 16,
+        channels: int = CHANNELS,
+        hidden_linear_size: int = HIDDEN_LINEAR_SIZE,
     ) -> None:
         super().__init__()
         self.conv1 = nn.Conv2d(1, channels, 3, padding=1, bias=False)
@@ -102,95 +105,72 @@ class MediumAvgPoolOnlyMnistNet(nn.Module):
         return self.linear2(x)
 
 
-class MediumNoPoolMnistNet(nn.Module):
-    """Medium depth with no pooling (flatten full spatial map)."""
+class Medium2Conv1LinearMnistNet(nn.Module):
+    """2×Conv2d + 1×Linear; one adaptive average pool before the classifier linear."""
 
     def __init__(
         self,
         num_classes: int = train_mnist.NUM_CLASSES,
-        channels: int = 4,
-        hidden_linear_size: int = 16,
+        channels: int = CHANNELS,
     ) -> None:
         super().__init__()
         self.conv1 = nn.Conv2d(1, channels, 3, padding=1, bias=False)
-        self.linear = nn.Linear(channels * MNIST_SPATIAL * MNIST_SPATIAL, hidden_linear_size, bias=True)
-        self.linear2 = nn.Linear(hidden_linear_size, num_classes, bias=False)
+        self.conv2 = nn.Conv2d(channels, channels, 3, padding=1, bias=False)
+        self.linear2 = nn.Linear(channels, num_classes, bias=False)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = F.relu(self.conv1(x))
-        x = F.relu(self.linear(x.flatten(1)))
-        return self.linear2(x)
+        x = F.relu(self.conv2(x))
+        x = F.adaptive_avg_pool2d(x, 1)
+        return self.linear2(x.flatten(1))
 
 
-def _build_big(channels: int, hidden_linear_size: int) -> Callable[[dict[str, object]], nn.Module]:
+class SmallAvgPoolMnistNet(nn.Module):
+    """1×Conv2d + 1×Linear; one adaptive average pool before the classifier linear."""
+
+    def __init__(
+        self,
+        num_classes: int = train_mnist.NUM_CLASSES,
+        channels: int = CHANNELS,
+    ) -> None:
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, channels, 3, padding=1, bias=False)
+        self.linear2 = nn.Linear(channels, num_classes, bias=False)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = F.relu(self.conv1(x))
+        x = F.adaptive_avg_pool2d(x, 1)
+        return self.linear2(x.flatten(1))
+
+
+def _factory(builder: Callable[..., nn.Module], **kwargs: object) -> Callable[[dict[str, object]], nn.Module]:
     def factory(_hp: dict[str, object]) -> nn.Module:
-        return train_mnist.MinimalMnistNet(
-            channels=channels,
-            hidden_linear_size=hidden_linear_size,
-        )
+        return builder(**kwargs)
 
     return factory
 
 
-def _build_medium(channels: int, hidden_linear_size: int) -> Callable[[dict[str, object]], nn.Module]:
-    def factory(_hp: dict[str, object]) -> nn.Module:
-        return MediumMnistNet(channels=channels, hidden_linear_size=hidden_linear_size)
-
-    return factory
-
-
-def _build_very_small(channels: int) -> Callable[[dict[str, object]], nn.Module]:
-    def factory(_hp: dict[str, object]) -> nn.Module:
-        return VerySmallMnistNet(channels=channels)
-
-    return factory
-
-
-def _build_medium_max_pool_only(
-    channels: int, hidden_linear_size: int,
-) -> Callable[[dict[str, object]], nn.Module]:
-    def factory(_hp: dict[str, object]) -> nn.Module:
-        return MediumMaxPoolOnlyMnistNet(channels=channels, hidden_linear_size=hidden_linear_size)
-
-    return factory
-
-
-def _build_medium_avg_pool_only(
-    channels: int, hidden_linear_size: int,
-) -> Callable[[dict[str, object]], nn.Module]:
-    def factory(_hp: dict[str, object]) -> nn.Module:
-        return MediumAvgPoolOnlyMnistNet(channels=channels, hidden_linear_size=hidden_linear_size)
-
-    return factory
-
-
-def _build_medium_no_pool(
-    channels: int, hidden_linear_size: int,
-) -> Callable[[dict[str, object]], nn.Module]:
-    def factory(_hp: dict[str, object]) -> nn.Module:
-        return MediumNoPoolMnistNet(channels=channels, hidden_linear_size=hidden_linear_size)
-
-    return factory
-
-
-# Starters from Experiment 001 plus proposed follow-ups (width, head, pooling).
+# Topology-only grid. Width and pooling are shared; rows are ordered by start params, largest first.
+# Param counts with channels=4, hidden=16, classes=10:
+#   big                    2×Conv+2×Linear → 420
+#   medium_1conv_2linear   1×Conv+2×Linear → 276
+#   medium_2conv_1linear   2×Conv+1×Linear → 220
+#   small                  1×Conv+1×Linear → 76
 MODEL_VARIANTS: tuple[tuple[str, Callable[[dict[str, object]], nn.Module]], ...] = (
-    ("big", _build_big(4, 16)),
-    ("medium", _build_medium(4, 16)),
-    ("very_small", _build_very_small(4)),
-    ("medium_h4", _build_medium(4, 4)),
-    ("medium_ch2_h8", _build_medium(2, 8)),
-    ("big_ch2_h8", _build_big(2, 8)),
-    ("very_small_ch2", _build_very_small(2)),
-    ("medium_max_pool_only", _build_medium_max_pool_only(4, 16)),
-    ("medium_avg_pool_only", _build_medium_avg_pool_only(4, 16)),
-    ("medium_no_pool", _build_medium_no_pool(4, 16)),
+    # 2×Conv2d + 2×Linear (4 modules); adaptive_avg only; channels=4, hidden=16; start params=420
+    ("big", _factory(BigAvgPoolMnistNet)),
+    # 1×Conv2d + 2×Linear (3 modules); adaptive_avg only; channels=4, hidden=16; start params=276
+    ("medium_1conv_2linear", _factory(Medium1Conv2LinearMnistNet)),
+    # 2×Conv2d + 1×Linear (3 modules); adaptive_avg only; channels=4; start params=220
+    ("medium_2conv_1linear", _factory(Medium2Conv1LinearMnistNet)),
+    # 1×Conv2d + 1×Linear (2 modules); adaptive_avg only; channels=4; start params=76
+    ("small", _factory(SmallAvgPoolMnistNet)),
 )
 
 
 if __name__ == "__main__":
     args = common.parse_board_cli(
-        "Experiment 002: fixed 3° logistic MNIST runs across initial architectures"
+        "Experiment 002: MNIST initial-architecture survey (topology-only, avg pool)"
     )
     configure_deterministic_seeding()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -237,6 +217,8 @@ if __name__ == "__main__":
                     {
                         **dict(zip(train_mnist.METAPARAM_KEYS, values)),
                         "epochs": EPOCHS_PER_GENERATION,
+                        "generations": GENERATIONS,
+                        "simulation_time": SIMULATION_TIME_SEC,
                     }
                     for values in itertools.product(*train_mnist.METAPARAM_LISTS)
                 ),
@@ -245,5 +227,6 @@ if __name__ == "__main__":
             )
         print(
             f"{model_name}: executed {executed}, skipped {skipped}, "
-            f"seeds={SEEDS}, output {definition.runs_dir}"
+            f"seeds={SEEDS}, gens={GENERATIONS}, simt={SIMULATION_TIME_SEC}, "
+            f"output {definition.runs_dir}"
         )
