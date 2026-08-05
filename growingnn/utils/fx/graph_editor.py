@@ -213,6 +213,43 @@ class ModelStructureEditor:
         gm.recompile()
 
     @staticmethod
+    def add_new_seq_layer_before_flatten(gm, src_name, dst_name, new_layer, name):
+        """Insert *new_layer* immediately before the flatten node on the src→dst sequential path."""
+        from growingnn.utils.fx.graph_analysis import GraphStructureQuery
+
+        gm.add_module(name, new_layer)
+        nodes = list(gm.graph.nodes)
+        src = ModuleResolver.find_call_module(nodes, src_name)
+        dst = ModuleResolver.find_call_module(nodes, dst_name)
+        if src is dst:
+            raise ValueError("src and dst must differ.")
+
+        path_destination_to_source = _path_dst_to_src(dst, src)
+        if path_destination_to_source is None:
+            raise ValueError(f"No path from {dst_name!r} back to {src_name!r} in the FX graph.")
+
+        flatten_node = GraphStructureQuery.find_flatten_node_on_path_toward_source(
+            path_destination_to_source, gm,
+        )
+        if flatten_node is None:
+            raise ValueError(f"No flatten on path from {src_name!r} to {dst_name!r}.")
+
+        flatten_index = path_destination_to_source.index(flatten_node)
+        if flatten_index + 1 >= len(path_destination_to_source):
+            raise ValueError("Flatten has no predecessor on the sequential path.")
+        insert_after_node = path_destination_to_source[flatten_index + 1]
+        pools_before_flatten = GraphStructureQuery.find_pool_nodes_between_flatten_and_source(
+            path_destination_to_source, flatten_node, gm,
+        )
+        if not pools_before_flatten:
+            raise ValueError("Sequential conv before flatten requires at least one pool before flatten.")
+
+        new_out = _insert_call_module_after(gm, insert_after_node, name, insert_after_node)
+        NodeEditor.swap_node_input(flatten_node, insert_after_node, new_out)
+        gm.graph.lint()
+        gm.recompile()
+
+    @staticmethod
     def delete_layer(
         gm: fx.GraphModule,
         layer_id: str,
