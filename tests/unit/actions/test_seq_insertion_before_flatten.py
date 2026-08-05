@@ -11,6 +11,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
+from growingnn.actions.utils.layer_Factory import ConvFactory
 from growingnn.core.traced_model import TracedModel
 from growingnn.utils.fx.graph_analysis import GraphStructureQuery, LayerBridgeFinder
 from growingnn.utils.fx.graph_editor import _path_dst_to_src
@@ -119,56 +120,58 @@ def test_medium_path_has_pools_and_method_flatten():
     assert any(NodeTypeChecker.two_d_pool_kind(p, gm) == "adaptive_avg" for p in pools)
 
 
-def test_try_build_eye_convolution_accepts_medium_conv_to_linear():
+def test_is_before_flatten_insert_accepts_medium_conv_to_linear():
     """
-    Before-flatten builder should accept MediumMnistNet conv1→linear and return an eye Conv2d.
+    Insert check should be True for MediumMnistNet conv1→linear; then get eye-conv shape.
     """
     # Arrange
     traced = TracedModel.create(MediumMnistNet(), (1, 1, 28, 28))
 
     # Act
-    layer = AddSeqConvLayer.try_build_eye_convolution_for_insert_before_flatten(
+    can_insert = AddSeqConvLayer.is_before_flatten_insert(traced, "conv1", "linear")
+    out_channels, kernel_size, padding = AddSeqConvLayer.get_eye_convolution_shape_for_before_flatten(
         traced, "conv1", "linear",
+    )
+    layer = ConvFactory.create_eye_conv(
+        out_channels, out_channels, kernel_size, stride=1, padding=padding,
     )
 
     # Assert
-    assert isinstance(layer, nn.Conv2d)
+    assert can_insert is True
     assert layer.in_channels == 4
     assert layer.out_channels == 4
 
 
-def test_try_build_eye_convolution_accepts_unpadded_source_via_one_by_one_fallback():
+def test_get_eye_convolution_shape_uses_one_by_one_fallback_for_unpadded_source():
     """
-    When source 3x3 has no padding on a 1x1 site, builder should accept kernel 1 fallback.
+    When source 3x3 has no padding on a 1x1 map, shape should use kernel 1 fallback.
     """
     # Arrange
     traced = TracedModel.create(ModelFactory.simple_mnist_cnn(), (1, 1, 28, 28))
 
     # Act
-    layer = AddSeqConvLayer.try_build_eye_convolution_for_insert_before_flatten(
+    assert AddSeqConvLayer.is_before_flatten_insert(traced, "conv1", "linear")
+    _, kernel_size, padding = AddSeqConvLayer.get_eye_convolution_shape_for_before_flatten(
         traced, "conv1", "linear",
     )
 
     # Assert
-    assert isinstance(layer, nn.Conv2d)
-    assert layer.kernel_size == (1, 1)
-    assert layer.padding == (0, 0)
+    assert kernel_size == 1
+    assert padding == 0
 
 
-def test_try_build_eye_convolution_rejects_linear_to_linear():
+def test_is_before_flatten_insert_rejects_linear_to_linear():
     """
-    Before-flatten builder should return None for linear→linear pairs.
+    Insert check should be False for linear→linear pairs.
     """
     # Arrange
     traced = TracedModel.create(MediumMnistNet(), (1, 1, 28, 28))
 
     # Act
-    layer = AddSeqConvLayer.try_build_eye_convolution_for_insert_before_flatten(
-        traced, "linear", "linear2",
-    )
+    can_insert = AddSeqConvLayer.is_before_flatten_insert(traced, "linear", "linear2")
 
     # Assert
-    assert layer is None
+    assert can_insert is False
 
 
 if __name__ == "__main__":

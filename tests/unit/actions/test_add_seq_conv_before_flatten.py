@@ -37,7 +37,8 @@ def test_medium_mnist_generates_seq_conv_before_flatten():
     assert action.params[0] == "conv1"
     assert action.params[1] == "linear"
     assert isinstance(action.params[2], nn.Conv2d)
-    assert len(action.params) == 4
+    assert len(action.params) == 5
+    assert action.params[4] is True
 
 
 def test_medium_mnist_execute_inserts_second_conv_before_flatten():

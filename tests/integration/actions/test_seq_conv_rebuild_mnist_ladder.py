@@ -132,6 +132,7 @@ def test_architecture_change_very_small_mnist_net_to_medium_and_big():
         "seq_linear",
         ConvFactory.create_eye_conv(_CHANNELS, _CHANNELS, 3, stride=1, padding=1),
         "seq_conv",
+        True,
     ])
     action2.execute(small_changed_to_big)
 
@@ -141,6 +142,7 @@ def test_architecture_change_very_small_mnist_net_to_medium_and_big():
         "seq_linear",
         ConvFactory.create_eye_conv(_CHANNELS, _CHANNELS, 3, stride=1, padding=1),
         "seq_conv_2",
+        True,
     ])
     action3.execute(small_changed_to_big)
 
