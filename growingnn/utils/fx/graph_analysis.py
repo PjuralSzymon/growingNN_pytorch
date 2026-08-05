@@ -9,7 +9,7 @@ from torch.fx.passes.shape_prop import ShapeProp
 
 from growingnn.core.config import EDITABLE_MODULES
 from growingnn.core.logger import logger
-from growingnn.utils.fx.node_analysis import ModuleResolver
+from growingnn.utils.fx.node_analysis import ModuleResolver, NodeTypeChecker
 
 
 class ModuleClassifier:
@@ -149,6 +149,31 @@ class GraphStructureQuery:
         """Successor editable modules of *layer_id*."""
         _, succ = GraphStructureQuery._sequential_adj(model)
         return list(succ.get(layer_id, []))
+
+    @staticmethod
+    def find_flatten_node_on_path_toward_source(
+        path_destination_to_source: list[fx.Node],
+        gm: fx.GraphModule,
+    ) -> fx.Node | None:
+        """Return the first flatten node walking a destination-to-source FX path, or None."""
+        for node in path_destination_to_source:
+            if NodeTypeChecker.is_flatten_node(node, gm):
+                return node
+        return None
+
+    @staticmethod
+    def find_pool_nodes_between_flatten_and_source(
+        path_destination_to_source: list[fx.Node],
+        flatten_node: fx.Node,
+        gm: fx.GraphModule,
+    ) -> list[fx.Node]:
+        """Return pool nodes between flatten and source (source-ward of flatten on the path)."""
+        flatten_index = path_destination_to_source.index(flatten_node)
+        pools: list[fx.Node] = []
+        for node in path_destination_to_source[flatten_index + 1 :]:
+            if NodeTypeChecker.is_pool_node(node, gm):
+                pools.append(node)
+        return pools
 
     @staticmethod
     def _sequential_adj(model: nn.Module | fx.GraphModule) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
@@ -491,3 +516,81 @@ class LayerBridgeFinder:
         if from_output_shape is None or from_output_shape != to_input_shape:
             return None
         return LayerBridgeFinder.conv_channels(from_output_shape)
+
+    @staticmethod
+    def _normalize_to_height_width_pair(
+        value: int | tuple[int, ...] | list[int],
+    ) -> tuple[int, int]:
+        """Turn an int or (height, width) size into a (height, width) pair for size formulas."""
+        if isinstance(value, int):
+            return value, value
+        return int(value[0]), int(value[1])
+
+    @staticmethod
+    def get_convolution_output_height_and_width(
+        input_height: int,
+        input_width: int,
+        kernel_size: int | tuple[int, ...],
+        stride: int | tuple[int, ...] = 1,
+        padding: int | tuple[int, ...] = 0,
+        dilation: int | tuple[int, ...] = 1,
+    ) -> tuple[int, int] | None:
+        """Return Conv2d output (height, width), or None when the result is invalid."""
+        kernel_h, kernel_w = LayerBridgeFinder._normalize_to_height_width_pair(kernel_size)
+        stride_h, stride_w = LayerBridgeFinder._normalize_to_height_width_pair(stride)
+        pad_h, pad_w = LayerBridgeFinder._normalize_to_height_width_pair(padding)
+        dil_h, dil_w = LayerBridgeFinder._normalize_to_height_width_pair(dilation)
+        out_h = (input_height + 2 * pad_h - dil_h * (kernel_h - 1) - 1) // stride_h + 1
+        out_w = (input_width + 2 * pad_w - dil_w * (kernel_w - 1) - 1) // stride_w + 1
+        if out_h < 1 or out_w < 1:
+            return None
+        return out_h, out_w
+
+    @staticmethod
+    def get_flatten_feature_count_after_convolution_and_pools(
+        insert_site_channels: int,
+        insert_site_height: int,
+        insert_site_width: int,
+        out_channels: int,
+        kernel_size: int | tuple[int, ...],
+        stride: int | tuple[int, ...],
+        padding: int | tuple[int, ...],
+        dilation: int | tuple[int, ...],
+        pools_after_insert: list[tuple[str, dict]],
+    ) -> int | None:
+        """Return C*H*W after a new conv then optional pools before flatten."""
+        del insert_site_channels
+        spatial = LayerBridgeFinder.get_convolution_output_height_and_width(
+            insert_site_height,
+            insert_site_width,
+            kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+        )
+        if spatial is None:
+            return None
+        height, width = spatial
+        channels = out_channels
+        for kind, kwargs in pools_after_insert:
+            if kind.startswith("adaptive"):
+                height, width = LayerBridgeFinder._normalize_to_height_width_pair(
+                    kwargs["output_size"],
+                )
+            else:
+                pool_kernel = kwargs["kernel_size"]
+                pool_stride = kwargs.get("stride")
+                if pool_stride is None:
+                    pool_stride = pool_kernel
+                spatial = LayerBridgeFinder.get_convolution_output_height_and_width(
+                    height,
+                    width,
+                    pool_kernel,
+                    stride=pool_stride,
+                    padding=kwargs.get("padding", 0),
+                    dilation=kwargs.get("dilation", 1),
+                )
+                if spatial is None:
+                    return None
+                height, width = spatial
+        return channels * height * width

@@ -19,12 +19,12 @@ from experiments.train_mnist_exp001_slope_model_depth import MediumMnistNet
 from tests.model_factory import ModelFactory
 
 
-def test_convolution_output_height_and_width_preserves_one_by_one_with_padding():
+def test_get_convolution_output_height_and_width_preserves_one_by_one_with_padding():
     """
     3x3 conv with pad=1 on 1x1 spatial should stay 1x1.
     """
     # Arrange / Act
-    result = LayerBridgeFinder.convolution_output_height_and_width(
+    result = LayerBridgeFinder.get_convolution_output_height_and_width(
         1, 1, kernel_size=3, stride=1, padding=1,
     )
 
@@ -32,12 +32,12 @@ def test_convolution_output_height_and_width_preserves_one_by_one_with_padding()
     assert result == (1, 1)
 
 
-def test_predicted_flatten_accepts_medium_insert_site():
+def test_get_flatten_feature_count_accepts_medium_insert_site():
     """
-    Medium-like site (C=4,1,1) with eye 3x3 pad1 should predict flatten features 4.
+    Medium-like site (C=4,1,1) with eye 3x3 pad1 should yield flatten features 4.
     """
     # Arrange / Act
-    predicted = LayerBridgeFinder.predicted_flatten_feature_count_after_convolution_and_pools(
+    feature_count = LayerBridgeFinder.get_flatten_feature_count_after_convolution_and_pools(
         insert_site_channels=4,
         insert_site_height=1,
         insert_site_width=1,
@@ -50,15 +50,15 @@ def test_predicted_flatten_accepts_medium_insert_site():
     )
 
     # Assert
-    assert predicted == 4
+    assert feature_count == 4
 
 
-def test_predicted_flatten_rejects_spatial_mismatch_without_later_pool():
+def test_get_flatten_feature_count_rejects_spatial_mismatch_without_later_pool():
     """
-    Site (4,2,2) with no later pool should predict 16, not match linear_in=4.
+    Site (4,2,2) with no later pool should yield 16, not match linear_in=4.
     """
     # Arrange / Act
-    predicted = LayerBridgeFinder.predicted_flatten_feature_count_after_convolution_and_pools(
+    feature_count = LayerBridgeFinder.get_flatten_feature_count_after_convolution_and_pools(
         insert_site_channels=4,
         insert_site_height=2,
         insert_site_width=2,
@@ -71,16 +71,16 @@ def test_predicted_flatten_rejects_spatial_mismatch_without_later_pool():
     )
 
     # Assert
-    assert predicted == 16
-    assert predicted != 4
+    assert feature_count == 16
+    assert feature_count != 4
 
 
-def test_predicted_flatten_with_adaptive_pool_after_insert_uses_out_channels():
+def test_get_flatten_feature_count_with_adaptive_pool_after_insert_uses_out_channels():
     """
-    Adaptive-to-1 after insert should make predicted flatten equal out_channels.
+    Adaptive-to-1 after insert should make flatten feature count equal out_channels.
     """
     # Arrange / Act
-    predicted = LayerBridgeFinder.predicted_flatten_feature_count_after_convolution_and_pools(
+    feature_count = LayerBridgeFinder.get_flatten_feature_count_after_convolution_and_pools(
         insert_site_channels=8,
         insert_site_height=7,
         insert_site_width=7,
@@ -93,7 +93,7 @@ def test_predicted_flatten_with_adaptive_pool_after_insert_uses_out_channels():
     )
 
     # Assert
-    assert predicted == 8
+    assert feature_count == 8
 
 
 def test_medium_path_has_pools_and_method_flatten():
