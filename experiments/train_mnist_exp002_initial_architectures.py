@@ -13,11 +13,8 @@ layer layouts grow usefully under fixed 3° logistic schedulers when width is he
 Published report target:
 documentation/website/content/experiments/experiment-002-initial-architectures.md
 
-Raw output (revised grid after stem/pool fixes):
+Raw output (published corrected grid):
 experiments/output/train_mnist/runs/exp002_initial_architectures_after_fix_1
-
-First-grid output (unchanged, kept for the published report):
-experiments/output/train_mnist/runs/exp002_initial_architectures
 """
 
 from __future__ import annotations
