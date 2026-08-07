@@ -108,6 +108,7 @@ def _running_config(
         simulation_score=SimulationScore(
             weight_acc=float(hp["score_weight_acc"]),
             weight_countW=float(hp["score_weight_countw"]),
+            accuracy_metric=str(hp.get("score_accuracy_metric", "val_acc")),
         ),
         simulation_set_size=int(hp["simulation_set_size"]),
         criterion=nn.CrossEntropyLoss(),

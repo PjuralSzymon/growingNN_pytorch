@@ -129,15 +129,17 @@ def test_is_before_flatten_insert_accepts_medium_conv_to_linear():
 
     # Act
     can_insert = AddSeqConvLayer.is_before_flatten_insert(traced, "conv1", "linear")
-    out_channels, kernel_size, padding = AddSeqConvLayer.get_eye_convolution_shape_for_before_flatten(
+    eye_shape = AddSeqConvLayer.get_eye_convolution_shape_for_before_flatten(
         traced, "conv1", "linear",
-    )
-    layer = ConvFactory.create_eye_conv(
-        out_channels, out_channels, kernel_size, stride=1, padding=padding,
     )
 
     # Assert
     assert can_insert is True
+    assert eye_shape is not None
+    out_channels, kernel_size, padding = eye_shape
+    layer = ConvFactory.create_eye_conv(
+        out_channels, out_channels, kernel_size, stride=1, padding=padding,
+    )
     assert layer.in_channels == 4
     assert layer.out_channels == 4
 
@@ -151,11 +153,13 @@ def test_get_eye_convolution_shape_uses_one_by_one_fallback_for_unpadded_source(
 
     # Act
     assert AddSeqConvLayer.is_before_flatten_insert(traced, "conv1", "linear")
-    _, kernel_size, padding = AddSeqConvLayer.get_eye_convolution_shape_for_before_flatten(
+    eye_shape = AddSeqConvLayer.get_eye_convolution_shape_for_before_flatten(
         traced, "conv1", "linear",
     )
 
     # Assert
+    assert eye_shape is not None
+    _, kernel_size, padding = eye_shape
     assert kernel_size == 1
     assert padding == 0
 
@@ -172,6 +176,39 @@ def test_is_before_flatten_insert_rejects_linear_to_linear():
 
     # Assert
     assert can_insert is False
+
+
+def test_is_before_flatten_insert_rejects_classifier_past_hidden_linear():
+    """
+    Big conv2→linear2 should be rejected because hidden linear sits after flatten.
+    """
+    # Arrange
+    from experiments.train_mnist_exp002_initial_architectures import BigAvgPoolMnistNet
+
+    traced = TracedModel.create(BigAvgPoolMnistNet(), (1, 1, 28, 28))
+
+    # Act
+    can_insert = AddSeqConvLayer.is_before_flatten_insert(traced, "conv2", "linear2")
+
+    # Assert
+    assert can_insert is False
+
+
+def test_generate_all_actions_on_big_does_not_raise():
+    """
+    Action generation on the big MNIST starter should stay stable during search.
+    """
+    # Arrange
+    from experiments.train_mnist_exp002_initial_architectures import BigAvgPoolMnistNet
+
+    traced = TracedModel.create(BigAvgPoolMnistNet(), (1, 1, 28, 28))
+
+    # Act
+    actions = AddSeqConvLayer.generate_all_actions(traced)
+
+    # Assert
+    assert len(actions) >= 1
+    assert all(action.params[1] != "linear2" for action in actions)
 
 
 if __name__ == "__main__":
