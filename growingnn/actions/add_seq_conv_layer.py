@@ -78,9 +78,16 @@ class AddSeqConvLayer(Action):
         flatten_node = GraphStructureQuery.find_flatten_node_on_path_toward_source(path, gm)
         if flatten_node is None:
             return False
+        flatten_index = path.index(flatten_node)
+        # Destination must be the first Linear after flatten (no intervening Linear).
+        for node in path[1:flatten_index]:
+            if node.op != "call_module":
+                continue
+            module = ModuleResolver.get_layer_module(node, gm)
+            if isinstance(module, nn.Linear):
+                return False
         if not GraphStructureQuery.find_pool_nodes_between_flatten_and_source(path, flatten_node, gm):
             return False
-        flatten_index = path.index(flatten_node)
         if flatten_index + 1 >= len(path):
             return False
         shape = LayerShapeAnalyser.node_shape(path[flatten_index + 1])
@@ -114,11 +121,11 @@ class AddSeqConvLayer(Action):
         traced: TracedModel,
         layer_from_id: str,
         layer_to_id: str,
-    ) -> tuple[int, int | tuple[int, ...], int | tuple[int, ...]]:
+    ) -> tuple[int, int | tuple[int, ...], int | tuple[int, ...]] | None:
         """
         Return (out_channels, kernel_size, padding) for a sequential eye conv before flatten.
 
-        Call only when is_before_flatten_insert is True.
+        Call only when is_before_flatten_insert is True. Returns None when no eye shape matches.
         """
         channels, height, width, linear_in_features = (
             AddSeqConvLayer._get_before_flatten_insert_shape(traced, layer_from_id, layer_to_id)
@@ -138,10 +145,7 @@ class AddSeqConvLayer(Action):
             )
             if feature_count is not None and feature_count == linear_in_features:
                 return channels, kernel_size, padding
-        # is_before_flatten_insert was True, so a matching pair should exist (incl. 1x1 fallback).
-        raise ValueError(
-            f"impossible: no eye conv shape for before-flatten {layer_from_id!r} -> {layer_to_id!r}"
-        )
+        return None
 
     @staticmethod
     def generate_all_actions(traced: TracedModel) -> List[Action]:
@@ -166,11 +170,16 @@ class AddSeqConvLayer(Action):
                 )
             elif AddSeqConvLayer.is_before_flatten_insert(traced, layer_from_id, layer_to_id):
                 # Conv→…→flatten→linear: eye conv immediately before flatten.
-                out_channels, kernel_size, padding = (
-                    AddSeqConvLayer.get_eye_convolution_shape_for_before_flatten(
-                        traced, layer_from_id, layer_to_id,
-                    )
+                eye_shape = AddSeqConvLayer.get_eye_convolution_shape_for_before_flatten(
+                    traced, layer_from_id, layer_to_id,
                 )
+                if eye_shape is None:
+                    logger.debug(
+                        "AddSeqConvLayer skip %s -> %s: no matching before-flatten eye shape",
+                        layer_from_id, layer_to_id,
+                    )
+                    continue
+                out_channels, kernel_size, padding = eye_shape
                 layer = ConvFactory.create_eye_conv(
                     out_channels, out_channels, kernel_size, stride=1, padding=padding,
                 )
