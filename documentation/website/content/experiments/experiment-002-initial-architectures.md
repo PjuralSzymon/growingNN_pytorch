@@ -247,7 +247,7 @@ Without the collapsed big runs, successful big ends larger and stronger than med
 ## Next steps
 
 1. Use `medium_1conv_2linear` as the default MNIST starter.
-2. Run a dedicated experiment on action scoring: compare choosing actions by validation accuracy, training accuracy, or a mix of both. The dropout bias makes this the next priority.
+2. Run Experiment 003 (`experiments/train_mnist_exp003_score_accuracy_metric.py`): compare choosing simulation actions by validation accuracy versus training accuracy. The dropout bias makes this the next priority.
 3. Penalize or block stacked sequential dropout early in a run.
 4. Adjust simulation scoring so regularization-only gains on validation are not over-selected when training does not improve.
 5. After the scoring fix, re-check whether the stable medium path can pass `90%` with the same short horizon.

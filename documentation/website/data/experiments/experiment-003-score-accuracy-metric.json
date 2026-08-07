@@ -1,0 +1,6866 @@
+{
+  "runs": [
+    {
+      "score_metric": "train_acc",
+      "model": "big",
+      "seed": 100,
+      "status": "completed",
+      "elapsed_sec": 1093,
+      "started_on": "2026-08-06T20:39:17Z",
+      "last_update": "2026-08-06T20:57:30Z",
+      "final_acc": 0.72,
+      "final_train_acc": 0.766,
+      "best_acc": 0.7981,
+      "best_train_acc": 0.766,
+      "final_params": 1160,
+      "start_params": 420,
+      "actions": 2,
+      "action_generations": [
+        0,
+        2
+      ],
+      "action_labels": [
+        "Add Seq Conv Layer Action",
+        "Add Res Conv Layer Action"
+      ],
+      "dropout_actions": 0,
+      "epochs": [
+        {
+          "globalEpoch": 0,
+          "generation": 0,
+          "trainAcc": 0.08982,
+          "valAcc": 0.093,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 1,
+          "generation": 0,
+          "trainAcc": 0.08982,
+          "valAcc": 0.093,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 2,
+          "generation": 0,
+          "trainAcc": 0.08982,
+          "valAcc": 0.093,
+          "lr": 0.0011403653008945564,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 3,
+          "generation": 0,
+          "trainAcc": 0.08982,
+          "valAcc": 0.093,
+          "lr": 0.0026580657804886093,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 4,
+          "generation": 0,
+          "trainAcc": 0.09666,
+          "valAcc": 0.0949,
+          "lr": 0.005,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 5,
+          "generation": 0,
+          "trainAcc": 0.1064,
+          "valAcc": 0.1099,
+          "lr": 0.0073419342195113904,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 6,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.008859634699105444,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 7,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.00958714340214204,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 8,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.009885534204613024,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 9,
+          "generation": 0,
+          "trainAcc": 0.11304,
+          "valAcc": 0.1104,
+          "lr": 0.01,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 10,
+          "generation": 1,
+          "trainAcc": 0.11492,
+          "valAcc": 0.1134,
+          "lr": 0.001,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 11,
+          "generation": 1,
+          "trainAcc": 0.1188,
+          "valAcc": 0.12,
+          "lr": 0.001,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 12,
+          "generation": 1,
+          "trainAcc": 0.12672,
+          "valAcc": 0.1284,
+          "lr": 0.0011403653008945564,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 13,
+          "generation": 1,
+          "trainAcc": 0.14168,
+          "valAcc": 0.149,
+          "lr": 0.0026580657804886093,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 14,
+          "generation": 1,
+          "trainAcc": 0.1638,
+          "valAcc": 0.1685,
+          "lr": 0.005,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 15,
+          "generation": 1,
+          "trainAcc": 0.17828,
+          "valAcc": 0.1767,
+          "lr": 0.0073419342195113904,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 16,
+          "generation": 1,
+          "trainAcc": 0.20328,
+          "valAcc": 0.2336,
+          "lr": 0.008859634699105444,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 17,
+          "generation": 1,
+          "trainAcc": 0.2435,
+          "valAcc": 0.2572,
+          "lr": 0.00958714340214204,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 18,
+          "generation": 1,
+          "trainAcc": 0.26596,
+          "valAcc": 0.2787,
+          "lr": 0.009885534204613024,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 19,
+          "generation": 1,
+          "trainAcc": 0.27712,
+          "valAcc": 0.2839,
+          "lr": 0.01,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 20,
+          "generation": 2,
+          "trainAcc": 0.27972,
+          "valAcc": 0.2809,
+          "lr": 0.01,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 21,
+          "generation": 2,
+          "trainAcc": 0.28288,
+          "valAcc": 0.284,
+          "lr": 0.01,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 22,
+          "generation": 2,
+          "trainAcc": 0.28782,
+          "valAcc": 0.2988,
+          "lr": 0.01,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 23,
+          "generation": 2,
+          "trainAcc": 0.29194,
+          "valAcc": 0.2862,
+          "lr": 0.01,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 24,
+          "generation": 2,
+          "trainAcc": 0.29228,
+          "valAcc": 0.3008,
+          "lr": 0.01,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 25,
+          "generation": 2,
+          "trainAcc": 0.29554,
+          "valAcc": 0.2849,
+          "lr": 0.01,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 26,
+          "generation": 2,
+          "trainAcc": 0.29774,
+          "valAcc": 0.2986,
+          "lr": 0.01,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 27,
+          "generation": 2,
+          "trainAcc": 0.30178,
+          "valAcc": 0.2928,
+          "lr": 0.01,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 28,
+          "generation": 2,
+          "trainAcc": 0.30042,
+          "valAcc": 0.3045,
+          "lr": 0.01,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 29,
+          "generation": 2,
+          "trainAcc": 0.30394,
+          "valAcc": 0.2934,
+          "lr": 0.01,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 30,
+          "generation": 3,
+          "trainAcc": 0.31612,
+          "valAcc": 0.3143,
+          "lr": 0.001,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 31,
+          "generation": 3,
+          "trainAcc": 0.32258,
+          "valAcc": 0.3246,
+          "lr": 0.001,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 32,
+          "generation": 3,
+          "trainAcc": 0.33338,
+          "valAcc": 0.3391,
+          "lr": 0.0011403653008945564,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 33,
+          "generation": 3,
+          "trainAcc": 0.35514,
+          "valAcc": 0.3773,
+          "lr": 0.0026580657804886093,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 34,
+          "generation": 3,
+          "trainAcc": 0.39736,
+          "valAcc": 0.4599,
+          "lr": 0.005,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 35,
+          "generation": 3,
+          "trainAcc": 0.47006,
+          "valAcc": 0.5021,
+          "lr": 0.0073419342195113904,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 36,
+          "generation": 3,
+          "trainAcc": 0.55304,
+          "valAcc": 0.6139,
+          "lr": 0.008859634699105444,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 37,
+          "generation": 3,
+          "trainAcc": 0.6236,
+          "valAcc": 0.6415,
+          "lr": 0.00958714340214204,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 38,
+          "generation": 3,
+          "trainAcc": 0.6592,
+          "valAcc": 0.709,
+          "lr": 0.009885534204613024,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 39,
+          "generation": 3,
+          "trainAcc": 0.6783,
+          "valAcc": 0.6751,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 40,
+          "generation": 4,
+          "trainAcc": 0.69656,
+          "valAcc": 0.6919,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 41,
+          "generation": 4,
+          "trainAcc": 0.7175,
+          "valAcc": 0.7609,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 42,
+          "generation": 4,
+          "trainAcc": 0.7244,
+          "valAcc": 0.7528,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 43,
+          "generation": 4,
+          "trainAcc": 0.73606,
+          "valAcc": 0.7589,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 44,
+          "generation": 4,
+          "trainAcc": 0.7417,
+          "valAcc": 0.7114,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 45,
+          "generation": 4,
+          "trainAcc": 0.74824,
+          "valAcc": 0.7748,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 46,
+          "generation": 4,
+          "trainAcc": 0.74874,
+          "valAcc": 0.7579,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 47,
+          "generation": 4,
+          "trainAcc": 0.7574,
+          "valAcc": 0.7981,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 48,
+          "generation": 4,
+          "trainAcc": 0.7611,
+          "valAcc": 0.7949,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 49,
+          "generation": 4,
+          "trainAcc": 0.766,
+          "valAcc": 0.72,
+          "lr": 0.01,
+          "paramCount": 1160
+        }
+      ]
+    },
+    {
+      "score_metric": "train_acc",
+      "model": "big",
+      "seed": 101,
+      "status": "completed",
+      "elapsed_sec": 1241,
+      "started_on": "2026-08-06T20:44:25Z",
+      "last_update": "2026-08-06T21:05:07Z",
+      "final_acc": 0.8309,
+      "final_train_acc": 0.81534,
+      "best_acc": 0.8552,
+      "best_train_acc": 0.82014,
+      "final_params": 1284,
+      "start_params": 420,
+      "actions": 3,
+      "action_generations": [
+        0,
+        2,
+        3
+      ],
+      "action_labels": [
+        "Add Res Conv Layer Action",
+        "Add Seq Linear Layer Action",
+        "Add Seq Dropout Layer Action"
+      ],
+      "dropout_actions": 1,
+      "epochs": [
+        {
+          "globalEpoch": 0,
+          "generation": 0,
+          "trainAcc": 0.08982,
+          "valAcc": 0.093,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 1,
+          "generation": 0,
+          "trainAcc": 0.08982,
+          "valAcc": 0.093,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 2,
+          "generation": 0,
+          "trainAcc": 0.10478,
+          "valAcc": 0.1099,
+          "lr": 0.0011403653008945564,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 3,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.0026580657804886093,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 4,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.005,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 5,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.0073419342195113904,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 6,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.008859634699105444,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 7,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.00958714340214204,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 8,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.009885534204613024,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 9,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.01,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 10,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.001,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 11,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.001,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 12,
+          "generation": 1,
+          "trainAcc": 0.11918,
+          "valAcc": 0.1617,
+          "lr": 0.0011403653008945564,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 13,
+          "generation": 1,
+          "trainAcc": 0.27476,
+          "valAcc": 0.3409,
+          "lr": 0.0026580657804886093,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 14,
+          "generation": 1,
+          "trainAcc": 0.30888,
+          "valAcc": 0.3308,
+          "lr": 0.005,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 15,
+          "generation": 1,
+          "trainAcc": 0.3729,
+          "valAcc": 0.4089,
+          "lr": 0.0073419342195113904,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 16,
+          "generation": 1,
+          "trainAcc": 0.46364,
+          "valAcc": 0.527,
+          "lr": 0.008859634699105444,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 17,
+          "generation": 1,
+          "trainAcc": 0.55612,
+          "valAcc": 0.4643,
+          "lr": 0.00958714340214204,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 18,
+          "generation": 1,
+          "trainAcc": 0.64544,
+          "valAcc": 0.632,
+          "lr": 0.009885534204613024,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 19,
+          "generation": 1,
+          "trainAcc": 0.71206,
+          "valAcc": 0.6868,
+          "lr": 0.01,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 20,
+          "generation": 2,
+          "trainAcc": 0.74628,
+          "valAcc": 0.7678,
+          "lr": 0.01,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 21,
+          "generation": 2,
+          "trainAcc": 0.76344,
+          "valAcc": 0.7475,
+          "lr": 0.01,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 22,
+          "generation": 2,
+          "trainAcc": 0.77344,
+          "valAcc": 0.7826,
+          "lr": 0.01,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 23,
+          "generation": 2,
+          "trainAcc": 0.77902,
+          "valAcc": 0.7605,
+          "lr": 0.01,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 24,
+          "generation": 2,
+          "trainAcc": 0.78792,
+          "valAcc": 0.7781,
+          "lr": 0.01,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 25,
+          "generation": 2,
+          "trainAcc": 0.7927,
+          "valAcc": 0.8159,
+          "lr": 0.01,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 26,
+          "generation": 2,
+          "trainAcc": 0.79442,
+          "valAcc": 0.7766,
+          "lr": 0.01,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 27,
+          "generation": 2,
+          "trainAcc": 0.7952,
+          "valAcc": 0.7938,
+          "lr": 0.01,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 28,
+          "generation": 2,
+          "trainAcc": 0.80066,
+          "valAcc": 0.8,
+          "lr": 0.01,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 29,
+          "generation": 2,
+          "trainAcc": 0.80326,
+          "valAcc": 0.8146,
+          "lr": 0.01,
+          "paramCount": 1012
+        },
+        {
+          "globalEpoch": 30,
+          "generation": 3,
+          "trainAcc": 0.8152,
+          "valAcc": 0.8434,
+          "lr": 0.001,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 31,
+          "generation": 3,
+          "trainAcc": 0.81626,
+          "valAcc": 0.8413,
+          "lr": 0.001,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 32,
+          "generation": 3,
+          "trainAcc": 0.81578,
+          "valAcc": 0.8379,
+          "lr": 0.0011403653008945564,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 33,
+          "generation": 3,
+          "trainAcc": 0.81108,
+          "valAcc": 0.8383,
+          "lr": 0.0026580657804886093,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 34,
+          "generation": 3,
+          "trainAcc": 0.79928,
+          "valAcc": 0.745,
+          "lr": 0.005,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 35,
+          "generation": 3,
+          "trainAcc": 0.7807,
+          "valAcc": 0.822,
+          "lr": 0.0073419342195113904,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 36,
+          "generation": 3,
+          "trainAcc": 0.7897,
+          "valAcc": 0.7296,
+          "lr": 0.008859634699105444,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 37,
+          "generation": 3,
+          "trainAcc": 0.79808,
+          "valAcc": 0.8451,
+          "lr": 0.00958714340214204,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 38,
+          "generation": 3,
+          "trainAcc": 0.80434,
+          "valAcc": 0.8294,
+          "lr": 0.009885534204613024,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 39,
+          "generation": 3,
+          "trainAcc": 0.80838,
+          "valAcc": 0.7908,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 40,
+          "generation": 4,
+          "trainAcc": 0.76678,
+          "valAcc": 0.8516,
+          "lr": 0.001,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 41,
+          "generation": 4,
+          "trainAcc": 0.80936,
+          "valAcc": 0.8535,
+          "lr": 0.001,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 42,
+          "generation": 4,
+          "trainAcc": 0.81606,
+          "valAcc": 0.8552,
+          "lr": 0.0011403653008945564,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 43,
+          "generation": 4,
+          "trainAcc": 0.82014,
+          "valAcc": 0.8332,
+          "lr": 0.0026580657804886093,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 44,
+          "generation": 4,
+          "trainAcc": 0.81864,
+          "valAcc": 0.8467,
+          "lr": 0.005,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 45,
+          "generation": 4,
+          "trainAcc": 0.81418,
+          "valAcc": 0.7196,
+          "lr": 0.0073419342195113904,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 46,
+          "generation": 4,
+          "trainAcc": 0.8136,
+          "valAcc": 0.8523,
+          "lr": 0.008859634699105444,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 47,
+          "generation": 4,
+          "trainAcc": 0.81378,
+          "valAcc": 0.8229,
+          "lr": 0.00958714340214204,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 48,
+          "generation": 4,
+          "trainAcc": 0.81394,
+          "valAcc": 0.8411,
+          "lr": 0.009885534204613024,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 49,
+          "generation": 4,
+          "trainAcc": 0.81534,
+          "valAcc": 0.8309,
+          "lr": 0.01,
+          "paramCount": 1284
+        }
+      ]
+    },
+    {
+      "score_metric": "train_acc",
+      "model": "big",
+      "seed": 102,
+      "status": "completed",
+      "elapsed_sec": 1070,
+      "started_on": "2026-08-06T20:57:31Z",
+      "last_update": "2026-08-06T21:15:22Z",
+      "final_acc": 0.6028,
+      "final_train_acc": 0.60172,
+      "best_acc": 0.6028,
+      "best_train_acc": 0.60172,
+      "final_params": 588,
+      "start_params": 420,
+      "actions": 2,
+      "action_generations": [
+        0,
+        2
+      ],
+      "action_labels": [
+        "Add Seq Linear Layer Action",
+        "Add Res Conv Layer Action"
+      ],
+      "dropout_actions": 0,
+      "epochs": [
+        {
+          "globalEpoch": 0,
+          "generation": 0,
+          "trainAcc": 0.10296,
+          "valAcc": 0.0992,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 1,
+          "generation": 0,
+          "trainAcc": 0.10278,
+          "valAcc": 0.0992,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 2,
+          "generation": 0,
+          "trainAcc": 0.10256,
+          "valAcc": 0.0985,
+          "lr": 0.0011403653008945564,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 3,
+          "generation": 0,
+          "trainAcc": 0.10716,
+          "valAcc": 0.1099,
+          "lr": 0.0026580657804886093,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 4,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.005,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 5,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.0073419342195113904,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 6,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.008859634699105444,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 7,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.00958714340214204,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 8,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.009885534204613024,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 9,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.01,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 10,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.001,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 11,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.001,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 12,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.0011403653008945564,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 13,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.0026580657804886093,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 14,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.005,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 15,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1102,
+          "lr": 0.0073419342195113904,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 16,
+          "generation": 1,
+          "trainAcc": 0.11398,
+          "valAcc": 0.116,
+          "lr": 0.008859634699105444,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 17,
+          "generation": 1,
+          "trainAcc": 0.12564,
+          "valAcc": 0.1686,
+          "lr": 0.00958714340214204,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 18,
+          "generation": 1,
+          "trainAcc": 0.1839,
+          "valAcc": 0.2058,
+          "lr": 0.009885534204613024,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 19,
+          "generation": 1,
+          "trainAcc": 0.2233,
+          "valAcc": 0.2354,
+          "lr": 0.01,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 20,
+          "generation": 2,
+          "trainAcc": 0.24324,
+          "valAcc": 0.2471,
+          "lr": 0.01,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 21,
+          "generation": 2,
+          "trainAcc": 0.24798,
+          "valAcc": 0.244,
+          "lr": 0.01,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 22,
+          "generation": 2,
+          "trainAcc": 0.2535,
+          "valAcc": 0.2624,
+          "lr": 0.01,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 23,
+          "generation": 2,
+          "trainAcc": 0.25976,
+          "valAcc": 0.2703,
+          "lr": 0.01,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 24,
+          "generation": 2,
+          "trainAcc": 0.27082,
+          "valAcc": 0.2774,
+          "lr": 0.01,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 25,
+          "generation": 2,
+          "trainAcc": 0.2754,
+          "valAcc": 0.2793,
+          "lr": 0.01,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 26,
+          "generation": 2,
+          "trainAcc": 0.27948,
+          "valAcc": 0.2849,
+          "lr": 0.01,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 27,
+          "generation": 2,
+          "trainAcc": 0.2773,
+          "valAcc": 0.2739,
+          "lr": 0.01,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 28,
+          "generation": 2,
+          "trainAcc": 0.28228,
+          "valAcc": 0.2758,
+          "lr": 0.01,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 29,
+          "generation": 2,
+          "trainAcc": 0.28898,
+          "valAcc": 0.2951,
+          "lr": 0.01,
+          "paramCount": 440
+        },
+        {
+          "globalEpoch": 30,
+          "generation": 3,
+          "trainAcc": 0.28992,
+          "valAcc": 0.2908,
+          "lr": 0.001,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 31,
+          "generation": 3,
+          "trainAcc": 0.2856,
+          "valAcc": 0.2877,
+          "lr": 0.001,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 32,
+          "generation": 3,
+          "trainAcc": 0.2949,
+          "valAcc": 0.2962,
+          "lr": 0.0011403653008945564,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 33,
+          "generation": 3,
+          "trainAcc": 0.299,
+          "valAcc": 0.3042,
+          "lr": 0.0026580657804886093,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 34,
+          "generation": 3,
+          "trainAcc": 0.30928,
+          "valAcc": 0.3125,
+          "lr": 0.005,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 35,
+          "generation": 3,
+          "trainAcc": 0.32234,
+          "valAcc": 0.3117,
+          "lr": 0.0073419342195113904,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 36,
+          "generation": 3,
+          "trainAcc": 0.3436,
+          "valAcc": 0.3411,
+          "lr": 0.008859634699105444,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 37,
+          "generation": 3,
+          "trainAcc": 0.36474,
+          "valAcc": 0.3818,
+          "lr": 0.00958714340214204,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 38,
+          "generation": 3,
+          "trainAcc": 0.39116,
+          "valAcc": 0.371,
+          "lr": 0.009885534204613024,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 39,
+          "generation": 3,
+          "trainAcc": 0.41206,
+          "valAcc": 0.4263,
+          "lr": 0.01,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 40,
+          "generation": 4,
+          "trainAcc": 0.42092,
+          "valAcc": 0.4448,
+          "lr": 0.01,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 41,
+          "generation": 4,
+          "trainAcc": 0.43192,
+          "valAcc": 0.447,
+          "lr": 0.01,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 42,
+          "generation": 4,
+          "trainAcc": 0.45426,
+          "valAcc": 0.4638,
+          "lr": 0.01,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 43,
+          "generation": 4,
+          "trainAcc": 0.47868,
+          "valAcc": 0.5167,
+          "lr": 0.01,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 44,
+          "generation": 4,
+          "trainAcc": 0.50464,
+          "valAcc": 0.5525,
+          "lr": 0.01,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 45,
+          "generation": 4,
+          "trainAcc": 0.53546,
+          "valAcc": 0.5753,
+          "lr": 0.01,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 46,
+          "generation": 4,
+          "trainAcc": 0.56962,
+          "valAcc": 0.5615,
+          "lr": 0.01,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 47,
+          "generation": 4,
+          "trainAcc": 0.584,
+          "valAcc": 0.5806,
+          "lr": 0.01,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 48,
+          "generation": 4,
+          "trainAcc": 0.5937,
+          "valAcc": 0.5883,
+          "lr": 0.01,
+          "paramCount": 588
+        },
+        {
+          "globalEpoch": 49,
+          "generation": 4,
+          "trainAcc": 0.60172,
+          "valAcc": 0.6028,
+          "lr": 0.01,
+          "paramCount": 588
+        }
+      ]
+    },
+    {
+      "score_metric": "train_acc",
+      "model": "big",
+      "seed": 103,
+      "status": "completed",
+      "elapsed_sec": 1349,
+      "started_on": "2026-08-06T21:05:08Z",
+      "last_update": "2026-08-06T21:27:38Z",
+      "final_acc": 0.8957,
+      "final_train_acc": 0.87592,
+      "best_acc": 0.9041,
+      "best_train_acc": 0.88068,
+      "final_params": 1308,
+      "start_params": 420,
+      "actions": 3,
+      "action_generations": [
+        0,
+        1,
+        3
+      ],
+      "action_labels": [
+        "Add Res Conv Layer Action",
+        "Add Res Conv Layer Action",
+        "Add Seq Conv Layer Action"
+      ],
+      "dropout_actions": 0,
+      "epochs": [
+        {
+          "globalEpoch": 0,
+          "generation": 0,
+          "trainAcc": 0.09792,
+          "valAcc": 0.0955,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 1,
+          "generation": 0,
+          "trainAcc": 0.09792,
+          "valAcc": 0.0955,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 2,
+          "generation": 0,
+          "trainAcc": 0.09792,
+          "valAcc": 0.0955,
+          "lr": 0.0011403653008945564,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 3,
+          "generation": 0,
+          "trainAcc": 0.09792,
+          "valAcc": 0.0955,
+          "lr": 0.0026580657804886093,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 4,
+          "generation": 0,
+          "trainAcc": 0.09792,
+          "valAcc": 0.0955,
+          "lr": 0.005,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 5,
+          "generation": 0,
+          "trainAcc": 0.12122,
+          "valAcc": 0.1099,
+          "lr": 0.0073419342195113904,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 6,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.008859634699105444,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 7,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.00958714340214204,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 8,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.009885534204613024,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 9,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.01,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 10,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.001,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 11,
+          "generation": 1,
+          "trainAcc": 0.11294,
+          "valAcc": 0.1103,
+          "lr": 0.001,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 12,
+          "generation": 1,
+          "trainAcc": 0.11352,
+          "valAcc": 0.1118,
+          "lr": 0.0011403653008945564,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 13,
+          "generation": 1,
+          "trainAcc": 0.11876,
+          "valAcc": 0.1232,
+          "lr": 0.0026580657804886093,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 14,
+          "generation": 1,
+          "trainAcc": 0.14088,
+          "valAcc": 0.1504,
+          "lr": 0.005,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 15,
+          "generation": 1,
+          "trainAcc": 0.16448,
+          "valAcc": 0.1704,
+          "lr": 0.0073419342195113904,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 16,
+          "generation": 1,
+          "trainAcc": 0.18022,
+          "valAcc": 0.1729,
+          "lr": 0.008859634699105444,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 17,
+          "generation": 1,
+          "trainAcc": 0.17998,
+          "valAcc": 0.1747,
+          "lr": 0.00958714340214204,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 18,
+          "generation": 1,
+          "trainAcc": 0.19162,
+          "valAcc": 0.2024,
+          "lr": 0.009885534204613024,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 19,
+          "generation": 1,
+          "trainAcc": 0.19738,
+          "valAcc": 0.2053,
+          "lr": 0.01,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 20,
+          "generation": 2,
+          "trainAcc": 0.20866,
+          "valAcc": 0.2203,
+          "lr": 0.001,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 21,
+          "generation": 2,
+          "trainAcc": 0.23056,
+          "valAcc": 0.2403,
+          "lr": 0.001,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 22,
+          "generation": 2,
+          "trainAcc": 0.25346,
+          "valAcc": 0.2704,
+          "lr": 0.0011403653008945564,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 23,
+          "generation": 2,
+          "trainAcc": 0.2876,
+          "valAcc": 0.3289,
+          "lr": 0.0026580657804886093,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 24,
+          "generation": 2,
+          "trainAcc": 0.35676,
+          "valAcc": 0.4162,
+          "lr": 0.005,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 25,
+          "generation": 2,
+          "trainAcc": 0.46914,
+          "valAcc": 0.5465,
+          "lr": 0.0073419342195113904,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 26,
+          "generation": 2,
+          "trainAcc": 0.60112,
+          "valAcc": 0.6011,
+          "lr": 0.008859634699105444,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 27,
+          "generation": 2,
+          "trainAcc": 0.67426,
+          "valAcc": 0.6166,
+          "lr": 0.00958714340214204,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 28,
+          "generation": 2,
+          "trainAcc": 0.73278,
+          "valAcc": 0.6992,
+          "lr": 0.009885534204613024,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 29,
+          "generation": 2,
+          "trainAcc": 0.77026,
+          "valAcc": 0.7727,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 30,
+          "generation": 3,
+          "trainAcc": 0.7936,
+          "valAcc": 0.795,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 31,
+          "generation": 3,
+          "trainAcc": 0.80806,
+          "valAcc": 0.7743,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 32,
+          "generation": 3,
+          "trainAcc": 0.823,
+          "valAcc": 0.8288,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 33,
+          "generation": 3,
+          "trainAcc": 0.83348,
+          "valAcc": 0.8607,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 34,
+          "generation": 3,
+          "trainAcc": 0.83904,
+          "valAcc": 0.7761,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 35,
+          "generation": 3,
+          "trainAcc": 0.84824,
+          "valAcc": 0.8458,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 36,
+          "generation": 3,
+          "trainAcc": 0.85122,
+          "valAcc": 0.8676,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 37,
+          "generation": 3,
+          "trainAcc": 0.85828,
+          "valAcc": 0.857,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 38,
+          "generation": 3,
+          "trainAcc": 0.85948,
+          "valAcc": 0.8179,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 39,
+          "generation": 3,
+          "trainAcc": 0.86404,
+          "valAcc": 0.8746,
+          "lr": 0.01,
+          "paramCount": 1160
+        },
+        {
+          "globalEpoch": 40,
+          "generation": 4,
+          "trainAcc": 0.8772,
+          "valAcc": 0.9017,
+          "lr": 0.001,
+          "paramCount": 1308
+        },
+        {
+          "globalEpoch": 41,
+          "generation": 4,
+          "trainAcc": 0.87752,
+          "valAcc": 0.9032,
+          "lr": 0.001,
+          "paramCount": 1308
+        },
+        {
+          "globalEpoch": 42,
+          "generation": 4,
+          "trainAcc": 0.88068,
+          "valAcc": 0.9019,
+          "lr": 0.0011403653008945564,
+          "paramCount": 1308
+        },
+        {
+          "globalEpoch": 43,
+          "generation": 4,
+          "trainAcc": 0.8783,
+          "valAcc": 0.9039,
+          "lr": 0.0026580657804886093,
+          "paramCount": 1308
+        },
+        {
+          "globalEpoch": 44,
+          "generation": 4,
+          "trainAcc": 0.87548,
+          "valAcc": 0.9041,
+          "lr": 0.005,
+          "paramCount": 1308
+        },
+        {
+          "globalEpoch": 45,
+          "generation": 4,
+          "trainAcc": 0.87488,
+          "valAcc": 0.8832,
+          "lr": 0.0073419342195113904,
+          "paramCount": 1308
+        },
+        {
+          "globalEpoch": 46,
+          "generation": 4,
+          "trainAcc": 0.87154,
+          "valAcc": 0.8687,
+          "lr": 0.008859634699105444,
+          "paramCount": 1308
+        },
+        {
+          "globalEpoch": 47,
+          "generation": 4,
+          "trainAcc": 0.87206,
+          "valAcc": 0.8984,
+          "lr": 0.00958714340214204,
+          "paramCount": 1308
+        },
+        {
+          "globalEpoch": 48,
+          "generation": 4,
+          "trainAcc": 0.87382,
+          "valAcc": 0.8699,
+          "lr": 0.009885534204613024,
+          "paramCount": 1308
+        },
+        {
+          "globalEpoch": 49,
+          "generation": 4,
+          "trainAcc": 0.87592,
+          "valAcc": 0.8957,
+          "lr": 0.01,
+          "paramCount": 1308
+        }
+      ]
+    },
+    {
+      "score_metric": "train_acc",
+      "model": "medium_1conv_2linear",
+      "seed": 100,
+      "status": "completed",
+      "elapsed_sec": 1150,
+      "started_on": "2026-08-06T21:15:22Z",
+      "last_update": "2026-08-06T21:34:32Z",
+      "final_acc": 0.7721,
+      "final_train_acc": 0.78196,
+      "best_acc": 0.7969,
+      "best_train_acc": 0.78196,
+      "final_params": 1060,
+      "start_params": 276,
+      "actions": 3,
+      "action_generations": [
+        0,
+        2,
+        3
+      ],
+      "action_labels": [
+        "Add Res Conv Layer Action",
+        "Delete Layer Action",
+        "Add Seq Linear Layer Action"
+      ],
+      "dropout_actions": 0,
+      "epochs": [
+        {
+          "globalEpoch": 0,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 1,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 2,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 3,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 4,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 5,
+          "generation": 0,
+          "trainAcc": 0.11334,
+          "valAcc": 0.1142,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 6,
+          "generation": 0,
+          "trainAcc": 0.13952,
+          "valAcc": 0.1673,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 7,
+          "generation": 0,
+          "trainAcc": 0.17976,
+          "valAcc": 0.1886,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 8,
+          "generation": 0,
+          "trainAcc": 0.18992,
+          "valAcc": 0.1964,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 9,
+          "generation": 0,
+          "trainAcc": 0.19588,
+          "valAcc": 0.2006,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 10,
+          "generation": 1,
+          "trainAcc": 0.22572,
+          "valAcc": 0.2513,
+          "lr": 0.001,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 11,
+          "generation": 1,
+          "trainAcc": 0.25352,
+          "valAcc": 0.2776,
+          "lr": 0.001,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 12,
+          "generation": 1,
+          "trainAcc": 0.2869,
+          "valAcc": 0.3039,
+          "lr": 0.0011403653008945564,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 13,
+          "generation": 1,
+          "trainAcc": 0.32084,
+          "valAcc": 0.3671,
+          "lr": 0.0026580657804886093,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 14,
+          "generation": 1,
+          "trainAcc": 0.37906,
+          "valAcc": 0.3438,
+          "lr": 0.005,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 15,
+          "generation": 1,
+          "trainAcc": 0.4236,
+          "valAcc": 0.3436,
+          "lr": 0.0073419342195113904,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 16,
+          "generation": 1,
+          "trainAcc": 0.46434,
+          "valAcc": 0.3769,
+          "lr": 0.008859634699105444,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 17,
+          "generation": 1,
+          "trainAcc": 0.51384,
+          "valAcc": 0.4829,
+          "lr": 0.00958714340214204,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 18,
+          "generation": 1,
+          "trainAcc": 0.5602,
+          "valAcc": 0.5279,
+          "lr": 0.009885534204613024,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 19,
+          "generation": 1,
+          "trainAcc": 0.5913,
+          "valAcc": 0.4936,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 20,
+          "generation": 2,
+          "trainAcc": 0.62402,
+          "valAcc": 0.5761,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 21,
+          "generation": 2,
+          "trainAcc": 0.65548,
+          "valAcc": 0.6889,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 22,
+          "generation": 2,
+          "trainAcc": 0.66712,
+          "valAcc": 0.6377,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 23,
+          "generation": 2,
+          "trainAcc": 0.67966,
+          "valAcc": 0.6198,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 24,
+          "generation": 2,
+          "trainAcc": 0.68816,
+          "valAcc": 0.7029,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 25,
+          "generation": 2,
+          "trainAcc": 0.69714,
+          "valAcc": 0.6979,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 26,
+          "generation": 2,
+          "trainAcc": 0.69776,
+          "valAcc": 0.6366,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 27,
+          "generation": 2,
+          "trainAcc": 0.7065,
+          "valAcc": 0.703,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 28,
+          "generation": 2,
+          "trainAcc": 0.71014,
+          "valAcc": 0.682,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 29,
+          "generation": 2,
+          "trainAcc": 0.71518,
+          "valAcc": 0.6418,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 30,
+          "generation": 3,
+          "trainAcc": 0.72126,
+          "valAcc": 0.7531,
+          "lr": 0.001,
+          "paramCount": 788
+        },
+        {
+          "globalEpoch": 31,
+          "generation": 3,
+          "trainAcc": 0.73056,
+          "valAcc": 0.7519,
+          "lr": 0.001,
+          "paramCount": 788
+        },
+        {
+          "globalEpoch": 32,
+          "generation": 3,
+          "trainAcc": 0.73084,
+          "valAcc": 0.7555,
+          "lr": 0.0011403653008945564,
+          "paramCount": 788
+        },
+        {
+          "globalEpoch": 33,
+          "generation": 3,
+          "trainAcc": 0.72958,
+          "valAcc": 0.7483,
+          "lr": 0.0026580657804886093,
+          "paramCount": 788
+        },
+        {
+          "globalEpoch": 34,
+          "generation": 3,
+          "trainAcc": 0.73032,
+          "valAcc": 0.7539,
+          "lr": 0.005,
+          "paramCount": 788
+        },
+        {
+          "globalEpoch": 35,
+          "generation": 3,
+          "trainAcc": 0.73364,
+          "valAcc": 0.7586,
+          "lr": 0.0073419342195113904,
+          "paramCount": 788
+        },
+        {
+          "globalEpoch": 36,
+          "generation": 3,
+          "trainAcc": 0.73544,
+          "valAcc": 0.6763,
+          "lr": 0.008859634699105444,
+          "paramCount": 788
+        },
+        {
+          "globalEpoch": 37,
+          "generation": 3,
+          "trainAcc": 0.74434,
+          "valAcc": 0.7596,
+          "lr": 0.00958714340214204,
+          "paramCount": 788
+        },
+        {
+          "globalEpoch": 38,
+          "generation": 3,
+          "trainAcc": 0.74714,
+          "valAcc": 0.7207,
+          "lr": 0.009885534204613024,
+          "paramCount": 788
+        },
+        {
+          "globalEpoch": 39,
+          "generation": 3,
+          "trainAcc": 0.75312,
+          "valAcc": 0.7712,
+          "lr": 0.01,
+          "paramCount": 788
+        },
+        {
+          "globalEpoch": 40,
+          "generation": 4,
+          "trainAcc": 0.769,
+          "valAcc": 0.7937,
+          "lr": 0.001,
+          "paramCount": 1060
+        },
+        {
+          "globalEpoch": 41,
+          "generation": 4,
+          "trainAcc": 0.77186,
+          "valAcc": 0.7969,
+          "lr": 0.001,
+          "paramCount": 1060
+        },
+        {
+          "globalEpoch": 42,
+          "generation": 4,
+          "trainAcc": 0.76952,
+          "valAcc": 0.7922,
+          "lr": 0.0011403653008945564,
+          "paramCount": 1060
+        },
+        {
+          "globalEpoch": 43,
+          "generation": 4,
+          "trainAcc": 0.76282,
+          "valAcc": 0.7723,
+          "lr": 0.0026580657804886093,
+          "paramCount": 1060
+        },
+        {
+          "globalEpoch": 44,
+          "generation": 4,
+          "trainAcc": 0.74578,
+          "valAcc": 0.7559,
+          "lr": 0.005,
+          "paramCount": 1060
+        },
+        {
+          "globalEpoch": 45,
+          "generation": 4,
+          "trainAcc": 0.73292,
+          "valAcc": 0.7824,
+          "lr": 0.0073419342195113904,
+          "paramCount": 1060
+        },
+        {
+          "globalEpoch": 46,
+          "generation": 4,
+          "trainAcc": 0.74226,
+          "valAcc": 0.6506,
+          "lr": 0.008859634699105444,
+          "paramCount": 1060
+        },
+        {
+          "globalEpoch": 47,
+          "generation": 4,
+          "trainAcc": 0.76364,
+          "valAcc": 0.665,
+          "lr": 0.00958714340214204,
+          "paramCount": 1060
+        },
+        {
+          "globalEpoch": 48,
+          "generation": 4,
+          "trainAcc": 0.7767,
+          "valAcc": 0.786,
+          "lr": 0.009885534204613024,
+          "paramCount": 1060
+        },
+        {
+          "globalEpoch": 49,
+          "generation": 4,
+          "trainAcc": 0.78196,
+          "valAcc": 0.7721,
+          "lr": 0.01,
+          "paramCount": 1060
+        }
+      ]
+    },
+    {
+      "score_metric": "train_acc",
+      "model": "medium_1conv_2linear",
+      "seed": 101,
+      "status": "completed",
+      "elapsed_sec": 1283,
+      "started_on": "2026-08-06T21:27:38Z",
+      "last_update": "2026-08-06T21:49:02Z",
+      "final_acc": 0.2057,
+      "final_train_acc": 0.14104,
+      "best_acc": 0.2195,
+      "best_train_acc": 0.17564,
+      "final_params": 276,
+      "start_params": 276,
+      "actions": 4,
+      "action_generations": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "action_labels": [
+        "Add Seq Dropout Layer Action",
+        "Add Seq Dropout Layer Action",
+        "Add Seq Dropout Layer Action",
+        "Add Seq Dropout Layer Action"
+      ],
+      "dropout_actions": 4,
+      "epochs": [
+        {
+          "globalEpoch": 0,
+          "generation": 0,
+          "trainAcc": 0.09866,
+          "valAcc": 0.0985,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 1,
+          "generation": 0,
+          "trainAcc": 0.09866,
+          "valAcc": 0.0985,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 2,
+          "generation": 0,
+          "trainAcc": 0.09866,
+          "valAcc": 0.0985,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 3,
+          "generation": 0,
+          "trainAcc": 0.09866,
+          "valAcc": 0.0985,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 4,
+          "generation": 0,
+          "trainAcc": 0.09866,
+          "valAcc": 0.0985,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 5,
+          "generation": 0,
+          "trainAcc": 0.11026,
+          "valAcc": 0.1121,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 6,
+          "generation": 0,
+          "trainAcc": 0.11302,
+          "valAcc": 0.1099,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 7,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 8,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 9,
+          "generation": 0,
+          "trainAcc": 0.11338,
+          "valAcc": 0.1122,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 10,
+          "generation": 1,
+          "trainAcc": 0.12748,
+          "valAcc": 0.1142,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 11,
+          "generation": 1,
+          "trainAcc": 0.12918,
+          "valAcc": 0.1162,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 12,
+          "generation": 1,
+          "trainAcc": 0.13104,
+          "valAcc": 0.1193,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 13,
+          "generation": 1,
+          "trainAcc": 0.13404,
+          "valAcc": 0.1307,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 14,
+          "generation": 1,
+          "trainAcc": 0.1398,
+          "valAcc": 0.1854,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 15,
+          "generation": 1,
+          "trainAcc": 0.15152,
+          "valAcc": 0.2051,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 16,
+          "generation": 1,
+          "trainAcc": 0.15686,
+          "valAcc": 0.2022,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 17,
+          "generation": 1,
+          "trainAcc": 0.16074,
+          "valAcc": 0.2014,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 18,
+          "generation": 1,
+          "trainAcc": 0.16594,
+          "valAcc": 0.2075,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 19,
+          "generation": 1,
+          "trainAcc": 0.17564,
+          "valAcc": 0.2133,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 20,
+          "generation": 2,
+          "trainAcc": 0.15188,
+          "valAcc": 0.2145,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 21,
+          "generation": 2,
+          "trainAcc": 0.1549,
+          "valAcc": 0.2153,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 22,
+          "generation": 2,
+          "trainAcc": 0.15684,
+          "valAcc": 0.2153,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 23,
+          "generation": 2,
+          "trainAcc": 0.15882,
+          "valAcc": 0.2155,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 24,
+          "generation": 2,
+          "trainAcc": 0.16032,
+          "valAcc": 0.2163,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 25,
+          "generation": 2,
+          "trainAcc": 0.1634,
+          "valAcc": 0.2162,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 26,
+          "generation": 2,
+          "trainAcc": 0.16538,
+          "valAcc": 0.2148,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 27,
+          "generation": 2,
+          "trainAcc": 0.16884,
+          "valAcc": 0.2178,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 28,
+          "generation": 2,
+          "trainAcc": 0.17114,
+          "valAcc": 0.2175,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 29,
+          "generation": 2,
+          "trainAcc": 0.17036,
+          "valAcc": 0.2195,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 30,
+          "generation": 3,
+          "trainAcc": 0.14254,
+          "valAcc": 0.2177,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 31,
+          "generation": 3,
+          "trainAcc": 0.14362,
+          "valAcc": 0.2171,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 32,
+          "generation": 3,
+          "trainAcc": 0.14278,
+          "valAcc": 0.2156,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 33,
+          "generation": 3,
+          "trainAcc": 0.14388,
+          "valAcc": 0.213,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 34,
+          "generation": 3,
+          "trainAcc": 0.14388,
+          "valAcc": 0.214,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 35,
+          "generation": 3,
+          "trainAcc": 0.14392,
+          "valAcc": 0.2133,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 36,
+          "generation": 3,
+          "trainAcc": 0.14386,
+          "valAcc": 0.2142,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 37,
+          "generation": 3,
+          "trainAcc": 0.14448,
+          "valAcc": 0.2137,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 38,
+          "generation": 3,
+          "trainAcc": 0.14602,
+          "valAcc": 0.2125,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 39,
+          "generation": 3,
+          "trainAcc": 0.14494,
+          "valAcc": 0.2115,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 40,
+          "generation": 4,
+          "trainAcc": 0.14192,
+          "valAcc": 0.2107,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 41,
+          "generation": 4,
+          "trainAcc": 0.14116,
+          "valAcc": 0.2105,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 42,
+          "generation": 4,
+          "trainAcc": 0.14218,
+          "valAcc": 0.2112,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 43,
+          "generation": 4,
+          "trainAcc": 0.14102,
+          "valAcc": 0.2095,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 44,
+          "generation": 4,
+          "trainAcc": 0.14216,
+          "valAcc": 0.2089,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 45,
+          "generation": 4,
+          "trainAcc": 0.14048,
+          "valAcc": 0.2114,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 46,
+          "generation": 4,
+          "trainAcc": 0.1414,
+          "valAcc": 0.2077,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 47,
+          "generation": 4,
+          "trainAcc": 0.14192,
+          "valAcc": 0.2093,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 48,
+          "generation": 4,
+          "trainAcc": 0.1421,
+          "valAcc": 0.2081,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 49,
+          "generation": 4,
+          "trainAcc": 0.14104,
+          "valAcc": 0.2057,
+          "lr": 0.01,
+          "paramCount": 276
+        }
+      ]
+    },
+    {
+      "score_metric": "train_acc",
+      "model": "medium_1conv_2linear",
+      "seed": 102,
+      "status": "completed",
+      "elapsed_sec": 1282,
+      "started_on": "2026-08-06T21:34:33Z",
+      "last_update": "2026-08-06T21:55:55Z",
+      "final_acc": 0.2133,
+      "final_train_acc": 0.13544,
+      "best_acc": 0.2221,
+      "best_train_acc": 0.19804,
+      "final_params": 276,
+      "start_params": 276,
+      "actions": 4,
+      "action_generations": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "action_labels": [
+        "Add Seq Dropout Layer Action",
+        "Add Seq Dropout Layer Action",
+        "Add Seq Dropout Layer Action",
+        "Add Seq Dropout Layer Action"
+      ],
+      "dropout_actions": 4,
+      "epochs": [
+        {
+          "globalEpoch": 0,
+          "generation": 0,
+          "trainAcc": 0.09706,
+          "valAcc": 0.0989,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 1,
+          "generation": 0,
+          "trainAcc": 0.09706,
+          "valAcc": 0.0989,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 2,
+          "generation": 0,
+          "trainAcc": 0.09706,
+          "valAcc": 0.0989,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 3,
+          "generation": 0,
+          "trainAcc": 0.09706,
+          "valAcc": 0.0989,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 4,
+          "generation": 0,
+          "trainAcc": 0.10976,
+          "valAcc": 0.1099,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 5,
+          "generation": 0,
+          "trainAcc": 0.11296,
+          "valAcc": 0.1099,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 6,
+          "generation": 0,
+          "trainAcc": 0.11522,
+          "valAcc": 0.1171,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 7,
+          "generation": 0,
+          "trainAcc": 0.1304,
+          "valAcc": 0.1503,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 8,
+          "generation": 0,
+          "trainAcc": 0.17388,
+          "valAcc": 0.1957,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 9,
+          "generation": 0,
+          "trainAcc": 0.19424,
+          "valAcc": 0.1978,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 10,
+          "generation": 1,
+          "trainAcc": 0.16164,
+          "valAcc": 0.1989,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 11,
+          "generation": 1,
+          "trainAcc": 0.16248,
+          "valAcc": 0.1997,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 12,
+          "generation": 1,
+          "trainAcc": 0.16578,
+          "valAcc": 0.2005,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 13,
+          "generation": 1,
+          "trainAcc": 0.16718,
+          "valAcc": 0.2009,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 14,
+          "generation": 1,
+          "trainAcc": 0.17492,
+          "valAcc": 0.203,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 15,
+          "generation": 1,
+          "trainAcc": 0.17848,
+          "valAcc": 0.2048,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 16,
+          "generation": 1,
+          "trainAcc": 0.18498,
+          "valAcc": 0.2105,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 17,
+          "generation": 1,
+          "trainAcc": 0.19162,
+          "valAcc": 0.2145,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 18,
+          "generation": 1,
+          "trainAcc": 0.19582,
+          "valAcc": 0.2161,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 19,
+          "generation": 1,
+          "trainAcc": 0.19804,
+          "valAcc": 0.2185,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 20,
+          "generation": 2,
+          "trainAcc": 0.16568,
+          "valAcc": 0.2171,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 21,
+          "generation": 2,
+          "trainAcc": 0.16328,
+          "valAcc": 0.2161,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 22,
+          "generation": 2,
+          "trainAcc": 0.16496,
+          "valAcc": 0.2163,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 23,
+          "generation": 2,
+          "trainAcc": 0.16638,
+          "valAcc": 0.2164,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 24,
+          "generation": 2,
+          "trainAcc": 0.16686,
+          "valAcc": 0.2167,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 25,
+          "generation": 2,
+          "trainAcc": 0.16826,
+          "valAcc": 0.2177,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 26,
+          "generation": 2,
+          "trainAcc": 0.16954,
+          "valAcc": 0.2175,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 27,
+          "generation": 2,
+          "trainAcc": 0.16846,
+          "valAcc": 0.216,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 28,
+          "generation": 2,
+          "trainAcc": 0.16974,
+          "valAcc": 0.2178,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 29,
+          "generation": 2,
+          "trainAcc": 0.16914,
+          "valAcc": 0.2175,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 30,
+          "generation": 3,
+          "trainAcc": 0.16306,
+          "valAcc": 0.2187,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 31,
+          "generation": 3,
+          "trainAcc": 0.16414,
+          "valAcc": 0.2194,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 32,
+          "generation": 3,
+          "trainAcc": 0.16406,
+          "valAcc": 0.2196,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 33,
+          "generation": 3,
+          "trainAcc": 0.16496,
+          "valAcc": 0.219,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 34,
+          "generation": 3,
+          "trainAcc": 0.16454,
+          "valAcc": 0.2188,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 35,
+          "generation": 3,
+          "trainAcc": 0.16584,
+          "valAcc": 0.2199,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 36,
+          "generation": 3,
+          "trainAcc": 0.16324,
+          "valAcc": 0.2201,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 37,
+          "generation": 3,
+          "trainAcc": 0.16398,
+          "valAcc": 0.2201,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 38,
+          "generation": 3,
+          "trainAcc": 0.16474,
+          "valAcc": 0.2205,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 39,
+          "generation": 3,
+          "trainAcc": 0.16494,
+          "valAcc": 0.2221,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 40,
+          "generation": 4,
+          "trainAcc": 0.13634,
+          "valAcc": 0.2197,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 41,
+          "generation": 4,
+          "trainAcc": 0.13512,
+          "valAcc": 0.2189,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 42,
+          "generation": 4,
+          "trainAcc": 0.13528,
+          "valAcc": 0.2176,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 43,
+          "generation": 4,
+          "trainAcc": 0.13582,
+          "valAcc": 0.2149,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 44,
+          "generation": 4,
+          "trainAcc": 0.1349,
+          "valAcc": 0.2139,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 45,
+          "generation": 4,
+          "trainAcc": 0.13588,
+          "valAcc": 0.2155,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 46,
+          "generation": 4,
+          "trainAcc": 0.13466,
+          "valAcc": 0.2154,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 47,
+          "generation": 4,
+          "trainAcc": 0.13524,
+          "valAcc": 0.2124,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 48,
+          "generation": 4,
+          "trainAcc": 0.13464,
+          "valAcc": 0.2129,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 49,
+          "generation": 4,
+          "trainAcc": 0.13544,
+          "valAcc": 0.2133,
+          "lr": 0.01,
+          "paramCount": 276
+        }
+      ]
+    },
+    {
+      "score_metric": "train_acc",
+      "model": "medium_1conv_2linear",
+      "seed": 103,
+      "status": "completed",
+      "elapsed_sec": 994,
+      "started_on": "2026-08-06T21:49:02Z",
+      "last_update": "2026-08-06T22:05:37Z",
+      "final_acc": 0.6983,
+      "final_train_acc": 0.64364,
+      "best_acc": 0.748,
+      "best_train_acc": 0.64364,
+      "final_params": 868,
+      "start_params": 276,
+      "actions": 2,
+      "action_generations": [
+        1,
+        2
+      ],
+      "action_labels": [
+        "Add Seq Dropout Layer Action",
+        "Add Res Conv Layer Action"
+      ],
+      "dropout_actions": 1,
+      "epochs": [
+        {
+          "globalEpoch": 0,
+          "generation": 0,
+          "trainAcc": 0.08982,
+          "valAcc": 0.093,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 1,
+          "generation": 0,
+          "trainAcc": 0.08982,
+          "valAcc": 0.093,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 2,
+          "generation": 0,
+          "trainAcc": 0.08982,
+          "valAcc": 0.093,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 3,
+          "generation": 0,
+          "trainAcc": 0.09152,
+          "valAcc": 0.1007,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 4,
+          "generation": 0,
+          "trainAcc": 0.09956,
+          "valAcc": 0.0955,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 5,
+          "generation": 0,
+          "trainAcc": 0.09792,
+          "valAcc": 0.0956,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 6,
+          "generation": 0,
+          "trainAcc": 0.14402,
+          "valAcc": 0.2105,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 7,
+          "generation": 0,
+          "trainAcc": 0.20282,
+          "valAcc": 0.1988,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 8,
+          "generation": 0,
+          "trainAcc": 0.19236,
+          "valAcc": 0.197,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 9,
+          "generation": 0,
+          "trainAcc": 0.19498,
+          "valAcc": 0.2007,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 10,
+          "generation": 1,
+          "trainAcc": 0.2027,
+          "valAcc": 0.208,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 11,
+          "generation": 1,
+          "trainAcc": 0.21612,
+          "valAcc": 0.2198,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 12,
+          "generation": 1,
+          "trainAcc": 0.22208,
+          "valAcc": 0.2232,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 13,
+          "generation": 1,
+          "trainAcc": 0.22538,
+          "valAcc": 0.2269,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 14,
+          "generation": 1,
+          "trainAcc": 0.22642,
+          "valAcc": 0.2262,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 15,
+          "generation": 1,
+          "trainAcc": 0.2278,
+          "valAcc": 0.2288,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 16,
+          "generation": 1,
+          "trainAcc": 0.227,
+          "valAcc": 0.2282,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 17,
+          "generation": 1,
+          "trainAcc": 0.22874,
+          "valAcc": 0.2295,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 18,
+          "generation": 1,
+          "trainAcc": 0.22912,
+          "valAcc": 0.23,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 19,
+          "generation": 1,
+          "trainAcc": 0.2281,
+          "valAcc": 0.2306,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 20,
+          "generation": 2,
+          "trainAcc": 0.21566,
+          "valAcc": 0.2323,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 21,
+          "generation": 2,
+          "trainAcc": 0.2193,
+          "valAcc": 0.2332,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 22,
+          "generation": 2,
+          "trainAcc": 0.2172,
+          "valAcc": 0.2313,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 23,
+          "generation": 2,
+          "trainAcc": 0.2192,
+          "valAcc": 0.2302,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 24,
+          "generation": 2,
+          "trainAcc": 0.21936,
+          "valAcc": 0.2309,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 25,
+          "generation": 2,
+          "trainAcc": 0.2237,
+          "valAcc": 0.2304,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 26,
+          "generation": 2,
+          "trainAcc": 0.22386,
+          "valAcc": 0.2341,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 27,
+          "generation": 2,
+          "trainAcc": 0.22416,
+          "valAcc": 0.2361,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 28,
+          "generation": 2,
+          "trainAcc": 0.22426,
+          "valAcc": 0.2323,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 29,
+          "generation": 2,
+          "trainAcc": 0.22608,
+          "valAcc": 0.2346,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 30,
+          "generation": 3,
+          "trainAcc": 0.22718,
+          "valAcc": 0.2359,
+          "lr": 0.001,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 31,
+          "generation": 3,
+          "trainAcc": 0.22956,
+          "valAcc": 0.2418,
+          "lr": 0.001,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 32,
+          "generation": 3,
+          "trainAcc": 0.2322,
+          "valAcc": 0.2524,
+          "lr": 0.0011403653008945564,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 33,
+          "generation": 3,
+          "trainAcc": 0.23924,
+          "valAcc": 0.2765,
+          "lr": 0.0026580657804886093,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 34,
+          "generation": 3,
+          "trainAcc": 0.25026,
+          "valAcc": 0.292,
+          "lr": 0.005,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 35,
+          "generation": 3,
+          "trainAcc": 0.27682,
+          "valAcc": 0.3525,
+          "lr": 0.0073419342195113904,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 36,
+          "generation": 3,
+          "trainAcc": 0.32238,
+          "valAcc": 0.4009,
+          "lr": 0.008859634699105444,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 37,
+          "generation": 3,
+          "trainAcc": 0.3888,
+          "valAcc": 0.484,
+          "lr": 0.00958714340214204,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 38,
+          "generation": 3,
+          "trainAcc": 0.44178,
+          "valAcc": 0.5065,
+          "lr": 0.009885534204613024,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 39,
+          "generation": 3,
+          "trainAcc": 0.48134,
+          "valAcc": 0.6143,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 40,
+          "generation": 4,
+          "trainAcc": 0.52828,
+          "valAcc": 0.6307,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 41,
+          "generation": 4,
+          "trainAcc": 0.55234,
+          "valAcc": 0.686,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 42,
+          "generation": 4,
+          "trainAcc": 0.58068,
+          "valAcc": 0.6525,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 43,
+          "generation": 4,
+          "trainAcc": 0.60104,
+          "valAcc": 0.6188,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 44,
+          "generation": 4,
+          "trainAcc": 0.61188,
+          "valAcc": 0.7067,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 45,
+          "generation": 4,
+          "trainAcc": 0.61934,
+          "valAcc": 0.6343,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 46,
+          "generation": 4,
+          "trainAcc": 0.62642,
+          "valAcc": 0.7024,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 47,
+          "generation": 4,
+          "trainAcc": 0.63568,
+          "valAcc": 0.748,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 48,
+          "generation": 4,
+          "trainAcc": 0.63706,
+          "valAcc": 0.7125,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 49,
+          "generation": 4,
+          "trainAcc": 0.64364,
+          "valAcc": 0.6983,
+          "lr": 0.01,
+          "paramCount": 868
+        }
+      ]
+    },
+    {
+      "score_metric": "val_acc",
+      "model": "big",
+      "seed": 100,
+      "status": "completed",
+      "elapsed_sec": 975,
+      "started_on": "2026-08-06T18:11:42Z",
+      "last_update": "2026-08-06T18:27:58Z",
+      "final_acc": 0.7897,
+      "final_train_acc": 0.81578,
+      "best_acc": 0.8388,
+      "best_train_acc": 0.81578,
+      "final_params": 1284,
+      "start_params": 420,
+      "actions": 2,
+      "action_generations": [
+        0,
+        2
+      ],
+      "action_labels": [
+        "Add Seq Linear Layer Action",
+        "Add Res Conv Layer Action"
+      ],
+      "dropout_actions": 0,
+      "epochs": [
+        {
+          "globalEpoch": 0,
+          "generation": 0,
+          "trainAcc": 0.08982,
+          "valAcc": 0.093,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 1,
+          "generation": 0,
+          "trainAcc": 0.08982,
+          "valAcc": 0.093,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 2,
+          "generation": 0,
+          "trainAcc": 0.08982,
+          "valAcc": 0.093,
+          "lr": 0.0011403653008945564,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 3,
+          "generation": 0,
+          "trainAcc": 0.08982,
+          "valAcc": 0.093,
+          "lr": 0.0026580657804886093,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 4,
+          "generation": 0,
+          "trainAcc": 0.09666,
+          "valAcc": 0.0949,
+          "lr": 0.005,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 5,
+          "generation": 0,
+          "trainAcc": 0.1064,
+          "valAcc": 0.1099,
+          "lr": 0.0073419342195113904,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 6,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.008859634699105444,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 7,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.00958714340214204,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 8,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.009885534204613024,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 9,
+          "generation": 0,
+          "trainAcc": 0.11304,
+          "valAcc": 0.1104,
+          "lr": 0.01,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 10,
+          "generation": 1,
+          "trainAcc": 0.11438,
+          "valAcc": 0.1121,
+          "lr": 0.001,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 11,
+          "generation": 1,
+          "trainAcc": 0.11654,
+          "valAcc": 0.1147,
+          "lr": 0.001,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 12,
+          "generation": 1,
+          "trainAcc": 0.12016,
+          "valAcc": 0.1206,
+          "lr": 0.0011403653008945564,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 13,
+          "generation": 1,
+          "trainAcc": 0.12966,
+          "valAcc": 0.1362,
+          "lr": 0.0026580657804886093,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 14,
+          "generation": 1,
+          "trainAcc": 0.15564,
+          "valAcc": 0.1577,
+          "lr": 0.005,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 15,
+          "generation": 1,
+          "trainAcc": 0.17374,
+          "valAcc": 0.1733,
+          "lr": 0.0073419342195113904,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 16,
+          "generation": 1,
+          "trainAcc": 0.18894,
+          "valAcc": 0.215,
+          "lr": 0.008859634699105444,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 17,
+          "generation": 1,
+          "trainAcc": 0.2264,
+          "valAcc": 0.2375,
+          "lr": 0.00958714340214204,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 18,
+          "generation": 1,
+          "trainAcc": 0.2464,
+          "valAcc": 0.2705,
+          "lr": 0.009885534204613024,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 19,
+          "generation": 1,
+          "trainAcc": 0.26614,
+          "valAcc": 0.2736,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 20,
+          "generation": 2,
+          "trainAcc": 0.27732,
+          "valAcc": 0.2794,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 21,
+          "generation": 2,
+          "trainAcc": 0.28088,
+          "valAcc": 0.2862,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 22,
+          "generation": 2,
+          "trainAcc": 0.28368,
+          "valAcc": 0.2916,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 23,
+          "generation": 2,
+          "trainAcc": 0.28582,
+          "valAcc": 0.2811,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 24,
+          "generation": 2,
+          "trainAcc": 0.28892,
+          "valAcc": 0.2895,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 25,
+          "generation": 2,
+          "trainAcc": 0.29352,
+          "valAcc": 0.2941,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 26,
+          "generation": 2,
+          "trainAcc": 0.29476,
+          "valAcc": 0.2987,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 27,
+          "generation": 2,
+          "trainAcc": 0.2962,
+          "valAcc": 0.2966,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 28,
+          "generation": 2,
+          "trainAcc": 0.29884,
+          "valAcc": 0.293,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 29,
+          "generation": 2,
+          "trainAcc": 0.29988,
+          "valAcc": 0.2968,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 30,
+          "generation": 3,
+          "trainAcc": 0.32108,
+          "valAcc": 0.3279,
+          "lr": 0.001,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 31,
+          "generation": 3,
+          "trainAcc": 0.34708,
+          "valAcc": 0.3718,
+          "lr": 0.001,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 32,
+          "generation": 3,
+          "trainAcc": 0.37492,
+          "valAcc": 0.3957,
+          "lr": 0.0011403653008945564,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 33,
+          "generation": 3,
+          "trainAcc": 0.41506,
+          "valAcc": 0.4421,
+          "lr": 0.0026580657804886093,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 34,
+          "generation": 3,
+          "trainAcc": 0.49776,
+          "valAcc": 0.5799,
+          "lr": 0.005,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 35,
+          "generation": 3,
+          "trainAcc": 0.6059,
+          "valAcc": 0.6323,
+          "lr": 0.0073419342195113904,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 36,
+          "generation": 3,
+          "trainAcc": 0.67234,
+          "valAcc": 0.689,
+          "lr": 0.008859634699105444,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 37,
+          "generation": 3,
+          "trainAcc": 0.7096,
+          "valAcc": 0.6927,
+          "lr": 0.00958714340214204,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 38,
+          "generation": 3,
+          "trainAcc": 0.73012,
+          "valAcc": 0.7153,
+          "lr": 0.009885534204613024,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 39,
+          "generation": 3,
+          "trainAcc": 0.75074,
+          "valAcc": 0.6212,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 40,
+          "generation": 4,
+          "trainAcc": 0.76214,
+          "valAcc": 0.7779,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 41,
+          "generation": 4,
+          "trainAcc": 0.77104,
+          "valAcc": 0.7978,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 42,
+          "generation": 4,
+          "trainAcc": 0.78174,
+          "valAcc": 0.784,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 43,
+          "generation": 4,
+          "trainAcc": 0.78642,
+          "valAcc": 0.7645,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 44,
+          "generation": 4,
+          "trainAcc": 0.79438,
+          "valAcc": 0.8175,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 45,
+          "generation": 4,
+          "trainAcc": 0.80076,
+          "valAcc": 0.7876,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 46,
+          "generation": 4,
+          "trainAcc": 0.80384,
+          "valAcc": 0.8276,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 47,
+          "generation": 4,
+          "trainAcc": 0.80666,
+          "valAcc": 0.8388,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 48,
+          "generation": 4,
+          "trainAcc": 0.8113,
+          "valAcc": 0.7488,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 49,
+          "generation": 4,
+          "trainAcc": 0.81578,
+          "valAcc": 0.7897,
+          "lr": 0.01,
+          "paramCount": 1284
+        }
+      ]
+    },
+    {
+      "score_metric": "val_acc",
+      "model": "big",
+      "seed": 101,
+      "status": "completed",
+      "elapsed_sec": 1246,
+      "started_on": "2026-08-06T18:27:59Z",
+      "last_update": "2026-08-06T18:48:45Z",
+      "final_acc": 0.394,
+      "final_train_acc": 0.33284,
+      "best_acc": 0.394,
+      "best_train_acc": 0.33284,
+      "final_params": 716,
+      "start_params": 420,
+      "actions": 4,
+      "action_generations": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "action_labels": [
+        "Add Seq Dropout Layer Action",
+        "Add Seq Conv Layer Action",
+        "Add Seq Dropout Layer Action",
+        "Add Seq Conv Layer Action"
+      ],
+      "dropout_actions": 2,
+      "epochs": [
+        {
+          "globalEpoch": 0,
+          "generation": 0,
+          "trainAcc": 0.08982,
+          "valAcc": 0.093,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 1,
+          "generation": 0,
+          "trainAcc": 0.08982,
+          "valAcc": 0.093,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 2,
+          "generation": 0,
+          "trainAcc": 0.10478,
+          "valAcc": 0.1099,
+          "lr": 0.0011403653008945564,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 3,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.0026580657804886093,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 4,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.005,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 5,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.0073419342195113904,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 6,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.008859634699105444,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 7,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.00958714340214204,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 8,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.009885534204613024,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 9,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.01,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 10,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 11,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 12,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.0011403653008945564,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 13,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.0026580657804886093,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 14,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.005,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 15,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.0073419342195113904,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 16,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.008859634699105444,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 17,
+          "generation": 1,
+          "trainAcc": 0.1141,
+          "valAcc": 0.1099,
+          "lr": 0.00958714340214204,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 18,
+          "generation": 1,
+          "trainAcc": 0.113,
+          "valAcc": 0.1155,
+          "lr": 0.009885534204613024,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 19,
+          "generation": 1,
+          "trainAcc": 0.14022,
+          "valAcc": 0.1939,
+          "lr": 0.01,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 20,
+          "generation": 2,
+          "trainAcc": 0.17518,
+          "valAcc": 0.1946,
+          "lr": 0.001,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 21,
+          "generation": 2,
+          "trainAcc": 0.17694,
+          "valAcc": 0.1965,
+          "lr": 0.001,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 22,
+          "generation": 2,
+          "trainAcc": 0.17916,
+          "valAcc": 0.1992,
+          "lr": 0.0011403653008945564,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 23,
+          "generation": 2,
+          "trainAcc": 0.18084,
+          "valAcc": 0.2023,
+          "lr": 0.0026580657804886093,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 24,
+          "generation": 2,
+          "trainAcc": 0.1831,
+          "valAcc": 0.2096,
+          "lr": 0.005,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 25,
+          "generation": 2,
+          "trainAcc": 0.1918,
+          "valAcc": 0.2188,
+          "lr": 0.0073419342195113904,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 26,
+          "generation": 2,
+          "trainAcc": 0.20404,
+          "valAcc": 0.2249,
+          "lr": 0.008859634699105444,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 27,
+          "generation": 2,
+          "trainAcc": 0.20578,
+          "valAcc": 0.2343,
+          "lr": 0.00958714340214204,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 28,
+          "generation": 2,
+          "trainAcc": 0.20794,
+          "valAcc": 0.2328,
+          "lr": 0.009885534204613024,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 29,
+          "generation": 2,
+          "trainAcc": 0.21094,
+          "valAcc": 0.246,
+          "lr": 0.01,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 30,
+          "generation": 3,
+          "trainAcc": 0.20442,
+          "valAcc": 0.2498,
+          "lr": 0.001,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 31,
+          "generation": 3,
+          "trainAcc": 0.2024,
+          "valAcc": 0.2512,
+          "lr": 0.001,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 32,
+          "generation": 3,
+          "trainAcc": 0.20642,
+          "valAcc": 0.2515,
+          "lr": 0.0011403653008945564,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 33,
+          "generation": 3,
+          "trainAcc": 0.20862,
+          "valAcc": 0.2562,
+          "lr": 0.0026580657804886093,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 34,
+          "generation": 3,
+          "trainAcc": 0.21036,
+          "valAcc": 0.2602,
+          "lr": 0.005,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 35,
+          "generation": 3,
+          "trainAcc": 0.22,
+          "valAcc": 0.2728,
+          "lr": 0.0073419342195113904,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 36,
+          "generation": 3,
+          "trainAcc": 0.2338,
+          "valAcc": 0.2779,
+          "lr": 0.008859634699105444,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 37,
+          "generation": 3,
+          "trainAcc": 0.2456,
+          "valAcc": 0.3178,
+          "lr": 0.00958714340214204,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 38,
+          "generation": 3,
+          "trainAcc": 0.26224,
+          "valAcc": 0.3138,
+          "lr": 0.009885534204613024,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 39,
+          "generation": 3,
+          "trainAcc": 0.27306,
+          "valAcc": 0.2802,
+          "lr": 0.01,
+          "paramCount": 568
+        },
+        {
+          "globalEpoch": 40,
+          "generation": 4,
+          "trainAcc": 0.2791,
+          "valAcc": 0.3284,
+          "lr": 0.001,
+          "paramCount": 716
+        },
+        {
+          "globalEpoch": 41,
+          "generation": 4,
+          "trainAcc": 0.28512,
+          "valAcc": 0.3324,
+          "lr": 0.001,
+          "paramCount": 716
+        },
+        {
+          "globalEpoch": 42,
+          "generation": 4,
+          "trainAcc": 0.28786,
+          "valAcc": 0.3331,
+          "lr": 0.0011403653008945564,
+          "paramCount": 716
+        },
+        {
+          "globalEpoch": 43,
+          "generation": 4,
+          "trainAcc": 0.29082,
+          "valAcc": 0.3473,
+          "lr": 0.0026580657804886093,
+          "paramCount": 716
+        },
+        {
+          "globalEpoch": 44,
+          "generation": 4,
+          "trainAcc": 0.2946,
+          "valAcc": 0.231,
+          "lr": 0.005,
+          "paramCount": 716
+        },
+        {
+          "globalEpoch": 45,
+          "generation": 4,
+          "trainAcc": 0.30084,
+          "valAcc": 0.3144,
+          "lr": 0.0073419342195113904,
+          "paramCount": 716
+        },
+        {
+          "globalEpoch": 46,
+          "generation": 4,
+          "trainAcc": 0.3115,
+          "valAcc": 0.3561,
+          "lr": 0.008859634699105444,
+          "paramCount": 716
+        },
+        {
+          "globalEpoch": 47,
+          "generation": 4,
+          "trainAcc": 0.31956,
+          "valAcc": 0.3254,
+          "lr": 0.00958714340214204,
+          "paramCount": 716
+        },
+        {
+          "globalEpoch": 48,
+          "generation": 4,
+          "trainAcc": 0.3294,
+          "valAcc": 0.3831,
+          "lr": 0.009885534204613024,
+          "paramCount": 716
+        },
+        {
+          "globalEpoch": 49,
+          "generation": 4,
+          "trainAcc": 0.33284,
+          "valAcc": 0.394,
+          "lr": 0.01,
+          "paramCount": 716
+        }
+      ]
+    },
+    {
+      "score_metric": "val_acc",
+      "model": "big",
+      "seed": 102,
+      "status": "completed",
+      "elapsed_sec": 986,
+      "started_on": "2026-08-06T18:48:46Z",
+      "last_update": "2026-08-06T19:05:12Z",
+      "final_acc": 0.8839,
+      "final_train_acc": 0.86932,
+      "best_acc": 0.8949,
+      "best_train_acc": 0.86932,
+      "final_params": 1284,
+      "start_params": 420,
+      "actions": 2,
+      "action_generations": [
+        0,
+        2
+      ],
+      "action_labels": [
+        "Add Seq Linear Layer Action",
+        "Add Res Conv Layer Action"
+      ],
+      "dropout_actions": 0,
+      "epochs": [
+        {
+          "globalEpoch": 0,
+          "generation": 0,
+          "trainAcc": 0.10296,
+          "valAcc": 0.0992,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 1,
+          "generation": 0,
+          "trainAcc": 0.10278,
+          "valAcc": 0.0992,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 2,
+          "generation": 0,
+          "trainAcc": 0.10256,
+          "valAcc": 0.0985,
+          "lr": 0.0011403653008945564,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 3,
+          "generation": 0,
+          "trainAcc": 0.10716,
+          "valAcc": 0.1099,
+          "lr": 0.0026580657804886093,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 4,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.005,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 5,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.0073419342195113904,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 6,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.008859634699105444,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 7,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.00958714340214204,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 8,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.009885534204613024,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 9,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.01,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 10,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.001,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 11,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.001,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 12,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.0011403653008945564,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 13,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.0026580657804886093,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 14,
+          "generation": 1,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.005,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 15,
+          "generation": 1,
+          "trainAcc": 0.113,
+          "valAcc": 0.1116,
+          "lr": 0.0073419342195113904,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 16,
+          "generation": 1,
+          "trainAcc": 0.11734,
+          "valAcc": 0.1156,
+          "lr": 0.008859634699105444,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 17,
+          "generation": 1,
+          "trainAcc": 0.13582,
+          "valAcc": 0.1337,
+          "lr": 0.00958714340214204,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 18,
+          "generation": 1,
+          "trainAcc": 0.17898,
+          "valAcc": 0.2231,
+          "lr": 0.009885534204613024,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 19,
+          "generation": 1,
+          "trainAcc": 0.23306,
+          "valAcc": 0.2433,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 20,
+          "generation": 2,
+          "trainAcc": 0.25136,
+          "valAcc": 0.2195,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 21,
+          "generation": 2,
+          "trainAcc": 0.25476,
+          "valAcc": 0.2588,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 22,
+          "generation": 2,
+          "trainAcc": 0.25888,
+          "valAcc": 0.2675,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 23,
+          "generation": 2,
+          "trainAcc": 0.26766,
+          "valAcc": 0.2786,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 24,
+          "generation": 2,
+          "trainAcc": 0.2726,
+          "valAcc": 0.2888,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 25,
+          "generation": 2,
+          "trainAcc": 0.274,
+          "valAcc": 0.2795,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 26,
+          "generation": 2,
+          "trainAcc": 0.27844,
+          "valAcc": 0.2515,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 27,
+          "generation": 2,
+          "trainAcc": 0.28132,
+          "valAcc": 0.2896,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 28,
+          "generation": 2,
+          "trainAcc": 0.30354,
+          "valAcc": 0.3207,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 29,
+          "generation": 2,
+          "trainAcc": 0.32818,
+          "valAcc": 0.3402,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 30,
+          "generation": 3,
+          "trainAcc": 0.37334,
+          "valAcc": 0.4312,
+          "lr": 0.001,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 31,
+          "generation": 3,
+          "trainAcc": 0.44638,
+          "valAcc": 0.4677,
+          "lr": 0.001,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 32,
+          "generation": 3,
+          "trainAcc": 0.4904,
+          "valAcc": 0.5272,
+          "lr": 0.0011403653008945564,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 33,
+          "generation": 3,
+          "trainAcc": 0.54824,
+          "valAcc": 0.5638,
+          "lr": 0.0026580657804886093,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 34,
+          "generation": 3,
+          "trainAcc": 0.6258,
+          "valAcc": 0.6471,
+          "lr": 0.005,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 35,
+          "generation": 3,
+          "trainAcc": 0.6825,
+          "valAcc": 0.679,
+          "lr": 0.0073419342195113904,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 36,
+          "generation": 3,
+          "trainAcc": 0.73296,
+          "valAcc": 0.7941,
+          "lr": 0.008859634699105444,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 37,
+          "generation": 3,
+          "trainAcc": 0.76764,
+          "valAcc": 0.7056,
+          "lr": 0.00958714340214204,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 38,
+          "generation": 3,
+          "trainAcc": 0.79192,
+          "valAcc": 0.667,
+          "lr": 0.009885534204613024,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 39,
+          "generation": 3,
+          "trainAcc": 0.80934,
+          "valAcc": 0.8376,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 40,
+          "generation": 4,
+          "trainAcc": 0.8218,
+          "valAcc": 0.7627,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 41,
+          "generation": 4,
+          "trainAcc": 0.83538,
+          "valAcc": 0.803,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 42,
+          "generation": 4,
+          "trainAcc": 0.83904,
+          "valAcc": 0.842,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 43,
+          "generation": 4,
+          "trainAcc": 0.84506,
+          "valAcc": 0.864,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 44,
+          "generation": 4,
+          "trainAcc": 0.85016,
+          "valAcc": 0.8432,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 45,
+          "generation": 4,
+          "trainAcc": 0.85638,
+          "valAcc": 0.8575,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 46,
+          "generation": 4,
+          "trainAcc": 0.85992,
+          "valAcc": 0.8949,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 47,
+          "generation": 4,
+          "trainAcc": 0.86216,
+          "valAcc": 0.8766,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 48,
+          "generation": 4,
+          "trainAcc": 0.86516,
+          "valAcc": 0.7743,
+          "lr": 0.01,
+          "paramCount": 1284
+        },
+        {
+          "globalEpoch": 49,
+          "generation": 4,
+          "trainAcc": 0.86932,
+          "valAcc": 0.8839,
+          "lr": 0.01,
+          "paramCount": 1284
+        }
+      ]
+    },
+    {
+      "score_metric": "val_acc",
+      "model": "big",
+      "seed": 103,
+      "status": "completed",
+      "elapsed_sec": 1606,
+      "started_on": "2026-08-06T19:05:13Z",
+      "last_update": "2026-08-06T19:31:59Z",
+      "final_acc": 0.2757,
+      "final_train_acc": 0.32972,
+      "best_acc": 0.3474,
+      "best_train_acc": 0.33454,
+      "final_params": 964,
+      "start_params": 420,
+      "actions": 4,
+      "action_generations": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "action_labels": [
+        "Add Seq Dropout Layer Action",
+        "Add Seq Linear Layer Action",
+        "Add Res Linear Layer Action",
+        "Add Seq Dropout Layer Action"
+      ],
+      "dropout_actions": 2,
+      "epochs": [
+        {
+          "globalEpoch": 0,
+          "generation": 0,
+          "trainAcc": 0.09792,
+          "valAcc": 0.0955,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 1,
+          "generation": 0,
+          "trainAcc": 0.09792,
+          "valAcc": 0.0955,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 2,
+          "generation": 0,
+          "trainAcc": 0.09792,
+          "valAcc": 0.0955,
+          "lr": 0.0011403653008945564,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 3,
+          "generation": 0,
+          "trainAcc": 0.09792,
+          "valAcc": 0.0955,
+          "lr": 0.0026580657804886093,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 4,
+          "generation": 0,
+          "trainAcc": 0.09792,
+          "valAcc": 0.0955,
+          "lr": 0.005,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 5,
+          "generation": 0,
+          "trainAcc": 0.12122,
+          "valAcc": 0.1099,
+          "lr": 0.0073419342195113904,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 6,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.008859634699105444,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 7,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.00958714340214204,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 8,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.009885534204613024,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 9,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.01,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 10,
+          "generation": 1,
+          "trainAcc": 0.11334,
+          "valAcc": 0.1099,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 11,
+          "generation": 1,
+          "trainAcc": 0.11352,
+          "valAcc": 0.1099,
+          "lr": 0.001,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 12,
+          "generation": 1,
+          "trainAcc": 0.11438,
+          "valAcc": 0.1099,
+          "lr": 0.0011403653008945564,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 13,
+          "generation": 1,
+          "trainAcc": 0.11656,
+          "valAcc": 0.1106,
+          "lr": 0.0026580657804886093,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 14,
+          "generation": 1,
+          "trainAcc": 0.12442,
+          "valAcc": 0.116,
+          "lr": 0.005,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 15,
+          "generation": 1,
+          "trainAcc": 0.14406,
+          "valAcc": 0.1313,
+          "lr": 0.0073419342195113904,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 16,
+          "generation": 1,
+          "trainAcc": 0.1589,
+          "valAcc": 0.1585,
+          "lr": 0.008859634699105444,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 17,
+          "generation": 1,
+          "trainAcc": 0.16872,
+          "valAcc": 0.1682,
+          "lr": 0.00958714340214204,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 18,
+          "generation": 1,
+          "trainAcc": 0.16746,
+          "valAcc": 0.172,
+          "lr": 0.009885534204613024,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 19,
+          "generation": 1,
+          "trainAcc": 0.17382,
+          "valAcc": 0.2021,
+          "lr": 0.01,
+          "paramCount": 420
+        },
+        {
+          "globalEpoch": 20,
+          "generation": 2,
+          "trainAcc": 0.17572,
+          "valAcc": 0.1993,
+          "lr": 0.001,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 21,
+          "generation": 2,
+          "trainAcc": 0.17526,
+          "valAcc": 0.1993,
+          "lr": 0.001,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 22,
+          "generation": 2,
+          "trainAcc": 0.1753,
+          "valAcc": 0.1983,
+          "lr": 0.0011403653008945564,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 23,
+          "generation": 2,
+          "trainAcc": 0.17608,
+          "valAcc": 0.1972,
+          "lr": 0.0026580657804886093,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 24,
+          "generation": 2,
+          "trainAcc": 0.18254,
+          "valAcc": 0.2078,
+          "lr": 0.005,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 25,
+          "generation": 2,
+          "trainAcc": 0.19522,
+          "valAcc": 0.2159,
+          "lr": 0.0073419342195113904,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 26,
+          "generation": 2,
+          "trainAcc": 0.2089,
+          "valAcc": 0.2258,
+          "lr": 0.008859634699105444,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 27,
+          "generation": 2,
+          "trainAcc": 0.2198,
+          "valAcc": 0.2199,
+          "lr": 0.00958714340214204,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 28,
+          "generation": 2,
+          "trainAcc": 0.23734,
+          "valAcc": 0.2225,
+          "lr": 0.009885534204613024,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 29,
+          "generation": 2,
+          "trainAcc": 0.25842,
+          "valAcc": 0.2264,
+          "lr": 0.01,
+          "paramCount": 692
+        },
+        {
+          "globalEpoch": 30,
+          "generation": 3,
+          "trainAcc": 0.28408,
+          "valAcc": 0.2597,
+          "lr": 0.001,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 31,
+          "generation": 3,
+          "trainAcc": 0.28588,
+          "valAcc": 0.2629,
+          "lr": 0.001,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 32,
+          "generation": 3,
+          "trainAcc": 0.28914,
+          "valAcc": 0.2705,
+          "lr": 0.0011403653008945564,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 33,
+          "generation": 3,
+          "trainAcc": 0.29432,
+          "valAcc": 0.2874,
+          "lr": 0.0026580657804886093,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 34,
+          "generation": 3,
+          "trainAcc": 0.29938,
+          "valAcc": 0.2974,
+          "lr": 0.005,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 35,
+          "generation": 3,
+          "trainAcc": 0.30962,
+          "valAcc": 0.2918,
+          "lr": 0.0073419342195113904,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 36,
+          "generation": 3,
+          "trainAcc": 0.32188,
+          "valAcc": 0.3393,
+          "lr": 0.008859634699105444,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 37,
+          "generation": 3,
+          "trainAcc": 0.33032,
+          "valAcc": 0.3244,
+          "lr": 0.00958714340214204,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 38,
+          "generation": 3,
+          "trainAcc": 0.33312,
+          "valAcc": 0.3406,
+          "lr": 0.009885534204613024,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 39,
+          "generation": 3,
+          "trainAcc": 0.33454,
+          "valAcc": 0.3474,
+          "lr": 0.01,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 40,
+          "generation": 4,
+          "trainAcc": 0.31688,
+          "valAcc": 0.2912,
+          "lr": 0.001,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 41,
+          "generation": 4,
+          "trainAcc": 0.31444,
+          "valAcc": 0.2941,
+          "lr": 0.001,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 42,
+          "generation": 4,
+          "trainAcc": 0.316,
+          "valAcc": 0.295,
+          "lr": 0.0011403653008945564,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 43,
+          "generation": 4,
+          "trainAcc": 0.31578,
+          "valAcc": 0.301,
+          "lr": 0.0026580657804886093,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 44,
+          "generation": 4,
+          "trainAcc": 0.31272,
+          "valAcc": 0.2834,
+          "lr": 0.005,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 45,
+          "generation": 4,
+          "trainAcc": 0.3192,
+          "valAcc": 0.2604,
+          "lr": 0.0073419342195113904,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 46,
+          "generation": 4,
+          "trainAcc": 0.32136,
+          "valAcc": 0.3003,
+          "lr": 0.008859634699105444,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 47,
+          "generation": 4,
+          "trainAcc": 0.3188,
+          "valAcc": 0.3223,
+          "lr": 0.00958714340214204,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 48,
+          "generation": 4,
+          "trainAcc": 0.32632,
+          "valAcc": 0.2722,
+          "lr": 0.009885534204613024,
+          "paramCount": 964
+        },
+        {
+          "globalEpoch": 49,
+          "generation": 4,
+          "trainAcc": 0.32972,
+          "valAcc": 0.2757,
+          "lr": 0.01,
+          "paramCount": 964
+        }
+      ]
+    },
+    {
+      "score_metric": "val_acc",
+      "model": "medium_1conv_2linear",
+      "seed": 100,
+      "status": "completed",
+      "elapsed_sec": 1480,
+      "started_on": "2026-08-06T19:32:00Z",
+      "last_update": "2026-08-06T19:56:40Z",
+      "final_acc": 0.7812,
+      "final_train_acc": 0.81122,
+      "best_acc": 0.8374,
+      "best_train_acc": 0.81122,
+      "final_params": 908,
+      "start_params": 276,
+      "actions": 3,
+      "action_generations": [
+        0,
+        1,
+        2
+      ],
+      "action_labels": [
+        "Add Seq Linear Layer Action",
+        "Add Seq Linear Layer Action",
+        "Add Res Conv Layer Action"
+      ],
+      "dropout_actions": 0,
+      "epochs": [
+        {
+          "globalEpoch": 0,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 1,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 2,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 3,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 4,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 5,
+          "generation": 0,
+          "trainAcc": 0.11334,
+          "valAcc": 0.1142,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 6,
+          "generation": 0,
+          "trainAcc": 0.13952,
+          "valAcc": 0.1673,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 7,
+          "generation": 0,
+          "trainAcc": 0.17976,
+          "valAcc": 0.1886,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 8,
+          "generation": 0,
+          "trainAcc": 0.18992,
+          "valAcc": 0.1964,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 9,
+          "generation": 0,
+          "trainAcc": 0.19588,
+          "valAcc": 0.2006,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 10,
+          "generation": 1,
+          "trainAcc": 0.20022,
+          "valAcc": 0.2048,
+          "lr": 0.001,
+          "paramCount": 296
+        },
+        {
+          "globalEpoch": 11,
+          "generation": 1,
+          "trainAcc": 0.20262,
+          "valAcc": 0.2052,
+          "lr": 0.001,
+          "paramCount": 296
+        },
+        {
+          "globalEpoch": 12,
+          "generation": 1,
+          "trainAcc": 0.20446,
+          "valAcc": 0.2083,
+          "lr": 0.0011403653008945564,
+          "paramCount": 296
+        },
+        {
+          "globalEpoch": 13,
+          "generation": 1,
+          "trainAcc": 0.20752,
+          "valAcc": 0.2123,
+          "lr": 0.0026580657804886093,
+          "paramCount": 296
+        },
+        {
+          "globalEpoch": 14,
+          "generation": 1,
+          "trainAcc": 0.21426,
+          "valAcc": 0.2208,
+          "lr": 0.005,
+          "paramCount": 296
+        },
+        {
+          "globalEpoch": 15,
+          "generation": 1,
+          "trainAcc": 0.22276,
+          "valAcc": 0.2256,
+          "lr": 0.0073419342195113904,
+          "paramCount": 296
+        },
+        {
+          "globalEpoch": 16,
+          "generation": 1,
+          "trainAcc": 0.22734,
+          "valAcc": 0.233,
+          "lr": 0.008859634699105444,
+          "paramCount": 296
+        },
+        {
+          "globalEpoch": 17,
+          "generation": 1,
+          "trainAcc": 0.23036,
+          "valAcc": 0.2327,
+          "lr": 0.00958714340214204,
+          "paramCount": 296
+        },
+        {
+          "globalEpoch": 18,
+          "generation": 1,
+          "trainAcc": 0.23302,
+          "valAcc": 0.2357,
+          "lr": 0.009885534204613024,
+          "paramCount": 296
+        },
+        {
+          "globalEpoch": 19,
+          "generation": 1,
+          "trainAcc": 0.23544,
+          "valAcc": 0.2424,
+          "lr": 0.01,
+          "paramCount": 296
+        },
+        {
+          "globalEpoch": 20,
+          "generation": 2,
+          "trainAcc": 0.2421,
+          "valAcc": 0.2409,
+          "lr": 0.001,
+          "paramCount": 316
+        },
+        {
+          "globalEpoch": 21,
+          "generation": 2,
+          "trainAcc": 0.24076,
+          "valAcc": 0.2432,
+          "lr": 0.001,
+          "paramCount": 316
+        },
+        {
+          "globalEpoch": 22,
+          "generation": 2,
+          "trainAcc": 0.24262,
+          "valAcc": 0.2428,
+          "lr": 0.0011403653008945564,
+          "paramCount": 316
+        },
+        {
+          "globalEpoch": 23,
+          "generation": 2,
+          "trainAcc": 0.24382,
+          "valAcc": 0.2482,
+          "lr": 0.0026580657804886093,
+          "paramCount": 316
+        },
+        {
+          "globalEpoch": 24,
+          "generation": 2,
+          "trainAcc": 0.24874,
+          "valAcc": 0.2521,
+          "lr": 0.005,
+          "paramCount": 316
+        },
+        {
+          "globalEpoch": 25,
+          "generation": 2,
+          "trainAcc": 0.25458,
+          "valAcc": 0.266,
+          "lr": 0.0073419342195113904,
+          "paramCount": 316
+        },
+        {
+          "globalEpoch": 26,
+          "generation": 2,
+          "trainAcc": 0.26432,
+          "valAcc": 0.2676,
+          "lr": 0.008859634699105444,
+          "paramCount": 316
+        },
+        {
+          "globalEpoch": 27,
+          "generation": 2,
+          "trainAcc": 0.26768,
+          "valAcc": 0.2716,
+          "lr": 0.00958714340214204,
+          "paramCount": 316
+        },
+        {
+          "globalEpoch": 28,
+          "generation": 2,
+          "trainAcc": 0.26938,
+          "valAcc": 0.2786,
+          "lr": 0.009885534204613024,
+          "paramCount": 316
+        },
+        {
+          "globalEpoch": 29,
+          "generation": 2,
+          "trainAcc": 0.2785,
+          "valAcc": 0.2627,
+          "lr": 0.01,
+          "paramCount": 316
+        },
+        {
+          "globalEpoch": 30,
+          "generation": 3,
+          "trainAcc": 0.29684,
+          "valAcc": 0.3181,
+          "lr": 0.001,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 31,
+          "generation": 3,
+          "trainAcc": 0.34658,
+          "valAcc": 0.3575,
+          "lr": 0.001,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 32,
+          "generation": 3,
+          "trainAcc": 0.39302,
+          "valAcc": 0.4556,
+          "lr": 0.0011403653008945564,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 33,
+          "generation": 3,
+          "trainAcc": 0.46856,
+          "valAcc": 0.4998,
+          "lr": 0.0026580657804886093,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 34,
+          "generation": 3,
+          "trainAcc": 0.58082,
+          "valAcc": 0.6202,
+          "lr": 0.005,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 35,
+          "generation": 3,
+          "trainAcc": 0.66816,
+          "valAcc": 0.7168,
+          "lr": 0.0073419342195113904,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 36,
+          "generation": 3,
+          "trainAcc": 0.70114,
+          "valAcc": 0.5474,
+          "lr": 0.008859634699105444,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 37,
+          "generation": 3,
+          "trainAcc": 0.72922,
+          "valAcc": 0.6238,
+          "lr": 0.00958714340214204,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 38,
+          "generation": 3,
+          "trainAcc": 0.75266,
+          "valAcc": 0.759,
+          "lr": 0.009885534204613024,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 39,
+          "generation": 3,
+          "trainAcc": 0.76394,
+          "valAcc": 0.7512,
+          "lr": 0.01,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 40,
+          "generation": 4,
+          "trainAcc": 0.77324,
+          "valAcc": 0.7331,
+          "lr": 0.01,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 41,
+          "generation": 4,
+          "trainAcc": 0.783,
+          "valAcc": 0.798,
+          "lr": 0.01,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 42,
+          "generation": 4,
+          "trainAcc": 0.78586,
+          "valAcc": 0.772,
+          "lr": 0.01,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 43,
+          "generation": 4,
+          "trainAcc": 0.79162,
+          "valAcc": 0.8179,
+          "lr": 0.01,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 44,
+          "generation": 4,
+          "trainAcc": 0.7974,
+          "valAcc": 0.8241,
+          "lr": 0.01,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 45,
+          "generation": 4,
+          "trainAcc": 0.79802,
+          "valAcc": 0.7978,
+          "lr": 0.01,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 46,
+          "generation": 4,
+          "trainAcc": 0.80332,
+          "valAcc": 0.7258,
+          "lr": 0.01,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 47,
+          "generation": 4,
+          "trainAcc": 0.80318,
+          "valAcc": 0.8331,
+          "lr": 0.01,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 48,
+          "generation": 4,
+          "trainAcc": 0.80676,
+          "valAcc": 0.8374,
+          "lr": 0.01,
+          "paramCount": 908
+        },
+        {
+          "globalEpoch": 49,
+          "generation": 4,
+          "trainAcc": 0.81122,
+          "valAcc": 0.7812,
+          "lr": 0.01,
+          "paramCount": 908
+        }
+      ]
+    },
+    {
+      "score_metric": "val_acc",
+      "model": "medium_1conv_2linear",
+      "seed": 101,
+      "status": "completed",
+      "elapsed_sec": 1523,
+      "started_on": "2026-08-06T19:56:41Z",
+      "last_update": "2026-08-06T20:22:05Z",
+      "final_acc": 0.254,
+      "final_train_acc": 0.24298,
+      "best_acc": 0.255,
+      "best_train_acc": 0.24298,
+      "final_params": 696,
+      "start_params": 276,
+      "actions": 4,
+      "action_generations": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "action_labels": [
+        "Add Seq Dropout Layer Action",
+        "Add Seq Dropout Layer Action",
+        "Add Seq Conv Layer Action",
+        "Add Seq Linear Layer Action"
+      ],
+      "dropout_actions": 2,
+      "epochs": [
+        {
+          "globalEpoch": 0,
+          "generation": 0,
+          "trainAcc": 0.09866,
+          "valAcc": 0.0985,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 1,
+          "generation": 0,
+          "trainAcc": 0.09866,
+          "valAcc": 0.0985,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 2,
+          "generation": 0,
+          "trainAcc": 0.09866,
+          "valAcc": 0.0985,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 3,
+          "generation": 0,
+          "trainAcc": 0.09866,
+          "valAcc": 0.0985,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 4,
+          "generation": 0,
+          "trainAcc": 0.09866,
+          "valAcc": 0.0985,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 5,
+          "generation": 0,
+          "trainAcc": 0.11026,
+          "valAcc": 0.1121,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 6,
+          "generation": 0,
+          "trainAcc": 0.11302,
+          "valAcc": 0.1099,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 7,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 8,
+          "generation": 0,
+          "trainAcc": 0.11286,
+          "valAcc": 0.1099,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 9,
+          "generation": 0,
+          "trainAcc": 0.11338,
+          "valAcc": 0.1122,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 10,
+          "generation": 1,
+          "trainAcc": 0.13262,
+          "valAcc": 0.1135,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 11,
+          "generation": 1,
+          "trainAcc": 0.13378,
+          "valAcc": 0.1152,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 12,
+          "generation": 1,
+          "trainAcc": 0.1356,
+          "valAcc": 0.1174,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 13,
+          "generation": 1,
+          "trainAcc": 0.13974,
+          "valAcc": 0.1259,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 14,
+          "generation": 1,
+          "trainAcc": 0.15672,
+          "valAcc": 0.1723,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 15,
+          "generation": 1,
+          "trainAcc": 0.17664,
+          "valAcc": 0.2026,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 16,
+          "generation": 1,
+          "trainAcc": 0.1835,
+          "valAcc": 0.1992,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 17,
+          "generation": 1,
+          "trainAcc": 0.18718,
+          "valAcc": 0.2089,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 18,
+          "generation": 1,
+          "trainAcc": 0.19506,
+          "valAcc": 0.2154,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 19,
+          "generation": 1,
+          "trainAcc": 0.19918,
+          "valAcc": 0.2213,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 20,
+          "generation": 2,
+          "trainAcc": 0.18734,
+          "valAcc": 0.2218,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 21,
+          "generation": 2,
+          "trainAcc": 0.18758,
+          "valAcc": 0.2218,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 22,
+          "generation": 2,
+          "trainAcc": 0.19104,
+          "valAcc": 0.2218,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 23,
+          "generation": 2,
+          "trainAcc": 0.1912,
+          "valAcc": 0.2221,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 24,
+          "generation": 2,
+          "trainAcc": 0.1942,
+          "valAcc": 0.2211,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 25,
+          "generation": 2,
+          "trainAcc": 0.1959,
+          "valAcc": 0.2233,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 26,
+          "generation": 2,
+          "trainAcc": 0.1999,
+          "valAcc": 0.2224,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 27,
+          "generation": 2,
+          "trainAcc": 0.20492,
+          "valAcc": 0.2245,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 28,
+          "generation": 2,
+          "trainAcc": 0.209,
+          "valAcc": 0.225,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 29,
+          "generation": 2,
+          "trainAcc": 0.20984,
+          "valAcc": 0.2236,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 30,
+          "generation": 3,
+          "trainAcc": 0.21154,
+          "valAcc": 0.227,
+          "lr": 0.001,
+          "paramCount": 424
+        },
+        {
+          "globalEpoch": 31,
+          "generation": 3,
+          "trainAcc": 0.21268,
+          "valAcc": 0.2254,
+          "lr": 0.001,
+          "paramCount": 424
+        },
+        {
+          "globalEpoch": 32,
+          "generation": 3,
+          "trainAcc": 0.21262,
+          "valAcc": 0.2271,
+          "lr": 0.0011403653008945564,
+          "paramCount": 424
+        },
+        {
+          "globalEpoch": 33,
+          "generation": 3,
+          "trainAcc": 0.2151,
+          "valAcc": 0.2273,
+          "lr": 0.0026580657804886093,
+          "paramCount": 424
+        },
+        {
+          "globalEpoch": 34,
+          "generation": 3,
+          "trainAcc": 0.21342,
+          "valAcc": 0.2271,
+          "lr": 0.005,
+          "paramCount": 424
+        },
+        {
+          "globalEpoch": 35,
+          "generation": 3,
+          "trainAcc": 0.21584,
+          "valAcc": 0.2301,
+          "lr": 0.0073419342195113904,
+          "paramCount": 424
+        },
+        {
+          "globalEpoch": 36,
+          "generation": 3,
+          "trainAcc": 0.21626,
+          "valAcc": 0.2306,
+          "lr": 0.008859634699105444,
+          "paramCount": 424
+        },
+        {
+          "globalEpoch": 37,
+          "generation": 3,
+          "trainAcc": 0.21742,
+          "valAcc": 0.2305,
+          "lr": 0.00958714340214204,
+          "paramCount": 424
+        },
+        {
+          "globalEpoch": 38,
+          "generation": 3,
+          "trainAcc": 0.22086,
+          "valAcc": 0.2314,
+          "lr": 0.009885534204613024,
+          "paramCount": 424
+        },
+        {
+          "globalEpoch": 39,
+          "generation": 3,
+          "trainAcc": 0.22356,
+          "valAcc": 0.2373,
+          "lr": 0.01,
+          "paramCount": 424
+        },
+        {
+          "globalEpoch": 40,
+          "generation": 4,
+          "trainAcc": 0.22274,
+          "valAcc": 0.237,
+          "lr": 0.001,
+          "paramCount": 696
+        },
+        {
+          "globalEpoch": 41,
+          "generation": 4,
+          "trainAcc": 0.22256,
+          "valAcc": 0.2389,
+          "lr": 0.001,
+          "paramCount": 696
+        },
+        {
+          "globalEpoch": 42,
+          "generation": 4,
+          "trainAcc": 0.22496,
+          "valAcc": 0.2404,
+          "lr": 0.0011403653008945564,
+          "paramCount": 696
+        },
+        {
+          "globalEpoch": 43,
+          "generation": 4,
+          "trainAcc": 0.22442,
+          "valAcc": 0.2398,
+          "lr": 0.0026580657804886093,
+          "paramCount": 696
+        },
+        {
+          "globalEpoch": 44,
+          "generation": 4,
+          "trainAcc": 0.22476,
+          "valAcc": 0.24,
+          "lr": 0.005,
+          "paramCount": 696
+        },
+        {
+          "globalEpoch": 45,
+          "generation": 4,
+          "trainAcc": 0.23126,
+          "valAcc": 0.24,
+          "lr": 0.0073419342195113904,
+          "paramCount": 696
+        },
+        {
+          "globalEpoch": 46,
+          "generation": 4,
+          "trainAcc": 0.22958,
+          "valAcc": 0.2398,
+          "lr": 0.008859634699105444,
+          "paramCount": 696
+        },
+        {
+          "globalEpoch": 47,
+          "generation": 4,
+          "trainAcc": 0.23432,
+          "valAcc": 0.2489,
+          "lr": 0.00958714340214204,
+          "paramCount": 696
+        },
+        {
+          "globalEpoch": 48,
+          "generation": 4,
+          "trainAcc": 0.237,
+          "valAcc": 0.255,
+          "lr": 0.009885534204613024,
+          "paramCount": 696
+        },
+        {
+          "globalEpoch": 49,
+          "generation": 4,
+          "trainAcc": 0.24298,
+          "valAcc": 0.254,
+          "lr": 0.01,
+          "paramCount": 696
+        }
+      ]
+    },
+    {
+      "score_metric": "val_acc",
+      "model": "medium_1conv_2linear",
+      "seed": 102,
+      "status": "completed",
+      "elapsed_sec": 1030,
+      "started_on": "2026-08-06T20:22:05Z",
+      "last_update": "2026-08-06T20:39:16Z",
+      "final_acc": 0.6623,
+      "final_train_acc": 0.44652,
+      "best_acc": 0.7038,
+      "best_train_acc": 0.68072,
+      "final_params": 868,
+      "start_params": 276,
+      "actions": 2,
+      "action_generations": [
+        0,
+        2
+      ],
+      "action_labels": [
+        "Add Res Conv Layer Action",
+        "Add Seq Dropout Layer Action"
+      ],
+      "dropout_actions": 1,
+      "epochs": [
+        {
+          "globalEpoch": 0,
+          "generation": 0,
+          "trainAcc": 0.09706,
+          "valAcc": 0.0989,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 1,
+          "generation": 0,
+          "trainAcc": 0.09706,
+          "valAcc": 0.0989,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 2,
+          "generation": 0,
+          "trainAcc": 0.09706,
+          "valAcc": 0.0989,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 3,
+          "generation": 0,
+          "trainAcc": 0.09706,
+          "valAcc": 0.0989,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 4,
+          "generation": 0,
+          "trainAcc": 0.10976,
+          "valAcc": 0.1099,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 5,
+          "generation": 0,
+          "trainAcc": 0.11296,
+          "valAcc": 0.1099,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 6,
+          "generation": 0,
+          "trainAcc": 0.11522,
+          "valAcc": 0.1171,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 7,
+          "generation": 0,
+          "trainAcc": 0.1304,
+          "valAcc": 0.1503,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 8,
+          "generation": 0,
+          "trainAcc": 0.17388,
+          "valAcc": 0.1957,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 9,
+          "generation": 0,
+          "trainAcc": 0.19424,
+          "valAcc": 0.1978,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 10,
+          "generation": 1,
+          "trainAcc": 0.1976,
+          "valAcc": 0.2091,
+          "lr": 0.001,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 11,
+          "generation": 1,
+          "trainAcc": 0.21016,
+          "valAcc": 0.2254,
+          "lr": 0.001,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 12,
+          "generation": 1,
+          "trainAcc": 0.22592,
+          "valAcc": 0.2413,
+          "lr": 0.0011403653008945564,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 13,
+          "generation": 1,
+          "trainAcc": 0.2448,
+          "valAcc": 0.2752,
+          "lr": 0.0026580657804886093,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 14,
+          "generation": 1,
+          "trainAcc": 0.29584,
+          "valAcc": 0.3359,
+          "lr": 0.005,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 15,
+          "generation": 1,
+          "trainAcc": 0.39834,
+          "valAcc": 0.3562,
+          "lr": 0.0073419342195113904,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 16,
+          "generation": 1,
+          "trainAcc": 0.48932,
+          "valAcc": 0.5561,
+          "lr": 0.008859634699105444,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 17,
+          "generation": 1,
+          "trainAcc": 0.54962,
+          "valAcc": 0.5768,
+          "lr": 0.00958714340214204,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 18,
+          "generation": 1,
+          "trainAcc": 0.5791,
+          "valAcc": 0.6121,
+          "lr": 0.009885534204613024,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 19,
+          "generation": 1,
+          "trainAcc": 0.5987,
+          "valAcc": 0.5678,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 20,
+          "generation": 2,
+          "trainAcc": 0.61894,
+          "valAcc": 0.6185,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 21,
+          "generation": 2,
+          "trainAcc": 0.63134,
+          "valAcc": 0.6071,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 22,
+          "generation": 2,
+          "trainAcc": 0.64324,
+          "valAcc": 0.6054,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 23,
+          "generation": 2,
+          "trainAcc": 0.6534,
+          "valAcc": 0.6297,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 24,
+          "generation": 2,
+          "trainAcc": 0.6593,
+          "valAcc": 0.6633,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 25,
+          "generation": 2,
+          "trainAcc": 0.66582,
+          "valAcc": 0.5761,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 26,
+          "generation": 2,
+          "trainAcc": 0.67004,
+          "valAcc": 0.6897,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 27,
+          "generation": 2,
+          "trainAcc": 0.67402,
+          "valAcc": 0.6778,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 28,
+          "generation": 2,
+          "trainAcc": 0.67838,
+          "valAcc": 0.6571,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 29,
+          "generation": 2,
+          "trainAcc": 0.68072,
+          "valAcc": 0.6949,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 30,
+          "generation": 3,
+          "trainAcc": 0.1564,
+          "valAcc": 0.3413,
+          "lr": 0.001,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 31,
+          "generation": 3,
+          "trainAcc": 0.2004,
+          "valAcc": 0.4235,
+          "lr": 0.001,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 32,
+          "generation": 3,
+          "trainAcc": 0.24356,
+          "valAcc": 0.5108,
+          "lr": 0.0011403653008945564,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 33,
+          "generation": 3,
+          "trainAcc": 0.28268,
+          "valAcc": 0.6043,
+          "lr": 0.0026580657804886093,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 34,
+          "generation": 3,
+          "trainAcc": 0.31196,
+          "valAcc": 0.6391,
+          "lr": 0.005,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 35,
+          "generation": 3,
+          "trainAcc": 0.32612,
+          "valAcc": 0.6606,
+          "lr": 0.0073419342195113904,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 36,
+          "generation": 3,
+          "trainAcc": 0.33692,
+          "valAcc": 0.6333,
+          "lr": 0.008859634699105444,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 37,
+          "generation": 3,
+          "trainAcc": 0.35314,
+          "valAcc": 0.6555,
+          "lr": 0.00958714340214204,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 38,
+          "generation": 3,
+          "trainAcc": 0.36714,
+          "valAcc": 0.6689,
+          "lr": 0.009885534204613024,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 39,
+          "generation": 3,
+          "trainAcc": 0.38312,
+          "valAcc": 0.6812,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 40,
+          "generation": 4,
+          "trainAcc": 0.3882,
+          "valAcc": 0.668,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 41,
+          "generation": 4,
+          "trainAcc": 0.40106,
+          "valAcc": 0.647,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 42,
+          "generation": 4,
+          "trainAcc": 0.40972,
+          "valAcc": 0.6853,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 43,
+          "generation": 4,
+          "trainAcc": 0.41826,
+          "valAcc": 0.6573,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 44,
+          "generation": 4,
+          "trainAcc": 0.42426,
+          "valAcc": 0.6911,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 45,
+          "generation": 4,
+          "trainAcc": 0.42894,
+          "valAcc": 0.6914,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 46,
+          "generation": 4,
+          "trainAcc": 0.43482,
+          "valAcc": 0.6863,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 47,
+          "generation": 4,
+          "trainAcc": 0.43496,
+          "valAcc": 0.6904,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 48,
+          "generation": 4,
+          "trainAcc": 0.44016,
+          "valAcc": 0.7038,
+          "lr": 0.01,
+          "paramCount": 868
+        },
+        {
+          "globalEpoch": 49,
+          "generation": 4,
+          "trainAcc": 0.44652,
+          "valAcc": 0.6623,
+          "lr": 0.01,
+          "paramCount": 868
+        }
+      ]
+    },
+    {
+      "score_metric": "val_acc",
+      "model": "medium_1conv_2linear",
+      "seed": 103,
+      "status": "completed",
+      "elapsed_sec": 1162,
+      "started_on": "2026-08-06T20:25:01Z",
+      "last_update": "2026-08-06T20:44:24Z",
+      "final_acc": 0.6331,
+      "final_train_acc": 0.60368,
+      "best_acc": 0.6801,
+      "best_train_acc": 0.60368,
+      "final_params": 1140,
+      "start_params": 276,
+      "actions": 3,
+      "action_generations": [
+        1,
+        2,
+        3
+      ],
+      "action_labels": [
+        "Add Seq Dropout Layer Action",
+        "Add Seq Linear Layer Action",
+        "Add Res Conv Layer Action"
+      ],
+      "dropout_actions": 1,
+      "epochs": [
+        {
+          "globalEpoch": 0,
+          "generation": 0,
+          "trainAcc": 0.08982,
+          "valAcc": 0.093,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 1,
+          "generation": 0,
+          "trainAcc": 0.08982,
+          "valAcc": 0.093,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 2,
+          "generation": 0,
+          "trainAcc": 0.08982,
+          "valAcc": 0.093,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 3,
+          "generation": 0,
+          "trainAcc": 0.09152,
+          "valAcc": 0.1007,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 4,
+          "generation": 0,
+          "trainAcc": 0.09956,
+          "valAcc": 0.0955,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 5,
+          "generation": 0,
+          "trainAcc": 0.09792,
+          "valAcc": 0.0956,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 6,
+          "generation": 0,
+          "trainAcc": 0.14402,
+          "valAcc": 0.2105,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 7,
+          "generation": 0,
+          "trainAcc": 0.20282,
+          "valAcc": 0.1988,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 8,
+          "generation": 0,
+          "trainAcc": 0.19236,
+          "valAcc": 0.197,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 9,
+          "generation": 0,
+          "trainAcc": 0.19498,
+          "valAcc": 0.2007,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 10,
+          "generation": 1,
+          "trainAcc": 0.2027,
+          "valAcc": 0.208,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 11,
+          "generation": 1,
+          "trainAcc": 0.21612,
+          "valAcc": 0.2198,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 12,
+          "generation": 1,
+          "trainAcc": 0.22208,
+          "valAcc": 0.2232,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 13,
+          "generation": 1,
+          "trainAcc": 0.22538,
+          "valAcc": 0.2269,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 14,
+          "generation": 1,
+          "trainAcc": 0.22642,
+          "valAcc": 0.2262,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 15,
+          "generation": 1,
+          "trainAcc": 0.2278,
+          "valAcc": 0.2288,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 16,
+          "generation": 1,
+          "trainAcc": 0.227,
+          "valAcc": 0.2282,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 17,
+          "generation": 1,
+          "trainAcc": 0.22874,
+          "valAcc": 0.2295,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 18,
+          "generation": 1,
+          "trainAcc": 0.22912,
+          "valAcc": 0.23,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 19,
+          "generation": 1,
+          "trainAcc": 0.2281,
+          "valAcc": 0.2306,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 20,
+          "generation": 2,
+          "trainAcc": 0.21364,
+          "valAcc": 0.2324,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 21,
+          "generation": 2,
+          "trainAcc": 0.216,
+          "valAcc": 0.2328,
+          "lr": 0.001,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 22,
+          "generation": 2,
+          "trainAcc": 0.21956,
+          "valAcc": 0.2313,
+          "lr": 0.0011403653008945564,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 23,
+          "generation": 2,
+          "trainAcc": 0.21956,
+          "valAcc": 0.23,
+          "lr": 0.0026580657804886093,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 24,
+          "generation": 2,
+          "trainAcc": 0.2216,
+          "valAcc": 0.2294,
+          "lr": 0.005,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 25,
+          "generation": 2,
+          "trainAcc": 0.22176,
+          "valAcc": 0.2288,
+          "lr": 0.0073419342195113904,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 26,
+          "generation": 2,
+          "trainAcc": 0.2228,
+          "valAcc": 0.2321,
+          "lr": 0.008859634699105444,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 27,
+          "generation": 2,
+          "trainAcc": 0.22474,
+          "valAcc": 0.229,
+          "lr": 0.00958714340214204,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 28,
+          "generation": 2,
+          "trainAcc": 0.22634,
+          "valAcc": 0.2339,
+          "lr": 0.009885534204613024,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 29,
+          "generation": 2,
+          "trainAcc": 0.22612,
+          "valAcc": 0.2338,
+          "lr": 0.01,
+          "paramCount": 276
+        },
+        {
+          "globalEpoch": 30,
+          "generation": 3,
+          "trainAcc": 0.22702,
+          "valAcc": 0.2342,
+          "lr": 0.001,
+          "paramCount": 548
+        },
+        {
+          "globalEpoch": 31,
+          "generation": 3,
+          "trainAcc": 0.22882,
+          "valAcc": 0.2348,
+          "lr": 0.001,
+          "paramCount": 548
+        },
+        {
+          "globalEpoch": 32,
+          "generation": 3,
+          "trainAcc": 0.22722,
+          "valAcc": 0.2338,
+          "lr": 0.0011403653008945564,
+          "paramCount": 548
+        },
+        {
+          "globalEpoch": 33,
+          "generation": 3,
+          "trainAcc": 0.2274,
+          "valAcc": 0.2374,
+          "lr": 0.0026580657804886093,
+          "paramCount": 548
+        },
+        {
+          "globalEpoch": 34,
+          "generation": 3,
+          "trainAcc": 0.22854,
+          "valAcc": 0.2339,
+          "lr": 0.005,
+          "paramCount": 548
+        },
+        {
+          "globalEpoch": 35,
+          "generation": 3,
+          "trainAcc": 0.22958,
+          "valAcc": 0.236,
+          "lr": 0.0073419342195113904,
+          "paramCount": 548
+        },
+        {
+          "globalEpoch": 36,
+          "generation": 3,
+          "trainAcc": 0.23278,
+          "valAcc": 0.2352,
+          "lr": 0.008859634699105444,
+          "paramCount": 548
+        },
+        {
+          "globalEpoch": 37,
+          "generation": 3,
+          "trainAcc": 0.23496,
+          "valAcc": 0.2453,
+          "lr": 0.00958714340214204,
+          "paramCount": 548
+        },
+        {
+          "globalEpoch": 38,
+          "generation": 3,
+          "trainAcc": 0.24002,
+          "valAcc": 0.2478,
+          "lr": 0.009885534204613024,
+          "paramCount": 548
+        },
+        {
+          "globalEpoch": 39,
+          "generation": 3,
+          "trainAcc": 0.24558,
+          "valAcc": 0.2573,
+          "lr": 0.01,
+          "paramCount": 548
+        },
+        {
+          "globalEpoch": 40,
+          "generation": 4,
+          "trainAcc": 0.25878,
+          "valAcc": 0.2819,
+          "lr": 0.001,
+          "paramCount": 1140
+        },
+        {
+          "globalEpoch": 41,
+          "generation": 4,
+          "trainAcc": 0.27888,
+          "valAcc": 0.3162,
+          "lr": 0.001,
+          "paramCount": 1140
+        },
+        {
+          "globalEpoch": 42,
+          "generation": 4,
+          "trainAcc": 0.29506,
+          "valAcc": 0.3359,
+          "lr": 0.0011403653008945564,
+          "paramCount": 1140
+        },
+        {
+          "globalEpoch": 43,
+          "generation": 4,
+          "trainAcc": 0.3108,
+          "valAcc": 0.3736,
+          "lr": 0.0026580657804886093,
+          "paramCount": 1140
+        },
+        {
+          "globalEpoch": 44,
+          "generation": 4,
+          "trainAcc": 0.3605,
+          "valAcc": 0.3465,
+          "lr": 0.005,
+          "paramCount": 1140
+        },
+        {
+          "globalEpoch": 45,
+          "generation": 4,
+          "trainAcc": 0.44228,
+          "valAcc": 0.4672,
+          "lr": 0.0073419342195113904,
+          "paramCount": 1140
+        },
+        {
+          "globalEpoch": 46,
+          "generation": 4,
+          "trainAcc": 0.5021,
+          "valAcc": 0.5575,
+          "lr": 0.008859634699105444,
+          "paramCount": 1140
+        },
+        {
+          "globalEpoch": 47,
+          "generation": 4,
+          "trainAcc": 0.54338,
+          "valAcc": 0.6147,
+          "lr": 0.00958714340214204,
+          "paramCount": 1140
+        },
+        {
+          "globalEpoch": 48,
+          "generation": 4,
+          "trainAcc": 0.5742,
+          "valAcc": 0.6801,
+          "lr": 0.009885534204613024,
+          "paramCount": 1140
+        },
+        {
+          "globalEpoch": 49,
+          "generation": 4,
+          "trainAcc": 0.60368,
+          "valAcc": 0.6331,
+          "lr": 0.01,
+          "paramCount": 1140
+        }
+      ]
+    }
+  ]
+}
