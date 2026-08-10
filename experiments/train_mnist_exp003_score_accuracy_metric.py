@@ -12,11 +12,16 @@ Research question: under fixed 3° logistic schedulers and the two strongest Exp
 starters, does grading simulation candidates by training accuracy reduce dropout
 overuse and improve realized growth versus grading by validation accuracy?
 
+Two published runs:
+- before_fix: stacked sequential dropout on the same editable path was possible
+  Folder: experiments/output/train_mnist/runs/exp003_score_accuracy_metric
+- after_fix_1: AddSeqDropoutLayer skips pairs that already have dropout on the path
+  Folder: experiments/output/train_mnist/runs/exp003_score_accuracy_metric_after_fix_1
+
+This script writes the after_fix_1 grid. Existing before_fix boards stay untouched.
+
 Published report target:
 documentation/website/content/experiments/experiment-003-score-accuracy-metric.md
-
-Raw output:
-experiments/output/train_mnist/runs/exp003_score_accuracy_metric
 """
 
 from __future__ import annotations
@@ -47,7 +52,10 @@ from growingnn.simulation.score_functions.score_by_learning import AccuracyMetri
 from growingnn.simulation.simulation_schedulers import SlopeEstimationSimulationScheduler
 from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
 
-RUNS_DIR = train_mnist.RUNS_DIR / "exp003_score_accuracy_metric"
+# Historical grid (do not overwrite). Chart/report compare against this folder.
+BEFORE_FIX_RUNS_DIR = train_mnist.RUNS_DIR / "exp003_score_accuracy_metric"
+# Rerun after AddSeqDropoutLayer path ban. This is what `python ...exp003...` writes.
+RUNS_DIR = train_mnist.RUNS_DIR / "exp003_score_accuracy_metric_after_fix_1"
 EPOCHS_PER_GENERATION = 10
 GENERATIONS = 5
 SIMULATION_TIME_SEC = 120.0
@@ -91,18 +99,23 @@ MODEL_VARIANTS: tuple[tuple[str, Callable[[dict[str, object]], torch.nn.Module]]
 
 if __name__ == "__main__":
     args = common.parse_board_cli(
-        "Experiment 003: MNIST simulation grading by train vs validation accuracy"
+        "Experiment 003: MNIST simulation grading by train vs validation accuracy "
+        "(after_fix_1: no stacked dropout on path)"
     )
     configure_deterministic_seeding()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     data = train_mnist.MNISTData(train_mnist.DATA_DIR)
     data.prepare()
+    print(
+        f"Exp 003 after_fix_1 write target: {RUNS_DIR} "
+        f"(before_fix kept at {BEFORE_FIX_RUNS_DIR})"
+    )
 
     for score_metric in SCORE_METRICS:
         for model_name, model_factory in MODEL_VARIANTS:
             definition = common.ExperimentDefinition(
                 name=(
-                    f"MNIST exp003 slope_3deg logistic "
+                    f"MNIST exp003 after_fix_1 slope_3deg logistic "
                     f"score_{score_metric.value} {model_name}"
                 ),
                 runs_dir=RUNS_DIR / score_metric.value / model_name,
@@ -112,7 +125,7 @@ if __name__ == "__main__":
                 model_factory=model_factory,
                 loader_factory=lambda hp: data.loaders(int(hp["batch_size"])),
                 board_metadata=lambda hp, folder, seed, metric=score_metric.value, model=model_name: (
-                    f"MNIST exp003 score_{metric} {model} | {folder} | seed {seed}",
+                    f"MNIST exp003 after_fix_1 score_{metric} {model} | {folder} | seed {seed}",
                     "MNIST",
                 ),
             )
