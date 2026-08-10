@@ -13,6 +13,7 @@ if str(_REPO_ROOT) not in sys.path:
 
 from experiments import experiments_common as common
 from experiments.train_mnist_exp003_score_accuracy_metric import (
+    BEFORE_FIX_RUNS_DIR,
     GENERATIONS,
     MODEL_VARIANTS,
     RUNS_DIR,
@@ -42,7 +43,15 @@ def test_exp003_compares_validation_and_training_score_metrics():
     """
     # Arrange / Act / Assert
     assert SCORE_METRICS == (AccuracyMetric.VAL_ACC, AccuracyMetric.TRAIN_ACC)
-    assert RUNS_DIR.name == "exp003_score_accuracy_metric"
+
+
+def test_exp003_writes_after_fix_1_and_keeps_before_fix_folder():
+    """
+    Reruns should write after_fix_1 while leaving the original before_fix folder name.
+    """
+    # Arrange / Act / Assert
+    assert BEFORE_FIX_RUNS_DIR.name == "exp003_score_accuracy_metric"
+    assert RUNS_DIR.name == "exp003_score_accuracy_metric_after_fix_1"
 
 
 def test_exp003_registers_big_and_medium_1conv_2linear_only():

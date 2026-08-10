@@ -14,7 +14,7 @@ from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
 from growingnn.actions.utils.layer_Factory import ConvFactory
 from growingnn.core.traced_model import TracedModel
 from growingnn.utils.fx.graph_analysis import GraphStructureQuery, LayerBridgeFinder
-from growingnn.utils.fx.graph_editor import _path_dst_to_src
+
 from growingnn.utils.fx.node_analysis import ModuleResolver, NodeTypeChecker
 from experiments.train_mnist_exp001_slope_model_depth import MediumMnistNet
 from tests.model_factory import ModelFactory
@@ -107,7 +107,7 @@ def test_medium_path_has_pools_and_method_flatten():
     gm = traced.gm
     src = ModuleResolver.find_call_module(gm.graph.nodes, "conv1")
     dst = ModuleResolver.find_call_module(gm.graph.nodes, "linear")
-    path = _path_dst_to_src(dst, src)
+    path = LayerBridgeFinder.path_dst_to_src(dst, src)
 
     # Act
     flatten_node = GraphStructureQuery.find_flatten_node_on_path_toward_source(path, gm)
