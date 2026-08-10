@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import torch.fx as fx
 
-from growingnn.utils.fx.graph_analysis import GraphStructureQuery, LayerShapeAnalyser, GraphConnectivity
+from growingnn.utils.fx.graph_analysis import (
+    GraphStructureQuery,
+    LayerShapeAnalyser,
+    GraphConnectivity,
+    LayerBridgeFinder,
+)
 from growingnn.utils.fx.node_analysis import ModuleResolver
 from growingnn.utils.fx.node_editor import NodeEditor
 from growingnn.utils.fx.sum_nodes import connect_residual_branch, is_merge_branch_layer, is_sum_node, remove_layer_from_sums
@@ -13,22 +18,6 @@ from growingnn.utils.fx.sum_nodes import connect_residual_branch, is_merge_branc
 def _insert_call_module_after(gm, insert_after, module_name, module_input):
     with gm.graph.inserting_after(insert_after):
         return gm.graph.call_module(module_name, args=(module_input,))
-
-
-def _path_dst_to_src(dst, src, seen=None):
-    if dst is src:
-        return [src]
-    if seen is None:
-        seen = set()
-    if dst in seen:
-        return None
-    seen.add(dst)
-    for pred in dst.all_input_nodes:
-        tail = _path_dst_to_src(pred, src, seen)
-        if tail is not None:
-            return [dst] + tail
-    seen.discard(dst)
-    return None
 
 
 def bypass_shapes_compatible(
@@ -99,7 +88,7 @@ def _producer_before_layer(
 ) -> fx.Node:
     """Return the FX node that feeds layer_node on the path from input_layer_id."""
     src = ModuleResolver.find_call_module(gm.graph.nodes, input_layer_id)
-    path = _path_dst_to_src(layer_node, src)
+    path = LayerBridgeFinder.path_dst_to_src(layer_node, src)
     if path is None:
         return src
     return path[1] if len(path) >= 2 else src
@@ -203,7 +192,7 @@ class ModelStructureEditor:
         if src is dst:
             raise ValueError("src and dst must differ.")
 
-        path = _path_dst_to_src(dst, src)
+        path = LayerBridgeFinder.path_dst_to_src(dst, src)
         if path is None:
             raise ValueError(f"No path from {dst_name!r} back to {src_name!r} in the FX graph.")
 
@@ -224,7 +213,7 @@ class ModelStructureEditor:
         if src is dst:
             raise ValueError("src and dst must differ.")
 
-        path_destination_to_source = _path_dst_to_src(dst, src)
+        path_destination_to_source = LayerBridgeFinder.path_dst_to_src(dst, src)
         if path_destination_to_source is None:
             raise ValueError(f"No path from {dst_name!r} back to {src_name!r} in the FX graph.")
 

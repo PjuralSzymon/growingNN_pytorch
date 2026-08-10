@@ -11,7 +11,7 @@ from growingnn.utils.fx import (
     ModuleResolver,
     ModelStructureEditor,
 )
-from growingnn.utils.fx.graph_editor import _path_dst_to_src
+
 from growingnn.core.logger import logger
 from .action import Action
 
@@ -72,7 +72,7 @@ class AddSeqConvLayer(Action):
         dst_node = ModuleResolver.find_call_module(gm.graph.nodes, layer_to_id)
         if src_node is None or dst_node is None:
             return False
-        path = _path_dst_to_src(dst_node, src_node)
+        path = LayerBridgeFinder.path_dst_to_src(dst_node, src_node)
         if path is None:
             return False
         flatten_node = GraphStructureQuery.find_flatten_node_on_path_toward_source(path, gm)
@@ -109,7 +109,7 @@ class AddSeqConvLayer(Action):
         linear_in_features = LayerBridgeFinder.linear_feature_dim(in_shapes.get(layer_to_id))
         src_node = ModuleResolver.find_call_module(gm.graph.nodes, layer_from_id)
         dst_node = ModuleResolver.find_call_module(gm.graph.nodes, layer_to_id)
-        path = _path_dst_to_src(dst_node, src_node)
+        path = LayerBridgeFinder.path_dst_to_src(dst_node, src_node)
         flatten_node = GraphStructureQuery.find_flatten_node_on_path_toward_source(path, gm)
         _, channels, height, width = LayerShapeAnalyser.node_shape(
             path[path.index(flatten_node) + 1],
