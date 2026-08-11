@@ -1,6 +1,6 @@
 The training loop is standard SGD, like in most PyTorch projects. The growingNN-specific orchestration lives in `train_generations` in `growingnn/training/trainer.py`. It is described at a high level in [[General]].
 
-When you set the number of training epochs, remember two things. First, that count applies to one generation only, not to the full run. Second, the same loop runs again in every generation. Learning rate shape comes from [[Learning Rate Scheduler]].
+When you set the number of training epochs, remember two things. First, that count applies to one generation only, not to the full run. Second, the same loop runs again in every generation. Learning rate shape comes from [[Learning Rate Scheduler]] (standalone or [[Composed Learning Rate Scheduler]]).
 
 ---
 
