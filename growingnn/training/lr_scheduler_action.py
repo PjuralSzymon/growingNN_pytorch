@@ -1,3 +1,11 @@
+"""GrowingNN action-aware learning-rate schedules.
+
+These schedules control how LR reacts to architecture actions via
+``structure_changed()`` (warmup recovery) or generation-local progressive
+curves. They are not the same as standard global epoch LR schedules; see
+``lr_scheduler_global`` for cosine / step / exponential-style curves.
+"""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -5,6 +13,40 @@ from enum import Enum
 from math import cos, exp, pi, tanh
 
 MIN_LEARNING_RATE = 0.001
+
+
+def clamp_to_minimum_learning_rate(learning_rate: float) -> float:
+    """Enforce the global LR floor used by every schedule path."""
+    return max(MIN_LEARNING_RATE, float(learning_rate))
+
+
+def compute_schedule_value_without_advancing(
+    schedule: LearningRateSchedule,
+    generation_local_epoch: int,
+    generation_epoch_count: int,
+) -> float:
+    """
+    Evaluate a schedule at its current logical step without mutating counters.
+
+    Warmup schedules read iterations_since_change; generation-local schedules
+    use generation_local_epoch / generation_epoch_count.
+    """
+    if hasattr(schedule, "iterations_since_change"):
+        return float(
+            schedule.compute(
+                float(schedule.iterations_since_change),
+                float(schedule.warmup_iterations),
+            )
+        )
+    return float(
+        schedule.compute(float(generation_local_epoch), float(generation_epoch_count))
+    )
+
+
+def mark_warmup_schedule_as_fully_complete(schedule: LearningRateSchedule) -> None:
+    """Set action-aware warmup so the next factor is already at its peak (idle)."""
+    if hasattr(schedule, "iterations_since_change") and hasattr(schedule, "warmup_iterations"):
+        schedule.iterations_since_change = int(schedule.warmup_iterations)
 
 
 class ScheduleMode(Enum):
@@ -36,8 +78,7 @@ class LearningRateSchedule(ABC):
         self.k = k
 
     def alpha_scheduler(self, i: int, iterations: int) -> float:
-        lr = self.compute(float(i), float(iterations))
-        return max(MIN_LEARNING_RATE, lr)
+        return clamp_to_minimum_learning_rate(self.compute(float(i), float(iterations)))
 
     def structure_changed(self) -> None:
         pass
@@ -83,9 +124,10 @@ class WarmupSchedule(LearningRateSchedule, ABC):
         self.iterations_since_change = 0
 
     def alpha_scheduler(self, i: int, iterations: int) -> float:
+        # i / iterations are generation-local; warmup tracks epochs since last action.
         lr = self.compute(float(self.iterations_since_change), float(self.warmup_iterations))
         self.iterations_since_change += 1
-        return max(MIN_LEARNING_RATE, lr)
+        return clamp_to_minimum_learning_rate(lr)
 
     def structure_changed(self) -> None:
         self.iterations_since_change = 0
@@ -137,6 +179,8 @@ _SCHEDULES: dict[ScheduleMode, type[LearningRateSchedule]] = {
 
 
 class LearningRateScheduler:
+    """Facade for GrowingNN action / generation-local LR schedules."""
+
     def __init__(
         self,
         mode: ScheduleMode,
@@ -147,6 +191,20 @@ class LearningRateScheduler:
     ):
         self._schedule = _SCHEDULES[mode](alpha, steepness, warmup_iterations, k)
 
+    def peek_learning_rate_without_advancing(
+        self,
+        generation_local_epoch: int = 0,
+        generation_epoch_count: int = 100,
+    ) -> float:
+        """Return current LR without advancing warmup or other schedule counters."""
+        return clamp_to_minimum_learning_rate(
+            compute_schedule_value_without_advancing(
+                self._schedule,
+                generation_local_epoch,
+                generation_epoch_count,
+            )
+        )
+
     def alpha_scheduler(self, i: int, iterations: int) -> float:
         return self._schedule.alpha_scheduler(i, iterations)
 
@@ -155,3 +213,7 @@ class LearningRateScheduler:
 
     def reset(self) -> None:
         self.structure_changed()
+
+    def learning_rate_config_board_labels(self) -> tuple[str, float]:
+        """Mode name and alpha for ExperimentBoard config snapshots."""
+        return type(self._schedule).__name__, float(self._schedule.alpha)
