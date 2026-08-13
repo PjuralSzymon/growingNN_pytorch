@@ -50,7 +50,7 @@ from experiments.train_mnist_exp002_initial_architectures import (
 )
 from growingnn.simulation.score_functions.score_by_learning import AccuracyMetric
 from growingnn.simulation.simulation_schedulers import SlopeEstimationSimulationScheduler
-from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 
 # Historical grid (do not overwrite). Chart/report compare against this folder.
 BEFORE_FIX_RUNS_DIR = train_mnist.RUNS_DIR / "exp003_score_accuracy_metric"
@@ -138,10 +138,8 @@ if __name__ == "__main__":
                         angle_threshold=SLOPE_ANGLE_THRESHOLD,
                     ),
                 ),
-                patch.object(
-                    common,
-                    "LearningRateScheduler",
-                    side_effect=lambda _mode, alpha: LearningRateScheduler(
+                patch.object(common, "ActionLearningRateScheduler",
+                    side_effect=lambda _mode, alpha: ActionLearningRateScheduler(
                         LR_MODE,
                         alpha,
                         warmup_iterations=WARMUP_ITERATIONS,

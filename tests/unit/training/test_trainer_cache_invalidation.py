@@ -25,7 +25,7 @@ from growingnn.simulation.simulation_schedulers import (
     AlwaysSimulationScheduler,
     NeverSimulationScheduler,
 )
-from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import StopperMode, TrainingStopper
 from growingnn.training.trainer import train_generations
 from growingnn.utils.fx import GraphStructureQuery
@@ -45,7 +45,7 @@ def _grow_only_config(*, generations: int = 3) -> RunningConfig:
     cfg = RunningConfig(
         generations=generations,
         epochs=1,
-        lr_scheduler=LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
+        lr_scheduler=ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
         stopper=TrainingStopper(StopperMode.EMPTY),
         simulation_scheduler=AlwaysSimulationScheduler(simulation_time=0.01),
         simulation_set_size=8,
