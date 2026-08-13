@@ -14,7 +14,7 @@ from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
 from growingnn.actions.utils.layer_Factory import ConvFactory
 from growingnn.core.traced_model import TracedModel
 from growingnn.utils.fx.graph_analysis import GraphStructureQuery, LayerBridgeFinder
-from growingnn.utils.fx.graph_editor import _path_dst_to_src
+
 from growingnn.utils.fx.node_analysis import ModuleResolver, NodeTypeChecker
 from experiments.train_mnist_exp001_slope_model_depth import MediumMnistNet
 from tests.model_factory import ModelFactory
@@ -107,7 +107,7 @@ def test_medium_path_has_pools_and_method_flatten():
     gm = traced.gm
     src = ModuleResolver.find_call_module(gm.graph.nodes, "conv1")
     dst = ModuleResolver.find_call_module(gm.graph.nodes, "linear")
-    path = _path_dst_to_src(dst, src)
+    path = LayerBridgeFinder.path_dst_to_src(dst, src)
 
     # Act
     flatten_node = GraphStructureQuery.find_flatten_node_on_path_toward_source(path, gm)
@@ -129,15 +129,17 @@ def test_is_before_flatten_insert_accepts_medium_conv_to_linear():
 
     # Act
     can_insert = AddSeqConvLayer.is_before_flatten_insert(traced, "conv1", "linear")
-    out_channels, kernel_size, padding = AddSeqConvLayer.get_eye_convolution_shape_for_before_flatten(
+    eye_shape = AddSeqConvLayer.get_eye_convolution_shape_for_before_flatten(
         traced, "conv1", "linear",
-    )
-    layer = ConvFactory.create_eye_conv(
-        out_channels, out_channels, kernel_size, stride=1, padding=padding,
     )
 
     # Assert
     assert can_insert is True
+    assert eye_shape is not None
+    out_channels, kernel_size, padding = eye_shape
+    layer = ConvFactory.create_eye_conv(
+        out_channels, out_channels, kernel_size, stride=1, padding=padding,
+    )
     assert layer.in_channels == 4
     assert layer.out_channels == 4
 
@@ -151,11 +153,13 @@ def test_get_eye_convolution_shape_uses_one_by_one_fallback_for_unpadded_source(
 
     # Act
     assert AddSeqConvLayer.is_before_flatten_insert(traced, "conv1", "linear")
-    _, kernel_size, padding = AddSeqConvLayer.get_eye_convolution_shape_for_before_flatten(
+    eye_shape = AddSeqConvLayer.get_eye_convolution_shape_for_before_flatten(
         traced, "conv1", "linear",
     )
 
     # Assert
+    assert eye_shape is not None
+    _, kernel_size, padding = eye_shape
     assert kernel_size == 1
     assert padding == 0
 
@@ -172,6 +176,39 @@ def test_is_before_flatten_insert_rejects_linear_to_linear():
 
     # Assert
     assert can_insert is False
+
+
+def test_is_before_flatten_insert_rejects_classifier_past_hidden_linear():
+    """
+    Big conv2→linear2 should be rejected because hidden linear sits after flatten.
+    """
+    # Arrange
+    from experiments.train_mnist_exp002_initial_architectures import BigAvgPoolMnistNet
+
+    traced = TracedModel.create(BigAvgPoolMnistNet(), (1, 1, 28, 28))
+
+    # Act
+    can_insert = AddSeqConvLayer.is_before_flatten_insert(traced, "conv2", "linear2")
+
+    # Assert
+    assert can_insert is False
+
+
+def test_generate_all_actions_on_big_does_not_raise():
+    """
+    Action generation on the big MNIST starter should stay stable during search.
+    """
+    # Arrange
+    from experiments.train_mnist_exp002_initial_architectures import BigAvgPoolMnistNet
+
+    traced = TracedModel.create(BigAvgPoolMnistNet(), (1, 1, 28, 28))
+
+    # Act
+    actions = AddSeqConvLayer.generate_all_actions(traced)
+
+    # Assert
+    assert len(actions) >= 1
+    assert all(action.params[1] != "linear2" for action in actions)
 
 
 if __name__ == "__main__":

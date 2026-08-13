@@ -87,7 +87,7 @@ def test_generate_all_actions_uses_dropout2d_on_conv_chain():
 
 def test_generate_all_actions_skips_pairs_adjacent_to_existing_dropout():
     """
-    AddSeqDropoutLayer should not insert directly before or after another dropout layer.
+    AddSeqDropoutLayer should not insert when from or to is already a dropout module.
     """
     # Arrange
     gm = fx.symbolic_trace(ModelFactory.simple_chain_3(neurons=10))
@@ -109,3 +109,23 @@ def test_generate_all_actions_skips_pairs_adjacent_to_existing_dropout():
     for action in actions:
         assert action.params[0] not in dropout_ids
         assert action.params[1] not in dropout_ids
+
+
+def test_generate_all_actions_skips_same_pair_after_dropout_already_on_path():
+    """
+    After one dropout on l1->l2, generate_all_actions must not stack another on that path.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_3(neurons=10))
+    first = next(
+        a for a in AddSeqDropoutLayer.generate_all_actions(TracedModel.create(gm, (1, 4)), p=0.2)
+        if a.params[0] == "l1" and a.params[1] == "l2"
+    )
+    first.execute(TracedModel.create(gm, (1, 4)))
+
+    # Act
+    actions = AddSeqDropoutLayer.generate_all_actions(TracedModel.create(gm, (1, 4)), p=0.2)
+
+    # Assert
+    assert all(not (a.params[0] == "l1" and a.params[1] == "l2") for a in actions)
+    assert sum(isinstance(m, (nn.Dropout, nn.Dropout2d)) for m in gm.modules()) == 1

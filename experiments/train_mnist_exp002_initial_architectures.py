@@ -13,11 +13,8 @@ layer layouts grow usefully under fixed 3° logistic schedulers when width is he
 Published report target:
 documentation/website/content/experiments/experiment-002-initial-architectures.md
 
-Raw output (revised grid after stem/pool fixes):
+Raw output (published corrected grid):
 experiments/output/train_mnist/runs/exp002_initial_architectures_after_fix_1
-
-First-grid output (unchanged, kept for the published report):
-experiments/output/train_mnist/runs/exp002_initial_architectures
 """
 
 from __future__ import annotations
@@ -41,7 +38,7 @@ from experiments import experiments_common as common
 from experiments import train_mnist
 from experiments.train_mnist_exp001_slope_model_depth import configure_deterministic_seeding
 from growingnn.simulation.simulation_schedulers import SlopeEstimationSimulationScheduler
-from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 
 RUNS_DIR = train_mnist.RUNS_DIR / "exp002_initial_architectures_after_fix_1"
 EPOCHS_PER_GENERATION = 10
@@ -200,10 +197,8 @@ if __name__ == "__main__":
                     angle_threshold=SLOPE_ANGLE_THRESHOLD,
                 ),
             ),
-            patch.object(
-                common,
-                "LearningRateScheduler",
-                side_effect=lambda _mode, alpha: LearningRateScheduler(
+            patch.object(common, "ActionLearningRateScheduler",
+                side_effect=lambda _mode, alpha: ActionLearningRateScheduler(
                     LR_MODE,
                     alpha,
                     warmup_iterations=WARMUP_ITERATIONS,

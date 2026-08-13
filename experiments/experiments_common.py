@@ -20,7 +20,7 @@ import growingnn.simulation.simulation_algorithms.montecarlo_alg as montecarlo_a
 from growingnn.simulation.score_functions.simulation_score import SimulationScore
 from growingnn.simulation.simulation_schedulers import AlwaysSimulationScheduler
 from growingnn.simulation.simulation_set import sample_loaders
-from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import AccuracyStopper
 from growingnn.training.trainer import train_generations
 from growingnn.utils.fx import GraphStructureQuery
@@ -87,6 +87,21 @@ def require_cuda(device: torch.device) -> None:
         raise
 
 
+def _resolve_learning_rate_scheduler_from_hyperparameters(hp: Hyperparameters):
+    """
+    Build the run LR scheduler from hp.
+
+    Prefer hp['lr_scheduler_factory'](hp) when present so experiment grids can
+    inject composed or custom schedulers without patching LearningRateScheduler.
+    """
+    factory = hp.get("lr_scheduler_factory")
+    if callable(factory):
+        return factory(hp)
+    return ActionLearningRateScheduler(
+        ScheduleMode.PROGRESSIVE_PARABOLIC, alpha=float(hp["lr_alpha"])
+    )
+
+
 def _running_config(
     hp: Hyperparameters,
     device: torch.device,
@@ -96,9 +111,7 @@ def _running_config(
         generations=int(hp["generations"]),
         epochs=int(hp["epochs"]),
         device=device,
-        lr_scheduler=LearningRateScheduler(
-            ScheduleMode.PROGRESSIVE_PARABOLIC, alpha=float(hp["lr_alpha"])
-        ),
+        lr_scheduler=_resolve_learning_rate_scheduler_from_hyperparameters(hp),
         simulation_alg=montecarlo_alg,
         simulation_scheduler=AlwaysSimulationScheduler(
             simulation_time=float(hp["simulation_time"]),
@@ -108,6 +121,7 @@ def _running_config(
         simulation_score=SimulationScore(
             weight_acc=float(hp["score_weight_acc"]),
             weight_countW=float(hp["score_weight_countw"]),
+            accuracy_metric=str(hp.get("score_accuracy_metric", "val_acc")),
         ),
         simulation_set_size=int(hp["simulation_set_size"]),
         criterion=nn.CrossEntropyLoss(),

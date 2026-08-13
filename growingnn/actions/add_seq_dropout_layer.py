@@ -1,21 +1,19 @@
 from typing import List
 
-from torch import fx, nn
+from torch import nn
 
 from growingnn.actions.utils.regularization_factory import RegularizationFactory
 from growingnn.actions.utils.seq_insertion import iter_seq_shape_matched_pairs
 from growingnn.core import config
 from growingnn.core.traced_model import TracedModel
 from growingnn.core.logger import logger
-from growingnn.utils.fx import ModuleResolver, ModelStructureEditor
+from growingnn.utils.fx import ModuleResolver, ModelStructureEditor, GraphStructureQuery
 from .action import Action
-
-_DROPOUT_TYPES = (nn.Dropout, nn.Dropout2d)
 
 
 def _is_dropout_module(mod: nn.Module | None) -> bool:
     """Return True when the module is nn.Dropout or nn.Dropout2d."""
-    return mod is not None and isinstance(mod, _DROPOUT_TYPES)
+    return mod is not None and isinstance(mod, config.DROPOUT_TYPES)
 
 
 class AddSeqDropoutLayer(Action):
@@ -38,6 +36,9 @@ class AddSeqDropoutLayer(Action):
             to_mod = ModuleResolver.get_layer_module(cand.to_id, gm)
             if _is_dropout_module(from_mod) or _is_dropout_module(to_mod):
                 logger.debug("AddSeqDropoutLayer skip %s -> %s: adjacent to dropout", cand.from_id, cand.to_id)
+                continue
+            if GraphStructureQuery.path_has_dropout(gm, cand.from_id, cand.to_id):
+                logger.debug("AddSeqDropoutLayer skip %s -> %s: dropout already on path", cand.from_id, cand.to_id)
                 continue
             layer = RegularizationFactory.create_dropout(cand.shape, p)
             if layer is None:

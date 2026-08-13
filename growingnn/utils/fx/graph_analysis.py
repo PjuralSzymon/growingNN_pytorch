@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.fx as fx
 from torch.fx.passes.shape_prop import ShapeProp
 
-from growingnn.core.config import EDITABLE_MODULES
+from growingnn.core.config import DROPOUT_TYPES, EDITABLE_MODULES
 from growingnn.core.logger import logger
 from growingnn.utils.fx.node_analysis import ModuleResolver, NodeTypeChecker
 
@@ -174,6 +174,35 @@ class GraphStructureQuery:
             if NodeTypeChecker.is_pool_node(node, gm):
                 pools.append(node)
         return pools
+
+    @staticmethod
+    def path_has_dropout(
+        gm: fx.GraphModule,
+        from_id: str,
+        to_id: str,
+    ) -> bool:
+        """
+        True when Dropout/Dropout2d already sits on the FX path from *from_id* to *to_id*.
+
+        Dropout is passthrough for editable sequential pairs, so endpoint checks alone miss
+        stacked inserts on the same (ancestor, descendant) pair.
+        """
+        nodes = list(gm.graph.nodes)
+        try:
+            src = ModuleResolver.find_call_module(nodes, from_id)
+            dst = ModuleResolver.find_call_module(nodes, to_id)
+        except ValueError:
+            return False
+        path = LayerBridgeFinder.path_dst_to_src(dst, src)
+        if path is None:
+            return False
+        for node in path[1:-1]:
+            if node.op != "call_module":
+                continue
+            module = ModuleResolver.get_layer_module(node, gm)
+            if module is not None and isinstance(module, DROPOUT_TYPES):
+                return True
+        return False
 
     @staticmethod
     def _sequential_adj(model: nn.Module | fx.GraphModule) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
@@ -381,6 +410,27 @@ class LayerShapeAnalyser:
 
 class LayerBridgeFinder:
     """From activation shapes, decide if a bridge layer fits and what sizes it needs."""
+
+    @staticmethod
+    def path_dst_to_src(
+        dst: fx.Node,
+        src: fx.Node,
+        seen: set[fx.Node] | None = None,
+    ) -> list[fx.Node] | None:
+        """Return FX path from *dst* back to *src* as [dst, ..., src], or None if unreachable."""
+        if dst is src:
+            return [src]
+        if seen is None:
+            seen = set()
+        if dst in seen:
+            return None
+        seen.add(dst)
+        for pred in dst.all_input_nodes:
+            tail = LayerBridgeFinder.path_dst_to_src(pred, src, seen)
+            if tail is not None:
+                return [dst] + tail
+        seen.discard(dst)
+        return None
 
     @staticmethod
     def uniform_activation_shape(

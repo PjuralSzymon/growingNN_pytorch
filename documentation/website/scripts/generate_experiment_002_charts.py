@@ -20,45 +20,43 @@ DEFAULT_RUNS = (
     / "output"
     / "train_mnist"
     / "runs"
-    / "exp002_initial_architectures"
+    / "exp002_initial_architectures_after_fix_1"
 )
 DEFAULT_OUTPUT = SITE / "app" / "public" / "assets" / "experiments"
 DEFAULT_SNAPSHOT = SITE / "data" / "experiments" / "experiment-002-initial-architectures.json"
 
-# Prefer known names for stable ordering; unknown models fall back to start params.
+# Topology-only after_fix_1 starters, largest start params first.
 MODELS = (
     "big",
-    "medium",
-    "medium_avg_pool_only",
-    "medium_max_pool_only",
-    "small_avg_pool_only",
-    "small_max_pool_only",
-    "big_ch2_h8",
-    "medium_ch2_h8",
-    "medium_h4",
-    "very_small",
-    "very_small_ch2",
-    "very_small_avg_pool_only",
-    "very_small_max_pool_only",
+    "medium_1conv_2linear",
+    "medium_2conv_1linear",
+    "small",
 )
 MODEL_COLORS = {
     "big": "#3568a8",
-    "medium": "#4f8a63",
-    "medium_avg_pool_only": "#708050",
-    "medium_max_pool_only": "#5a7a40",
-    "small_avg_pool_only": "#3a6a8a",
-    "small_max_pool_only": "#2a5a7a",
-    "big_ch2_h8": "#8a4a3a",
-    "medium_ch2_h8": "#2a8a8a",
-    "medium_h4": "#7a5a9a",
-    "very_small": "#d18b2c",
-    "very_small_ch2": "#a07030",
-    "very_small_avg_pool_only": "#c08020",
-    "very_small_max_pool_only": "#906018",
+    "medium_1conv_2linear": "#4f8a63",
+    "medium_2conv_1linear": "#2a8a8a",
+    "small": "#d18b2c",
 }
 SEED_COLORS = {100: "#3568a8", 101: "#4f8a63", 102: "#d18b2c", 103: "#7a5a9a"}
 ORDER_LABELS = ("1st", "2nd", "3rd", "4th", "5th+")
-PHASES = (("Early 0–3", 0, 3), ("Middle 4–6", 4, 6), ("Late 7–9", 7, 9))
+GENERATIONS = 5
+# Corrected grid has actions only in generations 0–3; generation 4 stayed empty.
+ACTION_CHART_GENERATIONS = (0, 1, 2, 3)
+SHORT_MODEL_NAMES = {
+    "medium_1conv_2linear": "med 1c+2l",
+    "medium_2conv_1linear": "med 2c+1l",
+}
+# Collapsed big seeds that start with stacked dropout and never learn.
+BIG_OUTLIER_SEEDS = frozenset({100, 101})
+
+
+def _is_big_outlier(run: dict[str, object]) -> bool:
+    return str(run["model"]) == "big" and int(run["seed"]) in BIG_OUTLIER_SEEDS
+
+
+def _without_big_outliers(runs: list[dict[str, object]]) -> list[dict[str, object]]:
+    return [run for run in runs if not _is_big_outlier(run)]
 
 
 def load_runs(runs_dir: Path) -> list[dict[str, object]]:
@@ -153,20 +151,7 @@ def write_snapshot(runs: list[dict[str, object]], snapshot_path: Path) -> None:
     snapshot_path.write_text(json.dumps({"runs": compact}, indent=2), encoding="utf-8")
 
 
-# Old flatten controls start far above compact stems (~12k / ~50k params).
-# The revised Exp 002 `medium_max_pool_only` is compact (~276 params) and stays in charts.
-OVERSIZED_START_PARAMS = 1000
-
-
-def _is_oversized_flatten_control(run: dict[str, object]) -> bool:
-    """True for starters that flatten a large spatial map into the first linear."""
-    model = str(run["model"])
-    start_params = int(run["start_params"])
-    if model == "medium_no_pool":
-        return True
-    return model == "medium_max_pool_only" and start_params > OVERSIZED_START_PARAMS
-
-
+# Completed after_fix_1 runs are the published analysis set.
 def _mean(values: list[float]) -> float:
     return sum(values) / len(values) if values else 0.0
 
@@ -177,11 +162,7 @@ def _completed(runs: list[dict[str, object]]) -> list[dict[str, object]]:
 
 def _analysis_runs(runs: list[dict[str, object]]) -> list[dict[str, object]]:
     """Completed runs used for ranking and action charts."""
-    return [
-        run
-        for run in _completed(runs)
-        if not _is_oversized_flatten_control(run)
-    ]
+    return _completed(runs)
 
 
 def _models_by_start_params(
@@ -232,34 +213,62 @@ def _order_buckets(order_map: dict[int, list[float]]) -> list[list[float]]:
     ]
 
 
-def _plot_order_bars(
+def _plot_order_pair_bars(
     axis: Axes,
-    order_values: list[list[float]],
-    bar_color: str,
+    train_order_values: list[list[float]],
+    val_order_values: list[list[float]],
     title: str,
 ) -> None:
-    order_means = [_mean(values) * 100 if values else 0.0 for values in order_values]
-    axis.bar(ORDER_LABELS, order_means, color=bar_color, alpha=0.35)
-    for category, values in enumerate(order_values):
-        count = len(values)
-        if count == 0:
-            continue
-        offsets = (
-            [0.0]
-            if count == 1
-            else [-0.16 + 0.32 * index / (count - 1) for index in range(count)]
-        )
-        axis.scatter(
-            [category + offset for offset in offsets],
-            [value * 100 for value in values],
-            color="#222222",
-            s=14,
-            alpha=0.65,
-        )
+    positions = list(range(len(ORDER_LABELS)))
+    train_means = [_mean(values) * 100 if values else 0.0 for values in train_order_values]
+    val_means = [_mean(values) * 100 if values else 0.0 for values in val_order_values]
+    axis.bar(
+        [position - 0.18 for position in positions],
+        train_means,
+        width=0.36,
+        color="#3568a8",
+        alpha=0.45,
+        label="Training",
+    )
+    axis.bar(
+        [position + 0.18 for position in positions],
+        val_means,
+        width=0.36,
+        color="#4f8a63",
+        alpha=0.45,
+        label="Validation",
+    )
+    for category, (train_values, val_values) in enumerate(
+        zip(train_order_values, val_order_values, strict=True)
+    ):
+        for values, center, color in (
+            (train_values, category - 0.18, "#3568a8"),
+            (val_values, category + 0.18, "#4f8a63"),
+        ):
+            count = len(values)
+            if count == 0:
+                continue
+            offsets = (
+                [0.0]
+                if count == 1
+                else [-0.12 + 0.24 * index / (count - 1) for index in range(count)]
+            )
+            axis.scatter(
+                [center + offset for offset in offsets],
+                [value * 100 for value in values],
+                color=color,
+                s=14,
+                alpha=0.7,
+                edgecolor="#222222",
+                linewidth=0.3,
+            )
     axis.axhline(0, color="#222222", linewidth=1)
     axis.set_title(title)
+    axis.set_xticks(positions)
+    axis.set_xticklabels(ORDER_LABELS)
     axis.set_xlabel("Order of the action in one run")
     axis.grid(axis="y", alpha=0.25)
+    axis.legend(fontsize=7)
 
 
 def _short_action_name(name: str) -> str:
@@ -267,7 +276,7 @@ def _short_action_name(name: str) -> str:
 
 
 def _short_model(name: str) -> str:
-    return name.replace("medium_", "m_").replace("very_small", "vsmall")
+    return SHORT_MODEL_NAMES.get(name, name)
 
 
 def generate_charts(
@@ -292,11 +301,7 @@ def generate_charts(
     n_complete = len(completed)
     n_loaded_complete = len(_completed(runs))
     n_total = len(runs)
-    note = (
-        f"Source: {n_complete} compact completed runs"
-        f" ({n_loaded_complete}/{n_total} loaded; "
-        "oversized flatten controls ignored)"
-    )
+    note = f"Source: {n_complete} completed after_fix_1 runs ({n_loaded_complete}/{n_total} loaded)"
     order_note = "largest starting parameters first"
     written: list[Path] = []
 
@@ -308,50 +313,125 @@ def generate_charts(
         return path
 
     positions = list(range(len(models)))
-
-    # Final train/val accuracy by architecture (ordered by start params).
-    figure, axis = plt.subplots(figsize=(11.5, 5.2))
-    for metric, offset, color, label in (
-        ("final_train_acc", -0.18, "#3568a8", "Training accuracy"),
-        ("final_acc", 0.18, "#4f8a63", "Validation accuracy"),
-    ):
-        means = [
-            _mean([float(run[metric]) * 100 for run in completed if run["model"] == model])
-            for model in models
-        ]
-        bars = axis.bar(
-            [position + offset for position in positions],
-            means,
-            width=0.36,
-            color=color,
-            label=label,
-        )
-        axis.bar_label(bars, fmt="%.1f", fontsize=7, padding=2)
-    for model_index, model in enumerate(models):
-        for run in completed:
-            if run["model"] != model:
-                continue
-            axis.scatter(
-                model_index + 0.18,
-                float(run["final_acc"]) * 100,
-                color="#222222",
-                s=18,
-                zorder=3,
-            )
-    axis.set(
-        title="Mean final training and validation accuracy by initial architecture",
-        xlabel=f"Initial architecture ({order_note})",
-        ylabel="Mean final accuracy across completed seeds (%)",
-        xticks=positions,
-        xticklabels=[_short_model(model) for model in models],
-        ylim=(0, 100),
+    filtered = _without_big_outliers(completed)
+    filtered_note = (
+        f"Source: {len(filtered)} runs after removing big seeds "
+        f"{sorted(BIG_OUTLIER_SEEDS)} (early stacked dropout collapses)"
     )
-    axis.tick_params(axis="x", rotation=25)
-    axis.legend()
-    axis.grid(axis="y", alpha=0.25)
-    figure.text(0.99, 0.01, f"{note} · {order_note} · dots are final validation per seed", ha="right", fontsize=7)
-    figure.tight_layout(rect=(0, 0.03, 1, 1))
-    save(figure, "002-final-accuracy-by-architecture.png")
+
+    def plot_final_accuracy(
+        runs_for_plot: list[dict[str, object]],
+        filename: str,
+        title: str,
+        footer: str,
+    ) -> None:
+        figure, axis = plt.subplots(figsize=(11.5, 5.2))
+        for metric, offset, color, label in (
+            ("final_train_acc", -0.18, "#3568a8", "Training accuracy"),
+            ("final_acc", 0.18, "#4f8a63", "Validation accuracy"),
+        ):
+            means = [
+                _mean([float(run[metric]) * 100 for run in runs_for_plot if run["model"] == model])
+                for model in models
+            ]
+            bars = axis.bar(
+                [position + offset for position in positions],
+                means,
+                width=0.36,
+                color=color,
+                label=label,
+            )
+            axis.bar_label(bars, fmt="%.1f", fontsize=7, padding=2)
+        for model_index, model in enumerate(models):
+            for run in runs_for_plot:
+                if run["model"] != model:
+                    continue
+                axis.scatter(
+                    model_index - 0.18,
+                    float(run["final_train_acc"]) * 100,
+                    color="#1f3f6d",
+                    s=18,
+                    zorder=3,
+                )
+                axis.scatter(
+                    model_index + 0.18,
+                    float(run["final_acc"]) * 100,
+                    color="#222222",
+                    s=18,
+                    zorder=3,
+                )
+        axis.set(
+            title=title,
+            xlabel=f"Initial architecture ({order_note})",
+            ylabel="Mean final accuracy (%)",
+            xticks=positions,
+            xticklabels=[_short_model(model) for model in models],
+            ylim=(0, 100),
+        )
+        axis.tick_params(axis="x", rotation=25)
+        axis.legend()
+        axis.grid(axis="y", alpha=0.25)
+        figure.text(0.99, 0.01, footer, ha="right", fontsize=7)
+        figure.tight_layout(rect=(0, 0.03, 1, 1))
+        save(figure, filename)
+
+    def plot_param_growth(
+        runs_for_plot: list[dict[str, object]],
+        filename: str,
+        title: str,
+        footer: str,
+    ) -> None:
+        figure, axis = plt.subplots(figsize=(11.5, 4.8))
+        for model_index, model in enumerate(models):
+            group = [run for run in runs_for_plot if run["model"] == model]
+            axis.bar(
+                model_index - 0.18,
+                _mean([float(run["start_params"]) for run in group]),
+                width=0.36,
+                color="#777777",
+                label="Start parameters" if model_index == 0 else None,
+            )
+            axis.bar(
+                model_index + 0.18,
+                _mean([float(run["final_params"]) for run in group]),
+                width=0.36,
+                color=MODEL_COLORS.get(model, "#3568a8"),
+                label="Final parameters" if model_index == 0 else None,
+            )
+            for run in group:
+                axis.scatter(
+                    model_index + 0.18,
+                    float(run["final_params"]),
+                    color="#222222",
+                    s=18,
+                    zorder=3,
+                )
+        axis.set(
+            title=title,
+            xlabel=f"Initial architecture ({order_note})",
+            ylabel="Parameter count",
+            xticks=positions,
+            xticklabels=[_short_model(model) for model in models],
+        )
+        axis.tick_params(axis="x", rotation=25)
+        axis.legend()
+        axis.grid(axis="y", alpha=0.25)
+        figure.text(0.99, 0.01, footer, ha="right", fontsize=7)
+        figure.tight_layout(rect=(0, 0.03, 1, 1))
+        save(figure, filename)
+
+    plot_final_accuracy(
+        completed,
+        "002-final-accuracy-by-architecture.png",
+        "Mean final training and validation accuracy by initial architecture",
+        f"{note} · {order_note} · dots are per-seed finals (blue=train, black=val)",
+    )
+    plot_final_accuracy(
+        filtered,
+        "002-final-accuracy-without-big-outliers.png",
+        "Mean final accuracy without collapsed big seeds 100 and 101",
+        f"{filtered_note} · {order_note} · dots are per-seed finals (blue=train, black=val)",
+    )
 
     # Best-seed envelope: avoids averaging in collapsed outlier seeds.
     figure, axis = plt.subplots(figsize=(11.5, 5.2))
@@ -392,144 +472,70 @@ def generate_charts(
     figure.tight_layout(rect=(0, 0.03, 1, 1))
     save(figure, "002-best-seed-accuracy-by-architecture.png")
 
-    # Mean end-of-generation training accuracy: find when runs near the strong band.
-    figure, axis = plt.subplots(figsize=(12.0, 5.2))
-    width = min(0.8 / max(len(models), 1), 0.12)
-    strong_band = 91.0
-    for model_index, model in enumerate(models):
-        group = [run for run in completed if run["model"] == model]
-        means = []
-        for generation in range(10):
-            values = []
-            for run in group:
-                generations = _generations(run)
-                if generation not in generations:
-                    continue
-                values.append(float(generations[generation][-1]["trainAcc"]) * 100)
-            means.append(_mean(values))
-        offset = (model_index - (len(models) - 1) / 2) * width
-        axis.bar(
-            [generation + offset for generation in range(10)],
-            means,
-            width=width,
-            color=MODEL_COLORS.get(model, "#3568a8"),
-            label=_short_model(model),
-        )
-    axis.axhline(
-        strong_band,
-        color="#a65353",
-        linestyle="--",
-        linewidth=1.4,
-        label=f"{strong_band:.0f}% strong band",
-    )
-    axis.set(
-        title="Mean end-of-generation training accuracy by architecture",
-        xlabel="Generation",
-        ylabel="Mean training accuracy (%)",
-        xticks=list(range(10)),
-        ylim=(0, 100),
-    )
-    axis.legend(fontsize=7, ncol=2)
-    axis.grid(axis="y", alpha=0.25)
-    figure.text(
-        0.99,
-        0.01,
-        f"{note} · dashed line marks {strong_band:.0f}% training accuracy",
-        ha="right",
-        fontsize=7,
-    )
-    figure.tight_layout(rect=(0, 0.03, 1, 1))
-    save(figure, "002-train-acc-by-generation.png")
-
-    # Parameter growth ordered by starting size.
-    figure, axis = plt.subplots(figsize=(11.5, 4.8))
-    for model_index, model in enumerate(models):
-        group = [run for run in completed if run["model"] == model]
-        axis.bar(
-            model_index - 0.18,
-            _mean([float(run["start_params"]) for run in group]),
-            width=0.36,
-            color="#777777",
-            label="Start parameters" if model_index == 0 else None,
-        )
-        axis.bar(
-            model_index + 0.18,
-            _mean([float(run["final_params"]) for run in group]),
-            width=0.36,
-            color=MODEL_COLORS.get(model, "#3568a8"),
-            label="Final parameters" if model_index == 0 else None,
-        )
-        for run in group:
-            axis.scatter(
-                model_index + 0.18,
-                float(run["final_params"]),
-                color="#222222",
-                s=18,
-                zorder=3,
-            )
-    axis.set(
-        title="Starting and final parameter counts",
-        xlabel=f"Initial architecture ({order_note})",
-        ylabel="Parameter count",
-        xticks=positions,
-        xticklabels=[_short_model(model) for model in models],
-    )
-    axis.tick_params(axis="x", rotation=25)
-    axis.legend()
-    axis.grid(axis="y", alpha=0.25)
-    figure.text(
-        0.99,
-        0.01,
+    plot_param_growth(
+        completed,
+        "002-param-growth.png",
+        "Starting and final parameter counts",
         f"{note} · {order_note} · dots show final parameters per completed seed",
-        ha="right",
-        fontsize=7,
     )
-    figure.tight_layout(rect=(0, 0.03, 1, 1))
-    save(figure, "002-param-growth.png")
+    plot_param_growth(
+        filtered,
+        "002-param-growth-without-big-outliers.png",
+        "Parameter growth without collapsed big seeds 100 and 101",
+        f"{filtered_note} · {order_note} · dots show final parameters per remaining seed",
+    )
 
-    # Actions by early / middle / late generation phases.
+    # Action counts by generation (0–3). Generation 4 had no actions in this grid.
     figure, axis = plt.subplots(figsize=(11.5, 5.0))
     width = min(0.8 / max(len(models), 1), 0.18)
-    phase_positions = list(range(len(PHASES)))
+    generation_positions = list(ACTION_CHART_GENERATIONS)
     for model_index, model in enumerate(models):
         group = [run for run in completed if run["model"] == model]
-        means = []
-        for _, lo, hi in PHASES:
-            counts = [
-                sum(1 for generation in list(run["action_generations"]) if lo <= int(generation) <= hi)
-                for run in group
-            ]
-            means.append(_mean([float(value) for value in counts]))
+        totals = []
+        for generation in ACTION_CHART_GENERATIONS:
+            totals.append(
+                sum(
+                    1
+                    for run in group
+                    for action_generation in list(run["action_generations"])
+                    if int(action_generation) == generation
+                )
+            )
         offset = (model_index - (len(models) - 1) / 2) * width
-        axis.bar(
-            [position + offset for position in phase_positions],
-            means,
+        bars = axis.bar(
+            [position + offset for position in generation_positions],
+            totals,
             width=width,
             color=MODEL_COLORS.get(model, "#3568a8"),
             label=_short_model(model),
         )
+        axis.bar_label(bars, fmt="%d", fontsize=7, padding=1)
     axis.set(
-        title="Mean executed actions by training phase and architecture",
-        xlabel="Generation phase",
-        ylabel="Mean actions per completed seed",
-        xticks=phase_positions,
-        xticklabels=[label for label, _, _ in PHASES],
+        title="Executed action counts by generation and architecture",
+        xlabel="Generation",
+        ylabel="Action count across all seeds",
+        xticks=generation_positions,
+        xticklabels=[f"Gen {generation}" for generation in ACTION_CHART_GENERATIONS],
     )
     axis.legend(fontsize=7, ncol=2)
     axis.grid(axis="y", alpha=0.2)
     figure.text(
         0.99,
         0.01,
-        f"{note} · early = gens 0–3, middle = gens 4–6, late = gens 7–9",
+        f"{note} · totals across four seeds · generation 4 had zero actions",
         ha="right",
         fontsize=7,
     )
     figure.tight_layout(rect=(0, 0.03, 1, 1))
-    save(figure, "002-actions-by-phase.png")
+    save(figure, "002-actions-by-generation.png")
 
-    # Recovery-window gains.
-    action_gains_by_order: dict[int, list[float]] = defaultdict(list)
-    action_gains_by_model_order: dict[str, dict[int, list[float]]] = {
+    # Recovery-window gains for training and validation.
+    train_gains_by_order: dict[int, list[float]] = defaultdict(list)
+    val_gains_by_order: dict[int, list[float]] = defaultdict(list)
+    train_gains_by_model_order: dict[str, dict[int, list[float]]] = {
+        model: defaultdict(list) for model in models
+    }
+    val_gains_by_model_order: dict[str, dict[int, list[float]]] = {
         model: defaultdict(list) for model in models
     }
     effects_by_type: dict[str, list[float]] = defaultdict(list)
@@ -552,23 +558,23 @@ def generate_charts(
             val_gain = float(current[-1]["valAcc"]) - float(previous[-1]["valAcc"])
             train_gain = float(current[-1]["trainAcc"]) - float(previous[-1]["trainAcc"])
             label = str(action_map[generation - 1])
-            action_gains_by_order[action_order].append(val_gain)
-            if model in action_gains_by_model_order:
-                action_gains_by_model_order[model][action_order].append(val_gain)
+            train_gains_by_order[action_order].append(train_gain)
+            val_gains_by_order[action_order].append(val_gain)
+            if model in train_gains_by_model_order:
+                train_gains_by_model_order[model][action_order].append(train_gain)
+                val_gains_by_model_order[model][action_order].append(val_gain)
             effects_by_type[label].append(val_gain)
             train_effects_by_type[label].append(train_gain)
             action_order += 1
 
-    figure, axis = plt.subplots(figsize=(8.5, 4.5))
-    _plot_order_bars(
+    figure, axis = plt.subplots(figsize=(9.0, 4.8))
+    _plot_order_pair_bars(
         axis,
-        _order_buckets(action_gains_by_order),
-        "#3568a8",
-        "Validation-accuracy change by action order",
+        _order_buckets(train_gains_by_order),
+        _order_buckets(val_gains_by_order),
+        "Training and validation change by action order",
     )
-    axis.set_ylabel(
-        "Validation-accuracy change over the next generation (percentage points)"
-    )
+    axis.set_ylabel("Accuracy change over the next generation (percentage points)")
     figure.text(
         0.99,
         0.01,
@@ -579,29 +585,32 @@ def generate_charts(
     figure.tight_layout(rect=(0, 0.03, 1, 1))
     save(figure, "002-action-order.png")
 
-    panel_models = [model for model in models if any(action_gains_by_model_order[model].values())]
+    panel_models = [
+        model
+        for model in models
+        if any(val_gains_by_model_order[model].values())
+        or any(train_gains_by_model_order[model].values())
+    ]
     if panel_models:
-        cols = min(3, len(panel_models))
+        cols = min(2, len(panel_models))
         rows = (len(panel_models) + cols - 1) // cols
-        figure, axes = plt.subplots(rows, cols, figsize=(4.2 * cols, 4.0 * rows), sharey=True)
+        figure, axes = plt.subplots(rows, cols, figsize=(5.0 * cols, 4.2 * rows), sharey=True)
         flat = list(axes.flat) if hasattr(axes, "flat") else [axes]
         for axis, model in zip(flat, panel_models, strict=False):
-            _plot_order_bars(
+            _plot_order_pair_bars(
                 axis,
-                _order_buckets(action_gains_by_model_order[model]),
-                MODEL_COLORS.get(model, "#3568a8"),
+                _order_buckets(train_gains_by_model_order[model]),
+                _order_buckets(val_gains_by_model_order[model]),
                 _short_model(model),
             )
         for axis in flat[len(panel_models) :]:
             axis.axis("off")
-        flat[0].set_ylabel(
-            "Validation-accuracy change over the next generation (percentage points)"
-        )
-        figure.suptitle("Validation-accuracy change by action order and architecture")
+        flat[0].set_ylabel("Accuracy change over the next generation (percentage points)")
+        figure.suptitle("Training and validation change by action order and architecture")
         figure.text(
             0.99,
             0.01,
-            f"{note} · same recovery window · one panel per architecture with completed seeds",
+            f"{note} · same recovery window · one panel per architecture",
             ha="right",
             fontsize=7,
         )
