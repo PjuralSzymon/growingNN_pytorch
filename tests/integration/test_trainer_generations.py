@@ -20,8 +20,8 @@ growingnn.core.config.ENABLE_LOGGING = False
 from growingnn.core.config import RunningConfig
 from growingnn.simulation.score_functions.simulation_score import SimulationScore
 import growingnn.simulation.simulation_algorithms.random_alg as random_alg
-from growingnn.simulation.simulation_scheduler import SchedulerMode, SimulationScheduler
-from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.simulation.simulation_schedulers import AlwaysSimulationScheduler
+from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import StopperMode, TrainingStopper
 from growingnn.training.trainer import train_generations
 from growingnn.utils.fx import GraphStructureQuery
@@ -47,11 +47,10 @@ def test_train_generations_runs_simulation_between_generations():
     cfg = RunningConfig(
         generations=2,
         epochs=1,
-        lr_scheduler=LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
+        lr_scheduler=ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
         stopper=TrainingStopper(StopperMode.EMPTY),
         simulation_alg=random_alg,
-        simulation_scheduler=SimulationScheduler(
-            SchedulerMode.ALWAYS,
+        simulation_scheduler=AlwaysSimulationScheduler(
             simulation_time=1.0,
             simulation_epochs=1,
         ),

@@ -10,7 +10,7 @@ import torch.fx as fx
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from growingnn.training.lr_scheduler import LearningRateScheduler
+from growingnn.training.lr_scheduler_action import MIN_LEARNING_RATE, LearningRateScheduler
 
 if TYPE_CHECKING:
     from growingnn.board.experiment_board import ExperimentBoard
@@ -30,14 +30,23 @@ def _set_optimizer_lr(optimizer: torch.optim.Optimizer, lr: float) -> None:
 
 def _resolve_optimizer(
     parameters: Iterable[torch.nn.Parameter],
-    initial_lr: float,
     optimizer: torch.optim.Optimizer | None,
     momentum: float,
 ) -> torch.optim.Optimizer:
+    """
+    Return the caller optimizer, or build SGD with a throwaway ctor LR.
+
+    Epoch 0 always overwrites LR via alpha_scheduler before any training steps.
+    """
     if optimizer is not None:
-        _set_optimizer_lr(optimizer, initial_lr)
         return optimizer
-    return torch.optim.SGD(parameters, lr=initial_lr, momentum=momentum)
+    # SGD requires an lr in the constructor; epoch 0 overwrites it before any steps.
+    return torch.optim.SGD(
+        parameters,
+        lr=MIN_LEARNING_RATE,
+        momentum=momentum,
+        weight_decay=0.0,
+    )
 
 
 def _evaluate(
@@ -89,13 +98,7 @@ def gradient_descent(
     device = torch.device(device)
     model = model.to(device)
 
-    initial_lr = lr_scheduler.alpha_scheduler(0, epochs)
-    optimizer = _resolve_optimizer(
-        model.parameters(),
-        initial_lr,
-        optimizer,
-        momentum,
-    )
+    optimizer = _resolve_optimizer(model.parameters(), optimizer, momentum)
     history: dict[str, list[float]] = {
         "train_loss": [],
         "train_acc": [],
@@ -104,7 +107,7 @@ def gradient_descent(
         "lr": [],
     }
 
-    for epoch in range(epochs + 1):
+    for epoch in range(epochs):
         scheduled_lr = lr_scheduler.alpha_scheduler(epoch, epochs)
         _set_optimizer_lr(optimizer, scheduled_lr)
 
@@ -134,6 +137,7 @@ def gradient_descent(
         history["val_loss"].append(val_loss)
         history["val_acc"].append(val_acc)
         history["lr"].append(applied_lr)
+        metrics = {"accuracy": train_acc, "val_acc": val_acc, "loss": train_loss}
 
         if experiment_board is not None:
             experiment_board.on_epoch_end(
@@ -147,15 +151,15 @@ def gradient_descent(
                 param_count=sum(p.numel() for p in model.parameters()),
             )
 
-        if not quiet and (epoch % print_every == 0 or epoch == epochs):
+        if not quiet and (epoch % print_every == 0 or epoch == epochs - 1):
             param_count = sum(p.numel() for p in model.parameters())
             print(
                 f"Epoch: {epoch} Accuracy: {train_acc:.3f} loss: {train_loss:.3f} "
                 f"val_acc: {val_acc:.3f} val_loss: {val_loss:.3f} "
                 f"lr: {applied_lr:.3f} param_count: {param_count}"
             )
-            metrics = {"accuracy": train_acc, "val_acc": val_acc, "loss": train_loss}
-            if stopper.check(model, epoch, metrics):
-                break
+        if stopper.check(model, epoch, metrics):
+            print(f"Stopping at epoch {epoch}")
+            break
 
     return model, history

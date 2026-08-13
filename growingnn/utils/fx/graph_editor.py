@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import torch.fx as fx
 
-from growingnn.utils.fx.graph_analysis import GraphStructureQuery, LayerShapeAnalyser, GraphConnectivity
+from growingnn.utils.fx.graph_analysis import (
+    GraphStructureQuery,
+    LayerShapeAnalyser,
+    GraphConnectivity,
+    LayerBridgeFinder,
+)
 from growingnn.utils.fx.node_analysis import ModuleResolver
 from growingnn.utils.fx.node_editor import NodeEditor
 from growingnn.utils.fx.sum_nodes import connect_residual_branch, is_merge_branch_layer, is_sum_node, remove_layer_from_sums
@@ -13,22 +18,6 @@ from growingnn.utils.fx.sum_nodes import connect_residual_branch, is_merge_branc
 def _insert_call_module_after(gm, insert_after, module_name, module_input):
     with gm.graph.inserting_after(insert_after):
         return gm.graph.call_module(module_name, args=(module_input,))
-
-
-def _path_dst_to_src(dst, src, seen=None):
-    if dst is src:
-        return [src]
-    if seen is None:
-        seen = set()
-    if dst in seen:
-        return None
-    seen.add(dst)
-    for pred in dst.all_input_nodes:
-        tail = _path_dst_to_src(pred, src, seen)
-        if tail is not None:
-            return [dst] + tail
-    seen.discard(dst)
-    return None
 
 
 def bypass_shapes_compatible(
@@ -99,7 +88,7 @@ def _producer_before_layer(
 ) -> fx.Node:
     """Return the FX node that feeds layer_node on the path from input_layer_id."""
     src = ModuleResolver.find_call_module(gm.graph.nodes, input_layer_id)
-    path = _path_dst_to_src(layer_node, src)
+    path = LayerBridgeFinder.path_dst_to_src(layer_node, src)
     if path is None:
         return src
     return path[1] if len(path) >= 2 else src
@@ -203,12 +192,49 @@ class ModelStructureEditor:
         if src is dst:
             raise ValueError("src and dst must differ.")
 
-        path = _path_dst_to_src(dst, src)
+        path = LayerBridgeFinder.path_dst_to_src(dst, src)
         if path is None:
             raise ValueError(f"No path from {dst_name!r} back to {src_name!r} in the FX graph.")
 
         new_out = _insert_call_module_after(gm, path[1], name, path[1])
         NodeEditor.swap_node_input(dst, path[1], new_out)
+        gm.graph.lint()
+        gm.recompile()
+
+    @staticmethod
+    def add_new_seq_layer_before_flatten(gm, src_name, dst_name, new_layer, name):
+        """Insert *new_layer* immediately before the flatten node on the src→dst sequential path."""
+        from growingnn.utils.fx.graph_analysis import GraphStructureQuery
+
+        gm.add_module(name, new_layer)
+        nodes = list(gm.graph.nodes)
+        src = ModuleResolver.find_call_module(nodes, src_name)
+        dst = ModuleResolver.find_call_module(nodes, dst_name)
+        if src is dst:
+            raise ValueError("src and dst must differ.")
+
+        path_destination_to_source = LayerBridgeFinder.path_dst_to_src(dst, src)
+        if path_destination_to_source is None:
+            raise ValueError(f"No path from {dst_name!r} back to {src_name!r} in the FX graph.")
+
+        flatten_node = GraphStructureQuery.find_flatten_node_on_path_toward_source(
+            path_destination_to_source, gm,
+        )
+        if flatten_node is None:
+            raise ValueError(f"No flatten on path from {src_name!r} to {dst_name!r}.")
+
+        flatten_index = path_destination_to_source.index(flatten_node)
+        if flatten_index + 1 >= len(path_destination_to_source):
+            raise ValueError("Flatten has no predecessor on the sequential path.")
+        insert_after_node = path_destination_to_source[flatten_index + 1]
+        pools_before_flatten = GraphStructureQuery.find_pool_nodes_between_flatten_and_source(
+            path_destination_to_source, flatten_node, gm,
+        )
+        if not pools_before_flatten:
+            raise ValueError("Sequential conv before flatten requires at least one pool before flatten.")
+
+        new_out = _insert_call_module_after(gm, insert_after_node, name, insert_after_node)
+        NodeEditor.swap_node_input(flatten_node, insert_after_node, new_out)
         gm.graph.lint()
         gm.recompile()
 

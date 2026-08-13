@@ -18,8 +18,8 @@ import growingnn.core.config
 growingnn.core.config.ENABLE_LOGGING = False
 
 from growingnn.core.config import RunningConfig
-from growingnn.simulation.simulation_scheduler import SchedulerMode, SimulationScheduler
-from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.simulation.simulation_schedulers import NeverSimulationScheduler
+from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import StopperMode, TrainingStopper
 from growingnn.training.trainer import train_generations
 
@@ -49,9 +49,9 @@ def test_train_generations_uses_prebuilt_simulation_loaders():
     cfg = RunningConfig(
         generations=1,
         epochs=1,
-        lr_scheduler=LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
+        lr_scheduler=ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
         stopper=TrainingStopper(StopperMode.EMPTY),
-        simulation_scheduler=SimulationScheduler(SchedulerMode.NEVER),
+        simulation_scheduler=NeverSimulationScheduler(),
         simulation_set_size=8,
         criterion=nn.CrossEntropyLoss(),
         quiet=True,

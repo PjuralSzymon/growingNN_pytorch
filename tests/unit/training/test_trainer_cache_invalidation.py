@@ -21,8 +21,11 @@ growingnn.core.config.ENABLE_LOGGING = False
 from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
 from growingnn.core.config import RunningConfig
 from growingnn.core.traced_model import TracedModel
-from growingnn.simulation.simulation_scheduler import SchedulerMode, SimulationScheduler
-from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.simulation.simulation_schedulers import (
+    AlwaysSimulationScheduler,
+    NeverSimulationScheduler,
+)
+from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import StopperMode, TrainingStopper
 from growingnn.training.trainer import train_generations
 from growingnn.utils.fx import GraphStructureQuery
@@ -42,9 +45,9 @@ def _grow_only_config(*, generations: int = 3) -> RunningConfig:
     cfg = RunningConfig(
         generations=generations,
         epochs=1,
-        lr_scheduler=LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
+        lr_scheduler=ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
         stopper=TrainingStopper(StopperMode.EMPTY),
-        simulation_scheduler=SimulationScheduler(SchedulerMode.ALWAYS, simulation_time=0.01),
+        simulation_scheduler=AlwaysSimulationScheduler(simulation_time=0.01),
         simulation_set_size=8,
         criterion=nn.CrossEntropyLoss(),
         quiet=True,
@@ -91,7 +94,7 @@ def test_train_generations_invalidates_after_each_simulation_action():
         train_generations(gm, train_loader, val_loader, cfg)
 
     # Assert
-    assert len(invalidate_calls) == 3
+    assert len(invalidate_calls) == 2
 
 
 def test_train_generations_skips_invalidate_when_simulation_disabled():
@@ -102,7 +105,7 @@ def test_train_generations_skips_invalidate_when_simulation_disabled():
     gm = _chain_model()
     train_loader, val_loader = _linear_loaders()
     cfg = _grow_only_config(generations=2)
-    cfg.simulation_scheduler = SimulationScheduler(SchedulerMode.NEVER)
+    cfg.simulation_scheduler = NeverSimulationScheduler()
     invalidate_calls: list[int] = []
     original_invalidate = TracedModel.invalidate
 
@@ -142,7 +145,7 @@ def test_train_generations_recomputes_param_count_after_each_invalidate():
 
     # Assert
     assert recomputed_counts == [params_before, params_before + 20, params_before + 40]
-    assert GraphStructureQuery.get_amount_of_parameters(gm) == params_before + 60
+    assert GraphStructureQuery.get_amount_of_parameters(gm) == params_before + 40
 
 
 def test_train_generations_runs_back_to_back_with_fresh_cache_each_run():
@@ -163,5 +166,5 @@ def test_train_generations_runs_back_to_back_with_fresh_cache_each_run():
     params_after_second_run = GraphStructureQuery.get_amount_of_parameters(gm)
 
     # Assert
-    assert params_after_first_run == params_before + 40
-    assert params_after_second_run == params_before + 80
+    assert params_after_first_run == params_before + 20
+    assert params_after_second_run == params_before + 40

@@ -18,13 +18,14 @@ from growingnn.core.config import RunningConfig
 from growingnn.core.logger import logger
 import growingnn.simulation.simulation_algorithms.montecarlo_alg as montecarlo_alg
 from growingnn.simulation.score_functions.simulation_score import SimulationScore
-from growingnn.simulation.simulation_scheduler import SchedulerMode, SimulationScheduler
+from growingnn.simulation.simulation_schedulers import AlwaysSimulationScheduler
 from growingnn.simulation.simulation_set import sample_loaders
-from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import AccuracyStopper
 from growingnn.training.trainer import train_generations
 from growingnn.utils.fx import GraphStructureQuery
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
+from growingnn.utils.seed import seed_all
 
 METRIC_KEYS = ("train_loss", "train_acc", "val_loss", "val_acc", "lr", "param_count")
 Hyperparameters = dict[str, object]
@@ -86,6 +87,21 @@ def require_cuda(device: torch.device) -> None:
         raise
 
 
+def _resolve_learning_rate_scheduler_from_hyperparameters(hp: Hyperparameters):
+    """
+    Build the run LR scheduler from hp.
+
+    Prefer hp['lr_scheduler_factory'](hp) when present so experiment grids can
+    inject composed or custom schedulers without patching LearningRateScheduler.
+    """
+    factory = hp.get("lr_scheduler_factory")
+    if callable(factory):
+        return factory(hp)
+    return ActionLearningRateScheduler(
+        ScheduleMode.PROGRESSIVE_PARABOLIC, alpha=float(hp["lr_alpha"])
+    )
+
+
 def _running_config(
     hp: Hyperparameters,
     device: torch.device,
@@ -95,12 +111,9 @@ def _running_config(
         generations=int(hp["generations"]),
         epochs=int(hp["epochs"]),
         device=device,
-        lr_scheduler=LearningRateScheduler(
-            ScheduleMode.PROGRESSIVE_PARABOLIC, alpha=float(hp["lr_alpha"])
-        ),
+        lr_scheduler=_resolve_learning_rate_scheduler_from_hyperparameters(hp),
         simulation_alg=montecarlo_alg,
-        simulation_scheduler=SimulationScheduler(
-            SchedulerMode.ALWAYS,
+        simulation_scheduler=AlwaysSimulationScheduler(
             simulation_time=float(hp["simulation_time"]),
             simulation_epochs=int(hp["simulation_epochs"]),
         ),
@@ -108,6 +121,7 @@ def _running_config(
         simulation_score=SimulationScore(
             weight_acc=float(hp["score_weight_acc"]),
             weight_countW=float(hp["score_weight_countw"]),
+            accuracy_metric=str(hp.get("score_accuracy_metric", "val_acc")),
         ),
         simulation_set_size=int(hp["simulation_set_size"]),
         criterion=nn.CrossEntropyLoss(),
@@ -154,9 +168,7 @@ def _train_run(
     device: torch.device,
     board_enabled: bool,
 ) -> None:
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
+    seed_all(seed)
 
     gm = fx.symbolic_trace(definition.model_factory(hp))
     params_before = GraphStructureQuery.get_amount_of_parameters(gm)

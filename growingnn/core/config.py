@@ -10,8 +10,15 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 FLOAT_TYPE = np.float32
-from growingnn.simulation.simulation_scheduler import SchedulerMode, SimulationScheduler
-from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.simulation.simulation_schedulers import (
+    NeverSimulationScheduler,
+    SimulationScheduler,
+)
+from growingnn.training.lr_scheduler_action import (
+    ActionLearningRateScheduler,
+    LearningRateScheduler,
+    ScheduleMode,
+)
 from growingnn.training.stoppers import StopperMode, TrainingStopper
 
 RESHEPERS_CACHE_MAX_SIZE = 10
@@ -23,6 +30,7 @@ RES_CONV_TO_LINEAR_GLOBAL_POOL_TYPE = "max"  # "avg" | "max"
 
 # Properties for neuron deletion action
 EDITABLE_MODULES = [nn.Linear, nn.Conv2d, nn.Conv1d, nn.Conv3d]
+DROPOUT_TYPES = (nn.Dropout, nn.Dropout2d)
 PASSTHROUGH_MODULES = (nn.Dropout, nn.Dropout2d, nn.Identity, nn.ReLU, nn.LeakyReLU,
                        nn.GELU, nn.SiLU, nn.Tanh, nn.ELU, nn.Sigmoid,
                        nn.Flatten,
@@ -53,7 +61,7 @@ WEIGHT_COUNT_WEIGHT = 1e-6
 MCTS_UCB1_C = 2
 MCTS_ROLLOUT_DEPTH = 2
 MCTS_ROLLOUT_EPOCHS = 1
-MCTS_ROLLOUT_LR = LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.0001)
+MCTS_ROLLOUT_LR = ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.0001)
 #TODO: To be reaserched:
 MCTS_UCB1_USE_SQRT = False  # False: legacy sum + log(N)/n; True: mean + sqrt(log(N)/n)
 MCTS_PROPAGATE_ROLLOUT_VALUE = False  # False: return node.value; True: return latest rollout only
@@ -79,11 +87,13 @@ class RunningConfig:
     def __init__(self, 
         generations: int,
         epochs: int,
-        lr_scheduler: LearningRateScheduler = LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
+        lr_scheduler: LearningRateScheduler = ActionLearningRateScheduler(
+            ScheduleMode.CONSTANT, alpha=0.01
+        ),
         stopper: TrainingStopper = TrainingStopper(StopperMode.EMPTY),
         #TODO: simualtion algs should also have parent type
         simulation_alg: Any | None = None,
-        simulation_scheduler: SimulationScheduler = SimulationScheduler(SchedulerMode.NEVER),
+        simulation_scheduler: SimulationScheduler = NeverSimulationScheduler(),
         simulation_score: Any | None = None,
         simulation_set_size: int = 32,
         criterion: nn.Module | None = None,

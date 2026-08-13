@@ -678,6 +678,24 @@ def test_get_input_layers_and_output_layers_for_middle_layer():
     assert outputs == ["l3"]
 
 
+def test_path_has_dropout_detects_dropout_between_editable_pair():
+    """
+    path_has_dropout should be True after a Dropout sits between two Linear modules.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_3(neurons=10))
+    assert GraphStructureQuery.path_has_dropout(gm, "l1", "l2") is False
+    from growingnn.utils.fx import ModelStructureEditor
+
+    ModelStructureEditor.add_new_seq_layer(gm, "l1", "l2", nn.Dropout(0.2), "seq_dropout_0")
+
+    # Act
+    result = GraphStructureQuery.path_has_dropout(gm, "l1", "l2")
+
+    # Assert
+    assert result is True
+
+
 def test_node_shape_reads_shape_from_shapeprop_metadata():
     """
     node_shape should return a tuple after ShapeProp has populated node.meta.

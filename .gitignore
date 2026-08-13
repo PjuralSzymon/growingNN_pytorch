@@ -1,7 +1,8 @@
 *.pdf
-# Fodlers in project: 
+
+# Generated experiment artifacts and downloaded datasets
 testResults/
-experiments/output/*
+experiments/output/
 experiments/data/
 
 # Byte-compiled / optimized
@@ -65,11 +66,11 @@ Thumbs.db
 *.temp
 .cache/
 
-# Pipenv (keep `Pipfile` tracked; ignore lock if you prefer local-only resolution)
+# Pipenv
 Pipfile.lock
 Pipfile
 
-# uv / PDM (optional toolchains)
+# uv / PDM
 .uv/
 uv.lock
 .pdm-python

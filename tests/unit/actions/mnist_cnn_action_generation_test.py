@@ -58,7 +58,10 @@ def test_simple_mnist_cnn_generates_seq_linear_between_boundary_conv_and_linear(
     assert isinstance(action.params[2], nn.Linear)
     assert action.params[2].in_features == 3
     assert action.params[2].out_features == 3
-    assert seq_conv_actions == []
+    assert len(seq_conv_actions) >= 1
+    assert seq_conv_actions[0].params[0] == "conv1"
+    assert seq_conv_actions[0].params[1] == "linear"
+    assert isinstance(seq_conv_actions[0].params[2], nn.Conv2d)
     assert res_conv_actions == []
 
 

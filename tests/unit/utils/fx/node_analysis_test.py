@@ -231,5 +231,56 @@ def test_propagation_hits_unsizable_false_for_plain_linear_chain():
     assert NodeWidthAnalyser.propagation_hits_unsizable(gm, l2) is False
 
 
+def test_is_flatten_node_true_for_module_and_function_forms():
+    """
+    is_flatten_node should be true for nn.Flatten and torch.flatten sites.
+    """
+    # Arrange
+    class FlattenModuleNet(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.flat = nn.Flatten()
+
+        def forward(self, x):
+            return self.flat(x)
+
+    class FlattenFunctionNet(nn.Module):
+        def forward(self, x):
+            return torch.flatten(x, 1)
+
+    gm_mod = fx.symbolic_trace(FlattenModuleNet())
+    gm_fn = fx.symbolic_trace(FlattenFunctionNet())
+
+    # Act / Assert
+    mod_flat = next(n for n in gm_mod.graph.nodes if n.op == "call_module")
+    assert NodeTypeChecker.is_flatten_node(mod_flat, gm_mod) is True
+    fn_flat = next(n for n in gm_fn.graph.nodes if n.op == "call_function")
+    assert NodeTypeChecker.is_flatten_node(fn_flat, gm_fn) is True
+
+
+def test_two_d_pool_kind_returns_adaptive_avg_for_module_pool():
+    """
+    two_d_pool_kind should return adaptive_avg for AdaptiveAvgPool2d modules.
+    """
+    # Arrange
+    class PoolNet(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.pool = nn.AdaptiveAvgPool2d(1)
+
+        def forward(self, x):
+            return self.pool(x)
+
+    gm = fx.symbolic_trace(PoolNet())
+    pool_node = next(n for n in gm.graph.nodes if n.op == "call_module")
+
+    # Act
+    kind = NodeTypeChecker.two_d_pool_kind(pool_node, gm)
+
+    # Assert
+    assert kind == "adaptive_avg"
+    assert NodeTypeChecker.is_pool_node(pool_node, gm) is True
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

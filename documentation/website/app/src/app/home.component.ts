@@ -39,7 +39,7 @@ import { CONTENT_PAGES, GRAPH_STATS } from './generated/content';
             <span class="feature-icon blue">▤</span><small>REFERENCE</small><h3>Technical documentation</h3>
             <p>Browse all {{ docsCount }} Obsidian pages by section. Wiki links remain a connected web of topics.</p><b>Open documentation →</b>
           </a>
-          <a routerLink="/experiments/experiment-000-previous-numpy-work/" class="feature">
+          <a routerLink="/experiments/experiment-000-slope-angle-lr-warmup/" class="feature">
             <span class="feature-icon mint">⌁</span><small>RESEARCH LOG</small><h3>Experiments and results</h3>
             <p>Follow sequential reports with goals, setup, metrics, findings, and next steps.</p><b>View experiments →</b>
           </a>
@@ -47,7 +47,7 @@ import { CONTENT_PAGES, GRAPH_STATS } from './generated/content';
       </section>
 
       <section class="experiments-preview">
-        <div class="section-heading"><div><span>02 — Latest research</span><h2>Experiment sequence</h2></div><a routerLink="/experiments/experiment-000-previous-numpy-work/">Start from experiment 00 →</a></div>
+        <div class="section-heading"><div><span>02 — Latest research</span><h2>Experiment sequence</h2></div><a routerLink="/experiments/experiment-000-slope-angle-lr-warmup/">Start from experiment 00 →</a></div>
         <div class="experiment-list">
           @for (page of experiments; track page.slug; let index = $index) {
             <a class="experiment-card" [routerLink]="'/' + page.slug + '/'">

@@ -20,7 +20,7 @@ from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
 from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
 from growingnn.actions.delete_layer import DelLayer
 from growingnn.training.gradient_descent import gradient_descent
-from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import StopperMode, TrainingStopper
 from growingnn.utils.fx import GraphStructureQuery
 from tests.regression.regression_utils import FOLDER_NAME
@@ -51,7 +51,7 @@ def _train(
         train_loader,
         val_loader,
         nn.CrossEntropyLoss(),
-        LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
+        ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
         TrainingStopper(StopperMode.EMPTY),
         quiet=True,
     )
@@ -77,10 +77,10 @@ def test_train_grow_train_resnet18_still_learns():
     params_before = GraphStructureQuery.get_amount_of_parameters(gm)
 
     # Act
-    history_before = _train(gm, train_loader, val_loader, epochs=1)
+    history_before = _train(gm, train_loader, val_loader, epochs=2)
     _first_grow_action(gm).execute(TracedModel.create(gm, (1, 3, 32, 32)))
     params_after_grow = GraphStructureQuery.get_amount_of_parameters(gm)
-    history_after = _train(gm, train_loader, val_loader, epochs=1)
+    history_after = _train(gm, train_loader, val_loader, epochs=2)
 
     # Assert
     assert params_after_grow > params_before
@@ -101,14 +101,14 @@ def test_train_shrink_train_resnet18_still_learns():
 
     # Act
     draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified_init", fmt="pdf")
-    history_before = _train(gm, train_loader, val_loader, epochs=1)
+    history_before = _train(gm, train_loader, val_loader, epochs=2)
     shrink_actions = DelLayer.generate_all_actions(TracedModel.create(gm, (1, 3, 32, 32)))
     assert shrink_actions, "expected at least one shrink action on ResNet-18"
     shrink_actions[0].execute(TracedModel.create(gm, (1, 3, 32, 32)))
     print(f"shrink action executed: {shrink_actions[0]}")
     draw_filtered_fx_graph(gm, FOLDER_NAME + "/" + "fx_graph_simplified_shrink", fmt="pdf")
     params_after_shrink = GraphStructureQuery.get_amount_of_parameters(gm)
-    history_after = _train(gm, train_loader, val_loader, epochs=1)
+    history_after = _train(gm, train_loader, val_loader, epochs=2)
 
     # Assert
     assert params_after_shrink < params_before

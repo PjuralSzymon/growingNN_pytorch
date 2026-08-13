@@ -117,6 +117,14 @@ def inline_markup(value: str, pages: list[Page]) -> str:
 
     value = re.sub(r"`([^`]+)`", stash_code, value)
     value = html.escape(value, quote=False)
+    value = re.sub(
+        r"!\[([^\]]*)\]\(([^)]+)\)",
+        lambda match: (
+            f'<img src="{html.escape(html.unescape(match.group(2)), quote=True)}" '
+            f'alt="{html.escape(html.unescape(match.group(1)), quote=True)}" loading="lazy">'
+        ),
+        value,
+    )
 
     def wiki(match: re.Match[str]) -> str:
         raw, label = match.group(1), match.group(2) or Path(match.group(1)).name
@@ -170,8 +178,21 @@ class MarkdownRenderer:
             self._missing_image,
             strip_frontmatter(markdown),
         )
-        for raw_line in markdown.splitlines():
-            self._render_line(raw_line)
+        lines = markdown.splitlines()
+        index = 0
+        while index < len(lines):
+            if index + 1 < len(lines) and "|" in lines[index]:
+                separators = [cell.strip() for cell in lines[index + 1].strip().strip("|").split("|")]
+                if separators and all(re.fullmatch(r":?-{3,}:?", cell) for cell in separators):
+                    rows: list[str] = []
+                    index += 2
+                    while index < len(lines) and "|" in lines[index] and lines[index].strip():
+                        rows.append(lines[index])
+                        index += 1
+                    self._handle_table(lines[index - len(rows) - 2], rows)
+                    continue
+            self._render_line(lines[index])
+            index += 1
         self._finish()
         return "\n".join(self.output), self.headings
 
@@ -254,6 +275,23 @@ class MarkdownRenderer:
             self.list_type = wanted
         self.output.append(f"<li>{inline_markup(match.group(1), self.pages)}</li>")
 
+    def _handle_table(self, header: str, rows: list[str]) -> None:
+        """Render one Markdown table with a responsive wrapper."""
+        self._flush_paragraph()
+        self._close_list()
+        self._flush_callout()
+        headers = [cell.strip() for cell in header.strip().strip("|").split("|")]
+        self.output.append('<div class="table-wrap"><table><thead><tr>')
+        self.output.extend(f"<th>{inline_markup(cell, self.pages)}</th>" for cell in headers)
+        self.output.append("</tr></thead><tbody>")
+        for row in rows:
+            cells = [cell.strip() for cell in row.strip().strip("|").split("|")]
+            cells.extend([""] * (len(headers) - len(cells)))
+            self.output.append("<tr>")
+            self.output.extend(f"<td>{inline_markup(cell, self.pages)}</td>" for cell in cells[: len(headers)])
+            self.output.append("</tr>")
+        self.output.append("</tbody></table></div>")
+
     def _flush_paragraph(self) -> None:
         """Render and clear the current paragraph buffer."""
         if self.paragraph:
@@ -269,10 +307,14 @@ class MarkdownRenderer:
     def _flush_callout(self) -> None:
         """Render and clear the current callout buffer."""
         if self.callout:
-            self.output.append(
-                f'<aside class="callout"><span>{html.escape(self.callout_kind.title())}</span>'
-                f"<p>{inline_markup(' '.join(self.callout), self.pages)}</p></aside>"
-            )
+            content = inline_markup(" ".join(self.callout), self.pages)
+            if self.callout_kind.upper() == "CAPTION":
+                self.output.append(f'<p class="figure-caption">{content}</p>')
+            else:
+                self.output.append(
+                    f'<aside class="callout"><span>{html.escape(self.callout_kind.title())}</span>'
+                    f"<p>{content}</p></aside>"
+                )
             self.callout.clear()
 
     def _append_code_block(self) -> None:

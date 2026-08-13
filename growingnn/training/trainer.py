@@ -89,12 +89,25 @@ def train_generations(
         if config.stopper.check(traced.gm, generation, metrics):
             break
 
-        if config.simulation_scheduler.can_simulate(generation, generation_val_acc, quiet=config.quiet):
+        # Slope estimation uses start/middle/end training accuracy from this generation;
+        # other schedulers keep using final accuracies across generations.
+        scheduler_values = (
+            history["train_acc"]
+            if config.simulation_scheduler.uses_current_generation_values
+            else generation_val_acc
+        )
+        if config.simulation_scheduler.can_simulate(
+            generation,
+            scheduler_values,
+            quiet=config.quiet,
+            generations=config.generations,
+        ):
             action, _, _ = config.simulation_alg.get_action(copy.deepcopy(traced), config)
             if action is None:
                 logger.warning("Generation %s no action executed", generation)
                 continue
             action.execute(traced)
+            config.lr_scheduler.structure_changed()
             logger.info("Generation %s action executed: %s", generation, action)
             if board is not None:
                 board.save_graphs(traced.gm, generation=generation, tag=f"gen_{generation}_simulation")
