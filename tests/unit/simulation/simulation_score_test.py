@@ -56,3 +56,50 @@ def test_simulation_score_weight_sum():
 
     # Assert
     assert total == 1.5
+
+
+def test_simulation_score_defaults_to_validation_accuracy_metric():
+    """
+    SimulationScore should default accuracy_metric to val_acc for backward compatibility.
+    """
+    # Arrange / Act
+    score_fn = SimulationScore()
+
+    # Assert
+    assert score_fn.accuracy_metric.value == "val_acc"
+
+
+def test_simulation_score_records_accuracy_metric_on_board():
+    """
+    score should store the configured accuracy_metric in board simulation metrics.
+    """
+    # Arrange
+    board = ExperimentBoard("/tmp/unused", experiment_name="t")
+    score_fn = SimulationScore(
+        weight_acc=1.0,
+        weight_loss=0.0,
+        weight_time=0.0,
+        weight_countW=0.0,
+        accuracy_metric="train_acc",
+    )
+    score_fn._SCORE_FUNCTIONS = {"weight_acc": lambda _model, _config: 0.7}
+    score_fn.weights = {
+        "weight_acc": 1.0,
+        "weight_loss": 0.0,
+        "weight_time": 0.0,
+        "weight_countW": 0.0,
+    }
+    cfg = RunningConfig(
+        generations=1,
+        epochs=1,
+        enable_experiment_board=True,
+        experiment_board=board,
+        simulation_score=score_fn,
+    )
+
+    # Act
+    score_fn.score(object(), cfg)
+
+    # Assert
+    assert board.simulation_metrics["accuracy_metric"] == "train_acc"
+    assert board.simulation_metrics["weight_acc_score"] == 0.7

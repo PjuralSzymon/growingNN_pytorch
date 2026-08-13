@@ -13,7 +13,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from growingnn.training.gradient_descent import gradient_descent
-from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import StopperMode, TrainingStopper
 
 
@@ -29,7 +29,7 @@ def test_gradient_descent_records_history_for_each_epoch():
     val_loader = DataLoader(TensorDataset(inputs, targets), batch_size=8)
     model = nn.Linear(4, 2)
     criterion = nn.CrossEntropyLoss()
-    lr_scheduler = LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.1)
+    lr_scheduler = ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.1)
     stopper = TrainingStopper(StopperMode.EMPTY)
     epochs = 2
 
@@ -66,7 +66,7 @@ def test_gradient_descent_stops_when_stopper_triggers():
     val_loader = DataLoader(TensorDataset(inputs, targets), batch_size=4)
     model = nn.Linear(4, 2)
     criterion = nn.CrossEntropyLoss()
-    lr_scheduler = LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.1)
+    lr_scheduler = ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.1)
     stopper = TrainingStopper(StopperMode.ACCURACY, target_accuracy=0.0)
     epochs = 20
 
@@ -99,7 +99,7 @@ def test_gradient_descent_accepts_custom_optimizer():
     val_loader = DataLoader(TensorDataset(inputs, targets), batch_size=8)
     model = nn.Linear(4, 2)
     criterion = nn.CrossEntropyLoss()
-    lr_scheduler = LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.05)
+    lr_scheduler = ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.05)
     stopper = TrainingStopper(StopperMode.EMPTY)
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 

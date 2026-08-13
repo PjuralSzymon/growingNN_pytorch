@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import torch.fx as fx
 
 from growingnn.utils.fx.sum_nodes import is_sum_node
@@ -79,6 +81,49 @@ class NodeTypeChecker:
     def is_add(n: fx.Node) -> bool:
         """True for binary or variadic tensor-sum call_function nodes."""
         return is_sum_node(n)
+
+    @staticmethod
+    def is_flatten_node(node: fx.Node, gm: fx.GraphModule) -> bool:
+        """True when the node is a method, module, or function flatten site."""
+        if node.op == "call_method" and node.target == "flatten":
+            return True
+        if node.op == "call_function" and node.target is torch.flatten:
+            return True
+        if node.op == "call_module":
+            module = ModuleResolver.get_layer_module(node, gm)
+            return isinstance(module, nn.Flatten)
+        return False
+
+    @staticmethod
+    def is_pool_node(node: fx.Node, gm: fx.GraphModule) -> bool:
+        """True when the node is a functional or module 2-D pooling site."""
+        return NodeTypeChecker.two_d_pool_kind(node, gm) is not None
+
+    @staticmethod
+    def two_d_pool_kind(node: fx.Node, gm: fx.GraphModule) -> str | None:
+        """Return windowed_max/windowed_avg/adaptive_max/adaptive_avg, else None."""
+        if node.op == "call_function":
+            if node.target is F.max_pool2d:
+                return "windowed_max"
+            if node.target is F.avg_pool2d:
+                return "windowed_avg"
+            if node.target is F.adaptive_max_pool2d:
+                return "adaptive_max"
+            if node.target is F.adaptive_avg_pool2d:
+                return "adaptive_avg"
+            return None
+        if node.op != "call_module":
+            return None
+        module = ModuleResolver.get_layer_module(node, gm)
+        if isinstance(module, nn.MaxPool2d):
+            return "windowed_max"
+        if isinstance(module, nn.AvgPool2d):
+            return "windowed_avg"
+        if isinstance(module, nn.AdaptiveMaxPool2d):
+            return "adaptive_max"
+        if isinstance(module, nn.AdaptiveAvgPool2d):
+            return "adaptive_avg"
+        return None
 
 
 class NodeWidthAnalyser:

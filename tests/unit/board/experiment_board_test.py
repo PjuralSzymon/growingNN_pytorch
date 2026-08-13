@@ -9,7 +9,7 @@ import torch.nn as nn
 
 from growingnn.board import ExperimentBoard
 from growingnn.core.config import RunningConfig
-from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 
 
 class _TinyNet(nn.Module):
@@ -31,7 +31,7 @@ def test_experiment_board_writes_main_and_metrics(tmp_path: Path):
     cfg = RunningConfig(
         generations=2,
         epochs=1,
-        lr_scheduler=LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
+        lr_scheduler=ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
         enable_experiment_board=True,
         experiment_board=board,
     )

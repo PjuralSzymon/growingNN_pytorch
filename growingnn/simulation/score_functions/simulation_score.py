@@ -10,7 +10,12 @@ import torch.nn as nn
 
 from growingnn.core.config import RunningConfig
 from growingnn.core.logger import logger
-from growingnn.simulation.score_functions.score_by_learning import score_acc, score_loss
+from growingnn.simulation.score_functions.score_by_learning import (
+    AccuracyMetric,
+    parse_accuracy_metric,
+    score_acc,
+    score_loss,
+)
 from growingnn.simulation.score_functions.score_efficiency import score_count_weights, score_time
 
 
@@ -28,6 +33,7 @@ class SimulationScore:
         weight_loss: float = 0.0,
         weight_time: float = 0.0,
         weight_countW: float = 0.5,
+        accuracy_metric: AccuracyMetric | str = AccuracyMetric.VAL_ACC,
     ):
         self.weights = {
             "weight_acc": weight_acc,
@@ -35,6 +41,7 @@ class SimulationScore:
             "weight_time": weight_time,
             "weight_countW": weight_countW,
         }
+        self.accuracy_metric = parse_accuracy_metric(accuracy_metric)
 
     def weight_sum(self) -> float:
         return sum(self.weights.values())
@@ -49,6 +56,7 @@ class SimulationScore:
         board_metrics = board.simulation_metrics if board is not None else None
         if board_metrics is not None:
             board_metrics.clear()
+            board_metrics["accuracy_metric"] = self.accuracy_metric.value
         for key, fn in self._SCORE_FUNCTIONS.items():
             weight = self.weights[key]
             if weight <= 0.0:
