@@ -15,10 +15,10 @@ from math import cos, pi
 from typing import Any, Iterator, Protocol, runtime_checkable
 
 from growingnn.training.lr_scheduler_action import (
+    ActionLearningRateScheduler,
     LearningRateScheduler,
     ScheduleMode,
     clamp_to_minimum_learning_rate,
-    compute_schedule_value_without_advancing,
     mark_warmup_schedule_as_fully_complete,
 )
 
@@ -189,7 +189,7 @@ def build_composed_learning_rate_scheduler(
             step_size=step_size,
             gamma=gamma,
         ),
-        recovery=LearningRateScheduler(
+        recovery=ActionLearningRateScheduler(
             ScheduleMode.WARMUP_LOGISTIC,
             alpha=1.0,
             warmup_iterations=warmup_iterations,
@@ -200,7 +200,7 @@ def build_composed_learning_rate_scheduler(
     )
 
 
-class ComposedLearningRateScheduler:
+class ComposedLearningRateScheduler(LearningRateScheduler):
     """
     Multiply a global LR curve by GrowingNN action recovery.
 
@@ -214,7 +214,7 @@ class ComposedLearningRateScheduler:
     def __init__(
         self,
         global_schedule: GlobalLearningRateSchedule,
-        recovery: LearningRateScheduler,
+        recovery: ActionLearningRateScheduler,
         *,
         total_epochs: int,
         initial_lr: float | None = None,
@@ -245,21 +245,6 @@ class ComposedLearningRateScheduler:
         recovery_factor: float,
     ) -> float:
         return clamp_to_minimum_learning_rate(global_learning_rate * recovery_factor)
-
-    def peek_learning_rate_without_advancing(
-        self,
-        generation_local_epoch: int = 0,
-        generation_epoch_count: int | None = None,
-    ) -> float:
-        """Return current composed LR without advancing global or recovery state."""
-        total = self.total_epochs if generation_epoch_count is None else int(generation_epoch_count)
-        global_learning_rate = self.global_schedule.lr_at(self.global_epoch, total)
-        recovery_factor = compute_schedule_value_without_advancing(
-            self.recovery._schedule,
-            generation_local_epoch,
-            total,
-        )
-        return self._compose_effective_learning_rate(global_learning_rate, recovery_factor)
 
     def alpha_scheduler(self, i: int, iterations: int) -> float:
         global_learning_rate = self.global_schedule.lr_at(

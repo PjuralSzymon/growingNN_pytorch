@@ -178,8 +178,33 @@ _SCHEDULES: dict[ScheduleMode, type[LearningRateSchedule]] = {
 }
 
 
-class LearningRateScheduler:
-    """Facade for GrowingNN action / generation-local LR schedules."""
+class LearningRateScheduler(ABC):
+    """
+    Public LR scheduler interface used by training and simulation.
+
+    Concrete kinds:
+    - ``ActionLearningRateScheduler`` — GrowingNN action / generation schedules
+    - ``ComposedLearningRateScheduler`` — global epoch curve × action recovery
+    """
+
+    @abstractmethod
+    def alpha_scheduler(self, i: int, iterations: int) -> float:
+        """Return LR for this epoch and advance schedule state."""
+
+    @abstractmethod
+    def structure_changed(self) -> None:
+        """Notify the scheduler that an architecture action ran."""
+
+    def reset(self) -> None:
+        self.structure_changed()
+
+    @abstractmethod
+    def learning_rate_config_board_labels(self) -> tuple[str, float]:
+        """Mode name and representative LR for ExperimentBoard snapshots."""
+
+
+class ActionLearningRateScheduler(LearningRateScheduler):
+    """GrowingNN action / generation-local LR schedules."""
 
     def __init__(
         self,
@@ -191,28 +216,11 @@ class LearningRateScheduler:
     ):
         self._schedule = _SCHEDULES[mode](alpha, steepness, warmup_iterations, k)
 
-    def peek_learning_rate_without_advancing(
-        self,
-        generation_local_epoch: int = 0,
-        generation_epoch_count: int = 100,
-    ) -> float:
-        """Return current LR without advancing warmup or other schedule counters."""
-        return clamp_to_minimum_learning_rate(
-            compute_schedule_value_without_advancing(
-                self._schedule,
-                generation_local_epoch,
-                generation_epoch_count,
-            )
-        )
-
     def alpha_scheduler(self, i: int, iterations: int) -> float:
         return self._schedule.alpha_scheduler(i, iterations)
 
     def structure_changed(self) -> None:
         self._schedule.structure_changed()
-
-    def reset(self) -> None:
-        self.structure_changed()
 
     def learning_rate_config_board_labels(self) -> tuple[str, float]:
         """Mode name and alpha for ExperimentBoard config snapshots."""
