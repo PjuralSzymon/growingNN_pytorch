@@ -82,7 +82,9 @@ class ExperimentBoard:
         sched = config.simulation_scheduler
         sim_alg = config.simulation_alg
         sim_alg_name = getattr(sim_alg, "__name__", "none") if sim_alg is not None else "none"
-        lr_sched = config.lr_scheduler._schedule
+        learning_rate_mode, learning_rate_alpha = (
+            config.lr_scheduler.learning_rate_config_board_labels()
+        )
         score = config.simulation_score
         self._config_snapshot = {
             "totalGenerations": config.generations,
@@ -92,8 +94,8 @@ class ExperimentBoard:
             "simulationTimeSec": sched.simulation_time,
             "simulationEpochs": sched.simulation_epochs,
             "simulationSchedulerMode": sched.mode.name,
-            "learningRateMode": type(lr_sched).__name__,
-            "learningRateAlpha": lr_sched.alpha,
+            "learningRateMode": learning_rate_mode,
+            "learningRateAlpha": learning_rate_alpha,
             "scoreWeights": getattr(score, "weights", None) if score is not None else None,
         }
 
