@@ -159,10 +159,10 @@ def test_learning_rate_scheduler_picks_schedule_from_mode():
 
 def test_cosine_annealing_base_matches_formula_at_endpoints():
     """
-    CosineAnnealingLearningRate should equal initial_lr at epoch 0 and eta_min at T_max.
+    CosineAnnealingLearningRate should equal initial_lr at epoch 0 and eta_min at t_max.
     """
     # Arrange
-    base = CosineAnnealingLearningRate(T_max=100, eta_min=0.001, initial_lr=0.01)
+    base = CosineAnnealingLearningRate(t_max=100, eta_min=0.001, initial_lr=0.01)
 
     # Act
     lr_start = base.lr_at(0, 100)
@@ -209,7 +209,7 @@ def test_composed_without_action_equals_base_curve():
     """
     # Arrange
     total = 20
-    base = CosineAnnealingLearningRate(T_max=total, eta_min=0.001, initial_lr=0.01)
+    base = CosineAnnealingLearningRate(t_max=total, eta_min=0.001, initial_lr=0.01)
     composed = ComposedLearningRateScheduler(
         global_schedule=base,
         recovery=ActionLearningRateScheduler(
@@ -260,11 +260,15 @@ def test_composed_rejects_recovery_alpha_not_one():
     """
     ComposedLearningRateScheduler should require recovery.alpha == 1.0.
     """
-    # Arrange / Act / Assert
+    # Arrange
+    recovery = ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01)
+    global_schedule = ConstantLearningRate(lr=0.01)
+
+    # Act / Assert
     with pytest.raises(ValueError, match="alpha=1.0"):
         ComposedLearningRateScheduler(
-            global_schedule=ConstantLearningRate(lr=0.01),
-            recovery=ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
+            global_schedule=global_schedule,
+            recovery=recovery,
             total_epochs=10,
         )
 
@@ -329,10 +333,10 @@ def test_non_composed_learning_rate_scheduler_unchanged():
 
 def test_linear_decay_base_matches_endpoints():
     """
-    LinearDecayLearningRate should equal initial_lr at epoch 0 and eta_min at T_max.
+    LinearDecayLearningRate should equal initial_lr at epoch 0 and eta_min at t_max.
     """
     # Arrange
-    base = LinearDecayLearningRate(T_max=100, eta_min=0.001, initial_lr=0.01)
+    base = LinearDecayLearningRate(t_max=100, eta_min=0.001, initial_lr=0.01)
 
     # Act / Assert
     assert base.lr_at(0, 100) == pytest.approx(0.01)

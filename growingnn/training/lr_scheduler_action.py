@@ -81,6 +81,7 @@ class LearningRateSchedule(ABC):
         return clamp_to_minimum_learning_rate(self.compute(float(i), float(iterations)))
 
     def structure_changed(self) -> None:
+        # No-op for generation-local schedules; WarmupSchedule overrides to reset.
         pass
 
     def reset(self) -> None:

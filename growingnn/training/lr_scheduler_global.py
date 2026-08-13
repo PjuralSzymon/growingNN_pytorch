@@ -11,7 +11,7 @@ action-aware recovery factor from ``lr_scheduler_action``.
 from __future__ import annotations
 
 from contextlib import contextmanager, nullcontext
-from math import cos, pi
+from math import cos, isclose, pi
 from typing import Any, Iterator, Protocol, runtime_checkable
 
 from growingnn.training.lr_scheduler_action import (
@@ -52,27 +52,27 @@ class ConstantLearningRate:
             raise ValueError("lr must be non-negative")
         self.lr = lr
 
-    def lr_at(self, global_epoch: int, total_epochs: int) -> float:
+    def lr_at(self, _global_epoch: int, _total_epochs: int) -> float:
         return self.lr
 
 
 class CosineAnnealingLearningRate:
-    """Cosine decay from *initial_lr* to *eta_min* over *T_max* epochs."""
+    """Cosine decay from *initial_lr* to *eta_min* over *t_max* epochs."""
 
-    def __init__(self, T_max: int, eta_min: float = 0.0, initial_lr: float = 0.01):
-        if T_max <= 0:
-            raise ValueError("T_max must be positive")
+    def __init__(self, t_max: int, eta_min: float = 0.0, initial_lr: float = 0.01):
+        if t_max <= 0:
+            raise ValueError("t_max must be positive")
         if eta_min < 0 or initial_lr < 0:
             raise ValueError("learning rates must be non-negative")
-        self.T_max = T_max
+        self.t_max = t_max
         self.eta_min = eta_min
         self.initial_lr = initial_lr
 
-    def lr_at(self, global_epoch: int, total_epochs: int) -> float:
-        epoch = max(0, min(int(global_epoch), self.T_max))
+    def lr_at(self, global_epoch: int, _total_epochs: int) -> float:
+        epoch = max(0, min(int(global_epoch), self.t_max))
         # Match torch.optim.lr_scheduler.CosineAnnealingLR for last_epoch == epoch.
         return self.eta_min + (self.initial_lr - self.eta_min) * (
-            1 + cos(pi * epoch / self.T_max)
+            1 + cos(pi * epoch / self.t_max)
         ) / 2
 
 
@@ -88,7 +88,7 @@ class StepLearningRate:
         self.gamma = gamma
         self.initial_lr = initial_lr
 
-    def lr_at(self, global_epoch: int, total_epochs: int) -> float:
+    def lr_at(self, global_epoch: int, _total_epochs: int) -> float:
         epoch = max(0, int(global_epoch))
         return self.initial_lr * (self.gamma ** (epoch // self.step_size))
 
@@ -102,26 +102,26 @@ class ExponentialLearningRate:
         self.gamma = gamma
         self.initial_lr = initial_lr
 
-    def lr_at(self, global_epoch: int, total_epochs: int) -> float:
+    def lr_at(self, global_epoch: int, _total_epochs: int) -> float:
         epoch = max(0, int(global_epoch))
         return self.initial_lr * (self.gamma ** epoch)
 
 
 class LinearDecayLearningRate:
-    """Linear decay from *initial_lr* to *eta_min* over *T_max* epochs."""
+    """Linear decay from *initial_lr* to *eta_min* over *t_max* epochs."""
 
-    def __init__(self, T_max: int, eta_min: float = 0.0, initial_lr: float = 0.01):
-        if T_max <= 0:
-            raise ValueError("T_max must be positive")
+    def __init__(self, t_max: int, eta_min: float = 0.0, initial_lr: float = 0.01):
+        if t_max <= 0:
+            raise ValueError("t_max must be positive")
         if eta_min < 0 or initial_lr < 0:
             raise ValueError("learning rates must be non-negative")
-        self.T_max = T_max
+        self.t_max = t_max
         self.eta_min = eta_min
         self.initial_lr = initial_lr
 
-    def lr_at(self, global_epoch: int, total_epochs: int) -> float:
-        epoch = max(0, min(int(global_epoch), self.T_max))
-        progress = epoch / self.T_max
+    def lr_at(self, global_epoch: int, _total_epochs: int) -> float:
+        epoch = max(0, min(int(global_epoch), self.t_max))
+        progress = epoch / self.t_max
         return self.initial_lr + (self.eta_min - self.initial_lr) * progress
 
 
@@ -142,7 +142,7 @@ def build_global_learning_rate_schedule(
     name = str(schedule_name).strip().lower()
     if name in ("cosine", "cosineannealing", "cosine_annealing"):
         return CosineAnnealingLearningRate(
-            T_max=total_epochs, eta_min=eta_min, initial_lr=initial_lr
+            t_max=total_epochs, eta_min=eta_min, initial_lr=initial_lr
         )
     if name in ("step", "steplr"):
         return StepLearningRate(
@@ -154,7 +154,7 @@ def build_global_learning_rate_schedule(
         return ExponentialLearningRate(gamma=gamma, initial_lr=initial_lr)
     if name in ("linear", "linear_decay", "lineardecay"):
         return LinearDecayLearningRate(
-            T_max=total_epochs, eta_min=eta_min, initial_lr=initial_lr
+            t_max=total_epochs, eta_min=eta_min, initial_lr=initial_lr
         )
     if name == "constant":
         return ConstantLearningRate(lr=initial_lr)
@@ -222,7 +222,7 @@ class ComposedLearningRateScheduler(LearningRateScheduler):
         if total_epochs <= 0:
             raise ValueError("total_epochs must be positive")
         recovery_alpha = float(recovery._schedule.alpha)
-        if recovery_alpha != 1.0:
+        if not isclose(recovery_alpha, 1.0):
             raise ValueError(
                 "ComposedLearningRateScheduler recovery must use alpha=1.0 "
                 f"(peak multiplier); got alpha={recovery_alpha}"

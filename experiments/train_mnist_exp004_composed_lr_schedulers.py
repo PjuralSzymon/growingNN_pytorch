@@ -126,7 +126,7 @@ def build_learning_rate_scheduler_for_schedule_id(
         # User cascade: decaying peak 1.0→0.1, with low→high recovery after each action.
         return ComposedLearningRateScheduler(
             global_schedule=LinearDecayLearningRate(
-                T_max=total_epochs,
+                t_max=total_epochs,
                 eta_min=CUSTOM_CASCADE_END_LR,
                 initial_lr=CUSTOM_CASCADE_START_LR,
             ),

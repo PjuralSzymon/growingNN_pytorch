@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import sys
+import tempfile
 from collections import defaultdict
 from pathlib import Path
 
@@ -36,6 +37,22 @@ _RUNS_ROOT = SITE.parents[1] / "experiments" / "output" / "train_mnist" / "runs"
 DEFAULT_RUNS = _RUNS_ROOT / "exp004_composed_lr_schedulers"
 DEFAULT_OUTPUT = SITE / "app" / "public" / "assets" / "experiments"
 DEFAULT_SNAPSHOT = SITE / "data" / "experiments" / "experiment-004-composed-lr-schedulers.json"
+_ALLOWED_SNAPSHOT_ROOT = (SITE / "data" / "experiments").resolve()
+_ALLOWED_OUTPUT_ROOT = (SITE / "app" / "public" / "assets" / "experiments").resolve()
+_ALLOWED_TEMP_ROOT = Path(tempfile.gettempdir()).resolve()
+
+
+def _resolve_under_allowed_root(path: Path, allowed_root: Path) -> Path:
+    """Resolve *path* and reject reads/writes outside *allowed_root* or the system temp dir."""
+    if ".." in path.parts:
+        raise ValueError("path must not contain '..'")
+    resolved = path.expanduser().resolve()
+    if resolved.is_relative_to(allowed_root) or resolved.is_relative_to(_ALLOWED_TEMP_ROOT):
+        return resolved
+    raise ValueError(
+        f"path {resolved} is outside allowed roots {allowed_root} and {_ALLOWED_TEMP_ROOT}"
+    )
+
 
 SCHEDULE_IDS = (
     "recovery_only_logistic",
@@ -100,14 +117,29 @@ def load_runs(runs_dir: Path) -> list[dict[str, object]]:
     runs: list[dict[str, object]] = []
     if not runs_dir.exists():
         return runs
-    for main_path in sorted(runs_dir.rglob("board/main.json")):
-        run_dir = main_path.parent.parent
-        parts = run_dir.relative_to(runs_dir).parts
-        metrics_path = main_path.parent / "metrics" / "training.json"
+    if ".." in runs_dir.parts:
+        raise ValueError("path must not contain '..'")
+    resolved_runs = runs_dir.expanduser().resolve()
+    allowed_runs_root = _RUNS_ROOT.resolve()
+    if not (
+        resolved_runs.is_relative_to(allowed_runs_root)
+        or resolved_runs.is_relative_to(_ALLOWED_TEMP_ROOT)
+    ):
+        raise ValueError(
+            f"path {resolved_runs} is outside allowed roots "
+            f"{allowed_runs_root} and {_ALLOWED_TEMP_ROOT}"
+        )
+    for main_path in sorted(resolved_runs.rglob("board/main.json")):
+        main_resolved = main_path.resolve()
+        if not main_resolved.is_relative_to(resolved_runs):
+            continue
+        run_dir = main_resolved.parent.parent
+        parts = run_dir.relative_to(resolved_runs).parts
+        metrics_path = main_resolved.parent / "metrics" / "training.json"
         if not metrics_path.exists() or len(parts) < 2:
             continue
         schedule_id = parts[0]
-        main = json.loads(main_path.read_text(encoding="utf-8"))
+        main = json.loads(main_resolved.read_text(encoding="utf-8"))
         epochs = json.loads(metrics_path.read_text(encoding="utf-8"))["epochs"]
         actions = [
             (item["generation"], item["actionExecuted"])
@@ -136,9 +168,10 @@ def load_runs(runs_dir: Path) -> list[dict[str, object]]:
 
 
 def write_snapshot(runs: list[dict[str, object]], snapshot_path: Path, folder: str) -> None:
-    snapshot_path.parent.mkdir(parents=True, exist_ok=True)
+    resolved = _resolve_under_allowed_root(snapshot_path, _ALLOWED_SNAPSHOT_ROOT)
+    resolved.parent.mkdir(parents=True, exist_ok=True)
     payload = {"experiment": "004", "folder": folder, "runs": runs}
-    snapshot_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    resolved.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
 def load_runs_or_snapshot(runs_dir: Path, snapshot_path: Path) -> list[dict[str, object]]:
@@ -146,9 +179,10 @@ def load_runs_or_snapshot(runs_dir: Path, snapshot_path: Path) -> list[dict[str,
     if runs:
         write_snapshot(runs, snapshot_path, runs_dir.name)
         return runs
-    if not snapshot_path.exists():
+    resolved_snapshot = _resolve_under_allowed_root(snapshot_path, _ALLOWED_SNAPSHOT_ROOT)
+    if not resolved_snapshot.exists():
         return []
-    payload = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    payload = json.loads(resolved_snapshot.read_text(encoding="utf-8"))
     return list(payload.get("runs", []))
 
 
@@ -373,7 +407,11 @@ def _plot_dual_seed_metric(
     return figure
 
 
-def _plot_post_action_train_changes(by_schedule: dict[str, list[float]]) -> plt.Figure:
+def _plot_post_action_train_changes(
+    by_schedule: dict[str, list[float]],
+) -> plt.Figure | None:
+    if not any(by_schedule.get(schedule_id) for schedule_id in SCHEDULE_IDS):
+        return None
     figure, axes = plt.subplots(2, 4, figsize=(12, 5.5), sharey=True)
     axes_flat = list(axes.flat)
     for axis, schedule_id in zip(axes_flat, SCHEDULE_IDS):
@@ -423,22 +461,22 @@ def generate_charts(
     runs = load_runs_or_snapshot(runs_dir, snapshot_path)
     completed = [run for run in runs if run.get("status") == "completed"]
 
-    output_dir.mkdir(parents=True, exist_ok=True)
+    resolved_output = _resolve_under_allowed_root(output_dir, _ALLOWED_OUTPUT_ROOT)
+    resolved_output.mkdir(parents=True, exist_ok=True)
     plt.rcParams.update({"figure.dpi": 120, "font.size": 9})
     written: list[Path] = []
 
-    def save(figure: plt.Figure, name: str) -> Path:
-        path = output_dir / name
+    def save(figure: plt.Figure, name: str) -> None:
+        path = resolved_output / name
         figure.savefig(path)
         plt.close(figure)
         written.append(path)
-        return path
 
     # Explainer strip does not need boards.
     save(_plot_explainer_strip(), "004-scheduler-shape-guide.png")
 
     if not completed:
-        return written
+        return list(written)
 
     note = f"Source: {len(completed)}/{len(runs)} completed Exp 004 runs"
 
@@ -470,7 +508,12 @@ def generate_charts(
             save(val_figure, f"004-val-acc-{schedule_id}-seeds-100-101.png")
 
     train_changes = post_action_train_accuracy_changes(completed)
-    save(_plot_post_action_train_changes(train_changes), "004-post-action-train-acc-change-by-schedule.png")
+    post_action_figure = _plot_post_action_train_changes(train_changes)
+    if post_action_figure is not None:
+        save(
+            post_action_figure,
+            "004-post-action-train-acc-change-by-schedule.png",
+        )
 
     figure, axis = plt.subplots(figsize=(10, 4.5))
     xs = list(range(len(SCHEDULE_IDS)))
@@ -507,8 +550,7 @@ def generate_charts(
     figure.tight_layout()
     save(figure, "004-final-accuracy-by-schedule.png")
 
-    return written
-
+    return list(written)
 
 if __name__ == "__main__":
     paths = generate_charts()

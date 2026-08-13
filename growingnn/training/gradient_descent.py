@@ -41,7 +41,12 @@ def _resolve_optimizer(
     if optimizer is not None:
         return optimizer
     # SGD requires an lr in the constructor; epoch 0 overwrites it before any steps.
-    return torch.optim.SGD(parameters, lr=MIN_LEARNING_RATE, momentum=momentum)
+    return torch.optim.SGD(
+        parameters,
+        lr=MIN_LEARNING_RATE,
+        momentum=momentum,
+        weight_decay=0.0,
+    )
 
 
 def _evaluate(
