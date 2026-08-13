@@ -63,7 +63,7 @@ def test_score_acc_uses_validation_accuracy_by_default():
 
     # Act
     with patch(
-        "growingnn.simulation.score_functions.score_by_learning.gradient_descent",
+        "growingnn.simulation.score_functions.score_by_learning.run_simulation_scoring_gradient_descent",
         return_value=(None, {"val_acc": [0.2, 0.55], "train_acc": [0.9]}),
     ):
         result = score_acc(model, cfg)
@@ -82,7 +82,7 @@ def test_score_acc_uses_training_accuracy_when_configured():
 
     # Act
     with patch(
-        "growingnn.simulation.score_functions.score_by_learning.gradient_descent",
+        "growingnn.simulation.score_functions.score_by_learning.run_simulation_scoring_gradient_descent",
         return_value=(None, {"val_acc": [0.55], "train_acc": [0.2, 0.81]}),
     ):
         result = score_acc(model, cfg)
@@ -102,7 +102,7 @@ def test_score_loss_prefers_lower_validation_loss():
 
     # Act
     with patch(
-        "growingnn.simulation.score_functions.score_by_learning.gradient_descent",
+        "growingnn.simulation.score_functions.score_by_learning.run_simulation_scoring_gradient_descent",
         side_effect=[(None, {"val_loss": [0.1]}), (None, {"val_loss": [0.9]})],
     ):
         low_loss_score = score_loss(model, cfg)
@@ -124,7 +124,7 @@ def test_score_loss_uses_training_loss_when_configured():
 
     # Act
     with patch(
-        "growingnn.simulation.score_functions.score_by_learning.gradient_descent",
+        "growingnn.simulation.score_functions.score_by_learning.run_simulation_scoring_gradient_descent",
         return_value=(None, {"train_loss": [0.25], "val_loss": [9.0]}),
     ):
         result = score_loss(model, cfg)
@@ -144,7 +144,7 @@ def test_score_loss_reward_stays_in_open_interval_zero_one():
 
     # Act
     with patch(
-        "growingnn.simulation.score_functions.score_by_learning.gradient_descent",
+        "growingnn.simulation.score_functions.score_by_learning.run_simulation_scoring_gradient_descent",
         side_effect=[(None, {"val_loss": [0.01]}), (None, {"val_loss": [0.99]})],
     ):
         very_low = score_loss(model, cfg)

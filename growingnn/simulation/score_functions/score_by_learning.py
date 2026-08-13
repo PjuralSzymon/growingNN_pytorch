@@ -8,7 +8,9 @@ import torch.fx as fx
 import torch.nn as nn
 
 from growingnn.core.config import RunningConfig
-from growingnn.training.gradient_descent import gradient_descent
+from growingnn.simulation.score_functions.simulation_training import (
+    run_simulation_scoring_gradient_descent,
+)
 
 
 class AccuracyMetric(str, Enum):
@@ -61,16 +63,7 @@ def score_acc(
 ) -> float:
     metric = _accuracy_metric(running_config)
     acc_key, _ = _history_keys(metric)
-    _, history = gradient_descent(
-        model,
-        running_config.simulation_scheduler.simulation_epochs,
-        running_config.sim_train_loader,
-        running_config.sim_val_loader,
-        running_config.criterion,
-        running_config.lr_scheduler,
-        quiet=True,
-        device=running_config.device,
-    )
+    _, history = run_simulation_scoring_gradient_descent(model, running_config)
     return float(history[acc_key][-1])
 
 
@@ -80,15 +73,6 @@ def score_loss(
 ) -> float:
     metric = _accuracy_metric(running_config)
     _, loss_key = _history_keys(metric)
-    _, history = gradient_descent(
-        model,
-        running_config.simulation_scheduler.simulation_epochs,
-        running_config.sim_train_loader,
-        running_config.sim_val_loader,
-        running_config.criterion,
-        running_config.lr_scheduler,
-        quiet=True,
-        device=running_config.device,
-    )
+    _, history = run_simulation_scoring_gradient_descent(model, running_config)
     loss = float(history[loss_key][-1])
     return min(1.0 / (max(loss, 1e-8) + 1), 1.0)
