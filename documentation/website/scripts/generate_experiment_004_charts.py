@@ -28,10 +28,8 @@ if str(_REPO_ROOT) not in sys.path:
 from experiments.train_mnist_exp004_composed_lr_schedulers import (
     build_learning_rate_scheduler_for_schedule_id,
 )
-from growingnn.training.lr_scheduler import (
-    ComposedLearningRateScheduler,
-    compute_schedule_value_without_advancing,
-)
+from growingnn.training.lr_scheduler_action import compute_schedule_value_without_advancing
+from growingnn.training.lr_scheduler_global import ComposedLearningRateScheduler
 
 SITE = Path(__file__).parents[1]
 _RUNS_ROOT = SITE.parents[1] / "experiments" / "output" / "train_mnist" / "runs"
@@ -182,7 +180,7 @@ def simulate_lr_components(
             scheduler.structure_changed()
 
         if isinstance(scheduler, ComposedLearningRateScheduler):
-            base = float(scheduler.base.lr_at(scheduler.global_epoch, scheduler.total_epochs))
+            base = float(scheduler.global_schedule.lr_at(scheduler.global_epoch, scheduler.total_epochs))
             factor = float(
                 compute_schedule_value_without_advancing(
                     scheduler.recovery._schedule,

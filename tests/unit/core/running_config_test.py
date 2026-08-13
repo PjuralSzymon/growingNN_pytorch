@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from growingnn.core.config import RunningConfig
-from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 
 
 def test_enable_experiment_board_false_clears_board_instance():
@@ -17,7 +17,7 @@ def test_enable_experiment_board_false_clears_board_instance():
     cfg = RunningConfig(
         generations=1,
         epochs=1,
-        lr_scheduler=LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
+        lr_scheduler=ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
         enable_experiment_board=False,
         experiment_board=sentinel,
     )

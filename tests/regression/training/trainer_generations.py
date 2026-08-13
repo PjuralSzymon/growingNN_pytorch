@@ -19,7 +19,7 @@ from growingnn.core.config import RunningConfig
 from growingnn.simulation.score_functions.simulation_score import SimulationScore
 import growingnn.simulation.simulation_algorithms.montecarlo_alg as montecarlo_alg
 from growingnn.simulation.simulation_schedulers import AlwaysSimulationScheduler
-from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 from growingnn.training.trainer import train_generations
 from growingnn.utils.fx import GraphStructureQuery
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     cfg = RunningConfig(
         generations=10,
         epochs=10,
-        lr_scheduler=LearningRateScheduler(ScheduleMode.PROGRESSIVE, alpha=0.01, steepness=0.5),
+        lr_scheduler=ActionLearningRateScheduler(ScheduleMode.PROGRESSIVE, alpha=0.01, steepness=0.5),
         print_every=1,
         simulation_alg=montecarlo_alg,
         simulation_scheduler=AlwaysSimulationScheduler(

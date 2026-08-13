@@ -20,7 +20,7 @@ from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
 from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
 from growingnn.actions.delete_layer import DelLayer
 from growingnn.training.gradient_descent import gradient_descent
-from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import StopperMode, TrainingStopper
 from growingnn.utils.fx import GraphStructureQuery
 from tests.regression.regression_utils import FOLDER_NAME
@@ -51,7 +51,7 @@ def _train(
         train_loader,
         val_loader,
         nn.CrossEntropyLoss(),
-        LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
+        ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
         TrainingStopper(StopperMode.EMPTY),
         quiet=True,
     )

@@ -43,7 +43,7 @@ if str(_REPO_ROOT) not in sys.path:
 from experiments import experiments_common as common
 from experiments import train_mnist
 from growingnn.simulation.simulation_schedulers import SlopeEstimationSimulationScheduler
-from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 
 RUNS_DIR = train_mnist.RUNS_DIR / "exp001_slope_logistic_model_depth"
 EPOCHS_PER_GENERATION = 10
@@ -167,10 +167,8 @@ if __name__ == "__main__":
                     angle_threshold=angle_threshold,
                 ),
             ),
-            patch.object(
-                common,
-                "LearningRateScheduler",
-                side_effect=lambda _mode, alpha: LearningRateScheduler(
+            patch.object(common, "ActionLearningRateScheduler",
+                side_effect=lambda _mode, alpha: ActionLearningRateScheduler(
                     LR_MODE,
                     alpha,
                     warmup_iterations=WARMUP_ITERATIONS,

@@ -14,7 +14,11 @@ from growingnn.simulation.simulation_schedulers import (
     NeverSimulationScheduler,
     SimulationScheduler,
 )
-from growingnn.training.lr_scheduler import LearningRateScheduler, ScheduleMode
+from growingnn.training.lr_scheduler_action import (
+    ActionLearningRateScheduler,
+    LearningRateScheduler,
+    ScheduleMode,
+)
 from growingnn.training.stoppers import StopperMode, TrainingStopper
 
 RESHEPERS_CACHE_MAX_SIZE = 10
@@ -57,7 +61,7 @@ WEIGHT_COUNT_WEIGHT = 1e-6
 MCTS_UCB1_C = 2
 MCTS_ROLLOUT_DEPTH = 2
 MCTS_ROLLOUT_EPOCHS = 1
-MCTS_ROLLOUT_LR = LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.0001)
+MCTS_ROLLOUT_LR = ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.0001)
 #TODO: To be reaserched:
 MCTS_UCB1_USE_SQRT = False  # False: legacy sum + log(N)/n; True: mean + sqrt(log(N)/n)
 MCTS_PROPAGATE_ROLLOUT_VALUE = False  # False: return node.value; True: return latest rollout only
@@ -83,7 +87,9 @@ class RunningConfig:
     def __init__(self, 
         generations: int,
         epochs: int,
-        lr_scheduler: LearningRateScheduler = LearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
+        lr_scheduler: LearningRateScheduler = ActionLearningRateScheduler(
+            ScheduleMode.CONSTANT, alpha=0.01
+        ),
         stopper: TrainingStopper = TrainingStopper(StopperMode.EMPTY),
         #TODO: simualtion algs should also have parent type
         simulation_alg: Any | None = None,
