@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 @Component({
   selector: 'app-login',
   template: `
-    <main class="login">
+    <main class="page login">
       <h1>Regression CI</h1>
       <p>Enter the dashboard password.</p>
       <label>

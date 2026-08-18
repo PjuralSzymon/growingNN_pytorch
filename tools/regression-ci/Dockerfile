@@ -31,7 +31,6 @@ RUN python -m pip install --upgrade pip \
     && pip install -r /tmp/regression-ci-requirements.txt
 
 COPY tools/regression-ci/worker /app/worker
-COPY tools/regression-ci/jobs.json /app/jobs.json
 COPY tools/regression-ci/baselines.json /app/baselines.json
 COPY --from=web /web/dist /app/web/dist
 

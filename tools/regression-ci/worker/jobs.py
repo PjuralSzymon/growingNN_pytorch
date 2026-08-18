@@ -1,18 +1,13 @@
-"""Load job map and baselines from JSON next to the worker package."""
+"""Discover regression CI scripts in the checked-out repo."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
+CI_SCRIPTS_DIR = Path("tests") / "regression" / "ci"
 ROOT = Path(__file__).resolve().parents[1]
-JOBS_PATH = ROOT / "jobs.json"
 BASELINES_PATH = ROOT / "baselines.json"
-
-
-def load_jobs(path: Path = JOBS_PATH) -> dict[str, dict[str, str]]:
-    """Return job name -> {script, dataset}."""
-    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def load_baselines(path: Path = BASELINES_PATH) -> dict[str, dict[str, float]]:
@@ -20,9 +15,33 @@ def load_baselines(path: Path = BASELINES_PATH) -> dict[str, dict[str, float]]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def script_path_for_job(job: str, jobs: dict[str, dict[str, str]] | None = None) -> str:
-    """Return the checkout-relative script path for a registered job name."""
-    registered = jobs if jobs is not None else load_jobs()
-    if job not in registered:
-        raise KeyError(f"unknown job {job!r}")
-    return registered[job]["script"]
+def discover_ci_scripts(repo_dir: Path) -> list[tuple[str, str]]:
+    """
+    Return (job_name, checkout-relative path) for each script in tests/regression/ci.
+
+    Skips underscore files such as __init__.py. Sorted by name so runs are stable.
+    """
+    folder = repo_dir / CI_SCRIPTS_DIR
+    if not folder.is_dir():
+        return []
+    found: list[tuple[str, str]] = []
+    for path in sorted(folder.glob("*.py")):
+        if path.name.startswith("_"):
+            continue
+        found.append((path.stem, path.relative_to(repo_dir).as_posix()))
+    return found
+
+    """
+    Return (job_name, checkout-relative path) for each script in tests/regression/ci.
+
+    Skips underscore files such as __init__.py. Sorted by name so runs are stable.
+    """
+    folder = repo_dir / CI_SCRIPTS_DIR
+    if not folder.is_dir():
+        return []
+    found: list[tuple[str, str]] = []
+    for path in sorted(folder.glob("*.py")):
+        if path.name.startswith("_"):
+            continue
+        found.append((path.stem, path.relative_to(repo_dir).as_posix()))
+    return found

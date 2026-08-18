@@ -1,0 +1,220 @@
+:root {
+  --bg: #f6f8fb;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: #e5e7eb;
+  --accent: #2563eb;
+  --accent-soft: #eff6ff;
+  --green: #16a34a;
+  --yellow: #eab308;
+  --gray: #9ca3af;
+  --shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.hidden { display: none !important; }
+
+.helper-text {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.load-status {
+  margin-top: 12px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.load-status.warn { color: #b45309; }
+
+/* Board shell (training + simulation) */
+.board-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 16px;
+  padding: 12px;
+  padding-bottom: 72px;
+}
+
+.board-shell.has-footer { padding-bottom: 88px; }
+
+.sidebar-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  height: fit-content;
+  position: sticky;
+  top: 12px;
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+}
+
+.sidebar-card h2 {
+  margin: 0 0 16px;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.sidebar-section { margin-bottom: 20px; }
+
+.sidebar-section h3 {
+  margin: 0 0 10px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.sidebar-card dl { margin: 0; }
+
+.sidebar-card dt {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-top: 10px;
+}
+
+.sidebar-card dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+  font-size: 0.92rem;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: var(--green);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.status-pill.running { background: #ecfdf5; color: var(--green); }
+.status-pill.completed { background: #f1f5f9; color: var(--muted); }
+
+.nav-link-btn {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.nav-link-btn:hover { background: #dbeafe; }
+
+.board-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.content-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+}
+
+.content-card h2 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+
+.pdf-meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+  word-break: break-all;
+}
+
+.pdf-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 0.88rem;
+}
+
+.pdf-toolbar button {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  min-width: 36px;
+}
+
+.pdf-toolbar button:hover { background: var(--accent-soft); }
+
+.pdf-viewport {
+  height: 420px;
+  overflow: scroll;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.pdf-viewport canvas {
+  display: block;
+  margin: 0 auto 16px;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 0.88rem;
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 8px 0;
+}
+
+.link-btn:hover { text-decoration: underline; }
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-active { background: var(--green); }
+.status-recent { background: var(--yellow); }
+.status-inactive { background: var(--gray); }
+
+@media (max-width: 1100px) {
+  .board-shell { grid-template-columns: 1fr; }
+  .sidebar-card { position: static; max-height: none; }
+}
