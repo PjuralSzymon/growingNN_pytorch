@@ -1,0 +1,6 @@
+{
+  "mnist": {
+    "mean_val_acc": 0.85,
+    "max_params": 20000
+  }
+}

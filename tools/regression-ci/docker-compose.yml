@@ -1,0 +1,23 @@
+services:
+  regression-ci:
+    image: growingnn-regression-ci
+    build:
+      context: ../..
+      dockerfile: tools/regression-ci/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    volumes:
+      - runs:/data/runs
+      - mnist-cache:/data/mnist
+    environment:
+      RUNS_DIR: /data/runs
+      WORKSPACES_DIR: /workspaces
+      MNIST_CACHE_DIR: /data/mnist
+      WEB_DIST: /app/web/dist/browser
+
+volumes:
+  runs:
+  mnist-cache:

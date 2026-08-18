@@ -1,0 +1,6 @@
+{
+  "mnist": {
+    "script": "experiments/regression_ci/mnist.py",
+    "dataset": "mnist"
+  }
+}
