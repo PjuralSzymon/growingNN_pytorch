@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
-_TRAINING_PAGE = _REPO_ROOT / "growingnn_board" / "static" / "pages" / "training"
+_TRAINING_PAGE = _REPO_ROOT / "tools" / "growingnn_board" / "static" / "pages" / "training"
 
 
 def test_training_page_contains_six_charts_in_comparison_order():
