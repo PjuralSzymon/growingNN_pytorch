@@ -1,1 +1,0 @@
-{"dataset_id": "mnist", "dataset": "mnist", "seed": 0, "metric_name": "val_acc", "metric_value": 0.0, "param_count": 0, "extra": {"trainer": "experiments.train_mnist"}}

@@ -3,8 +3,12 @@
 One dataset x one seed. Dataset and seed come from the environment so this
 file is not tied to MNIST or any other single algorithm.
 
-MNIST reuses the known Experiment 004 composed_step settings. This is a gate,
-not an experiment.
+MNIST uses the best published GrowingNN package from experiments 001-004:
+- Exp 001: slope gate 3°, logistic recovery
+- Exp 003 after_fix: val_acc grading, big starter
+- Exp 004: composed_exponential LR (chosen default over composed_step)
+
+This is a gate, not an experiment.
 """
 
 from __future__ import annotations
@@ -18,6 +22,8 @@ import sys
 from functools import partial
 from pathlib import Path
 from unittest.mock import patch
+
+os.environ.setdefault("MPLBACKEND", "Agg")
 
 ROOT = Path(os.environ.get("TRAIN_CI_WORKDIR") or Path(__file__).resolve().parents[1])
 if str(ROOT) not in sys.path:
@@ -48,7 +54,7 @@ TRAINERS = {
 LAUNCH = ""
 HAS_EXPERIMENTS_COMMON = True
 RESULT_PREFIX = "REGRESSION_CI_RESULT "
-SCHEDULE_ID = "composed_step"
+SCHEDULE_ID = "composed_exponential"
 
 
 def _ci_env() -> tuple[str, int, Path]:
@@ -119,7 +125,7 @@ def _metrics_from_history(history_path: Path) -> tuple[float, int] | None:
 
 
 def mnist_hyperparameters() -> dict[str, object]:
-    """Return the known composed_step cell used by the MNIST CI gate."""
+    """Return the Exp 004 composed_exponential cell used by the MNIST CI gate."""
     values = next(itertools.product(*train_mnist.METAPARAM_LISTS))
     return {
         **dict(zip(train_mnist.METAPARAM_KEYS, values)),
@@ -135,7 +141,7 @@ def mnist_hyperparameters() -> dict[str, object]:
 
 
 def run_mnist(*, seed: int, root: Path) -> tuple[float, int]:
-    """Train one MNIST seed with Experiment 004 composed_step settings."""
+    """Train one MNIST seed with the Experiment 004 composed_exponential package."""
     configure_deterministic_seeding()
     import torch
 

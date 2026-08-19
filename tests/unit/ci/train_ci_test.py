@@ -36,23 +36,25 @@ def _write_fake_history(definition, hps) -> tuple[int, int]:
     return 1, 0
 
 
-def test_mnist_hyperparameters_use_exp004_composed_step_cell():
+def test_mnist_hyperparameters_use_exp004_composed_exponential_cell():
     """
-    mnist_hyperparameters should reuse Experiment 004 composed_step settings.
+    mnist_hyperparameters should reuse Experiment 004 composed_exponential settings.
     """
     # Arrange
     train_ci = _load_train_ci()
 
     # Act
     hp = train_ci.mnist_hyperparameters()
+    scheduler = hp["lr_scheduler_factory"](hp)
 
     # Assert
+    assert train_ci.SCHEDULE_ID == "composed_exponential"
     assert hp["epochs"] == train_ci.EPOCHS_PER_GENERATION
     assert hp["generations"] == train_ci.GENERATIONS
     assert hp["simulation_time"] == train_ci.SIMULATION_TIME_SEC
     assert hp["lr_alpha"] == train_ci.INITIAL_LR
     assert hp["score_accuracy_metric"] == train_ci.SCORE_ACCURACY_METRIC
-    assert callable(hp["lr_scheduler_factory"])
+    assert type(scheduler).__name__ == "ComposedLearningRateScheduler"
 
 
 def test_run_mnist_trains_one_seed_and_reads_history(tmp_path, monkeypatch):
@@ -111,7 +113,7 @@ def test_run_mnist_patches_always_scheduler_with_slope_gate(tmp_path, monkeypatc
     assert scheduler.keywords["angle_threshold"] == train_ci.SLOPE_ANGLE_THRESHOLD
 
 
-def test_run_one_dispatches_mnist_to_composed_step_runner(tmp_path, monkeypatch):
+def test_run_one_dispatches_mnist_to_composed_exponential_runner(tmp_path, monkeypatch):
     """
     run_one should send the mnist dataset through run_mnist.
     """
@@ -174,3 +176,17 @@ def test_write_metrics_prints_hostinger_result_line(tmp_path, capsys):
     assert line.startswith(train_ci.RESULT_PREFIX)
     printed = json.loads(line[len(train_ci.RESULT_PREFIX) :])
     assert printed == {"dataset": "mnist", "seeds": [0], "val_acc": [0.9], "param_count": [12]}
+
+
+def test_requirements_files_declare_matplotlib_and_torchvision():
+    """
+    Train-CI install files should list matplotlib and torchvision.
+    """
+    # Arrange
+    spelled = (_REPO_ROOT / "requirements.txt").read_text(encoding="utf-8")
+    typo = (_REPO_ROOT / "requirments.txt").read_text(encoding="utf-8")
+
+    # Act / Assert
+    for text in (spelled, typo):
+        assert "matplotlib" in text
+        assert "torchvision" in text
