@@ -12,7 +12,7 @@ Fixed package from Experiment 004 conclusions:
 - five matched seeds per simulation algorithm (same idea as Exp 004's matched seeds per LR schedule)
 
 Grid factors:
-1. simulation algorithm (MCTS, greedy, random, and the new candidate algs)
+1. simulation algorithm (keep set after Exp 005 conclusions)
 2. starter architecture (big and medium, same Exp 003 pair)
 
 Each algorithm × starter runs on SEEDS = (100, 101, 102, 103, 104).
@@ -22,23 +22,21 @@ The big starter may need only one strong action to reach a high plateau, which c
 greedy look artificially strong. Medium (1×Conv + 2×Linear) should need more growth steps,
 so lookahead and multi-step search have a clearer job.
 
-Simulation algorithm IDs (also the first folder under RUNS_DIR):
+Keep-set simulation algorithm IDs (also the first folder under RUNS_DIR):
 
 | ID | Module |
 | --- | --- |
 | montecarlo | montecarlo_alg |
 | greedy | greedy_alg |
 | random | random_alg |
-| sequential_halving | sequential_halving_alg |
-| ugape | ugape_alg |
-| successive_rejects | successive_rejects_alg |
 | beam_search | beam_search_alg |
 | best_first | best_first_alg |
-| shot | shot_alg |
 | sequential_halving_beam | sequential_halving_beam_alg |
 | ugape_deepen | ugape_deepen_alg |
-| progressive_widening | progressive_widening_alg |
-| hierarchical_search | hierarchical_search_alg |
+
+Dropped after Exp 005 (modules removed; historical run folders and the website report still
+document them): sequential_halving, ugape, successive_rejects, shot, progressive_widening,
+hierarchical_search.
 
 Example run path:
 experiments/output/train_mnist/runs/exp005_simulation_algorithms/<alg_id>/<model_name>/<hp_folder>/seed_<seed>/
@@ -83,15 +81,9 @@ from growingnn.simulation.simulation_schedulers import SlopeEstimationSimulation
 import growingnn.simulation.simulation_algorithms.beam_search_alg as beam_search_alg
 import growingnn.simulation.simulation_algorithms.best_first_alg as best_first_alg
 import growingnn.simulation.simulation_algorithms.greedy_alg as greedy_alg
-import growingnn.simulation.simulation_algorithms.hierarchical_search_alg as hierarchical_search_alg
 import growingnn.simulation.simulation_algorithms.montecarlo_alg as montecarlo_alg
-import growingnn.simulation.simulation_algorithms.progressive_widening_alg as progressive_widening_alg
 import growingnn.simulation.simulation_algorithms.random_alg as random_alg
-import growingnn.simulation.simulation_algorithms.sequential_halving_alg as sequential_halving_alg
 import growingnn.simulation.simulation_algorithms.sequential_halving_beam_alg as sequential_halving_beam_alg
-import growingnn.simulation.simulation_algorithms.shot_alg as shot_alg
-import growingnn.simulation.simulation_algorithms.successive_rejects_alg as successive_rejects_alg
-import growingnn.simulation.simulation_algorithms.ugape_alg as ugape_alg
 import growingnn.simulation.simulation_algorithms.ugape_deepen_alg as ugape_deepen_alg
 
 RUNS_DIR = train_mnist.RUNS_DIR / "exp005_simulation_algorithms"
@@ -106,16 +98,10 @@ ALG_VARIANTS: tuple[tuple[str, object], ...] = (
     ("montecarlo", montecarlo_alg),
     ("greedy", greedy_alg),
     ("random", random_alg),
-    ("sequential_halving", sequential_halving_alg),
-    ("ugape", ugape_alg),
-    ("successive_rejects", successive_rejects_alg),
     ("beam_search", beam_search_alg),
     ("best_first", best_first_alg),
-    ("shot", shot_alg),
     ("sequential_halving_beam", sequential_halving_beam_alg),
     ("ugape_deepen", ugape_deepen_alg),
-    ("progressive_widening", progressive_widening_alg),
-    ("hierarchical_search", hierarchical_search_alg),
 )
 
 

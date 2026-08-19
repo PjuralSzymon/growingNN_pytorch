@@ -72,7 +72,7 @@ Build a common harness that swaps only `simulation_alg` and shared search knobs 
 - fraction of harmful actions (accuracy drop beyond a threshold)
 - wall time and number of scored states
 
-Start with the top ten on [[Candidate Simulation Algorithms]]. Wave 1: Sequential Halving, Beam Search, and Sequential Halving then Beam. Wave 2: UGapE and SHOT, then Progressive Widening if branching is too large. Keep current MCTS and greedy as anchors. Pick the best two for a larger MNIST or CIFAR grid.
+Experiment 005 finished the first MNIST grid. Keep set on [[Candidate Simulation Algorithms]]: `sequential_halving_beam`, `ugape_deepen`, `best_first`, `beam_search`, plus MCTS, greedy, and random baselines. Use that keep set on harder tasks next.
 
 ## Comparison with the original growingNN paper
 
@@ -80,4 +80,4 @@ The paper used Monte Carlo style simulation to choose architecture moves under l
 
 ## Known limitations of this plan
 
-This page does not yet name a winner. Algorithm fit is reasoned from search theory and from current code behavior, not from a finished head-to-head in this repo. Accept or revert after a bad live action is a separate safety layer and is not a substitute for better search.
+Experiment 005 named a keep set on MNIST with the Exp 004 LR package. Harder tasks may reorder winners. Accept or revert after a bad live action is a separate safety layer and is not a substitute for better search.

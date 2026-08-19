@@ -9,9 +9,9 @@ Code lives under `growingnn/simulation/`. `train_generations` in `growingnn/trai
 - [[MCTS]] — default Monte Carlo tree search (`montecarlo_alg.py`)
 - [[Simulation Search Improvement Plan]] — why MCTS is not enough and what rules the next search must follow
 - [[Simulation Search Common Steps]] — shared words and expand / score / depth steps for every candidate
-- [[Candidate Simulation Algorithms]] — top ten methods grouped by root ranking, lookahead, and hybrids
+- [[Candidate Simulation Algorithms]] — keep-set methods after Experiment 005 (lookahead and hybrids)
 
-Alternatives on `RunningConfig.simulation_alg` / Exp 005 `hp["simulation_alg"]`: `greedy_alg.py`, `random_alg.py`, and the ten candidate modules listed on [[Candidate Simulation Algorithms]].
+Alternatives on `RunningConfig.simulation_alg` / Exp 005 `hp["simulation_alg"]`: `greedy_alg.py`, `random_alg.py`, and the keep-set modules listed on [[Candidate Simulation Algorithms]].
 
 ### Grading
 

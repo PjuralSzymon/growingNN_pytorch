@@ -1,4 +1,4 @@
-"""Unit tests for candidate simulation algorithms (mocked scoring)."""
+"""Unit tests for keep-set simulation algorithms (mocked scoring)."""
 
 from __future__ import annotations
 
@@ -20,26 +20,14 @@ from growingnn.core.config import RunningConfig
 from growingnn.core.traced_model import TracedModel
 import growingnn.simulation.simulation_algorithms.beam_search_alg as beam_search_alg
 import growingnn.simulation.simulation_algorithms.best_first_alg as best_first_alg
-import growingnn.simulation.simulation_algorithms.hierarchical_search_alg as hierarchical_search_alg
-import growingnn.simulation.simulation_algorithms.progressive_widening_alg as progressive_widening_alg
-import growingnn.simulation.simulation_algorithms.sequential_halving_alg as sequential_halving_alg
 import growingnn.simulation.simulation_algorithms.sequential_halving_beam_alg as sequential_halving_beam_alg
-import growingnn.simulation.simulation_algorithms.shot_alg as shot_alg
-import growingnn.simulation.simulation_algorithms.successive_rejects_alg as successive_rejects_alg
-import growingnn.simulation.simulation_algorithms.ugape_alg as ugape_alg
 import growingnn.simulation.simulation_algorithms.ugape_deepen_alg as ugape_deepen_alg
 
-CANDIDATE_ALGS = (
-    sequential_halving_alg,
-    ugape_alg,
-    successive_rejects_alg,
+KEEP_SET_ALGS = (
     beam_search_alg,
     best_first_alg,
-    shot_alg,
     sequential_halving_beam_alg,
     ugape_deepen_alg,
-    progressive_widening_alg,
-    hierarchical_search_alg,
 )
 
 
@@ -79,10 +67,10 @@ def _running_config(*, simulation_time: float = 0.75) -> RunningConfig:
     return cfg
 
 
-@pytest.mark.parametrize("alg", CANDIDATE_ALGS, ids=[m.__name__.split(".")[-1] for m in CANDIDATE_ALGS])
-def test_candidate_algorithm_returns_executable_action(alg):
+@pytest.mark.parametrize("alg", KEEP_SET_ALGS, ids=[m.__name__.split(".")[-1] for m in KEEP_SET_ALGS])
+def test_keep_set_algorithm_returns_executable_action(alg):
     """
-    Each candidate simulation algorithm should return an executable root action under a short budget.
+    Each keep-set simulation algorithm should return an executable root action under a short budget.
     """
     # Arrange
     gm = fx.symbolic_trace(_TinyNet())
@@ -99,9 +87,9 @@ def test_candidate_algorithm_returns_executable_action(alg):
     action.execute(traced)
 
 
-def test_exp005_imports_all_algorithm_variants():
+def test_exp005_imports_keep_set_algorithm_variants():
     """
-    Exp 005 should list montecarlo, greedy, random, and all ten candidate algorithms.
+    Exp 005 should list montecarlo, greedy, random, and the four keep-set candidate algorithms.
     """
     # Arrange / Act
     from experiments.train_mnist_exp005_simulation_algorithms import ALG_VARIANTS
@@ -112,10 +100,11 @@ def test_exp005_imports_all_algorithm_variants():
     assert "montecarlo" in ids
     assert "greedy" in ids
     assert "random" in ids
-    assert "sequential_halving" in ids
-    assert "shot" in ids
-    assert "hierarchical_search" in ids
-    assert len(ALG_VARIANTS) == 13
+    assert "beam_search" in ids
+    assert "best_first" in ids
+    assert "sequential_halving_beam" in ids
+    assert "ugape_deepen" in ids
+    assert len(ALG_VARIANTS) == 7
 
 
 def test_exp005_includes_big_and_medium_starters():
@@ -134,7 +123,7 @@ def test_exp005_includes_big_and_medium_starters():
 
 def test_exp005_simulation_algorithm_ids_are_unique_and_stable():
     """
-    Each Exp 005 simulation run family should have a unique stable simulation_alg_id.
+    Each Exp 005 keep-set simulation run family should have a unique stable simulation_alg_id.
     """
     # Arrange
     from experiments.train_mnist_exp005_simulation_algorithms import ALG_VARIANTS
@@ -148,14 +137,8 @@ def test_exp005_simulation_algorithm_ids_are_unique_and_stable():
         "montecarlo",
         "greedy",
         "random",
-        "sequential_halving",
-        "ugape",
-        "successive_rejects",
         "beam_search",
         "best_first",
-        "shot",
         "sequential_halving_beam",
         "ugape_deepen",
-        "progressive_widening",
-        "hierarchical_search",
     ]
