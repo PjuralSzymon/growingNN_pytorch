@@ -61,10 +61,11 @@ def test_extract_graph_raises_original_error_when_huggingface_unavailable(monkey
     import growingnn.utils.fx.graph_extraction as ge
 
     monkeypatch.setattr(ge, "_huggingface_trace", lambda *args, **kwargs: None)
+    model = Broken()
 
     # Act / Assert
-    with pytest.raises(Exception):
-        extract_graph(Broken())
+    with pytest.raises(fx.proxy.TraceError, match="control flow"):
+        extract_graph(model)
 
 
 def test_extract_graph_uses_huggingface_when_input_names_given(monkeypatch):
