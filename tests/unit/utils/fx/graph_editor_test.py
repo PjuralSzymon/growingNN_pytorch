@@ -14,7 +14,12 @@ if str(_REPO_ROOT) not in sys.path:
 
 from growingnn.actions.utils.layer_Factory import Layer_Type, LinearFactory
 from growingnn.utils.fx import ModelStructureEditor, ModuleResolver
+from growingnn.utils.fx.graph_editor import (
+    bypass_valid_for_all_users,
+    user_requires_exact_output_shape,
+)
 from growingnn.utils.fx.sum_nodes import nary_add
+from tests.conv1d_leaf_tracer import trace_conv1d_leaves
 from tests.model_factory import ModelFactory
 
 
@@ -267,6 +272,169 @@ def test_add_new_seq_layer_raises_when_src_equals_dst():
         ModelStructureEditor.add_new_seq_layer(
             gm, "l1", "l1", nn.Linear(4, 4), name="seq_bad",
         )
+
+
+def _call_module_node(gm: fx.GraphModule, layer_id: str) -> fx.Node:
+    return next(n for n in gm.graph.nodes if n.op == "call_module" and n.target == layer_id)
+
+
+def test_user_requires_exact_output_shape_false_for_relu():
+    """
+    user_requires_exact_output_shape should be False for a relu call_function user.
+    """
+
+    # Arrange
+    class ReluChain(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.l1 = nn.Linear(4, 8)
+            self.l2 = nn.Linear(8, 8)
+            self.l3 = nn.Linear(8, 2)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.l3(torch.relu(self.l2(self.l1(x))))
+
+    gm = fx.symbolic_trace(ReluChain())
+    l2 = _call_module_node(gm, "l2")
+    relu_user = next(iter(l2.users))
+
+    # Act
+    result = user_requires_exact_output_shape(relu_user)
+
+    # Assert
+    assert result is False
+
+
+def test_user_requires_exact_output_shape_true_for_getitem_slice():
+    """
+    user_requires_exact_output_shape should be True for a getitem slice after packed projection.
+    """
+
+    # Arrange
+    class Conv1D(nn.Module):
+        def __init__(self, nx: int, nf: int):
+            super().__init__()
+            self.weight = nn.Parameter(torch.ones(nx, nf))
+            self.bias = nn.Parameter(torch.zeros(nf))
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return x @ self.weight + self.bias
+
+    class SplitAfterAttn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.l1 = nn.Linear(2, 2)
+            self.c_attn = Conv1D(2, 6)
+            self.c_proj = Conv1D(2, 2)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.c_proj(self.c_attn(self.l1(x))[..., :2])
+
+    gm = trace_conv1d_leaves(SplitAfterAttn())
+    c_attn = _call_module_node(gm, "c_attn")
+    slice_user = next(iter(c_attn.users))
+
+    # Act
+    result = user_requires_exact_output_shape(slice_user)
+
+    # Assert
+    assert result is True
+
+
+def test_bypass_valid_for_all_users_true_when_relu_and_shapes_differ():
+    """
+    bypass_valid_for_all_users should ignore relu and stay True when replacement width differs.
+    """
+
+    # Arrange
+    class ReluChain(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.l1 = nn.Linear(4, 8)
+            self.l2 = nn.Linear(8, 8)
+            self.l3 = nn.Linear(8, 2)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.l3(torch.relu(self.l2(self.l1(x))))
+
+    gm = fx.symbolic_trace(ReluChain())
+    l2 = _call_module_node(gm, "l2")
+
+    # Act
+    result = bypass_valid_for_all_users(l2, (1, 4), (1, 8))
+
+    # Assert
+    assert result is True
+
+
+def test_bypass_valid_for_all_users_false_when_slice_needs_wider_output():
+    """
+    bypass_valid_for_all_users should refuse a slice user when replacement width is narrower.
+    """
+
+    # Arrange
+    class Conv1D(nn.Module):
+        def __init__(self, nx: int, nf: int):
+            super().__init__()
+            self.weight = nn.Parameter(torch.ones(nx, nf))
+            self.bias = nn.Parameter(torch.zeros(nf))
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return x @ self.weight + self.bias
+
+    class SplitAfterAttn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.l1 = nn.Linear(2, 2)
+            self.c_attn = Conv1D(2, 6)
+            self.c_proj = Conv1D(2, 2)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.c_proj(self.c_attn(self.l1(x))[..., :2])
+
+    gm = trace_conv1d_leaves(SplitAfterAttn())
+    c_attn = _call_module_node(gm, "c_attn")
+
+    # Act
+    result = bypass_valid_for_all_users(c_attn, (1, 8, 2), (1, 8, 6))
+
+    # Assert
+    assert result is False
+
+
+def test_bypass_valid_for_all_users_true_when_slice_shapes_match():
+    """
+    bypass_valid_for_all_users should allow a slice user when replacement equals layer output.
+    """
+
+    # Arrange
+    class Conv1D(nn.Module):
+        def __init__(self, nx: int, nf: int):
+            super().__init__()
+            self.weight = nn.Parameter(torch.ones(nx, nf))
+            self.bias = nn.Parameter(torch.zeros(nf))
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return x @ self.weight + self.bias
+
+    class SplitAfterAttn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.l1 = nn.Linear(2, 2)
+            self.c_attn = Conv1D(2, 6)
+            self.c_proj = Conv1D(2, 2)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.c_proj(self.c_attn(self.l1(x))[..., :2])
+
+    gm = trace_conv1d_leaves(SplitAfterAttn())
+    c_attn = _call_module_node(gm, "c_attn")
+
+    # Act
+    result = bypass_valid_for_all_users(c_attn, (1, 8, 6), (1, 8, 6))
+
+    # Assert
+    assert result is True
 
 
 if __name__ == "__main__":

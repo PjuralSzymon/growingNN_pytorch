@@ -25,8 +25,12 @@ UNIT_DIR = TESTS / "unit"
 REGRESSION_DIR = TESTS / "regression"
 INTEGRATION_DIR = TESTS / "integration"
 
-# Not standalone harnesses (import-only helpers).
-REGRESSION_SKIP = frozenset({"regression_utils.py"})
+# Helpers and long training smokes (run those scripts directly).
+REGRESSION_SKIP = frozenset({
+    "regression_utils.py",
+    "trainer_generations.py",
+    "transformer_generations.py",
+})
 
 
 def _agg_env() -> dict[str, str]:
@@ -104,14 +108,17 @@ def discover_regression_scripts() -> list[Path]:
 
 def run_regression_script(path: Path) -> tuple[int, str]:
     cmd = [sys.executable, str(path), "--save-output", "false"]
-    proc = subprocess.run(
-        cmd,
-        cwd=REPO_ROOT,
-        env=_agg_env(),
-        capture_output=True,
-        text=True,
-        timeout=3600,
-    )
+    try:
+        proc = subprocess.run(
+            cmd,
+            cwd=REPO_ROOT,
+            env=_agg_env(),
+            capture_output=True,
+            text=True,
+            timeout=3600,
+        )
+    except subprocess.TimeoutExpired as err:
+        return 124, f"timed out after 3600s: {path.name}\n{(err.stderr or '')[-2000:]}"
     msg = ""
     if proc.stdout:
         msg += proc.stdout[-4000:]

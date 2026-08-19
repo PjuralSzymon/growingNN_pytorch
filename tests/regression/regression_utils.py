@@ -9,6 +9,61 @@ from growingnn.core.logger import logger
 
 FOLDER_NAME = "testResults/regression"
 
+ACTION_TYPE_COLUMNS = (
+    "AddResLinearLayer",
+    "AddResConvLayer",
+    "AddSeqLinearLayer",
+    "AddSeqConvLayer",
+    "AddSeqDropoutLayer",
+    "AddNeurons",
+    "DelLayer",
+    "DelNeurons",
+)
+
+
+def action_count_table_lines(
+    counts: dict[str, int],
+    *,
+    title: str = "action counts",
+    include_known_zeros: bool = True,
+) -> list[str]:
+    """ASCII table of action type counts, optionally including known types with zero."""
+    merged = dict(counts)
+    if include_known_zeros:
+        merged = {name: counts.get(name, 0) for name in ACTION_TYPE_COLUMNS}
+        for name, n in counts.items():
+            merged[name] = n
+        names = [n for n in ACTION_TYPE_COLUMNS if n in merged] + [
+            n for n in sorted(merged) if n not in ACTION_TYPE_COLUMNS
+        ]
+    else:
+        names = sorted(merged)
+    col = max([len("action"), *(len(n) for n in names)], default=6)
+    rows = [
+        title,
+        f"{'action':<{col}} | count",
+        f"{'-' * col}-+------",
+    ]
+    for name in names:
+        rows.append(f"{name:<{col}} | {merged[name]}")
+    rows.append(f"{'total':<{col}} | {sum(merged.values())}")
+    return rows
+
+
+def log_action_count_table(
+    counts: dict[str, int],
+    *,
+    title: str = "action counts",
+    include_known_zeros: bool = True,
+) -> list[str]:
+    """Log one line per table row and return the same rows for a summary file."""
+    rows = action_count_table_lines(
+        counts, title=title, include_known_zeros=include_known_zeros
+    )
+    for row in rows:
+        logger.info("%s", row)
+    return rows
+
 
 def regression_cifar_dir() -> str:
     """Prefer cached CIFAR under testResults, else experiments download."""
