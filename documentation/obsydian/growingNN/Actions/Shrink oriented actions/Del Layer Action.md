@@ -2,7 +2,7 @@
 
 This page is about `growingnn/actions/delete_layer.py` and the class `DelLayer`.
 
-It removes one hidden `call_module` from a traced model. Generation and execution use [[Torch.fx]] (`GraphStructureQuery`, `LayerShapeAnalyser`, `ModelStructureEditor.delete_layer`). Merge-branch deletes use `sum_nodes.py` (`is_merge_branch_layer`, `remove_layer_from_sums`). Eligibility uses `compute_bypass_matching` and `branch_only_bypass_compatible` in `graph_editor.py`.
+It removes one hidden `call_module` from a traced model. Generation and execution use [[Torch.fx]] (`GraphStructureQuery`, `LayerShapeAnalyser`, `ModelStructureEditor.delete_layer`). Merge-branch deletes use `sum_nodes.py` (`is_merge_branch_layer`, `remove_layer_from_sums`). Eligibility uses `bypass_valid_for_all_users`, `compute_bypass_matching`, and `branch_only_bypass_compatible` in [[Graph editor]]. Packed Transformer ops come from [[Config]] (`TRANSFORMER_PACKED_PROJECTION_WIDTH_SENSITIVE_METHODS`, `TRANSFORMER_PACKED_PROJECTION_WIDTH_SENSITIVE_FUNCTIONS`).
 
 ---
 
@@ -14,8 +14,9 @@ For each hidden `layer_id`, `can_bypass_delete_layer` must return `True`. Otherw
 
 1. if `is_merge_branch_layer` is true and the layer has no FX inputs then skip (residual side branch only feeds sums but has no upstream tensor to keep)
 2. if `GraphStructureQuery.get_input_layers` is empty then skip (no editable predecessor on the trunk to bypass into)
-3. if `get_output_layers` is empty and `branch_only_bypass_compatible` is false then skip (dead-end layer: not exactly one FX input, feeds a sum node, feeds a non-module op, or input activation shape ≠ successor input shape)
-4. if `compute_bypass_matching` returns `None` then skip (some successor has no predecessor whose probed output shape equals that successor's probed input shape)
+3. if `bypass_valid_for_all_users` is false for any predecessor then skip (a split or slice after GPT `c_attn` needs the packed output width, not the next Linear input size)
+4. if `get_output_layers` is empty and `branch_only_bypass_compatible` is false then skip (dead-end layer: not exactly one FX input, feeds a sum node, feeds a non-module op, or input activation shape ≠ successor input shape)
+5. if `compute_bypass_matching` returns `None` then skip (some successor has no predecessor whose probed output shape equals that successor's probed input shape)
 
 Use `explain_delete_layer_blockers(gm)` for `(layer_id, reason)` log lines when the list is empty.
 
@@ -37,7 +38,7 @@ Merge branch. `remove_layer_from_sums(gm, layer_node)` drops the branch tensor f
 
 Branch-only bypass. `_rewire_branch_only_layer` replaces the layer with its single FX input in every user.
 
-Pairwise bypass. `_rewire_layer_users` uses `compute_bypass_matching` and `_producer_before_layer` so each user gets the compatible predecessor branch, not a sum of all inputs.
+Pairwise bypass. `_rewire_layer_users` uses `compute_bypass_matching` and `_producer_before_layer` so each user gets the compatible predecessor branch, not a sum of all inputs. `delete_layer` first calls `bypass_valid_for_all_users` for every predecessor. If a Transformer split or slice needs the deleted packed width, it raises.
 
 After rewire, the code erases the `call_module` node and `delattr(gm, layer_id)` when the submodule is a top-level attribute.
 
