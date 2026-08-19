@@ -41,13 +41,25 @@ def _rescale_sequential_output(gm, name: str, mod: nn.Sequential, width: int) ->
         NodeEditor.replace_submodule(gm, path, ConvFactory.create_conv_with_rescaled_output_channels(conv, width))
 
 
+def _norm_feature_width(mod: nn.Module) -> int | None:
+    if isinstance(mod, PASSTHROUGH_MODULES_TO_UPDATE):
+        return int(mod.num_features)
+    if isinstance(mod, nn.LayerNorm):
+        shape = mod.normalized_shape
+        if isinstance(shape, tuple):
+            return int(shape[-1]) if shape else None
+        return int(shape)
+    return None
+
+
 def _module_output_width(mod: nn.Module) -> int:
     if isinstance(mod, nn.Linear):
         return mod.out_features
     if isinstance(mod, nn.Conv2d):
         return mod.out_channels
-    if isinstance(mod, PASSTHROUGH_MODULES_TO_UPDATE):
-        return mod.num_features
+    norm_w = _norm_feature_width(mod)
+    if norm_w is not None:
+        return norm_w
     raise TypeError(f"Unsupported module type for width query: {type(mod).__name__}")
 
 
@@ -68,6 +80,22 @@ def _rescale_batch_norm(gm, name, mod, width):
             bn.running_var.copy_((R.T @ mod.running_var).contiguous())
             bn.num_batches_tracked.copy_(mod.num_batches_tracked)
     NodeEditor.replace_submodule(gm, name, bn)
+
+
+def _rescale_layer_norm(gm, name, mod: nn.LayerNorm, width: int) -> None:
+    if _norm_feature_width(mod) == width:
+        return
+    device, dtype = mod.weight.device, mod.weight.dtype
+    # Keep trailing-dim LayerNorm (ViT-style); drop leading normalized dims if any.
+    ln = nn.LayerNorm(width, eps=mod.eps, elementwise_affine=mod.elementwise_affine)
+    ln = ln.to(device=device, dtype=dtype)
+    with torch.no_grad():
+        if mod.elementwise_affine:
+            old_w = _norm_feature_width(mod)
+            R = get_reshsper(old_w, width, dtype=mod.weight.dtype, device=mod.weight.device)
+            ln.weight.copy_((R.T @ mod.weight.reshape(-1)).contiguous())
+            ln.bias.copy_((R.T @ mod.bias.reshape(-1)).contiguous())
+    NodeEditor.replace_submodule(gm, name, ln)
 
 
 def _rescale_linear_output(gm, name, mod: nn.Linear, width: int) -> None:
@@ -94,11 +122,13 @@ _OUTPUT_RESIZE_CHAIN = (
     (nn.Linear, _rescale_linear_output),
     (nn.Conv2d, _rescale_conv_output),
     (PASSTHROUGH_MODULES_TO_UPDATE, _rescale_batch_norm),
+    (nn.LayerNorm, _rescale_layer_norm),
 )
 _INPUT_RESIZE_CHAIN = (
     (nn.Linear, _rescale_linear_input),
     (nn.Conv2d, _rescale_conv_input),
     (PASSTHROUGH_MODULES_TO_UPDATE, _rescale_batch_norm),
+    (nn.LayerNorm, _rescale_layer_norm),
 )
 
 
@@ -128,58 +158,257 @@ def _rescale_input_connections(gm, name, mod, width):
     _apply_input_resize(gm, name, mod, width)
 
 
-def _sync_add_siblings_backward(gm, node, width, seen, *, via_pass=False, at_add=None):
-    """Walk backward from add-node sibling branches to align their output width."""
-    logger.debug("sync_add_siblings_backward: %s", node.name)
-    key = ("s", node.name, width)
-    if key in seen:
-        return
-    seen.add(key)
-    if NodeTypeChecker.is_add(node):
-        if not via_pass:
-            for inp in node.all_input_nodes:
-                _sync_add_siblings_backward(gm, inp, width, seen, at_add=node)
-        return
-    if node.op == "call_module":
-        mod = ModuleResolver.get_layer_module(node.target, gm)
-        if isinstance(mod, PROPAGATION_RESIZABLE_MODULES):
-            if NodeTypeChecker.is_fork(node) and (at_add is None or node not in at_add.all_input_nodes):
-                return
-            _rescale_output_neurons(gm, str(node.target), mod, width)
-            propagate_neuron_change(gm, node, width, seen)
-            return
-        if isinstance(mod, nn.Sequential) and _sequential_branch_resizable(mod):
-            _rescale_sequential_output(gm, str(node.target), mod, width)
-            for pred in node.all_input_nodes:
-                _sync_add_siblings_backward(gm, pred, width, seen, via_pass=True)
-            return
-        if isinstance(mod, PASSTHROUGH_MODULES_TO_UPDATE):
-            _rescale_output_neurons(gm, str(node.target), mod, width)
-            for pred in node.all_input_nodes:
-                _sync_add_siblings_backward(gm, pred, width, seen, via_pass=True)
-            return
-    if NodeTypeChecker.is_passthrough(gm, node):
-        for pred in node.all_input_nodes:
-            if NodeTypeChecker.is_fork(pred) and not (
-                NodeTypeChecker.is_passthrough(gm, pred)
-                or (pred.op == "call_module" and isinstance(ModuleResolver.get_layer_module(pred.target, gm), PASSTHROUGH_MODULES_TO_UPDATE))
-            ):
+_HEAD_NAME_CANDIDATES = ("output", "head", "fc", "classifier")
+
+
+def _find_head_linear_name(gm: fx.GraphModule) -> str | None:
+    """Prefer a named classifier Linear; else a Linear reached only through passthrough/norm."""
+    for name in _HEAD_NAME_CANDIDATES:
+        mod = ModuleResolver.get_layer_module(name, gm)
+        if isinstance(mod, nn.Linear):
+            return name
+    output_node = next((n for n in gm.graph.nodes if n.op == "output"), None)
+    if output_node is None or not output_node.all_input_nodes:
+        return None
+    cur = output_node.all_input_nodes[0]
+    seen: set[fx.Node] = set()
+    while cur is not None and cur not in seen:
+        seen.add(cur)
+        if cur.op == "call_module":
+            mod = ModuleResolver.get_layer_module(cur.target, gm)
+            if isinstance(mod, nn.Linear):
+                return str(cur.target)
+            if isinstance(mod, (PASSTHROUGH_MODULES, PASSTHROUGH_MODULES_TO_UPDATE, nn.LayerNorm)):
+                cur = cur.all_input_nodes[0] if cur.all_input_nodes else None
                 continue
-            _sync_add_siblings_backward(gm, pred, width, seen, via_pass=True)
+            return None
+        if NodeTypeChecker.is_passthrough(gm, cur):
+            cur = cur.all_input_nodes[0] if cur.all_input_nodes else None
+            continue
+        return None
+    return None
 
 
-def _align_inputs_backward(gm, node, add_node, width, seen):
-    """Walk backward through predecessors to rescale their input features."""
-    if node in add_node.all_input_nodes or NodeTypeChecker.is_fork(node):
-        return
-    key = ("b", node.name, width)
-    if key in seen:
-        return
-    seen.add(key)
-    for pred in node.all_input_nodes:
-        _align_inputs_backward(gm, pred, add_node, width, seen)
-    if node.op == "call_module" and NodeWidthAnalyser.inputs_match_width(gm, node, width):
-        _rescale_input_connections(gm, str(node.target), ModuleResolver.get_layer_module(node.target, gm), width)
+def _snapshot_pinned_head_out(gm: fx.GraphModule) -> tuple[str | None, int | None]:
+    """Return (head_name, out_features) to keep fixed during the global fix sweep."""
+    name = _find_head_linear_name(gm)
+    if name is None:
+        return None, None
+    mod = ModuleResolver.get_layer_module(name, gm)
+    if not isinstance(mod, nn.Linear):
+        return None, None
+    return name, int(mod.out_features)
+
+
+def _module_input_width(mod: nn.Module) -> int | None:
+    if isinstance(mod, nn.Linear):
+        return mod.in_features
+    if isinstance(mod, nn.Conv2d):
+        return mod.in_channels
+    return _norm_feature_width(mod)
+
+
+def _agreed_input_width(gm: fx.GraphModule, node: fx.Node) -> int | None:
+    if not node.all_input_nodes:
+        return None
+    widths = [NodeWidthAnalyser.node_output_width(gm, inp) for inp in node.all_input_nodes]
+    if any(w is None for w in widths) or len(set(widths)) != 1:
+        return None
+    return widths[0]
+
+
+def _nearest_output_resize_target(
+    gm: fx.GraphModule, node: fx.Node
+) -> tuple[str, nn.Module] | None:
+    """Walk upstream through passthrough/BN/add to the nearest Linear/Conv/Sequential to rescale."""
+    seen: set[fx.Node] = set()
+    stack = [node]
+    while stack:
+        cur = stack.pop()
+        if cur in seen:
+            continue
+        seen.add(cur)
+        if cur.op == "call_module":
+            mod = ModuleResolver.get_layer_module(cur.target, gm)
+            if mod is None:
+                continue
+            name = str(cur.target)
+            if isinstance(mod, PROPAGATION_RESIZABLE_MODULES):
+                return name, mod
+            if isinstance(mod, nn.Sequential) and _sequential_branch_resizable(mod):
+                return name, mod
+            # BN / LayerNorm follow the producer; do not stop here or add-sync oscillates.
+            if isinstance(mod, (PASSTHROUGH_MODULES, PASSTHROUGH_MODULES_TO_UPDATE, nn.LayerNorm)):
+                stack.extend(cur.all_input_nodes)
+                continue
+        if NodeTypeChecker.is_passthrough(gm, cur) or NodeTypeChecker.is_add(cur):
+            stack.extend(cur.all_input_nodes)
+    return None
+
+
+def _current_site_output_width(gm: fx.GraphModule, name: str, mod: nn.Module) -> int | None:
+    if isinstance(mod, nn.Sequential):
+        found = _find_conv_submodule(mod, name)
+        return None if found is None else found[1].out_channels
+    if isinstance(mod, (PROPAGATION_RESIZABLE_MODULES, PASSTHROUGH_MODULES_TO_UPDATE)):
+        return _module_output_width(mod)
+    return None
+
+
+def _fix_site_output_width(gm: fx.GraphModule, name: str, mod: nn.Module, width: int) -> bool:
+    before = _current_site_output_width(gm, name, mod)
+    if before == width:
+        return False
+    if isinstance(mod, nn.Sequential):
+        _rescale_sequential_output(gm, name, mod, width)
+    else:
+        _rescale_output_neurons(gm, name, mod, width)
+    updated = ModuleResolver.get_layer_module(name, gm)
+    if updated is None:
+        return before != width
+    after = _current_site_output_width(gm, name, updated)
+    return after != before
+
+
+def _fix_module_input_mismatch(gm: fx.GraphModule, node: fx.Node) -> bool:
+    if node.op != "call_module":
+        return False
+    mod = ModuleResolver.get_layer_module(node.target, gm)
+    if mod is None:
+        return False
+    name = str(node.target)
+    target_w = _agreed_input_width(gm, node)
+    if target_w is None:
+        return False
+    current = _module_input_width(mod)
+    if current is None or current == target_w:
+        return False
+    if isinstance(mod, (PROPAGATION_RESIZABLE_MODULES, PASSTHROUGH_MODULES_TO_UPDATE, nn.LayerNorm)):
+        _rescale_input_connections(gm, name, mod, target_w)
+        updated = ModuleResolver.get_layer_module(name, gm)
+        return updated is not None and _module_input_width(updated) == target_w and current != target_w
+    return False
+
+
+def _fix_add_input_mismatch(
+    gm: fx.GraphModule,
+    node: fx.Node,
+    *,
+    align_add_to: int,
+    pinned_head_name: str | None,
+) -> bool:
+    if not NodeTypeChecker.is_add(node):
+        return False
+    widths: list[int] = []
+    for inp in node.all_input_nodes:
+        w = NodeWidthAnalyser.node_output_width(gm, inp)
+        if w is None:
+            return False
+        widths.append(w)
+    if len(set(widths)) <= 1:
+        return False
+    target = align_add_to if align_add_to in widths else min(widths)
+    changed = False
+    for inp in node.all_input_nodes:
+        site = _nearest_output_resize_target(gm, inp)
+        if site is None:
+            continue
+        name, mod = site
+        if pinned_head_name is not None and name == pinned_head_name:
+            continue
+        if _fix_site_output_width(gm, name, mod, target):
+            changed = True
+    return changed
+
+
+def _fix_norm_mismatch(gm: fx.GraphModule, node: fx.Node) -> bool:
+    if node.op != "call_module":
+        return False
+    mod = ModuleResolver.get_layer_module(node.target, gm)
+    if not isinstance(mod, (PASSTHROUGH_MODULES_TO_UPDATE, nn.LayerNorm)):
+        return False
+    target_w = _agreed_input_width(gm, node)
+    current = _module_input_width(mod)
+    if target_w is None or current is None or current == target_w:
+        return False
+    name = str(node.target)
+    _rescale_input_connections(gm, name, mod, target_w)
+    updated = ModuleResolver.get_layer_module(name, gm)
+    return updated is not None and _module_input_width(updated) == target_w
+
+
+def _pin_head_output(gm: fx.GraphModule, head_name: str | None, pinned_head_out: int | None) -> bool:
+    if head_name is None or pinned_head_out is None:
+        return False
+    mod = ModuleResolver.get_layer_module(head_name, gm)
+    if not isinstance(mod, nn.Linear) or mod.out_features == pinned_head_out:
+        return False
+    _rescale_linear_output(gm, head_name, mod, pinned_head_out)
+    updated = ModuleResolver.get_layer_module(head_name, gm)
+    return isinstance(updated, nn.Linear) and updated.out_features == pinned_head_out
+
+
+def _graph_has_width_mismatch(gm: fx.GraphModule) -> bool:
+    for node in gm.graph.nodes:
+        if NodeTypeChecker.is_add(node):
+            widths = [NodeWidthAnalyser.node_output_width(gm, inp) for inp in node.all_input_nodes]
+            if widths and all(w is not None for w in widths) and len(set(widths)) > 1:
+                return True
+            continue
+        if node.op != "call_module":
+            continue
+        mod = ModuleResolver.get_layer_module(node.target, gm)
+        if mod is None:
+            continue
+        current = _module_input_width(mod)
+        if current is None:
+            continue
+        target_w = _agreed_input_width(gm, node)
+        if target_w is not None and current != target_w:
+            return True
+    return False
+
+
+def fix_graph_widths(
+    gm: fx.GraphModule,
+    *,
+    align_add_to: int,
+    pinned_head_out: int | None,
+    pinned_head_name: str | None = None,
+    max_passes: int = 32,
+) -> None:
+    """
+    Sequentially sweep the FX graph and fix width mismatches until stable.
+
+    Reuses existing rescale helpers. Does not recurse from the edited layer.
+    """
+    head_name = pinned_head_name
+    if head_name is None and pinned_head_out is not None:
+        head_name, _ = _snapshot_pinned_head_out(gm)
+
+    for pass_idx in range(max_passes):
+        changed = False
+        for node in list(gm.graph.nodes):
+            if _fix_module_input_mismatch(gm, node):
+                changed = True
+            if _fix_add_input_mismatch(
+                gm, node, align_add_to=align_add_to, pinned_head_name=head_name
+            ):
+                changed = True
+            if _fix_norm_mismatch(gm, node):
+                changed = True
+            if _pin_head_output(gm, head_name, pinned_head_out):
+                changed = True
+        logger.debug("fix_graph_widths pass=%s changed=%s", pass_idx, changed)
+        if not changed:
+            break
+    else:
+        logger.error("fix_graph_widths: exceeded max_passes=%s", max_passes)
+
+    if _graph_has_width_mismatch(gm):
+        raise RuntimeError(
+            f"fix_graph_widths failed to resolve width mismatches after {max_passes} passes"
+        )
 
 
 def _within_linear_matrix_limit(mod: nn.Linear, new_out: int) -> bool:
@@ -210,72 +439,21 @@ def can_resize_linear_output(
 
 
 def resize_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, new_width: int) -> fx.GraphModule:
-    """Resize a Linear layer's output to new_width and propagate the change through the graph."""
+    """Resize a Linear layer's output to new_width, then fix all graph width mismatches."""
     gm = gm if isinstance(gm, fx.GraphModule) else fx.symbolic_trace(gm)
     mod = ModuleResolver.get_layer_module(layer_id, gm)
     if not isinstance(mod, nn.Linear):
         raise TypeError(f"{layer_id} is {type(mod).__name__}, not nn.Linear")
+    head_name, pinned_head_out = _snapshot_pinned_head_out(gm)
     NodeEditor.replace_submodule(gm, layer_id, LinearFactory.create_linear_with_rescaled_neurons(mod, new_width))
-    propagate_neuron_change(gm, ModuleResolver.find_call_module(gm.graph.nodes, layer_id), new_width, set())
+    fix_graph_widths(
+        gm,
+        align_add_to=new_width,
+        pinned_head_out=pinned_head_out,
+        pinned_head_name=head_name,
+    )
     gm.recompile()
     for tensor in list(gm.parameters()) + list(gm.buffers()):
         if tensor.numel() > 0 and not tensor.is_contiguous():
             tensor.data = tensor.data.contiguous()
     return gm
-
-
-def propagate_neuron_change(gm, node, width, seen):
-    """Walk forward through the graph and resize every downstream layer to match width."""
-    key = ("p", node.name, width)
-    logger.debug("propagate_neuron_change: %s", node.name)
-    if key in seen:
-        return
-    seen.add(key)
-    if NodeTypeChecker.is_fork(node) and NodeWidthAnalyser.node_output_width(gm, node) != width:
-        return
-    for user in list(node.users):
-        if user.op == "output":
-            logger.debug("propagate_neuron_change --- skip output: %s", user.name)
-            continue
-        if NodeTypeChecker.is_add(user):
-            for inp in user.all_input_nodes:
-                if inp is not node:
-                    _sync_add_siblings_backward(gm, inp, width, seen, at_add=user)
-            if not NodeTypeChecker.is_fork(node):
-                for pred in node.all_input_nodes:
-                    _align_inputs_backward(gm, pred, user, width, seen)
-            propagate_neuron_change(gm, user, width, seen)
-            continue
-        if user.op == "call_module" and isinstance(ModuleResolver.get_layer_module(user.target, gm), PASSTHROUGH_MODULES_TO_UPDATE):
-            mod = ModuleResolver.get_layer_module(user.target, gm)
-            _rescale_output_neurons(gm, str(user.target), mod, width)
-            propagate_neuron_change(gm, user, width, seen)
-            continue
-        if NodeTypeChecker.is_passthrough(gm, user):
-            propagate_neuron_change(gm, user, width, seen)
-            continue
-        if user.op != "call_module":
-            logger.debug("propagate_neuron_change --- skip non-call_module: %s op=%s", user.name, user.op)
-            continue
-        mod = ModuleResolver.get_layer_module(user.target, gm)
-        if mod is None:
-            logger.debug("propagate_neuron_change --- skip missing module: %s", user.target)
-            continue
-        name = str(user.target)
-        if isinstance(mod, PROPAGATION_RESIZABLE_MODULES):
-            if not NodeWidthAnalyser.inputs_match_width(gm, user, width):
-                logger.debug("propagate_neuron_change --- skip input width mismatch: %s", name)
-                continue
-            was_square = (
-                (isinstance(mod, nn.Linear) and mod.in_features == mod.out_features)
-                or (isinstance(mod, nn.Conv2d) and mod.in_channels == mod.out_channels)
-            )
-            _rescale_input_connections(gm, name, mod, width)
-            updated = ModuleResolver.get_layer_module(name, gm)
-            out_w = _module_output_width(updated)
-            if NodeTypeChecker.is_add(node) and was_square and out_w != width:
-                _rescale_output_neurons(gm, name, updated, width)
-                out_w = width
-            propagate_neuron_change(gm, user, out_w, seen)
-        else:
-            logger.debug("propagate_neuron_change --- skip non-resizable module: %s", name)
