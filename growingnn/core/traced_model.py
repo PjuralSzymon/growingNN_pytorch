@@ -9,6 +9,7 @@ import torch.fx as fx
 import torch.nn as nn
 
 from growingnn.utils.fx.graph_analysis import GraphStructureQuery, LayerShapeAnalyser
+from growingnn.utils.fx.graph_extraction import extract_graph
 
 
 @dataclass
@@ -32,7 +33,7 @@ class TracedModel:
         input_shape: tuple[int, ...],
     ) -> TracedModel:
         """Trace *model* when needed and attach *input_shape* for ShapeProp."""
-        gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
+        gm = extract_graph(model)
         return cls(gm, input_shape)
 
     def probe(self) -> torch.Tensor:
