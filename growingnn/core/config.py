@@ -30,6 +30,7 @@ RES_CONV_TO_LINEAR_GLOBAL_POOL_TYPE = "max"  # "avg" | "max"
 
 # Properties for neuron deletion action
 EDITABLE_MODULES = [nn.Linear, nn.Conv2d, nn.Conv1d, nn.Conv3d]
+EDITABLE_LINEAR_LIKE_NAMES = frozenset({"Conv1D"})
 DROPOUT_TYPES = (nn.Dropout, nn.Dropout2d)
 PASSTHROUGH_MODULES = (nn.Dropout, nn.Dropout2d, nn.Identity, nn.ReLU, nn.LeakyReLU,
                        nn.GELU, nn.SiLU, nn.Tanh, nn.ELU, nn.Sigmoid,

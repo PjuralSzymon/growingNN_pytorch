@@ -16,7 +16,7 @@ It uses [[Torch.fx]]: `GraphStructureQuery.module_sequential_pairs`, `LayerShape
 
 For each sequential pair from `module_sequential_pairs(gm)`:
 
-1. if `find_bridge_linear_sizes` returns `None` and `find_seq_linear_after_conv_sizes` returns `None` then skip (no square linear bridge: probed shapes missing, not a linear feature dim, or conv→linear path cannot map to the successor input width)
+1. if `find_bridge_linear_sizes` returns `None` and `find_seq_linear_after_conv_sizes` returns `None` then skip (no square linear bridge: probed shapes missing, last dims differ because of reshape between the pair, not a linear feature dim, or conv→linear path cannot map to the successor input width)
 2. if `in_features * out_features` exceeds `MAX_ADD_SEQ_LAYER_WEIGHT_MATRIX_SIZE` then skip (EYE projector would be too large to allocate safely)
 
 ---
