@@ -6,6 +6,7 @@ from growingnn.core import config
 from growingnn.core.config import PASSTHROUGH_MODULES_TO_UPDATE, PROPAGATION_RESIZABLE_MODULES, PASSTHROUGH_MODULES
 from growingnn.core.logger import logger
 from growingnn.utils.fx import ModuleResolver, NodeEditor, NodeTypeChecker, NodeWidthAnalyser
+from growingnn.utils.fx.graph_extraction import extract_graph
 from growingnn.actions.utils.layer_Factory import ConvFactory, LinearFactory
 from growingnn.utils.quaziIdentity import get_reshsper
 
@@ -196,7 +197,7 @@ def can_resize_linear_output(
     new_width: int,
 ) -> bool:
     """Return True when a Linear layer output can be rescaled to new_width and propagated."""
-    gm = gm if isinstance(gm, fx.GraphModule) else fx.symbolic_trace(gm)
+    gm = extract_graph(gm)
     mod = ModuleResolver.get_layer_module(layer_id, gm)
     if not isinstance(mod, nn.Linear) or new_width == mod.out_features:
         return False
@@ -211,7 +212,7 @@ def can_resize_linear_output(
 
 def resize_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, new_width: int) -> fx.GraphModule:
     """Resize a Linear layer's output to new_width and propagate the change through the graph."""
-    gm = gm if isinstance(gm, fx.GraphModule) else fx.symbolic_trace(gm)
+    gm = extract_graph(gm)
     mod = ModuleResolver.get_layer_module(layer_id, gm)
     if not isinstance(mod, nn.Linear):
         raise TypeError(f"{layer_id} is {type(mod).__name__}, not nn.Linear")

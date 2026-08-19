@@ -14,7 +14,7 @@ import torch
 import torch.fx as fx
 from torch.fx.passes.graph_drawer import FxGraphDrawer
 from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
-from growingnn.utils.fx import GraphStructureQuery
+from growingnn.utils.fx import GraphStructureQuery, extract_graph
 
 from growingnn.actions.action import Layer_Type
 from growingnn.actions.add_res_conv_layer import AddResConvLayer
@@ -32,7 +32,7 @@ from tests.regression.regression_utils import (
 if __name__ == "__main__":
     args = parse_regression_cli()
     model = ModelFactory.complex_residual_conv_many_widths()
-    gm = fx.symbolic_trace(model)
+    gm = extract_graph(model)
     executed_actions = []
     x = torch.randn(2, 4, 8, 8)
     trace_shape = (1, *x.shape[1:])

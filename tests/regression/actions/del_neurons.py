@@ -14,7 +14,7 @@ from growingnn.actions.action import Action, Layer_Type
 from growingnn.actions.add_res_linear_layer import AddResLinearLayer
 from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
 from growingnn.actions.delete_neurons import DelNeurons
-from growingnn.utils.fx import GraphStructureQuery
+from growingnn.utils.fx import GraphStructureQuery, extract_graph
 from growingnn.core.logger import logger
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from tests.model_factory import ModelFactory
@@ -28,7 +28,7 @@ from tests.regression.regression_utils import (
 if __name__ == "__main__":
     args = parse_regression_cli()
     model = ModelFactory.complex_residual_many_widths()
-    gm = fx.symbolic_trace(model)
+    gm = extract_graph(model)
     x = torch.randn(2, 4)
     rng = random.Random(42)
     output_initial = gm(x)

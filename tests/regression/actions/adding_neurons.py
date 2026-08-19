@@ -13,7 +13,7 @@ if str(_REPO_ROOT) not in sys.path:
 
 from growingnn.actions.action import Action
 from growingnn.actions.add_neurons import AddNeurons
-from growingnn.utils.fx import GraphStructureQuery
+from growingnn.utils.fx import GraphStructureQuery, extract_graph
 from growingnn.core.logger import logger
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from tests.model_factory import ModelFactory
@@ -30,7 +30,7 @@ _CONV_TRACE_SHAPE = (1, 4, 8, 8)
 if __name__ == "__main__":
     args = parse_regression_cli()
     model = ModelFactory.complex_residual_conv_many_widths()
-    gm = fx.symbolic_trace(model)
+    gm = extract_graph(model)
     x = torch.randn(2, 4, 8, 8)
     rng = random.Random(42)
     output_initial = gm(x)

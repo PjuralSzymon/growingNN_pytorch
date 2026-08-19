@@ -24,7 +24,7 @@ from growingnn.simulation.simulation_schedulers import AlwaysSimulationScheduler
 from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import StopperMode, TrainingStopper
 from growingnn.training.trainer import train_generations
-from growingnn.utils.fx import GraphStructureQuery
+from growingnn.utils.fx import GraphStructureQuery, extract_graph
 
 
 def _loaders():
@@ -41,7 +41,7 @@ def test_train_generations_runs_simulation_between_generations():
     """
     # Arrange
     torch.manual_seed(0)
-    gm = fx.symbolic_trace(resnet18(weights=None, num_classes=2))
+    gm = extract_graph(resnet18(weights=None, num_classes=2))
     train_loader, val_loader = _loaders()
     params_before = GraphStructureQuery.get_amount_of_parameters(gm)
     cfg = RunningConfig(

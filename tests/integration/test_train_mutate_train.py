@@ -22,7 +22,7 @@ from growingnn.actions.delete_layer import DelLayer
 from growingnn.training.gradient_descent import gradient_descent
 from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import StopperMode, TrainingStopper
-from growingnn.utils.fx import GraphStructureQuery
+from growingnn.utils.fx import GraphStructureQuery, extract_graph
 from tests.regression.regression_utils import FOLDER_NAME
 from growingnn.core.traced_model import TracedModel
 def _loaders(seed: int = 0, n: int = 64, batch_size: int = 8, num_classes: int = 2):
@@ -36,7 +36,7 @@ def _loaders(seed: int = 0, n: int = 64, batch_size: int = 8, num_classes: int =
 
 def _trace_resnet(num_classes: int = 2) -> fx.GraphModule:
     model = resnet18(weights=None, num_classes=num_classes)
-    return fx.symbolic_trace(model)
+    return extract_graph(model)
 
 
 def _train(
