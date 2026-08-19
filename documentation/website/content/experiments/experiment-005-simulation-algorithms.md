@@ -12,7 +12,7 @@ Folder: `experiments/output/train_mnist/runs/exp005_simulation_algorithms`
 
 Snapshot: `documentation/website/data/experiments/experiment-005-simulation-algorithms.json`
 
-This page is a live report. Tables and charts use only boards with `status=completed` (`108` / `130` cells, `83.1%`).
+This page is a live report. Tables and charts use only boards with `status=completed` (`130` / `130` cells, `100.0%`).
 
 Color scheme on charts: blue = `big` starter, green = `medium` starter. Pooled scores that mix both starters use purple, not green or blue.
 
@@ -28,7 +28,7 @@ Color scheme on charts: blue = `big` starter, green = `medium` starter. Pooled s
 | --- | ---: | --- |
 | Dataset | MNIST | Classification task |
 | Planned cells | `130` | `13` algorithms × `2` starters × `5` seeds |
-| Completed cells in this refresh | `108` | Partial grid is still valid for live reading |
+| Completed cells in this refresh | `130` | Partial grid is still valid for live reading |
 | LR package | `composed_exponential` × logistic recovery | Best package from Experiment 004 |
 | Effective LR rule | `max(0.001, base_lr(epoch) * recovery_factor)` | Global exponential base times action recovery |
 | Standard cell `lr_alpha` | `0.01` | Target / peak learning rate |
@@ -78,7 +78,7 @@ Supporting checks:
 
 ## Result timeline
 
-Progress in this refresh: `108` / `130` completed (`83.1%`).
+Progress in this refresh: `130` / `130` completed (`100.0%`).
 
 | Algorithm | Big | Medium | Notes |
 | --- | ---: | ---: | --- |
@@ -91,10 +91,10 @@ Progress in this refresh: `108` / `130` completed (`83.1%`).
 | `beam_search` | `5` / `5` | `5` / `5` | Finished both |
 | `best_first` | `5` / `5` | `5` / `5` | Finished both |
 | `shot` | `5` / `5` | `5` / `5` | Finished both |
-| `sequential_halving_beam` | `5` / `5` | `4` / `5` | One medium seed left |
-| `ugape_deepen` | `5` / `5` | `0` / `5` | Medium missing |
-| `progressive_widening` | `4` / `5` | `0` / `5` | Big seed `104` + medium missing |
-| `hierarchical_search` | `0` / `5` | `0` / `5` | Not started |
+| `sequential_halving_beam` | `5` / `5` | `5` / `5` | Finished both |
+| `ugape_deepen` | `5` / `5` | `5` / `5` | Finished both |
+| `progressive_widening` | `5` / `5` | `5` / `5` | Finished both |
+| `hierarchical_search` | `5` / `5` | `5` / `5` | Finished both |
 
 ## Algorithms used
 
@@ -414,20 +414,21 @@ This section pools completed big and medium runs. The chart is sorted by mean fi
 
 | Algorithm | Seeds | Mean train (%) | Mean val (%) | Big train (%) | Big val (%) | Medium train (%) | Medium val (%) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `progressive_widening` | `4` | `88.55` | `90.42` | `88.55` | `90.42` | — | — |
-| `ugape_deepen` | `5` | `87.11` | `88.55` | `87.11` | `88.55` | — | — |
-| `sequential_halving_beam` | `9` | `85.82` | `87.43` | `87.24` | `88.60` | `84.06` | `85.97` |
+| `sequential_halving_beam` | `10` | `85.80` | `87.46` | `87.24` | `88.60` | `84.37` | `86.31` |
+| `ugape_deepen` | `10` | `85.66` | `87.45` | `87.11` | `88.55` | `84.20` | `86.34` |
 | `best_first` | `10` | `84.78` | `86.95` | `85.54` | `87.71` | `84.03` | `86.20` |
+| `progressive_widening` | `10` | `84.55` | `86.52` | `87.30` | `89.34` | `81.80` | `83.70` |
 | `beam_search` | `10` | `84.36` | `86.76` | `87.87` | `89.90` | `80.86` | `83.62` |
 | `ugape` | `10` | `83.97` | `86.74` | `85.27` | `87.89` | `82.67` | `85.59` |
 | `greedy` | `10` | `83.52` | `87.09` | `87.99` | `88.91` | `79.05` | `85.27` |
 | `sequential_halving` | `10` | `83.17` | `85.35` | `86.52` | `88.79` | `79.83` | `81.91` |
+| `hierarchical_search` | `10` | `81.52` | `85.09` | `85.21` | `87.26` | `77.83` | `82.92` |
 | `montecarlo` | `10` | `70.59` | `76.53` | `69.80` | `76.53` | `71.37` | `76.53` |
 | `successive_rejects` | `10` | `66.42` | `67.54` | `45.37` | `45.53` | `87.48` | `89.55` |
 | `shot` | `10` | `60.89` | `62.13` | `45.37` | `46.14` | `76.42` | `78.12` |
 | `random` | `10` | `44.41` | `49.28` | `44.65` | `49.71` | `44.16` | `48.86` |
 
-Best three by mean train: `progressive_widening`, `ugape_deepen`, `sequential_halving_beam`.
+Best three by mean train: `sequential_halving_beam`, `ugape_deepen`, `best_first`.
 
 Worst three by mean train: `random`, `shot`, `successive_rejects`.
 
@@ -439,7 +440,7 @@ Greedy is high. That is a warning: the current MNIST growth task is still easy. 
 
 > [!CAPTION] Figure 2. Mean final train and validation accuracy (%) on `big`. Bars = means. Gray circles = train seeds. Gray diamonds = validation seeds.
 
-MCTS mean on big looks low even though many seed points sit high. The mean is correct: big seeds `100`–`102` land near `86`–`89%` train, but seed `103` collapses to `58.2%` and seed `104` collapses to `26.8%`. Max train on big MCTS is about `88.9%`, which would sit near the top of the chart. One or two collapse seeds pull the mean down. Gray seed markers make those low points easier to see against the mean bars.
+MCTS mean on big looks low even though many seed points sit high. The mean is correct: several big seeds land near `86.47`–`88.88`% train when high, but collapse seeds pull the mean down (mean `69.80`%, max `88.88`%). Gray seed markers make those low points easier to see against the mean bars.
 
 ### Final accuracy on medium
 
@@ -447,7 +448,7 @@ MCTS mean on big looks low even though many seed points sit high. The mean is co
 
 > [!CAPTION] Figure 3. Mean final train and validation accuracy (%) on `medium`. Bars = means. Gray circles = train seeds. Gray diamonds = validation seeds.
 
-On medium alone, `successive_rejects` has the best mean train. On the pooled table above it is still in the worst three, because its big runs collapse.
+On medium alone, `successive_rejects` has the best mean train. On the pooled table above it can still rank much lower if its big runs collapse.
 
 ## Seed stability
 
@@ -463,16 +464,15 @@ Charts sort unstable methods on the left and tighter methods on the right. Blue 
 
 > [!CAPTION] Figure 5. Composite score for all completed runs: mean final validation minus `0.15 * sqrt(variance)`. Left = worse. Right = better. Purple = pooled score across starters.
 
-Best three by composite: `progressive_widening`, `ugape_deepen`, `sequential_halving_beam`.
+Best three by composite: `sequential_halving_beam`, `ugape_deepen`, `best_first`.
 
 Worst three by composite: `random`, `shot`, `successive_rejects`.
 
 Cross-check with final accuracy:
 
-- The same three lead both sections. So far they confirm each other.
-- `progressive_widening` is currently the strongest on both mean accuracy and composite. It is still incomplete (`4` big seeds only), so do not lock it yet.
-- Among those three, `ugape_deepen` is the next high-band hybrid on big. `sequential_halving_beam` already has medium seeds and stays close to the top with lower variance.
-- `successive_rejects` was one of the worst three here even though it looked best on medium accuracy alone. That is the rejection rule: good medium accuracy is not enough if pooled seed stability collapses.
+- The same top band leads both sections. Accuracy and stability agree so far.
+- `sequential_halving_beam` leads composite in this refresh.
+- `successive_rejects` stays weak on pooled composite even when medium accuracy looks strong.
 - `shot` and `random` stay rejected on both accuracy and stability.
 
 ## Does the first action do all the work?
@@ -489,13 +489,13 @@ Orange bars mark the current top three by mean final train, so we can see where 
 
 Best three here (smallest first-action monopoly): `montecarlo`, `random`, `successive_rejects`.
 
-Worst three here (largest first-action monopoly): `progressive_widening`, `greedy`, `ugape_deepen`.
+Worst three here (largest first-action monopoly): `progressive_widening`, `ugape_deepen`, `greedy`.
 
 Cross-check with final accuracy:
 
-- The methods with the smallest first-action share (`montecarlo`, `random`, …) are not the accuracy leaders. A low first-action share alone does not make a winner.
-- The accuracy leaders `progressive_widening` and `ugape_deepen` are among the worst here: most of their useful gain comes from the first live action.
-- `sequential_halving_beam` sits in the middle on this chart: still first-action heavy, but less extreme than the two leaders above.
+- The methods with the smallest first-action share are not the accuracy leaders. A low first-action share alone does not make a winner.
+- Accuracy leaders can still be among the worst here: most of their useful gain may come from the first live action.
+- `sequential_halving_beam` sits nearer the middle than the worst first-action group.
 - Among methods that stay high on accuracy and are less first-action-only than greedy, `beam_search` and `best_first` are the more interesting middle ground.
 
 ## Action composition
@@ -510,13 +510,13 @@ Charts sort low diversity on the left and higher diversity on the right.
 
 Best three by action mix (more types): `montecarlo`, `random`, `ugape`.
 
-Worst three by action mix (almost one type): `successive_rejects`, `progressive_widening`, `shot`.
+Worst three by action mix (almost one type): `successive_rejects`, `shot`, `progressive_widening`.
 
 Cross-check with final accuracy:
 
-- `progressive_widening` is currently best on accuracy/stability, but here it is one of the worst on exploration. That weakens it as a final choice until we see whether the residual-only path survives harder tasks.
-- `successive_rejects` has the same narrow mix. Combined with bad pooled stability, it stays rejected as a general default.
-- `best_first` and `beam_search` sit in a useful middle: competitive final accuracy and more than one action family. If we weigh accuracy and exploration together, those two look like the most balanced complete methods so far.
+- A top accuracy method can still be one of the worst on exploration. That weakens it as a final choice until harder tasks are tested.
+- `successive_rejects` stays rejected as a general default when narrow mix pairs with bad pooled stability.
+- `best_first` and `beam_search` sit in a useful middle: competitive final accuracy and more than one action family.
 
 ## Recovery after architecture actions
 
@@ -533,15 +533,15 @@ Figure 8 shows mean values of those two changes per algorithm. Orange is the imm
 
 > [!CAPTION] Figure 8. Mean training-accuracy change after an architecture action. Orange = next epoch. Blue = after one recovery generation (`10` epochs).
 
-Best three by recovered train change: `ugape_deepen`, `progressive_widening`, `sequential_halving_beam`.
+Best three by recovered train change: `sequential_halving_beam`, `ugape`, `best_first`.
 
 Worst three by recovered train change: `random`, `shot`, `successive_rejects`.
 
 Cross-check with final accuracy:
 
-- The same three that lead final accuracy also lead recovery here. That fits: they apply actions that bounce back within one generation.
-- The same three that sit at the bottom of final accuracy also recover the least.
-- Recovery alone does not add a new winner. It mainly confirms the accuracy ranking on this MNIST setup.
+- Recovery leaders are `sequential_halving_beam`, `ugape`, and `best_first`. Final-accuracy leaders are `sequential_halving_beam`, `ugape_deepen`, and `best_first`.
+- The overlap is partial. Recovery still rejects the weakest absolute methods, but it is not a perfect copy of the accuracy ranking.
+- Worst recovery: `random`, `shot`, `successive_rejects`.
 
 ## Starter effect
 
@@ -561,7 +561,7 @@ Cross-check with final accuracy:
 
 - `successive_rejects` again looks good on medium and bad on big. A large starter gap means the method is tied to model size.
 - `best_first` is the useful consistency result among strong methods: high accuracy and a small big/medium gap.
-- `random` and `montecarlo` look consistent, but they are still weak or unstable on absolute accuracy, so consistency alone does not promote them.
+- `sequential_halving_beam` and `ugape_deepen` also stay close across starters.
 
 ## Training histories
 
@@ -575,9 +575,9 @@ All simulation algorithms are shown in one grid. Blue = big. Green = medium.
 
 > [!CAPTION] Figure 11. Training mean ± std for every algorithm. Solid = mean. Band = ±1 std. Blue = big. Green = medium.
 
-Best three looking training shapes: `progressive_widening`, `ugape_deepen`, `sequential_halving_beam`.
+Best three looking training shapes: `sequential_halving_beam`, `ugape_deepen`, `best_first`.
 
-Worst three looking training shapes: `random`, `shot`, `successive_rejects` on big (plus collapse seeds in `montecarlo`).
+Worst three looking training shapes: `random`, `shot`, `successive_rejects`.
 
 Cross-check with final accuracy: the history shapes match the final ranking. Greedy stays high. That is still an easy-task warning, not a reason to pick greedy as the default.
 
@@ -591,11 +591,11 @@ Cross-check with final accuracy: the history shapes match the final ranking. Gre
 
 > [!CAPTION] Figure 13. Validation mean ± std for every algorithm. Solid = mean. Band = ±1 std. Blue = big. Green = medium.
 
-Best three looking validation shapes: `progressive_widening`, `ugape_deepen`, `sequential_halving_beam`.
+Best three looking validation shapes: `sequential_halving_beam`, `ugape_deepen`, `greedy`.
 
-Worst three looking validation shapes: `random`, `shot`, pooled `successive_rejects`.
+Worst three looking validation shapes: `random`, `shot`, `successive_rejects`.
 
-Cross-check with final accuracy: same high band and same rejects. Incomplete hybrids still look strong on big only. Medium must finish before we lock them.
+Cross-check with final accuracy: same high band and same rejects.
 
 ## Curiosity check: look-ahead vs depth-1
 
@@ -615,87 +615,106 @@ Green-plus matrix below: one row per algorithm, one column per analysis section,
 
 | Algorithm | Final accuracy | Seed stability | First-action | Action mix | Recovery | Starter effect | Train histories | Val histories | Total |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `progressive_widening` | :g+: | :g+: |  |  | :g+: |  | :g+: | :g+: | 5 |
-| `ugape_deepen` | :g+: | :g+: |  |  | :g+: |  | :g+: | :g+: | 5 |
+| `best_first` | :g+: | :g+: |  |  | :g+: | :g+: | :g+: | :g+: | 6 |
 | `sequential_halving_beam` | :g+: | :g+: |  |  | :g+: |  | :g+: | :g+: | 5 |
-| `best_first` | :g+: | :g+: |  |  |  | :g+: | :g+: |  | 4 |
+| `ugape_deepen` | :g+: | :g+: |  |  |  |  | :g+: | :g+: | 4 |
 | `ugape` |  |  |  | :g+: | :g+: | :g+: |  |  | 3 |
+| `greedy` |  | :g+: |  | :g+: |  |  |  | :g+: | 3 |
 | `montecarlo` |  |  | :g+: | :g+: |  | :g+: |  |  | 3 |
 | `random` |  |  | :g+: | :g+: |  | :g+: |  |  | 3 |
-| `greedy` |  |  |  | :g+: |  |  |  | :g+: | 2 |
+| `progressive_widening` | :g+: |  |  |  |  |  | :g+: |  | 2 |
+| `beam_search` |  |  |  |  | :g+: |  |  |  | 1 |
 | `successive_rejects` |  |  | :g+: |  |  |  |  |  | 1 |
 | `shot` |  |  | :g+: |  |  |  |  |  | 1 |
-| `beam_search` |  |  |  |  |  |  |  |  | 0 |
 | `sequential_halving` |  |  |  |  |  |  |  |  | 0 |
+| `hierarchical_search` |  |  |  |  |  |  |  |  | 0 |
 
 **1. Final accuracy**
 
-Best three: `progressive_widening`, `ugape_deepen`, `sequential_halving_beam`.
+Best three: `sequential_halving_beam`, `ugape_deepen`, `best_first`.
 Close behind: `best_first`, `beam_search`.
 Worst three: `random`, `shot`, `successive_rejects`.
 Greedy is high, so the MNIST task is still easy.
-Shortlist after this section: `progressive_widening`, `ugape_deepen`, `sequential_halving_beam`, plus watch `best_first` and `beam_search`.
+Complete on both starters in this refresh: `sequential_halving_beam`, `ugape_deepen`, `progressive_widening`, `hierarchical_search`.
+`progressive_widening` is complete on both starters.
+Shortlist after this section: `sequential_halving_beam`, `ugape_deepen`, `best_first`, plus watch `best_first` and `beam_search`.
 
 **2. Seed stability**
 
-Best three and worst three are the same as final accuracy.
-That confirms the point-1 leaders are not just high means with hidden seed chaos. They also stay tight across seeds.
-Shortlist after this section: keep `progressive_widening`, `ugape_deepen`, `sequential_halving_beam`. Keep watching `best_first` and `beam_search`. Reject `random`, `shot`, and pooled `successive_rejects`.
+Best three by composite: `sequential_halving_beam`, `ugape_deepen`, `best_first`.
+Worst three by composite: `random`, `shot`, `successive_rejects`.
+The accuracy leaders also stay near the top on composite, so high means are not just lucky seeds.
+Shortlist after this section: keep `sequential_halving_beam`, `ugape_deepen`, `best_first`. Keep watching `best_first` and `beam_search`. Reject `random`, `shot`, and `successive_rejects`.
 
 **3. First-action effect**
 
 Best three here (least first-action heavy): `montecarlo`, `random`, `successive_rejects`.
-Worst three here (most first-action heavy): `progressive_widening`, `greedy`, `ugape_deepen`.
-So two accuracy leaders look weak on this check: almost all useful gain comes from the first live action. That can be a lucky first step on an easy task.
-`sequential_halving_beam` is in the middle on this chart.
+Worst three here (most first-action heavy): `progressive_widening`, `ugape_deepen`, `greedy`.
+So some accuracy leaders look weak on this check: most useful gain can still come from the first live action.
+`sequential_halving_beam` sits nearer the middle than the worst first-action group.
 `best_first` and `beam_search` stay useful because they keep high accuracy without sitting in the worst first-action group.
-Shortlist after this section: `sequential_halving_beam` stays strongest among the old top three. Keep `best_first` and `beam_search`. Keep `progressive_widening` and `ugape_deepen` only with a warning until harder tasks are tested.
+Shortlist after this section: keep `sequential_halving_beam`, `best_first`, and `beam_search`. Keep `progressive_widening` and `ugape_deepen` with a first-action warning.
 
 **4. Action composition**
 
 Best three by mix: `montecarlo`, `random`, `ugape`.
-Worst three by mix: `successive_rejects`, `progressive_widening`, `shot`.
-`progressive_widening` is narrow (often one action type). That weakens it further as a locked default.
+Worst three by mix: `successive_rejects`, `shot`, `progressive_widening`.
+Narrow mix weakens a method as a locked default even if accuracy is high.
 `best_first` and `beam_search` sit in the useful middle: good accuracy and more than one action family.
-Shortlist after this section: `sequential_halving_beam`, `best_first`, `beam_search` look best when accuracy and exploration are weighed together. `progressive_widening` and `ugape_deepen` stay interesting on raw score, but weaker on mix / first-action checks.
+Shortlist after this section: `sequential_halving_beam`, `best_first`, `beam_search` look best when accuracy and exploration are weighed together.
 
 **5. Recovery after architecture actions**
 
-Best three and worst three match final accuracy again.
-Recovery confirms the same winners and losers. It does not change the shortlist.
-Shortlist after this section: unchanged.
+Best three by recovered train change: `sequential_halving_beam`, `ugape`, `best_first`.
+Worst three: `random`, `shot`, `successive_rejects`.
+Recovery does not promote a new global winner.
+Shortlist after this section: unchanged in spirit.
 
 **6. Starter effect**
 
 Best three for consistency: `random`, `best_first`, `montecarlo`.
 Worst three for consistency: `successive_rejects`, `shot`, `greedy`.
-Among strong methods, `best_first` is the clearest both-starter survivor. `sequential_halving_beam` also stays close across starters where medium is available.
-Shortlist after this section: `best_first` rises in confidence. `sequential_halving_beam` stays. Incomplete big-only leaders stay provisional.
+Among strong methods, `best_first` remains a clear both-starter survivor. `sequential_halving_beam` and `ugape_deepen` also stay close across starters.
+Shortlist after this section: `best_first`, `sequential_halving_beam`, and `ugape_deepen` stay strong. `progressive_widening` is complete and can be judged on starter gap too.
 
 **7. Training histories and validation histories**
 
-Best and worst shapes match the accuracy ranking again.
+Best training shapes: `sequential_halving_beam`, `ugape_deepen`, `best_first`.
+Best validation shapes: `sequential_halving_beam`, `ugape_deepen`, `greedy`.
+Worst shapes stay with `random`, `shot`, and nearby rejects.
 Shortlist after this section: unchanged.
 
-Algorithms that still look good after all sections:
+Algorithms that will stay for future experiments:
 
-- `sequential_halving_beam`: stayed in the high band on accuracy, stability, recovery, and starter gap, and was only middling on first-action share.
-- `best_first`: never the absolute accuracy #1, but repeatedly survives as a balanced complete method (accuracy, mix, both starters).
-- `beam_search`: same middle-band survivor as `best_first`, a bit less consistent on starter gap.
-- Still watch, with warnings: `progressive_widening` and `ugape_deepen` (top scores so far, but incomplete and first-action / narrow-mix risks).
-- Reject for now: `random`, `shot`, pooled `successive_rejects`, and unstable `montecarlo`.
+- `sequential_halving_beam`: keep. Top-band accuracy/composite and small starter gap. Note: look-ahead deepen uses `MAX_DEPTH = 2`.
+- `ugape_deepen`: keep. Top-band accuracy/composite on both starters. Note: deepen also uses `MAX_DEPTH = 2`.
+- `best_first`: keep. Balanced across accuracy, starter gap, and middle exploration.
+- `beam_search`: keep. Strong middle-band survivor with real look-ahead (`MAX_DEPTH = 2`).
+- `montecarlo`: keep as the look-ahead reference / baseline, even though it is unstable here.
+- `greedy`: keep as the easy-task filter baseline.
+- `random`: keep as the weak baseline control.
+
+Algorithms removed from future experiments:
+
+- `progressive_widening`: drop. Accuracy can look high, but action mix is too narrow. Same exploratory risk as other residual-only winners.
+- `successive_rejects`: drop. Strong on medium alone, but pooled stability collapses and the action mix is too narrow.
+- `shot`: drop. Weak pooled accuracy/stability and narrow exploration.
+- `sequential_halving`: drop. Depth-1 only; beaten by its beam hybrid.
+- `ugape`: drop. Depth-1 only; beaten by `ugape_deepen`.
+- `hierarchical_search`: drop. Finished the grid, but it did not earn a place in the keep shortlist.
+
+Keep set for the next harder-task experiment: `sequential_halving_beam`, `ugape_deepen`, `best_first`, `beam_search`, plus baselines `montecarlo`, `greedy`, and `random`.
 
 ## Conclusions
 
 1. The main goal is a stable simulation algorithm that still looks beyond one local step. MCTS can look ahead, but it is not stable enough here.
-2. The current task is still easy: greedy is high. Use this experiment to filter candidates, not to lock a final default. Repeat the same comparison later on harder tasks such as CIFAR.
-3. After walking every section, the safest complete shortlist is `sequential_halving_beam`, `best_first`, and `beam_search`. `progressive_widening` and `ugape_deepen` lead raw accuracy/composite so far, but they are incomplete and weaker on first-action / mix checks.
-4. Reject `random` and `shot`. Treat `successive_rejects` as medium-only evidence, not a global winner.
-5. Finish the remaining cells (`progressive_widening` medium, `ugape_deepen` medium, last `sequential_halving_beam` medium seed, all `hierarchical_search`) before locking any default.
+2. The current task is still easy: greedy is high. This experiment is a filter for the next harder runs, not a final default lock.
+3. After the full grid (`130` / `130`), keep `sequential_halving_beam`, `ugape_deepen`, `best_first`, and `beam_search`, with baselines `montecarlo`, `greedy`, and `random`.
+4. Remove `progressive_widening`, `successive_rejects`, `shot`, `sequential_halving`, `ugape`, and `hierarchical_search` from the next experiment set. Narrow action mix and/or weak pooled evidence are the rejection reasons.
+5. The planned MNIST grid is complete. Re-test only the keep set on a harder task.
 
 ## Next experiments
 
-1. Finish the remaining Exp 005 cells and refresh this page.
-2. Re-test the shortlist on a harder starter / dataset (for example CIFAR), where greedy should stop looking strong.
-3. Prefer methods that stay high without depending on one first residual action.
-4. Keep MCTS as a look-ahead reference, not as the default, until seed collapses are fixed or reduced.
+1. Re-test only the keep set on a harder starter / dataset (for example CIFAR), where greedy should stop looking strong.
+2. Prefer methods that stay high without depending on one first residual action.
+3. Keep MCTS as a look-ahead reference, not as the default, until seed collapses are fixed or reduced.
