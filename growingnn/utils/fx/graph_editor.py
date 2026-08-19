@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import torch.fx as fx
 
+from growingnn.core.config import (
+    TRANSFORMER_PACKED_PROJECTION_WIDTH_SENSITIVE_FUNCTIONS,
+    TRANSFORMER_PACKED_PROJECTION_WIDTH_SENSITIVE_METHODS,
+)
 from growingnn.utils.fx.graph_analysis import (
     GraphStructureQuery,
     LayerShapeAnalyser,
@@ -30,6 +34,32 @@ def bypass_shapes_compatible(
         and successor_input_shape is not None
         and predecessor_output_shape == successor_input_shape
     )
+
+
+def user_requires_exact_output_shape(user: fx.Node) -> bool:
+    """True for Transformer packed-projection users (split/view/slice), not relu/add."""
+    if user.op == "call_method":
+        return user.target in TRANSFORMER_PACKED_PROJECTION_WIDTH_SENSITIVE_METHODS
+    if user.op == "call_function":
+        name = getattr(user.target, "__name__", "")
+        return name in TRANSFORMER_PACKED_PROJECTION_WIDTH_SENSITIVE_FUNCTIONS
+    return False
+
+
+def bypass_valid_for_all_users(
+    layer_node: fx.Node,
+    replacement_shape: tuple[int, ...] | None,
+    layer_output_shape: tuple[int, ...] | None,
+) -> bool:
+    """True when replacement_shape can replace layer_node's output for every immediate user."""
+    for user in layer_node.users:
+        if not user_requires_exact_output_shape(user):
+            continue
+        if replacement_shape is None or layer_output_shape is None:
+            return False
+        if replacement_shape != layer_output_shape:
+            return False
+    return True
 
 
 def compute_bypass_matching(
@@ -257,6 +287,14 @@ class ModelStructureEditor:
         if is_merge_branch_layer(layer_node):
             remove_layer_from_sums(gm, layer_node)
         else:
+            layer_out = output_shapes.get(layer_id)
+            if not all(
+                bypass_valid_for_all_users(layer_node, output_shapes.get(pred_id), layer_out)
+                for pred_id in input_layers
+            ):
+                raise ValueError(
+                    f"Cannot delete {layer_id!r}: replacement not valid for all users of this layer"
+                )
             matching = compute_bypass_matching(input_layers, output_layers, output_shapes, input_shapes)
             if not output_layers:
                 if not input_layers:

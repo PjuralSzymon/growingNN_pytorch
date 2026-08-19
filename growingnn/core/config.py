@@ -31,6 +31,15 @@ RES_CONV_TO_LINEAR_GLOBAL_POOL_TYPE = "max"  # "avg" | "max"
 # Properties for neuron deletion action
 EDITABLE_MODULES = [nn.Linear, nn.Conv2d, nn.Conv1d, nn.Conv3d]
 EDITABLE_LINEAR_LIKE_NAMES = frozenset({"Conv1D"})
+# After a packed Transformer projection (GPT c_attn QKV), these FX ops keep that
+# packed width. DelLayer must not replace the projection output with a narrower
+# predecessor (n_embd vs 3 * n_embd). Relu/add are not in these sets.
+TRANSFORMER_PACKED_PROJECTION_WIDTH_SENSITIVE_METHODS = frozenset({
+    "view", "reshape", "split", "chunk", "unflatten", "expand",
+})
+TRANSFORMER_PACKED_PROJECTION_WIDTH_SENSITIVE_FUNCTIONS = frozenset({
+    "split", "chunk", "reshape", "view", "unflatten", "getitem",
+})
 DROPOUT_TYPES = (nn.Dropout, nn.Dropout2d)
 PASSTHROUGH_MODULES = (nn.Dropout, nn.Dropout2d, nn.Identity, nn.ReLU, nn.LeakyReLU,
                        nn.GELU, nn.SiLU, nn.Tanh, nn.ELU, nn.Sigmoid,
