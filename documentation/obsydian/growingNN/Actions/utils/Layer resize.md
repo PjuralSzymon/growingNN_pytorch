@@ -1,4 +1,4 @@
-Neuron width propagation on traced `fx.GraphModule` lives in `growingnn/actions/utils/layer_resize.py`. Used by `delete_neurons.py` and `add_neurons.py`. Reads graph structure through [[Torch.fx]] `ModuleResolver`, `NodeTypeChecker`, `NodeWidthAnalyser`, and writes modules through `NodeEditor.replace_submodule` in `node_editor.py`.
+Neuron width updates on traced `fx.GraphModule` live in `growingnn/actions/utils/layer_resize.py`. Used by `delete_neurons.py` and `add_neurons.py`. Reads graph structure through [[Torch.fx]] `ModuleResolver`, `NodeTypeChecker`, `NodeWidthAnalyser`, and writes modules through `NodeEditor.replace_submodule` in `node_editor.py`.
 
 Weight reprojection uses `get_reshsper` from [[Quasi identity]] inside `LinearFactory` and `ConvFactory` in `layer_Factory.py`.
 
@@ -9,8 +9,8 @@ Weight reprojection uses `get_reshsper` from [[Quasi identity]] inside `LinearFa
 | Function | Role |
 |----------|------|
 | `can_resize_linear_output(gm, layer_id, new_width)` | Pre-check before emitting or executing a neuron action |
-| `resize_layer_output(gm, layer_id, new_width)` | Replace linear output width and propagate |
-| `propagate_neuron_change(gm, node, width, seen)` | Forward walk from one FX node; core propagation engine |
+| `resize_layer_output(gm, layer_id, new_width)` | Replace one linear output width, then fix the whole graph |
+| `fix_graph_widths(gm, align_add_to=..., pinned_head_out=...)` | Sequential sweep that repairs width mismatches |
 
 `shrink_layer_output` and `expand_layer_output` live in `delete_neurons.py` and `add_neurons.py`; both call `resize_layer_output` after ratio math.
 
@@ -34,72 +34,32 @@ Idea:
 
 ## `resize_layer_output`
 
-Entry point when a neuron action runs. Resizes one linear, then starts propagation.
+Entry point when a neuron action runs. Local edit first, then a whole-graph fix.
 
 Idea:
 
-1. replace the target linear with a new module whose output neuron count matches the requested width (`LinearFactory.create_linear_with_rescaled_neurons`, `layer_id`, `new_width`)
-2. start forward propagation from that layer's FX node (`propagate_neuron_change(gm, layer_node, new_width, seen)`)
-3. recompile the graph (`gm.recompile()`); connections stay the same, only weights and module sizes change
+1. snapshot the classifier Linear `out_features` (named `output` / `head` / `fc` / `classifier`, or the Linear that feeds the FX output) so class count cannot drift
+2. replace the target linear with a new module whose output neuron count matches the requested width (`LinearFactory.create_linear_with_rescaled_neurons`, `layer_id`, `new_width`)
+3. run `fix_graph_widths` with `align_add_to=new_width` and the pinned head size
+4. recompile the graph (`gm.recompile()`); connections stay the same, only weights and module sizes change
 
 ---
 
-## `propagate_neuron_change`
+## `fix_graph_widths`
 
-Most important function in this file. One output width changed to `width`; every downstream consumer must follow.
-
-Idea:
-
-1. if this graph node at this target width was already handled in an earlier pass (`key = ("p", node.name, width)` in `seen`) then stop here
-2. if the node splits into multiple branches and its output width differs from the target (`NodeTypeChecker.is_fork(node)` and `NodeWidthAnalyser.node_output_width != width`) then stop here
-3. for each downstream consumer of this node's output (`user in node.users`):
-   3.1 if the consumer is the final graph output (`user.op == "output"`) then skip it
-   3.2 if the consumer is a residual sum (`NodeTypeChecker.is_add(user)`, `nary_add` in `sum_nodes.py`) then:
-       3.2.1 resize every other branch feeding that sum (`_sync_add_siblings_backward` on `inp != node`)
-       3.2.2 optionally clean input widths on the branch that already changed (`_align_inputs_backward` on `node.all_input_nodes`)
-       3.2.3 continue forward through the sum with the same target width (`propagate_neuron_change(gm, user, width, seen)`)
-   3.3 else if the consumer is a passthrough op such as ReLU or Dropout (`NodeTypeChecker.is_passthrough`) then walk through with the same `width`
-   3.4 else if the consumer is BatchNorm (`PASSTHROUGH_MODULES_TO_UPDATE`) then rescale channels (`_rescale_output_neurons`) and keep walking
-   3.5 else if the consumer is a linear or conv layer (`PROPAGATION_RESIZABLE_MODULES`) then:
-       3.5.1 if that layer's input width does not yet match the target (`not NodeWidthAnalyser.inputs_match_width`) then skip it
-       3.5.2 rescale input connections to the target width (`_rescale_input_connections`, `width`)
-       3.5.3 if the layer is square on an add path but output is still wrong (`was_square`, `NodeTypeChecker.is_add(node)`) then rescale output too (`_rescale_output_neurons`)
-       3.5.4 continue propagation using that layer's new output width (`out_w = _module_output_width(updated)`)
-4. record each visit in `seen` so forward, backward, and align passes do not loop on the same `node` and `width`
-
-Rule of thumb: width is a contract. If one layer outputs N features, every direct consumer must accept N. At a residual sum, all branches must output N before the sum can move forward.
-
----
-
-## `_sync_add_siblings_backward`
-
-Called when forward propagation hits a sum. Makes sibling branches match before the sum can proceed.
+Core repair loop. Does not start at the edited layer and recurse. It walks every FX node in topological order, fixes local mismatches, and repeats until a full pass makes no edits (or raises after `max_passes`).
 
 Idea:
 
-1. if this graph node at this target width was already synced (`key = ("s", node.name, width)` in `seen`) then stop here
-2. if the current node is itself a residual sum (`NodeTypeChecker.is_add(node)`) then walk backward into each input (`node.all_input_nodes`)
-3. else if the current node is a resizable linear or conv layer (`PROPAGATION_RESIZABLE_MODULES`) then:
-   3.1 if the node is a fork outside this sum (`NodeTypeChecker.is_fork`, `at_add`) then stop here
-   3.2 rescale that layer's output to the target width (`_rescale_output_neurons`, `width`)
-   3.3 restart forward propagation from that node (`propagate_neuron_change(gm, node, width, seen)`)
-4. else if the current node is BatchNorm or passthrough (`PASSTHROUGH_MODULES_TO_UPDATE`, `is_passthrough`) then walk further backward (`via_pass=True`)
-5. else stop at forks that sit outside this sum branch
+1. for each node in `gm.graph.nodes`:
+   1.1 if a resizable module’s input width disagrees with its producer (`NodeWidthAnalyser.node_output_width`) then rescale the input (`_rescale_input_connections` / `_apply_input_resize`)
+   1.2 if a residual sum (`NodeTypeChecker.is_add`, `nary_add`) has unequal input widths then pick a target width (`align_add_to` when that value is present among the inputs, else `min`) and rescale each branch’s nearest upstream output site (`_rescale_output_neurons` / `_rescale_sequential_output`); never change the pinned classifier’s `out_features` here
+   1.3 if BatchNorm `num_features` disagrees with its producer then rescale (`_rescale_batch_norm`)
+   1.4 if the classifier `out_features` drifted from the snapshot then restore it (`_rescale_linear_output`)
+2. if a pass changed nothing then stop
+3. if mismatches remain after `max_passes` then raise (fail loud; do not leave a half-fixed graph)
 
-Enforces: both residual branches must output the same width before they can be added.
-
----
-
-## `_align_inputs_backward`
-
-Light backward pass before a sum. Cleans input widths on the branch that already changed.
-
-Idea:
-
-1. if the current node is already a direct sum input or a fork point (`node in add_node.all_input_nodes`, `NodeTypeChecker.is_fork(node)`) then stop here
-2. if this graph node at this target width was already aligned (`key = ("b", node.name, width)` in `seen`) then stop here
-3. first walk backward through earlier layers on this branch (`node.all_input_nodes`, recursive `_align_inputs_backward`)
-4. if a layer's inputs already match the target width (`NodeWidthAnalyser.inputs_match_width`) then rescale its input connections (`_rescale_input_connections`)
+Rule of thumb: width is a contract. If one layer outputs N features, every direct consumer must accept N. At a residual sum, all branches must output N before the sum is valid.
 
 ---
 
@@ -119,16 +79,16 @@ Idea:
 
 ## Comparison with the original growingNN paper
 
-Old GrowingNN used `scale_neurons` on custom layers and manual column slices on successor `W` matrices. R5 uses module replacement plus FX traversal. Add nodes impose the same constraint: all branch widths at a sum must stay equal after a shrink.
+Old GrowingNN used `scale_neurons` on custom layers and manual column slices on successor `W` matrices. R5 uses module replacement plus a sequential whole-graph width repair. Add nodes impose the same constraint: all branch widths at a sum must stay equal after a shrink.
 
-Chapter DOI 10.1007/978-3-031-63749-0_25 treats width change as a search move. `propagate_neuron_change` is the R5 equivalent of the old recursive `output_layers_ids` walk.
+Chapter DOI 10.1007/978-3-031-63749-0_25 treats width change as a search move. `fix_graph_widths` is the R5 repair step after one local width edit.
 
 ---
 
 ## Known limitations
 
-1. Initial safe scope is Linear + BatchNorm1d + passthrough ops + `nary_add`. Conv resize helpers exist for propagation but conv neuron actions are not wired in `DelNeurons.generate_all_actions`.
+1. Initial safe scope is Linear + BatchNorm1d + passthrough ops + `nary_add`. Conv resize helpers exist for the fix sweep but conv neuron actions are not wired in `DelNeurons.generate_all_actions`.
 
-2. `cat`, `view`, and attention blocks are not supported on the propagation path.
+2. `cat`, `view`, and attention blocks are not supported on the width-fix path.
 
 3. Shared modules used at multiple FX sites need `NodeWidthAnalyser.all_sites_match_width` before input rescale.
