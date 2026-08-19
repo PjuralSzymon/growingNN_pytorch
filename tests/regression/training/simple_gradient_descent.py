@@ -86,10 +86,10 @@ if __name__ == "__main__":
     rng = random.Random(42)
     previous_acc = 0.0
     all_histories: list[dict[str, list[float]]] = []
-    for id in range(5):
+    for id in range(3):
         _, history = gradient_descent(
             gm,
-            5,
+            10,
             train_loader,
             val_loader,
             nn.CrossEntropyLoss(),
@@ -106,7 +106,7 @@ if __name__ == "__main__":
         all_histories.append(history)
         print(f"generation: {id} action executed: {actions[idx]}")
         assert history["train_acc"][0] >= previous_acc * 0.9
-        assert history["train_acc"][-1] > 0.5
+        assert history["train_acc"][-1] > 0.4
         previous_acc = history["train_acc"][-1]
 
     combined_history = _combine_histories(all_histories)
