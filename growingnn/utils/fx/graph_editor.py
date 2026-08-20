@@ -24,6 +24,20 @@ def _insert_call_module_after(gm, insert_after, module_name, module_input):
         return gm.graph.call_module(module_name, args=(module_input,))
 
 
+def _align_new_module_to_graph(gm: fx.GraphModule, new_layer):
+    """
+    Move *new_layer* onto the GraphModule device/dtype before insertion.
+
+    Action factories often build modules on CPU. Live and simulation models may
+    already be on CUDA; ShapeProp then crashes with mixed CUDA inputs / CPU weights.
+    """
+    try:
+        param = next(gm.parameters())
+        return new_layer.to(device=param.device, dtype=param.dtype)
+    except StopIteration:
+        return new_layer
+
+
 def bypass_shapes_compatible(
     predecessor_output_shape: tuple[int, ...] | None,
     successor_input_shape: tuple[int, ...] | None,
@@ -232,6 +246,7 @@ class ModelStructureEditor:
     @staticmethod
     def add_new_residual_layer(gm, src_name, dst_name, new_layer, name):
         """Insert *new_layer* as a residual branch from *src_name* added to *dst_name* output."""
+        new_layer = _align_new_module_to_graph(gm, new_layer)
         gm.add_module(name, new_layer)
         nodes = list(gm.graph.nodes)
         connect_residual_branch(
@@ -246,6 +261,7 @@ class ModelStructureEditor:
     @staticmethod
     def add_new_seq_layer(gm, src_name, dst_name, new_layer, name):
         """Insert *new_layer* sequentially on the path from *src_name* to *dst_name*."""
+        new_layer = _align_new_module_to_graph(gm, new_layer)
         gm.add_module(name, new_layer)
         nodes = list(gm.graph.nodes)
         src = ModuleResolver.find_call_module(nodes, src_name)
@@ -267,6 +283,7 @@ class ModelStructureEditor:
         """Insert *new_layer* immediately before the flatten node on the src→dst sequential path."""
         from growingnn.utils.fx.graph_analysis import GraphStructureQuery
 
+        new_layer = _align_new_module_to_graph(gm, new_layer)
         gm.add_module(name, new_layer)
         nodes = list(gm.graph.nodes)
         src = ModuleResolver.find_call_module(nodes, src_name)
