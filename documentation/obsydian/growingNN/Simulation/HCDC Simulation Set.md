@@ -8,4 +8,4 @@ Executing actions: none. Loaders wrap a `TensorDataset`, not a `Subset`.
 
 Comparison with the original growingNN paper: the original used real samples. HCDC synthesizes a tiny proxy set.
 
-Known limitations: this is a simplification of the paper. It does not use implicit-function hypergradients over architecture variables. Spearman and Kendall are not the training loss. On failure it falls back to `ProtectedSimulationSet`.
+Known limitations: this is a simplification of the paper. It does not use implicit-function hypergradients over architecture variables. Spearman and Kendall are not the training loss. Condensation errors raise.
