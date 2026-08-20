@@ -1,0 +1,30 @@
+name: Ping train-ci
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ping-train-ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  notify:
+    name: Wake train-ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Wake the image (job runs on your host)
+        env:
+          TRAIN_CI_URL: ${{ secrets.TRAIN_CI_URL }}
+          TRAIN_CI_TRIGGER_SECRET: ${{ secrets.TRAIN_CI_TRIGGER_SECRET }}
+        run: |
+          : "${TRAIN_CI_URL:?missing TRAIN_CI_URL}"
+          : "${TRAIN_CI_TRIGGER_SECRET:?missing TRAIN_CI_TRIGGER_SECRET}"
+          curl -sS -f -X POST "$TRAIN_CI_URL/v1/jobs" \
+            -H "Authorization: Bearer $TRAIN_CI_TRIGGER_SECRET" \
+            -H "Content-Type: application/json" \
+            -d "{\"sha\":\"${{ github.event.pull_request.head.sha }}\",\"pr\":${{ github.event.pull_request.number }},\"kind\":\"job\",\"repo\":\"${{ github.repository }}\"}"

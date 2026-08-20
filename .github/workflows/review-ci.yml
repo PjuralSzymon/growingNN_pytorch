@@ -1,0 +1,30 @@
+name: Ping review-ci
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ping-review-ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  notify:
+    name: Wake review-ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Wake the image (job runs on your host)
+        env:
+          REVIEW_CI_URL: ${{ secrets.REVIEW_CI_URL }}
+          REVIEW_CI_TRIGGER_SECRET: ${{ secrets.REVIEW_CI_TRIGGER_SECRET }}
+        run: |
+          : "${REVIEW_CI_URL:?missing REVIEW_CI_URL}"
+          : "${REVIEW_CI_TRIGGER_SECRET:?missing REVIEW_CI_TRIGGER_SECRET}"
+          curl -sS -f -X POST "$REVIEW_CI_URL/v1/jobs" \
+            -H "Authorization: Bearer $REVIEW_CI_TRIGGER_SECRET" \
+            -H "Content-Type: application/json" \
+            -d "{\"sha\":\"${{ github.event.pull_request.head.sha }}\",\"pr\":${{ github.event.pull_request.number }},\"kind\":\"review\",\"repo\":\"${{ github.repository }}\"}"
