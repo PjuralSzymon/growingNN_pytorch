@@ -77,6 +77,7 @@ from experiments.train_mnist_exp004_composed_lr_schedulers import (
     WARMUP_STEEPNESS,
     build_learning_rate_scheduler_for_schedule_id,
 )
+from growingnn.core.config import RunningConfig
 from growingnn.simulation.simulation_schedulers import SlopeEstimationSimulationScheduler
 import growingnn.simulation.simulation_algorithms.beam_search_alg as beam_search_alg
 import growingnn.simulation.simulation_algorithms.best_first_alg as best_first_alg
@@ -85,6 +86,21 @@ import growingnn.simulation.simulation_algorithms.montecarlo_alg as montecarlo_a
 import growingnn.simulation.simulation_algorithms.random_alg as random_alg
 import growingnn.simulation.simulation_algorithms.sequential_halving_beam_alg as sequential_halving_beam_alg
 import growingnn.simulation.simulation_algorithms.ugape_deepen_alg as ugape_deepen_alg
+
+_ORIGINAL_RUNNING_CONFIG = common._running_config
+
+
+def _running_config_without_neuron_resize(hp, device, board) -> RunningConfig:
+    """Exp 005 keeps width resize off; only layer add/delete stay enabled."""
+    cfg = _ORIGINAL_RUNNING_CONFIG(hp, device, board)
+    cfg.ACTIONS_ENABLE_ADD_NEURONS_11 = False
+    cfg.ACTIONS_ENABLE_ADD_NEURONS_15 = False
+    cfg.ACTIONS_ENABLE_ADD_NEURONS_20 = False
+    cfg.ACTIONS_ENABLE_DEL_NEURONS_01 = False
+    cfg.ACTIONS_ENABLE_DEL_NEURONS_05 = False
+    cfg.ACTIONS_ENABLE_DEL_NEURONS_09 = False
+    return cfg
+
 
 RUNS_DIR = train_mnist.RUNS_DIR / "exp005_simulation_algorithms"
 SCHEDULE_ID = "composed_exponential"
@@ -168,13 +184,16 @@ if __name__ == "__main__":
                     "MNIST",
                 ),
             )
-            with patch.object(
-                common,
-                "AlwaysSimulationScheduler",
-                partial(
-                    SlopeEstimationSimulationScheduler,
-                    angle_threshold=SLOPE_ANGLE_THRESHOLD,
+            with (
+                patch.object(
+                    common,
+                    "AlwaysSimulationScheduler",
+                    partial(
+                        SlopeEstimationSimulationScheduler,
+                        angle_threshold=SLOPE_ANGLE_THRESHOLD,
+                    ),
                 ),
+                patch.object(common, "_running_config", _running_config_without_neuron_resize),
             ):
                 executed, skipped = common.run_experiment_grid(
                     definition,
