@@ -13,7 +13,19 @@ from growingnn.simulation.simulation_sets.commons import (
 
 
 class ProtectedSimulationSet(SimulationSet):
-    """Class-balanced random subset. Same behavior as the old sample_loaders path."""
+    """
+    0. Protected sampling (default).
+
+    Paper: none. Same behavior as the old sample_loaders path.
+
+    Class-balanced random subset. Every class keeps at least one example.
+
+    Pseudocode:
+        for each class:
+            take max(K // C, 1) random indices
+        val set uses seed + 1 and K // 4
+        return Subset loaders
+    """
 
     def generate(
         self,
