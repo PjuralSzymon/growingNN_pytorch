@@ -146,6 +146,36 @@ def test_run_experiment_grid_trains_and_saves_metric_artifacts(tmp_path, monkeyp
         f"{key}.png" for key in common.METRIC_KEYS
     }
     assert captured["config"].generations == 1
+    assert captured["config"].ACTIONS_ENABLE_ADD_NEURONS_15 is False
+    assert captured["config"].ACTIONS_ENABLE_DEL_NEURONS_05 is False
+
+
+def test_running_config_disables_neuron_resize_unless_hp_opts_in():
+    """
+    Experiment grids keep AddNeurons/DelNeurons off unless enable_neuron_resize_actions is set.
+    """
+    # Arrange
+    hp_off = _hyperparameters()
+    hp_on = {**_hyperparameters(), "enable_neuron_resize_actions": True}
+    device = torch.device("cpu")
+
+    # Act
+    cfg_off = common._running_config(hp_off, device, None)
+    cfg_on = common._running_config(hp_on, device, None)
+
+    # Assert
+    assert cfg_off.ACTIONS_ENABLE_ADD_NEURONS_11 is False
+    assert cfg_off.ACTIONS_ENABLE_ADD_NEURONS_15 is False
+    assert cfg_off.ACTIONS_ENABLE_ADD_NEURONS_20 is False
+    assert cfg_off.ACTIONS_ENABLE_DEL_NEURONS_01 is False
+    assert cfg_off.ACTIONS_ENABLE_DEL_NEURONS_05 is False
+    assert cfg_off.ACTIONS_ENABLE_DEL_NEURONS_09 is False
+    assert cfg_on.ACTIONS_ENABLE_ADD_NEURONS_11 is True
+    assert cfg_on.ACTIONS_ENABLE_ADD_NEURONS_15 is True
+    assert cfg_on.ACTIONS_ENABLE_ADD_NEURONS_20 is True
+    assert cfg_on.ACTIONS_ENABLE_DEL_NEURONS_01 is True
+    assert cfg_on.ACTIONS_ENABLE_DEL_NEURONS_05 is True
+    assert cfg_on.ACTIONS_ENABLE_DEL_NEURONS_09 is True
 
 
 def test_draw_graphs_uses_full_and_simplified_names(tmp_path, monkeypatch):

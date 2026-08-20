@@ -144,6 +144,7 @@ def mnist_hyperparameters() -> dict[str, object]:
         "simulation_alg_id": SIMULATION_ALG_ID,
         "simulation_alg": SIMULATION_ALG,
         "model_name": MODEL_NAME,
+        "enable_neuron_resize_actions": True,
         "lr_scheduler_factory": (
             lambda hp: build_learning_rate_scheduler_for_schedule_id(SCHEDULE_ID, hp)
         ),
