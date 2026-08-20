@@ -24,7 +24,7 @@ Logging block: `ENABLE_LOGGING` `True` line 18. `LOG_LEVEL` `"DEBUG"` line 19. `
 
 Training fields: `generations`, `epochs`, `lr_scheduler`, `stopper`, `criterion`, `device`, `simulation_set_size`.
 
-Search fields: `simulation_alg`, `simulation_scheduler`, `simulation_score`, `sim_train_loader` / `sim_val_loader` set via `set_simulation_loaders`.
+Search fields: `simulation_alg`, `simulation_scheduler`, `simulation_score`, `simulation_set`, `simulation_set_size`, `simulation_set_seed`, `sim_train_loader` / `sim_val_loader` set via `set_simulation_loaders`.
 
 Action enable flags (default all `True` in `__init__`):
 

@@ -16,4 +16,4 @@ Alternatives on `RunningConfig.simulation_alg` / Exp 005 `hp["simulation_alg"]`:
 ### Grading
 
 - [[Scoring function]] — weighted `SimulationScore` over acc, loss, time, and parameter count
-- [[Simulation Set]] — how train/val loaders are sampled for rollouts
+- [[Simulation Set]] — `RunningConfig.simulation_set.generate` builds the train/val loaders used by rollouts
