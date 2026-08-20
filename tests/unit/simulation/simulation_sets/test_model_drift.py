@@ -11,7 +11,8 @@ _REPO_ROOT = Path(__file__).resolve().parents[4]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from growingnn.simulation.simulation_sets.base import ProtectedSimulationSet, SimulationSet
+from growingnn.simulation.simulation_sets.base import SimulationSet
+from growingnn.simulation.simulation_sets.protected import ProtectedSimulationSet
 from growingnn.simulation.simulation_sets.commons import subset_indices
 from growingnn.simulation.simulation_sets.model_drift import ModelDriftSimulationSet
 
