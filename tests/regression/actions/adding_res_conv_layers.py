@@ -16,7 +16,7 @@ from torch.fx.passes.graph_drawer import FxGraphDrawer
 from growingnn.actions.action import Layer_Type
 from growingnn.actions.add_res_conv_layer import AddResConvLayer
 from growingnn.actions.add_res_linear_layer import AddResLinearLayer
-from growingnn.utils.fx import GraphStructureQuery
+from growingnn.utils.fx import GraphStructureQuery, extract_graph
 from growingnn.core.logger import logger
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from tests.model_factory import ModelFactory
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     args = parse_regression_cli()
     #    model = ModelFactory.simple_conv_chain_2()
     model = ModelFactory.complex_residual_conv_many_widths()
-    gm = fx.symbolic_trace(model)
+    gm = extract_graph(model)
     executed_actions = []
     x = torch.randn(2, 4, 8, 8)
     trace_shape = (1, *x.shape[1:])

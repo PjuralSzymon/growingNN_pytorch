@@ -3,12 +3,14 @@ from typing import List
 from torch import fx, nn
 
 from growingnn.core.traced_model import TracedModel
+from growingnn.utils.fx.graph_extraction import extract_graph
 from growingnn.utils.fx import (
     LayerShapeAnalyser,
     GraphStructureQuery,
     ModelStructureEditor,
 )
 from growingnn.utils.fx.graph_editor import (
+    bypass_valid_for_all_users,
     branch_only_bypass_compatible,
     compute_bypass_matching,
 )
@@ -31,7 +33,7 @@ def can_bypass_delete_layer(
     input_shape: tuple[int, ...] | None = None,
 ) -> bool:
     """Return True when each successor can be fed by one shape-compatible predecessor."""
-    gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
+    gm = extract_graph(model)
     if output_shapes is None or input_shapes is None:
         output_shapes, input_shapes = LayerShapeAnalyser.collect_layer_shapes(
             gm, input_shape=input_shape
@@ -42,6 +44,12 @@ def can_bypass_delete_layer(
     input_layers = GraphStructureQuery.get_input_layers(layer_id, gm)
     output_layers = GraphStructureQuery.get_output_layers(layer_id, gm)
     if not input_layers:
+        return False
+    layer_out = output_shapes.get(layer_id)
+    if not all(
+        bypass_valid_for_all_users(layer_node, output_shapes.get(pred_id), layer_out)
+        for pred_id in input_layers
+    ):
         return False
     if not output_layers:
         return branch_only_bypass_compatible(layer_node, input_shapes)
@@ -89,6 +97,13 @@ def explain_delete_layer_blockers(
         output_layers = GraphStructureQuery.get_output_layers(layer_id, gm)
         if not input_layers:
             blockers.append((layer_id, "no editable predecessors"))
+            continue
+        layer_out = output_shapes.get(layer_id)
+        if not all(
+            bypass_valid_for_all_users(layer_node, output_shapes.get(pred_id), layer_out)
+            for pred_id in input_layers
+        ):
+            blockers.append((layer_id, "replacement not valid for all users of this layer"))
             continue
         if not output_layers:
             if not branch_only_bypass_compatible(layer_node, input_shapes):

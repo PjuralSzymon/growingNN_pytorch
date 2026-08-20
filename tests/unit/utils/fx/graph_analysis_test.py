@@ -58,6 +58,30 @@ def test_find_bridge_linear_sizes_maps_rank2_output_to_rank2_input():
     """
 
     # Arrange / Act
+    sizes = LayerBridgeFinder.find_bridge_linear_sizes((1, 8), (1, 8))
+
+    # Assert
+    assert sizes == (8, 8)
+
+
+def test_find_bridge_linear_sizes_rejects_mismatched_feature_dims():
+    """
+    find_bridge_linear_sizes should return None when rank-3 last dims differ (reshape between pair).
+    """
+
+    # Arrange / Act
+    sizes = LayerBridgeFinder.find_bridge_linear_sizes((1, 8, 6), (1, 8, 2))
+
+    # Assert
+    assert sizes is None
+
+
+def test_find_bridge_linear_sizes_allows_rank2_width_change():
+    """
+    find_bridge_linear_sizes should keep MLP bridges that change feature width.
+    """
+
+    # Arrange / Act
     sizes = LayerBridgeFinder.find_bridge_linear_sizes((1, 8), (1, 16))
 
     # Assert
@@ -863,6 +887,112 @@ def test_prune_unreachable_nodes_removes_dangling_branch():
     assert not hasattr(gm, "orphan")
     assert GraphConnectivity.is_connected_to_output(gm)
     assert GraphConnectivity.live_module_ids(gm) == ["stem", "head"]
+
+
+def test_linear_feature_dim_rank2_uses_last_axis():
+    """
+    linear_feature_dim should return shape[1] for a rank-2 (batch, features) tensor.
+    """
+
+    # Arrange / Act
+    features = LayerBridgeFinder.linear_feature_dim((1, 4))
+
+    # Assert
+    assert features == 4
+
+
+def test_linear_feature_dim_rank3_uses_last_axis():
+    """
+    linear_feature_dim should return shape[-1] for a rank-3 (batch, seq, features) tensor.
+    """
+
+    # Arrange / Act
+    features = LayerBridgeFinder.linear_feature_dim((1, 8, 2))
+
+    # Assert
+    assert features == 2
+
+
+def test_linear_feature_dim_rank4_is_none():
+    """
+    linear_feature_dim should return None for a rank-4 conv activation.
+    """
+
+    # Arrange / Act
+    features = LayerBridgeFinder.linear_feature_dim((1, 3, 32, 32))
+
+    # Assert
+    assert features is None
+
+
+def test_find_bridge_linear_sizes_rank3_uses_last_dim():
+    """
+    find_bridge_linear_sizes should map matching rank-3 last dims to Linear sizes.
+    """
+
+    # Arrange / Act
+    sizes = LayerBridgeFinder.find_bridge_linear_sizes((1, 8, 2), (1, 8, 2))
+
+    # Assert
+    assert sizes == (2, 2)
+
+
+class Conv1D(nn.Module):
+    """HF-style transposed Linear named Conv1D so leaf tracers keep it as call_module."""
+
+    def __init__(self, nx: int, nf: int):
+        super().__init__()
+        self.weight = nn.Parameter(torch.ones(nx, nf))
+        self.bias = nn.Parameter(torch.zeros(nf))
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return x @ self.weight + self.bias
+
+
+class _ToyConv1DMlp(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.c_fc = Conv1D(2, 4)
+        self.c_proj = Conv1D(4, 2)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.c_proj(self.c_fc(x))
+
+
+def _trace_conv1d_leaves(model: nn.Module) -> fx.GraphModule:
+    from tests.conv1d_leaf_tracer import trace_conv1d_leaves
+    return trace_conv1d_leaves(model)
+
+
+def test_is_editable_module_true_for_conv1d_call_module():
+    """
+    is_editable_module should accept a Conv1D leaf kept as call_module.
+    """
+
+    # Arrange
+    gm = _trace_conv1d_leaves(_ToyConv1DMlp())
+    c_fc = next(n for n in gm.graph.nodes if n.op == "call_module" and n.target == "c_fc")
+
+    # Act
+    result = ModuleClassifier.is_editable_module(c_fc, gm)
+
+    # Assert
+    assert result is True
+
+
+def test_module_sequential_pairs_nonempty_for_conv1d_chain():
+    """
+    module_sequential_pairs should include c_fc -> c_proj when Conv1D stays a leaf.
+    """
+
+    # Arrange
+    gm = _trace_conv1d_leaves(_ToyConv1DMlp())
+
+    # Act
+    pairs = GraphStructureQuery.module_sequential_pairs(gm)
+
+    # Assert
+    assert ("c_fc", "c_proj") in pairs
 
 
 if __name__ == "__main__":

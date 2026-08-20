@@ -31,7 +31,7 @@ from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
 from growingnn.actions.delete_layer import DelLayer
 from growingnn.actions.delete_neurons import DelNeurons
 from growingnn.core.logger import logger
-from growingnn.utils.fx import GraphStructureQuery
+from growingnn.utils.fx import GraphStructureQuery, extract_graph
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from growingnn.core.traced_model import TracedModel
 from tests.regression.regression_utils import (
@@ -265,11 +265,17 @@ if __name__ == "__main__":
 
     for name, load_model, make_x in _model_specs_for_run():
         logger.info("======== model: %s ========", name)
-        model = load_model()
-        x = make_x(data_rng)
-        gm = fx.symbolic_trace(model)
-        with torch.no_grad():
-            gm(x)
+        try:
+            model = load_model()
+            x = make_x(data_rng)
+            gm = extract_graph(model)
+            with torch.no_grad():
+                gm(x)
+        except Exception as err:
+            if name in _HF_MODEL_NAMES:
+                logger.warning("skip %s (HF trace failed with this transformers build): %s", name, err)
+                continue
+            raise
         _run_model(name, gm, x, args, rng)
 
     if not args.save_output:

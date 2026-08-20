@@ -2,6 +2,7 @@
 
 import torch
 import torch.fx as fx
+import torch.nn as nn
 
 from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
 from growingnn.core import config
@@ -42,6 +43,42 @@ def test_generate_all_actions_skips_when_weight_matrix_exceeds_config_limit(monk
 
     # Act
     actions = AddSeqLinearLayer.generate_all_actions(TracedModel.create(gm, (1, 4)))
+
+    # Assert
+    assert actions == []
+
+
+def test_generate_all_actions_skips_when_feature_dims_differ():
+    """
+    AddSeqLinearLayer should skip a sequential pair whose last dims differ (reshape between).
+    """
+
+    # Arrange
+    class Conv1D(nn.Module):
+        def __init__(self, nx: int, nf: int):
+            super().__init__()
+            self.weight = nn.Parameter(torch.ones(nx, nf))
+            self.bias = nn.Parameter(torch.zeros(nf))
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return x @ self.weight + self.bias
+
+    class SplitThenProj(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.c_attn = Conv1D(2, 6)
+            self.c_proj = Conv1D(2, 2)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.c_proj(self.c_attn(x)[..., :2])
+
+    from tests.conv1d_leaf_tracer import trace_conv1d_leaves
+
+    model = SplitThenProj()
+    gm = trace_conv1d_leaves(model)
+
+    # Act
+    actions = AddSeqLinearLayer.generate_all_actions(TracedModel.create(gm, (1, 8, 2)))
 
     # Assert
     assert actions == []

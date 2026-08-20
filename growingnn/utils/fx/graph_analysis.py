@@ -7,8 +7,9 @@ import torch.nn as nn
 import torch.fx as fx
 from torch.fx.passes.shape_prop import ShapeProp
 
-from growingnn.core.config import DROPOUT_TYPES, EDITABLE_MODULES
+from growingnn.core.config import DROPOUT_TYPES, EDITABLE_LINEAR_LIKE_NAMES, EDITABLE_MODULES
 from growingnn.core.logger import logger
+from growingnn.utils.fx.graph_extraction import extract_graph
 from growingnn.utils.fx.node_analysis import ModuleResolver, NodeTypeChecker
 
 
@@ -34,13 +35,16 @@ class ModuleClassifier:
 
     @staticmethod
     def is_editable_module(node: fx.Node, gm: fx.GraphModule) -> bool:
-        """True when the node is a call_module whose resolved type is in EDITABLE_MODULES."""
+        """True when the node is a call_module Linear/Conv or a Linear-like name (HF Conv1D)."""
         if node.op != "call_module":
             return False
         module = ModuleResolver.get_layer_module(node, gm)
         if module is None:
             return False
-        return any(isinstance(module, t) for t in EDITABLE_MODULES)
+        return (
+            any(isinstance(module, t) for t in EDITABLE_MODULES)
+            or type(module).__name__ in EDITABLE_LINEAR_LIKE_NAMES
+        )
 
     @staticmethod
     def is_at_least_one_hidden_module(n1: fx.Node, n2: fx.Node) -> bool:
@@ -59,7 +63,7 @@ class GraphStructureQuery:
     @staticmethod
     def get_all_hidden_modules(model: nn.Module | fx.GraphModule) -> list[str]:
         """Return the target names of all hidden call_module nodes."""
-        gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
+        gm = extract_graph(model)
         nodes: list[str] = []
         for n in gm.graph.nodes:
             if n.op != "call_module":
@@ -73,7 +77,7 @@ class GraphStructureQuery:
     @staticmethod
     def module_dependency_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str, str]]:
         """All (ancestor, descendant) pairs where the descendant is a hidden module reachable forward."""
-        gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
+        gm = extract_graph(model)
         edges: list[tuple[str, str]] = []
         for n in gm.graph.nodes:
             if not ModuleClassifier.is_editable_module(n, gm):
@@ -94,7 +98,7 @@ class GraphStructureQuery:
     @staticmethod
     def module_sequential_pairs(model: nn.Module | fx.GraphModule) -> list[tuple[str, str]]:
         """All (ancestor, descendant) editable pairs on the forward path (boundaries allowed)."""
-        gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
+        gm = extract_graph(model)
         edges: list[tuple[str, str]] = []
         for n in gm.graph.nodes:
             if not ModuleClassifier.is_editable_module(n, gm):
@@ -135,7 +139,7 @@ class GraphStructureQuery:
     @staticmethod
     def get_amount_of_parameters(model: nn.Module | fx.GraphModule) -> int:
         """Total number of parameters in FX graph call_module nodes (conv, linear, etc.)."""
-        gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
+        gm = extract_graph(model)
         return GraphStructureQuery._sum_graph_module_parameters(gm)
 
     @staticmethod
@@ -444,12 +448,15 @@ class LayerBridgeFinder:
 
     @staticmethod
     def linear_feature_dim(shape: tuple[int, ...] | None) -> int | None:
-        """Feature dimension from a 2-D (batch, features) shape."""
+        """Feature dim: rank-2 shape[1], rank-3 shape[-1]; else None."""
         if shape is None:
             return None
-        if len(shape) != 2:
+        if len(shape) == 2:
+            features = int(shape[1])
+        elif len(shape) == 3:
+            features = int(shape[-1])
+        else:
             return None
-        features = int(shape[1])
         return features if features > 0 else None
 
     @staticmethod
@@ -467,12 +474,18 @@ class LayerBridgeFinder:
         from_output_shape: tuple[int, ...] | None,
         to_input_shape: tuple[int, ...] | None,
     ) -> tuple[int, int] | None:
-        """(in_features, out_features) for a bridge Linear between two layers."""
+        """(in_features, out_features) for a bridge Linear between two layers.
+
+        Rank-2 MLP pairs may change width. Rank-3 token pairs must match last dim
+        so a reshape/split between modules is not bridged with a wrong Linear.
+        """
         if from_output_shape is None or to_input_shape is None:
             return None
         in_f = LayerBridgeFinder.linear_feature_dim(from_output_shape)
         out_f = LayerBridgeFinder.linear_feature_dim(to_input_shape)
         if in_f is None or out_f is None:
+            return None
+        if (len(from_output_shape) == 3 or len(to_input_shape) == 3) and in_f != out_f:
             return None
         return in_f, out_f
 

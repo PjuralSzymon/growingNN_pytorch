@@ -1,5 +1,6 @@
 """Unit tests for delete-layer shape helpers."""
 
+import pytest
 import torch
 import torch.fx as fx
 import torch.nn as nn
@@ -199,3 +200,99 @@ def test_delete_pairwise_branch_mid_preserves_forward_shape():
     # Assert
     assert y.shape == (2, 4)
     assert not hasattr(gm, "mid_a")
+
+
+def test_can_bypass_delete_layer_true_when_relu_follows_hidden_linear():
+    """
+    can_bypass_delete_layer should ignore relu call_function users and keep the old matching path.
+    """
+
+    # Arrange
+    class ReluChain(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.l1 = nn.Linear(4, 8)
+            self.l2 = nn.Linear(8, 8)
+            self.l3 = nn.Linear(8, 2)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.l3(torch.relu(self.l2(self.l1(x))))
+
+    gm = fx.symbolic_trace(ReluChain())
+
+    # Act
+    result = can_bypass_delete_layer(gm, "l2", input_shape=(1, 4))
+
+    # Assert
+    assert result is True
+
+
+def test_can_bypass_delete_layer_false_when_split_needs_wider_output():
+    """
+    can_bypass_delete_layer should refuse a Conv1D whose non-module user (slice) needs its output width.
+    """
+
+    # Arrange
+    class Conv1D(nn.Module):
+        def __init__(self, nx: int, nf: int):
+            super().__init__()
+            self.weight = nn.Parameter(torch.ones(nx, nf))
+            self.bias = nn.Parameter(torch.zeros(nf))
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return x @ self.weight + self.bias
+
+    class SplitAfterAttn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.l1 = nn.Linear(2, 2)
+            self.c_attn = Conv1D(2, 6)
+            self.c_proj = Conv1D(2, 2)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.c_proj(self.c_attn(self.l1(x))[..., :2])
+
+    from tests.conv1d_leaf_tracer import trace_conv1d_leaves
+
+    model = SplitAfterAttn()
+    gm = trace_conv1d_leaves(model)
+
+    # Act
+    result = can_bypass_delete_layer(gm, "c_attn", input_shape=(1, 8, 2))
+
+    # Assert
+    assert result is False
+
+
+def test_delete_layer_raises_when_slice_needs_wider_output():
+    """
+    delete_layer should raise when a slice user needs the deleted packed-projection width.
+    """
+
+    # Arrange
+    class Conv1D(nn.Module):
+        def __init__(self, nx: int, nf: int):
+            super().__init__()
+            self.weight = nn.Parameter(torch.ones(nx, nf))
+            self.bias = nn.Parameter(torch.zeros(nf))
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return x @ self.weight + self.bias
+
+    class SplitAfterAttn(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.l1 = nn.Linear(2, 2)
+            self.c_attn = Conv1D(2, 6)
+            self.c_proj = Conv1D(2, 2)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.c_proj(self.c_attn(self.l1(x))[..., :2])
+
+    from tests.conv1d_leaf_tracer import trace_conv1d_leaves
+
+    gm = trace_conv1d_leaves(SplitAfterAttn())
+
+    # Act / Assert
+    with pytest.raises(ValueError, match="replacement not valid for all users"):
+        ModelStructureEditor.delete_layer(gm, "c_attn", input_shape=(1, 8, 2))

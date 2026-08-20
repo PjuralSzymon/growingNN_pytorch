@@ -18,7 +18,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from growingnn.actions.delete_neurons import DelNeurons
-from growingnn.utils.fx import ModuleResolver, NodeWidthAnalyser
+from growingnn.utils.fx import ModuleResolver, NodeWidthAnalyser, extract_graph
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from tests.regression.regression_utils import FOLDER_NAME, clear_regression_folder, parse_regression_cli
 from growingnn.core.traced_model import TracedModel
@@ -116,7 +116,7 @@ def test_del_neurons_generate_then_execute_aligns_widths_on_residual_model(save_
     """
     # Arrange
     probe = _passthrough_fork_residual_model()
-    gm = fx.symbolic_trace(probe)
+    gm = extract_graph(probe)
     x = torch.randn(BATCH_SIZE, INPUT_FEATURES)
     actions = DelNeurons.generate_all_actions(TracedModel.create(gm, (1, 4)))
     output_1 = gm(x)

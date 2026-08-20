@@ -4,6 +4,7 @@ from torch import fx, nn
 
 from growingnn.core.traced_model import TracedModel
 from growingnn.utils.fx import ModuleResolver
+from growingnn.utils.fx.graph_extraction import extract_graph
 from growingnn.actions.utils.layer_resize import can_resize_linear_output, resize_layer_output
 from growingnn.core import config
 from .action import Action
@@ -11,7 +12,7 @@ from .action import Action
 
 def expand_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, ratio: float) -> fx.GraphModule:
     """Grow a Linear layer's output by ratio and propagate shapes."""
-    gm = gm if isinstance(gm, fx.GraphModule) else fx.symbolic_trace(gm)
+    gm = extract_graph(gm)
     mod = ModuleResolver.get_layer_module(layer_id, gm)
     if not isinstance(mod, nn.Linear):
         raise TypeError(f"{layer_id} is not nn.Linear")

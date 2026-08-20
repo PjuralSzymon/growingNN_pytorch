@@ -19,7 +19,7 @@ from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
 from growingnn.actions.delete_layer import DelLayer
 from growingnn.actions.delete_neurons import DelNeurons
 from growingnn.core.logger import logger
-from growingnn.utils.fx import GraphStructureQuery
+from growingnn.utils.fx import GraphStructureQuery, extract_graph
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from growingnn.core.traced_model import TracedModel
 from tests.regression.regression_utils import (
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     args = parse_regression_cli()
 
     model = _load_pretrained_resnet18()
-    gm = fx.symbolic_trace(model)
+    gm = extract_graph(model)
 
     rng = random.Random(SEED)
     data_rng = torch.Generator().manual_seed(SEED)

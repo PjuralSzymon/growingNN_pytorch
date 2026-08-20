@@ -8,7 +8,7 @@ Called from grow/shrink actions in `growingnn/actions/`. Layer names must be uni
 
 
 
-Residual wiring uses `connect_residual_branch` from `sum_nodes.py`. Layer delete uses `remove_layer_from_sums`, `compute_bypass_matching`, and `prune_unreachable_nodes`.
+Residual wiring uses `connect_residual_branch` from `sum_nodes.py`. Layer delete uses `remove_layer_from_sums`, `compute_bypass_matching`, `bypass_valid_for_all_users`, and `prune_unreachable_nodes`.
 
 
 
@@ -25,6 +25,10 @@ Residual wiring uses `connect_residual_branch` from `sum_nodes.py`. Layer delete
 - `_path_dst_to_src(dst, src)` — backward DFS along `all_input_nodes` for sequential insert
 
 - `bypass_shapes_compatible(pred_shape, succ_shape)` — equal activation tuples
+
+- `user_requires_exact_output_shape(user)` — true for Transformer packed-projection FX ops (`split`, `view`, `getitem`) listed in [[Config]] as `TRANSFORMER_PACKED_PROJECTION_WIDTH_SENSITIVE_METHODS` and `TRANSFORMER_PACKED_PROJECTION_WIDTH_SENSITIVE_FUNCTIONS`. False for relu and add.
+
+- `bypass_valid_for_all_users(layer_node, replacement_shape, layer_output_shape)` — true when the replacement tensor can stand in for the deleted node for every immediate user. A split or slice user needs `replacement_shape == layer_output_shape`. Relu and add do not.
 
 - `compute_bypass_matching(input_layers, output_layers, output_shapes, input_shapes)` — map each successor id to one compatible predecessor id
 
@@ -88,15 +92,17 @@ Used by `DelLayer` in `delete_layer.py`.
 
 2. If `is_merge_branch_layer(layer_node)` (`sum_nodes.py`): `remove_layer_from_sums(gm, layer_node)`.
 
-3. Else if no sequential successors: `_rewire_branch_only_layer` when `branch_only_bypass_compatible` passes.
+3. Else if any predecessor fails `bypass_valid_for_all_users`: raise. This blocks GPT `c_attn` when a split or slice still needs the packed QKV width.
 
-4. Else: `_rewire_layer_users` with `compute_bypass_matching`.
+4. Else if no sequential successors: `_rewire_branch_only_layer` when `branch_only_bypass_compatible` passes.
 
-5. `graph.erase_node(layer_node)` and drop submodule when top-level.
+5. Else: `_rewire_layer_users` with `compute_bypass_matching`.
 
-6. `prune_unreachable_nodes(gm)` — removes dangling `act` nodes and dead branches not reaching the graph output.
+6. `graph.erase_node(layer_node)` and drop submodule when top-level.
 
-7. `lint` and `recompile`.
+7. `prune_unreachable_nodes(gm)` — removes dangling `act` nodes and dead branches not reaching the graph output.
+
+8. `lint` and `recompile`.
 
 
 

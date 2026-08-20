@@ -24,6 +24,7 @@ from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, 
 from growingnn.training.stoppers import AccuracyStopper
 from growingnn.training.trainer import train_generations
 from growingnn.utils.fx import GraphStructureQuery
+from growingnn.utils.fx.graph_extraction import extract_graph
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from growingnn.utils.seed import seed_all
 
@@ -171,7 +172,7 @@ def _train_run(
 ) -> None:
     seed_all(seed)
 
-    gm = fx.symbolic_trace(definition.model_factory(hp))
+    gm = extract_graph(definition.model_factory(hp))
     params_before = GraphStructureQuery.get_amount_of_parameters(gm)
     logger.info("Run %s seed %s params=%s -> %s", folder, seed, params_before, run_dir)
     if definition.save_fx_graphs:

@@ -22,7 +22,7 @@ from growingnn.core.config import RunningConfig
 from growingnn.simulation.score_functions.simulation_score import SimulationScore
 import growingnn.simulation.simulation_algorithms.greedy_alg as greedy_alg
 import growingnn.simulation.simulation_algorithms.random_alg as random_alg
-from growingnn.utils.fx import GraphStructureQuery
+from growingnn.utils.fx import GraphStructureQuery, extract_graph
 from growingnn.core.traced_model import TracedModel
 
 
@@ -47,7 +47,7 @@ def test_random_alg_returns_executable_action():
     random_alg should pick an action that can mutate a traced ResNet-18.
     """
     # Arrange
-    gm = fx.symbolic_trace(resnet18(weights=None, num_classes=2))
+    gm = extract_graph(resnet18(weights=None, num_classes=2))
     traced = TracedModel.create(gm, (1, 3, 32, 32))
     params_before = GraphStructureQuery.get_amount_of_parameters(gm)
     cfg = _running_config()
@@ -69,7 +69,7 @@ def test_greedy_alg_returns_action_within_time_budget():
     greedy_alg should finish within the allotted time and return an action.
     """
     # Arrange
-    gm = fx.symbolic_trace(resnet18(weights=None, num_classes=2))
+    gm = extract_graph(resnet18(weights=None, num_classes=2))
     traced = TracedModel.create(gm, (1, 3, 32, 32))
     cfg = _running_config(
         simulation_time=2.0,

@@ -14,7 +14,7 @@ One file keeps numbers for init ranges, cache limits, which module types count a
 
 `RES_CONV_TO_LINEAR_GLOBAL_POOL_TYPE` is the string `"max"` at line 13. Allowed values in code are `"avg"` or `"max"`. Used in `ConvFactory.create_zero_conv_before_linear` in `layer_Factory.py` lines 103 to 110.
 
-`EDITABLE_MODULES` is a list `[nn.Linear, nn.Conv2d, nn.Conv1d, nn.Conv3d]` at line 17. [[Torch.fx]] uses it in `ModuleClassifier.is_editable_module` to decide which `call_module` nodes count as editable. `PASSTHROUGH_MODULES`, `PASSTHROUGH_FUNCTIONS`, and `PROPAGATION_RESIZABLE_MODULES` feed `node_analysis.py` and `layer_resize.py`.
+`EDITABLE_MODULES` is a list `[nn.Linear, nn.Conv2d, nn.Conv1d, nn.Conv3d]` at line 32. [[Torch.fx]] uses it in `ModuleClassifier.is_editable_module` to decide which `call_module` nodes count as editable. `EDITABLE_LINEAR_LIKE_NAMES` is `{"Conv1D"}` at line 33 so HuggingFace GPT projections count as Linear-like. `TRANSFORMER_PACKED_PROJECTION_WIDTH_SENSITIVE_METHODS` and `TRANSFORMER_PACKED_PROJECTION_WIDTH_SENSITIVE_FUNCTIONS` list FX `split` / `view` / `getitem` ops after packed GPT `c_attn` QKV. [[Graph editor]] `bypass_valid_for_all_users` reads them so DelLayer does not replace a packed width with a narrower predecessor. Relu and add are not in those sets. `PASSTHROUGH_MODULES`, `PASSTHROUGH_FUNCTIONS`, and `PROPAGATION_RESIZABLE_MODULES` feed `node_analysis.py` and `layer_resize.py`.
 
 Logging block: `ENABLE_LOGGING` `True` line 18. `LOG_LEVEL` `"DEBUG"` line 19. `LOG_TO_FILE` `True` line 20. `LOG_FILE_NAME` `"growingnn.log"` line 21. `LOG_FILE_MAX_BYTES` `100 * 1024 * 1024` line 22. `LOG_FILE_BACKUP_COUNT` `9` line 23. Rough cap near 1 GB total with one active file plus backups.
 

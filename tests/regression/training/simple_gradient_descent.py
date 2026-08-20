@@ -22,6 +22,7 @@ from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, 
 from growingnn.training.stoppers import StopperMode, TrainingStopper
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 from growingnn.core.traced_model import TracedModel
+from growingnn.utils.fx.graph_extraction import extract_graph
 from tests.regression.regression_utils import (
     FOLDER_NAME,
     clear_regression_folder,
@@ -81,7 +82,7 @@ if __name__ == "__main__":
     args = parse_regression_cli()
     torch.manual_seed(0)
     model = resnet18(weights=None, num_classes=NUM_CLASSES)
-    gm = torch.fx.symbolic_trace(model)
+    gm = extract_graph(model)
     train_loader, val_loader = _loaders()
     rng = random.Random(42)
     previous_acc = 0.0
@@ -89,7 +90,7 @@ if __name__ == "__main__":
     for id in range(5):
         _, history = gradient_descent(
             gm,
-            5,
+            8,
             train_loader,
             val_loader,
             nn.CrossEntropyLoss(),

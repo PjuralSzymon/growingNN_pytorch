@@ -16,6 +16,7 @@ import torch.nn as nn
 import growingnn.core.config as project_config
 from growingnn.core.config import RunningConfig
 from growingnn.utils.fx import GraphStructureQuery
+from growingnn.utils.fx.graph_extraction import extract_graph
 from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_fx_graph
 
 
@@ -251,7 +252,7 @@ class ExperimentBoard:
         generation: int,
         tag: str | None = None,
     ) -> None:
-        gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
+        gm = extract_graph(model)
         suffix = f"gen_{generation}" if tag is None else tag
         full = self.root / "graphs" / f"{suffix}_full.pdf"
         simple = self.root / "graphs" / f"{suffix}_simplified.pdf"
@@ -266,7 +267,7 @@ class ExperimentBoard:
         index: int,
         model: nn.Module | fx.GraphModule,
     ) -> str:
-        gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
+        gm = extract_graph(model)
         rel = f"graphs/candidates/gen_{generation}_cand_{index}_simplified.pdf"
         out = self.root / rel
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -455,7 +456,7 @@ class ExperimentBoard:
 
     @staticmethod
     def structure_summary(model: nn.Module | fx.GraphModule) -> dict[str, Any]:
-        gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
+        gm = extract_graph(model)
         modules = [n.target for n in gm.graph.nodes if n.op == "call_module"]
         hidden = GraphStructureQuery.get_all_hidden_modules(gm)
         return {

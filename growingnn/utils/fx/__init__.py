@@ -9,4 +9,5 @@ from growingnn.utils.fx.graph_analysis import (
     LayerShapeAnalyser,
     LayerBridgeFinder,
 )
+from growingnn.utils.fx.graph_extraction import extract_graph
 from growingnn.utils.fx.graph_editor import ModelStructureEditor
