@@ -10,7 +10,7 @@ Entry point used by experiment drivers (for example `experiments/train_cifar10.p
 
 Idea:
 
-1. prepare simulation loaders (`RunningConfig.simulation_set.generate`, see [[Simulation Set]])
+1. prepare simulation loaders (passed in, or `RunningConfig.simulation_set_generator.generate` if missing, see [[Simulation Set]])
 2. for each generation index until `config.generations`:
    2.1 run `gradient_descent` for `config.epochs` on the live model ([[Learning Rate Scheduler]], optional stopper)
    2.2 record metrics and parameter count (`GraphStructureQuery.get_amount_of_parameters`)
