@@ -13,7 +13,7 @@ Read-only dashboard backend for GrowingNN training runs. Training writes JSON an
 From the repository root:
 
 ```bash
-pip install -r requirments.txt
+pip install -r requirements.txt
 pip install -r growingnn_board/requirements.txt
 ```
 
