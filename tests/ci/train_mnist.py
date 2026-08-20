@@ -3,10 +3,14 @@
 One dataset x one seed. Dataset and seed come from the environment so this
 file is not tied to MNIST or any other single algorithm.
 
-MNIST uses the best published GrowingNN package from experiments 001-004:
+MNIST uses the Exp 005 keep-set package on the Exp 004 LR cell:
 - Exp 001: slope gate 3°, logistic recovery
 - Exp 003 after_fix: val_acc grading, big starter
-- Exp 004: composed_exponential LR (chosen default over composed_step)
+- Exp 004: composed_exponential LR
+- Exp 005: sequential_halving_beam search (top accuracy and composite; not MCTS)
+
+CI length is 8 generations x 8 epochs (64 train epochs). Exp 005 used 10 x 10.
+This is a shorter gate; some Exp 005 seeds only crossed val 0.85 after generation 8.
 
 This is a gate, not an experiment.
 """
@@ -25,7 +29,7 @@ from unittest.mock import patch
 
 os.environ.setdefault("MPLBACKEND", "Agg")
 
-ROOT = Path(os.environ.get("TRAIN_CI_WORKDIR") or Path(__file__).resolve().parents[1])
+ROOT = Path(os.environ.get("TRAIN_CI_WORKDIR") or Path(__file__).resolve().parents[2])
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
@@ -33,8 +37,6 @@ from experiments import experiments_common as common
 from experiments import train_mnist
 from experiments.train_mnist_exp001_slope_model_depth import configure_deterministic_seeding
 from experiments.train_mnist_exp004_composed_lr_schedulers import (
-    EPOCHS_PER_GENERATION,
-    GENERATIONS,
     INITIAL_LR,
     MODEL_FACTORY,
     MODEL_NAME,
@@ -43,6 +45,7 @@ from experiments.train_mnist_exp004_composed_lr_schedulers import (
     SLOPE_ANGLE_THRESHOLD,
     build_learning_rate_scheduler_for_schedule_id,
 )
+import growingnn.simulation.simulation_algorithms.sequential_halving_beam_alg as sequential_halving_beam_alg
 from growingnn.simulation.simulation_schedulers import SlopeEstimationSimulationScheduler
 
 TRAINERS = {
@@ -55,6 +58,10 @@ LAUNCH = ""
 HAS_EXPERIMENTS_COMMON = True
 RESULT_PREFIX = "REGRESSION_CI_RESULT "
 SCHEDULE_ID = "composed_exponential"
+SIMULATION_ALG_ID = "sequential_halving_beam"
+SIMULATION_ALG = sequential_halving_beam_alg
+EPOCHS_PER_GENERATION = 10
+GENERATIONS = 8
 
 
 def _ci_env() -> tuple[str, int, Path]:
@@ -125,7 +132,7 @@ def _metrics_from_history(history_path: Path) -> tuple[float, int] | None:
 
 
 def mnist_hyperparameters() -> dict[str, object]:
-    """Return the Exp 004 composed_exponential cell used by the MNIST CI gate."""
+    """Return the Exp 005 sequential_halving_beam cell on the Exp 004 LR package."""
     values = next(itertools.product(*train_mnist.METAPARAM_LISTS))
     return {
         **dict(zip(train_mnist.METAPARAM_KEYS, values)),
@@ -134,6 +141,9 @@ def mnist_hyperparameters() -> dict[str, object]:
         "simulation_time": SIMULATION_TIME_SEC,
         "lr_alpha": INITIAL_LR,
         "score_accuracy_metric": SCORE_ACCURACY_METRIC,
+        "simulation_alg_id": SIMULATION_ALG_ID,
+        "simulation_alg": SIMULATION_ALG,
+        "model_name": MODEL_NAME,
         "lr_scheduler_factory": (
             lambda hp: build_learning_rate_scheduler_for_schedule_id(SCHEDULE_ID, hp)
         ),
@@ -141,7 +151,7 @@ def mnist_hyperparameters() -> dict[str, object]:
 
 
 def run_mnist(*, seed: int, root: Path) -> tuple[float, int]:
-    """Train one MNIST seed with the Experiment 004 composed_exponential package."""
+    """Train one MNIST seed with Exp 005 sequential_halving_beam on Exp 004 LR."""
     configure_deterministic_seeding()
     import torch
 
@@ -159,7 +169,7 @@ def run_mnist(*, seed: int, root: Path) -> tuple[float, int]:
         model_factory=MODEL_FACTORY,
         loader_factory=lambda cell: data.loaders(int(cell["batch_size"])),
         board_metadata=lambda cell, folder, run_seed: (
-            f"train-ci mnist {SCHEDULE_ID} {MODEL_NAME} | {folder} | seed {run_seed}",
+            f"train-ci mnist {SIMULATION_ALG_ID} {SCHEDULE_ID} {MODEL_NAME} | {folder} | seed {run_seed}",
             "MNIST",
         ),
     )
@@ -280,6 +290,7 @@ if __name__ == "__main__":
     extra = {
         "trainer": TRAINERS.get(dataset.replace("-", "_"), LAUNCH or ""),
         "schedule_id": SCHEDULE_ID if dataset.replace("-", "_") == "mnist" else "",
+        "simulation_alg_id": SIMULATION_ALG_ID if dataset.replace("-", "_") == "mnist" else "",
         "model": MODEL_NAME if dataset.replace("-", "_") == "mnist" else "",
     }
     write_metrics(acc, params, extra=extra, dataset=dataset, seed=seed, output=output)
