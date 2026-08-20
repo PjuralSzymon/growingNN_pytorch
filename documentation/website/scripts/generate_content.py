@@ -154,6 +154,8 @@ def inline_markup(value: str, pages: list[Page]) -> str:
     value = re.sub(r"\*([^*]+)\*", r"<em>\1</em>", value)
     for index, code in enumerate(code_values):
         value = value.replace(f"\x00CODE{index}\x00", code)
+    # Table-friendly green plus marker used in experiment summary matrices.
+    value = value.replace(":g+:", '<span class="green-plus">+</span>')
     return value
 
 

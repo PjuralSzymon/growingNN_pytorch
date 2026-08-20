@@ -107,12 +107,13 @@ def _running_config(
     device: torch.device,
     board: ExperimentBoard | None,
 ) -> RunningConfig:
+    simulation_alg = hp.get("simulation_alg", montecarlo_alg)
     return RunningConfig(
         generations=int(hp["generations"]),
         epochs=int(hp["epochs"]),
         device=device,
         lr_scheduler=_resolve_learning_rate_scheduler_from_hyperparameters(hp),
-        simulation_alg=montecarlo_alg,
+        simulation_alg=simulation_alg,
         simulation_scheduler=AlwaysSimulationScheduler(
             simulation_time=float(hp["simulation_time"]),
             simulation_epochs=int(hp["simulation_epochs"]),
