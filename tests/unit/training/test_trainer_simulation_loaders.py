@@ -58,7 +58,7 @@ def test_train_generations_uses_prebuilt_simulation_loaders():
     )
 
     # Act
-    with patch.object(cfg.simulation_set, "generate") as mock_generate:
+    with patch.object(cfg.simulation_set_generator, "generate") as mock_generate:
         train_generations(
             gm,
             train_loader,
@@ -72,3 +72,42 @@ def test_train_generations_uses_prebuilt_simulation_loaders():
     mock_generate.assert_not_called()
     assert cfg.sim_train_loader is sim_train_loader
     assert cfg.sim_val_loader is sim_val_loader
+
+
+def test_train_generations_builds_sim_loaders_when_missing():
+    """
+    When sim loaders are not passed, generate should be called with train_loader, val_loader, and size.
+    """
+
+    # Arrange
+    torch.manual_seed(0)
+    gm = fx.symbolic_trace(_TinyNet())
+    x = torch.randn(16, 3, 32, 32)
+    y = torch.randint(0, 2, (16,))
+    train_loader = DataLoader(TensorDataset(x[:12], y[:12]), batch_size=4)
+    val_loader = DataLoader(TensorDataset(x[12:], y[12:]), batch_size=4)
+    dummy_sim_train = DataLoader(TensorDataset(x[:8], y[:8]), batch_size=4)
+    dummy_sim_val = DataLoader(TensorDataset(x[8:12], y[8:12]), batch_size=4)
+    cfg = RunningConfig(
+        generations=1,
+        epochs=1,
+        lr_scheduler=ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
+        stopper=TrainingStopper(StopperMode.EMPTY),
+        simulation_scheduler=NeverSimulationScheduler(),
+        simulation_set_size=8,
+        criterion=nn.CrossEntropyLoss(),
+        quiet=True,
+    )
+
+    # Act
+    with patch.object(
+        cfg.simulation_set_generator,
+        "generate",
+        return_value=(dummy_sim_train, dummy_sim_val),
+    ) as mock_generate:
+        train_generations(gm, train_loader, val_loader, cfg)
+
+    # Assert
+    mock_generate.assert_called_once_with(train_loader, val_loader, 8)
+    assert cfg.sim_train_loader is dummy_sim_train
+    assert cfg.sim_val_loader is dummy_sim_val
