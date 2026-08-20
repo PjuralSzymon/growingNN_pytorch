@@ -121,11 +121,6 @@ def test_run_experiment_grid_trains_and_saves_metric_artifacts(tmp_path, monkeyp
         return model, summary
 
     monkeypatch.setattr(common, "train_generations", _fake_train)
-    monkeypatch.setattr(
-        common,
-        "sample_loaders",
-        lambda clean_train, val, _size, *, seed: (clean_train, val),
-    )
     definition = _definition(tmp_path)
 
     # Act

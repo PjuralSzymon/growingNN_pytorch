@@ -58,7 +58,7 @@ def test_train_generations_uses_prebuilt_simulation_loaders():
     )
 
     # Act
-    with patch("growingnn.training.trainer.sample_loaders") as mock_sample:
+    with patch.object(cfg.simulation_set, "generate") as mock_generate:
         train_generations(
             gm,
             train_loader,
@@ -69,6 +69,6 @@ def test_train_generations_uses_prebuilt_simulation_loaders():
         )
 
     # Assert
-    mock_sample.assert_not_called()
+    mock_generate.assert_not_called()
     assert cfg.sim_train_loader is sim_train_loader
     assert cfg.sim_val_loader is sim_val_loader

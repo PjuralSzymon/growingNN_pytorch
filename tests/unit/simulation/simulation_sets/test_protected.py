@@ -1,9 +1,8 @@
-"""Unit tests for ``growingnn.simulation.simulation_set``."""
+"""Unit tests for protected stratified simulation-set sampling."""
 
 import sys
 from pathlib import Path
 
-import numpy as np
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -11,11 +10,8 @@ _REPO_ROOT = Path(__file__).resolve().parents[4]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from growingnn.simulation.simulation_set import (
-    create_simulation_set_sample,
-    protected_sampling_indices,
-    sample_loaders,
-)
+from growingnn.simulation.simulation_sets.base import ProtectedSimulationSet
+from growingnn.simulation.simulation_sets.commons import protected_sampling_indices
 
 
 def test_protected_sampling_indices_balances_classes():
@@ -33,25 +29,9 @@ def test_protected_sampling_indices_balances_classes():
     assert len(set(picked.tolist())) == 3
 
 
-def test_create_simulation_set_sample_returns_stratified_subset():
+def test_protected_generate_covers_every_class():
     """
-    create_simulation_set_sample should return aligned x/y subsets with all classes present.
-    """
-    # Arrange
-    x = torch.arange(9).float().unsqueeze(1)
-    y = torch.tensor([0, 0, 0, 1, 1, 1, 2, 2, 2])
-
-    # Act
-    x_sim, y_sim = create_simulation_set_sample(x, y, amount=6, seed=0)
-
-    # Assert
-    assert len(x_sim) == len(y_sim)
-    assert len(torch.unique(y_sim)) == 3
-
-
-def test_sample_loaders_uses_stratified_indices():
-    """
-    sample_loaders should build smaller loaders that still cover every class.
+    ProtectedSimulationSet.generate should build smaller loaders that still cover every class.
     """
     # Arrange
     x = torch.randn(30, 4)
@@ -60,7 +40,7 @@ def test_sample_loaders_uses_stratified_indices():
     val = DataLoader(TensorDataset(x[:12], y[:12]), batch_size=4)
 
     # Act
-    sim_train, sim_val = sample_loaders(train, val, size=9, seed=0)
+    sim_train, sim_val = ProtectedSimulationSet().generate(train, val, size=9, seed=0)
     train_labels = torch.cat([batch[1] for batch in sim_train])
     val_labels = torch.cat([batch[1] for batch in sim_val])
 
