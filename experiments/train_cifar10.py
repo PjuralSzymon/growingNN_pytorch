@@ -1,4 +1,4 @@
-"""CIFAR-10 growingNN run on a minimal ResNet-style backbone."""
+"""CIFAR-10 growingNN run on a sequential conv starter."""
 
 from __future__ import annotations
 
@@ -38,27 +38,25 @@ SIMULATION_SET_SIZE = [2000]
 TARGET_ACCURACY = [0.99]
 SCORE_WEIGHT_ACC = [1.0]
 SCORE_WEIGHT_COUNTW = [0.2]
-MODEL_CHANNELS = [32]
-MODEL_HIDDEN_DIM = [256]
-MODEL_NUM_BLOCKS = [1]
+MODEL_CHANNELS = [8]
+MODEL_HIDDEN_DIM = [38]
 GRID_REPEAT_SEEDS = [110]
 
 METAPARAM_KEYS = (
     "generations", "epochs", "batch_size", "lr_alpha", "simulation_time",
     "simulation_epochs", "simulation_set_size", "target_accuracy",
     "score_weight_acc", "score_weight_countw", "model_channels",
-    "model_hidden_dim", "model_num_blocks",
+    "model_hidden_dim",
 )
 METAPARAM_LISTS = (
     GENERATIONS, EPOCHS, BATCH_SIZE, LR_ALPHA, SIMULATION_TIME, SIMULATION_EPOCHS,
     SIMULATION_SET_SIZE, TARGET_ACCURACY, SCORE_WEIGHT_ACC, SCORE_WEIGHT_COUNTW,
-    MODEL_CHANNELS, MODEL_HIDDEN_DIM, MODEL_NUM_BLOCKS,
+    MODEL_CHANNELS, MODEL_HIDDEN_DIM,
 )
 
 OUT_DIR = _EXPERIMENT_DIR / "output" / "train_cifar10"
 DATA_DIR = _EXPERIMENT_DIR / "data" / "cifar10"
 RUNS_DIR = OUT_DIR / "runs"
-NUM_CLASSES = 10
 CIFAR10_MEAN = (0.4914, 0.4822, 0.4465)
 CIFAR10_STD = (0.2023, 0.1994, 0.2010)
 
@@ -120,78 +118,36 @@ class Cifar10Data:
         return loaders
 
 
-class MinimalBasicBlock(nn.Module):
-    expansion = 1
-
-    def __init__(self, in_planes: int, planes: int, stride: int = 1) -> None:
-        super().__init__()
-        self.conv1 = nn.Conv2d(in_planes, planes, 3, stride=stride, padding=1, bias=False)
-        self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, 3, stride=1, padding=1, bias=False)
-        self.bn2 = nn.BatchNorm2d(planes)
-        if stride != 1 or in_planes != self.expansion * planes:
-            self.shortcut = nn.Sequential(
-                nn.Conv2d(in_planes, self.expansion * planes, 1, stride=stride, bias=False),
-                nn.BatchNorm2d(self.expansion * planes),
-            )
-        else:
-            self.shortcut = nn.Identity()
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.relu(self.bn1(self.conv1(x)))
-        out = self.bn2(self.conv2(out))
-        out += self.shortcut(x)
-        return F.relu(out)
-
-
 class MinimalCifarNet(nn.Module):
-    """Tiny ResNet for CIFAR-10: stem + 1 or 2 residual blocks."""
-
-    @staticmethod
-    def _block_specs(channels: int, hidden_dim: int, num_blocks: int) -> list[tuple[int, int]]:
-        if num_blocks == 1:
-            return [(hidden_dim, 2)]
-        if num_blocks == 2:
-            return [(channels, 1), (hidden_dim, 2)]
-        raise ValueError(f"model_num_blocks must be 1 or 2, got {num_blocks}")
+    """Sequential CIFAR-10 starter: two convs, one BN, one pool, two-layer linear head."""
 
     def __init__(
         self,
-        num_classes: int = NUM_CLASSES,
+        num_classes: int = 10,
         channels: int = 8,
-        hidden_dim: int = 32,
-        num_blocks: int = 1,
+        hidden_dim: int = 38,
     ) -> None:
         super().__init__()
-        if num_blocks not in (1, 2):
-            raise ValueError(f"model_num_blocks must be 1 or 2, got {num_blocks}")
-        self.num_blocks = num_blocks
-        self.conv1 = nn.Conv2d(3, channels, 3, stride=1, padding=1, bias=False)
+        spatial = 32 // 2
+        self.conv1 = nn.Conv2d(3, channels, 3, padding=1, bias=False)
         self.bn1 = nn.BatchNorm2d(channels)
-        in_planes = channels
-        pool_size = 32
-        for i, (out_planes, stride) in enumerate(
-            self._block_specs(channels, hidden_dim, num_blocks), start=1
-        ):
-            setattr(self, f"layer{i}", MinimalBasicBlock(in_planes, out_planes, stride))
-            in_planes = out_planes
-            pool_size //= stride
-        self._pool_size = pool_size
-        self.linear = nn.Linear(hidden_dim, num_classes)
+        self.pool = nn.MaxPool2d(2)
+        self.conv2 = nn.Conv2d(channels, channels, 3, padding=1, bias=False)
+        self.linear = nn.Linear(channels * spatial * spatial, hidden_dim)
+        self.linear2 = nn.Linear(hidden_dim, num_classes)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = F.relu(self.bn1(self.conv1(x)))
-        for i in range(1, self.num_blocks + 1):
-            x = getattr(self, f"layer{i}")(x)
-        x = F.avg_pool2d(x, self._pool_size)
-        return self.linear(torch.flatten(x, 1))
+        x = self.pool(x)
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.linear(torch.flatten(x, 1)))
+        return self.linear2(x)
 
 
 def _build_model(hp: dict[str, object]) -> nn.Module:
     return MinimalCifarNet(
         channels=int(hp["model_channels"]),
         hidden_dim=int(hp["model_hidden_dim"]),
-        num_blocks=int(hp["model_num_blocks"]),
     )
 
 

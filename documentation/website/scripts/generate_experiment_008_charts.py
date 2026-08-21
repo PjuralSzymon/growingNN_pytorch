@@ -36,7 +36,7 @@ _ALLOWED_SNAPSHOT_ROOT = (SITE / "data" / "experiments").resolve()
 _ALLOWED_OUTPUT_ROOT = (SITE / "app" / "public" / "assets" / "experiments").resolve()
 _ALLOWED_TEMP_ROOT = Path(tempfile.gettempdir()).resolve()
 
-GROUP_ORDER = ("base", "narrow", "deep", "epochs20", "always", "fixed")
+GROUP_ORDER = ("narrow", "base", "deep", "epochs20", "always", "fixed")
 GROUP_LABELS = {
     "base": "base",
     "narrow": "narrow",

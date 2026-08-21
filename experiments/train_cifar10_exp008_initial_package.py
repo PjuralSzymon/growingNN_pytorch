@@ -98,18 +98,17 @@ class CifarPackageVariant:
     variant_id: str
     channels: int
     hidden_dim: int
-    num_blocks: int
     epochs: int
     scheduler: str
 
 
 VARIANTS: tuple[CifarPackageVariant, ...] = (
-    CifarPackageVariant("base", 32, 256, 1, EPOCHS_PER_GENERATION, SCHEDULER_SLOPE),
-    CifarPackageVariant("narrow", 16, 128, 1, EPOCHS_PER_GENERATION, SCHEDULER_SLOPE),
-    CifarPackageVariant("deep", 32, 256, 2, EPOCHS_PER_GENERATION, SCHEDULER_SLOPE),
-    CifarPackageVariant("epochs20", 32, 256, 1, EPOCHS_20, SCHEDULER_SLOPE),
-    CifarPackageVariant("always", 32, 256, 1, EPOCHS_PER_GENERATION, SCHEDULER_ALWAYS),
-    CifarPackageVariant("fixed", 32, 256, 1, EPOCHS_PER_GENERATION, SCHEDULER_NEVER),
+    CifarPackageVariant("narrow", 4, 32, EPOCHS_PER_GENERATION, SCHEDULER_SLOPE),  # 33390 params
+    CifarPackageVariant("base", 8, 38, EPOCHS_PER_GENERATION, SCHEDULER_SLOPE),  # 79060 params
+    CifarPackageVariant("deep", 16, 48, EPOCHS_PER_GENERATION, SCHEDULER_SLOPE),  # 199914 params
+    CifarPackageVariant("epochs20", 8, 38, EPOCHS_20, SCHEDULER_SLOPE),  # 79060 params
+    CifarPackageVariant("always", 8, 38, EPOCHS_PER_GENERATION, SCHEDULER_ALWAYS),  # 79060 params
+    CifarPackageVariant("fixed", 8, 38, EPOCHS_PER_GENERATION, SCHEDULER_NEVER),  # 79060 params
 )
 
 
@@ -122,7 +121,7 @@ def variant_by_id(variant_id: str) -> CifarPackageVariant:
 
 
 def apply_residual_conv_pool_patch():
-    """Force residual-into-linear skips to use average pool, matching the CIFAR stem."""
+    """Force residual-into-linear skips to use average pool when growth adds them."""
     return patch.object(
         growingnn_config,
         "RES_CONV_TO_LINEAR_GLOBAL_POOL_TYPE",
@@ -145,7 +144,6 @@ def hyperparameters_for_variant(variant: CifarPackageVariant) -> dict[str, objec
         "score_weight_countw": SCORE_WEIGHT_COUNTW,
         "model_channels": variant.channels,
         "model_hidden_dim": variant.hidden_dim,
-        "model_num_blocks": variant.num_blocks,
         "score_accuracy_metric": SCORE_ACCURACY_METRIC,
         "simulation_alg_id": SIMULATION_ALG_ID,
         "simulation_alg": SIMULATION_ALG,
@@ -221,8 +219,7 @@ def print_variants() -> None:
         print(
             f"  {index:>2}. {variant.variant_id:<10} "
             f"ch={variant.channels} hd={variant.hidden_dim} "
-            f"blocks={variant.num_blocks} epochs={variant.epochs} "
-            f"scheduler={variant.scheduler}"
+            f"epochs={variant.epochs} scheduler={variant.scheduler}"
         )
     print(f"Fixed package: {SIMULATION_ALG_ID} + {SCHEDULE_ID} + slope {SLOPE_ANGLE_THRESHOLD}deg")
     print(

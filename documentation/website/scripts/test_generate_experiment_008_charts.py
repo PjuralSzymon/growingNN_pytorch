@@ -30,7 +30,7 @@ def test_default_runs_point_at_cifar10_exp008_folder():
     assert DEFAULT_RUNS.name == "exp008_cifar10_initial_package"
     assert DEFAULT_RUNS.parent.name == "runs"
     assert DEFAULT_SNAPSHOT.name == "experiment-008-cifar10-initial-package.json"
-    assert GROUP_ORDER == ("base", "narrow", "deep", "epochs20", "always", "fixed")
+    assert GROUP_ORDER == ("narrow", "base", "deep", "epochs20", "always", "fixed")
 
 
 def test_load_runs_reads_variant_board_and_simulation_count(tmp_path: Path):

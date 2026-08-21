@@ -18,7 +18,7 @@ This page is a report template. Fill tables and conclusions after the grid finis
 
 | Parameter | Values | Purpose |
 | --- | --- | --- |
-| Package variant | `base`, `narrow`, `deep`, `epochs20`, `always`, `fixed` | Change one CIFAR knob at a time |
+| Package variant | `narrow`, `base`, `deep`, `epochs20`, `always`, `fixed` | Change one CIFAR knob at a time |
 | Seed | `100`, `101`, `102` | Three matched seeds per variant |
 
 | Fixed parameter | Value | Explanation |
@@ -40,20 +40,21 @@ This page is a report template. Fill tables and conclusions after the grid finis
 | Simulation training epochs | `15` | Epochs inside scoring GD |
 | Simulation set size | `2000` | Samples used by simulation scoring |
 | Batch size | `64` | Training samples per batch |
+| Starter | sequential `8/38` | `MinimalCifarNet`: two convs, one BN, one `2×2` pool, hidden linear `38` (`79060` params) |
 | Augmentation | RandomCrop pad `4` + horizontal flip | CIFAR train transform in `Cifar10Data` |
-| Residual-to-linear pool | average | Matches the CIFAR stem `avg_pool2d` |
+| Residual-to-linear pool | average | Used if growth later inserts a residual conv before a linear |
 | Neuron-resize flags | off | Experiment 006 is unfinished |
 
 Variant meanings. Each row changes one thing from `base`.
 
 | ID | Change from `base` | CIFAR question |
 | --- | --- | --- |
-| `base` | none. `MinimalCifarNet` channels `32`, hidden `256`, `1` block | Does the MNIST package train on CIFAR at all? |
-| `narrow` | channels `16`, hidden `128`, `1` block | Does a smaller start need growth? |
-| `deep` | `2` residual blocks, same width | Does extra starter depth help without the crashed `ch64/hd512` cell? |
+| `narrow` | channels `4`, hidden `32` | Does a smaller start need growth more? |
+| `base` | none. Sequential `MinimalCifarNet` channels `8`, hidden `38` | Does the MNIST package train on this CIFAR starter? |
+| `deep` | channels `16`, hidden `48` | Does a wider sequential start help, or is it already too big? |
 | `epochs20` | `20` epochs per generation | Is `10` epochs too short for the 3° gate on CIFAR? |
 | `always` | `AlwaysSimulationScheduler` | If 3° never fires, does searching every generation help? |
-| `fixed` | `NeverSimulationScheduler` | Does search help, or is this only SGD on the tiny ResNet? |
+| `fixed` | `NeverSimulationScheduler` | Does search help, or is this only SGD on the sequential starter? |
 
 Run path:
 
@@ -77,7 +78,7 @@ Supporting checks:
 
 1. Does `base` beat `fixed` on final validation accuracy?
 2. Does the 3° slope gate run search on CIFAR, or does `always` search much more?
-3. Is the current CIFAR starter (`32/256/1`) the right capacity, or is `narrow` / `deep` better?
+3. Is starter width the CIFAR knob (`narrow` `4/32`, `base` `8/38`, `deep` `16/48`), or is the `8/38` cell already enough?
 4. Do `20` epochs per generation beat `10` because CIFAR climbs more slowly?
 5. After an architecture action, does training accuracy recover within one generation?
 
@@ -87,9 +88,9 @@ Progress: `0` / `18` completed (`0.0%`). Re-run this section after the grid fini
 
 | Variant | Seeds done | Notes |
 | --- | ---: | --- |
+| `narrow` | `0` / `3` | smaller sequential starter |
 | `base` | `0` / `3` | Exp 005 package on CIFAR |
-| `narrow` | `0` / `3` | smaller starter |
-| `deep` | `0` / `3` | two residual blocks |
+| `deep` | `0` / `3` | wider sequential starter |
 | `epochs20` | `0` / `3` | longer generations |
 | `always` | `0` / `3` | search every generation |
 | `fixed` | `0` / `3` | no architecture search |
@@ -134,7 +135,7 @@ Count how many search calls ran and how many actions executed. `always` should s
 
 ### Starter capacity
 
-`narrow`, `base`, and `deep` keep the same gate and length. Compare final accuracy, parameter growth, and whether residual convolution still appears.
+`narrow`, `base`, and `deep` keep the same gate and length. They only change sequential width (`4/32`, `8/38`, `16/48`). Residual convolution can appear only if search adds it.
 
 ![Executed action mix by CIFAR-10 package variant](/assets/experiments/008-action-composition-by-variant.png)
 
@@ -166,8 +167,8 @@ Fill after completion.
 
 | Variant | Mean train (%) | Mean val (%) | Mean final params | Mean simulations | Mean actions |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `base` |  |  |  |  |  |
 | `narrow` |  |  |  |  |  |
+| `base` |  |  |  |  |  |
 | `deep` |  |  |  |  |  |
 | `epochs20` |  |  |  |  |  |
 | `always` |  |  |  |  |  |
@@ -176,7 +177,7 @@ Fill after completion.
 ## Limitations and seed effects
 
 - Three seeds are enough for a first ranking, not for a hard reject of a close second place.
-- CIFAR-10 is harder than MNIST. Final accuracy on this tiny ResNet is not a published CIFAR ResNet baseline.
+- CIFAR-10 is harder than MNIST. Final accuracy on this sequential starter is not a published CIFAR ResNet baseline.
 - Simulation time stays at `120 s`. A larger net spends the same wall time and scores fewer candidates.
 - Neuron-resize and new simulation-set generators are out of this grid because Experiments 006 and 007 are unfinished.
 - The old CIFAR cell `ch64/hd512` is not tested. It previously crashed.
@@ -188,7 +189,7 @@ To fill after the grid:
 
 1. State whether `base` beats `fixed` on mean validation accuracy.
 2. State whether the 3° gate fires on CIFAR, or whether `always` is required.
-3. State which starter (`narrow`, `base`, `deep`) is the CIFAR starting cell.
+3. State which sequential width (`narrow`, `base`, `deep`) is the CIFAR starting cell.
 4. State whether `epochs20` is needed for the slope gate.
 5. Name one recommended CIFAR cell for later work. Do not treat it as a CI lock.
 
