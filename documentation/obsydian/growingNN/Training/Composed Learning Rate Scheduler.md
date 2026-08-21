@@ -1,14 +1,16 @@
-`ComposedLearningRateScheduler` in `growingnn/training/lr_scheduler_global.py` multiplies a global curve by GrowingNN recovery. Pass it as `RunningConfig.lr_scheduler` when you want both. The [[Training loop]] still calls `alpha_scheduler`, `structure_changed`, and `reset`.
+`ComposedLearningRateScheduler` in `growingnn/training/lr_scheduler_global.py` interpolates from the LR floor to a global curve using GrowingNN recovery. Pass it as `RunningConfig.lr_scheduler` when you want both. The [[Training loop]] still calls `alpha_scheduler`, `structure_changed`, and `reset`.
 
 ## What it does
 
 ```text
-effective_lr = max(MIN_LEARNING_RATE, global_lr(global_epoch) * recovery_factor)
+effective_lr = MIN_LEARNING_RATE + (global_lr(global_epoch) - MIN_LEARNING_RATE) * recovery_factor
 ```
+
+`MIN_LEARNING_RATE` is `0.001`. The result is clamped to that floor if the global curve is already at or below it.
 
 Global schedule: absolute LR over the full run (`global_epoch`). Continues across generations when no action runs.
 
-Recovery factor: after `structure_changed()`, starts near `0` and warms to `1`. When idle, factor stays `1`, so training is just the global schedule. Recovery comes from [[Learning Rate Scheduler]] modes with `alpha=1.0` as the peak factor, not an absolute LR.
+Recovery factor: after `structure_changed()`, starts near `0` and warms to `1`. When idle, factor stays `1`, so training is just the global schedule. Recovery comes from [[Learning Rate Scheduler]] modes with `alpha=1.0` as the peak factor, not an absolute LR. Compose reads that factor through `unclamped_alpha_scheduler`, so the 0..1 value is not treated as an absolute LR.
 
 Until the first action, `mark_warmup_schedule_as_fully_complete` primes recovery so early epochs follow the global curve only.
 
@@ -69,7 +71,7 @@ config.lr_scheduler = build_composed_learning_rate_scheduler(
 
 ## Comparison with the original growingNN paper
 
-The paper focused on action-aware LR after mutations. Composition keeps that idea and adds a standard global decay on top, which the paper did not separate as global × factor.
+The paper focused on action-aware LR after mutations. Composition keeps that idea and adds a standard global decay on top, which the paper did not separate as floor-to-base interpolation.
 
 ## Known limitations
 

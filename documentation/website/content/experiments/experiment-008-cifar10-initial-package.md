@@ -180,6 +180,7 @@ Fill after completion.
 - Simulation time stays at `120 s`. A larger net spends the same wall time and scores fewer candidates.
 - Neuron-resize and new simulation-set generators are out of this grid because Experiments 006 and 007 are unfinished.
 - The old CIFAR cell `ch64/hd512` is not tested. It previously crashed.
+- Composed LR now interpolates from `0.001` to the current global base. Do not mix cells recorded under the older `max(0.001, global * factor)` rule.
 
 ## Conclusions
 
