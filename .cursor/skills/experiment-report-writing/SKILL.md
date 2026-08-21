@@ -1,11 +1,17 @@
 ---
 name: experiment-report-writing
-description: Writes concise GrowingNN experiment pages with clear research questions, reproducible parameters, readable charts, real captions, evidence-based conclusions, and focused next steps. Use when creating or editing experiment reports, chart scripts, result summaries, or scientific documentation.
+description: Writes concise GrowingNN experiment pages with clear research questions, reproducible parameters, readable charts, real captions, evidence-based conclusions, and focused next steps. Use when creating or editing experiment reports, experiment scripts, chart scripts, result summaries, or scientific documentation. Never create unit tests for experiments or for other tests.
 ---
 
 # Experiment report writing
 
 Use simple scientific language. Prefer short sentences. Remove text that does not help interpret the experiment.
+
+## No unit tests for experiments or other tests
+
+Do not create any tests for experiments. No unit tests should be created for an experiment, and no unit tests should be created for other regression, CI, or integration tests. Everything test-related or experiment-related should not have a separate unit test.
+
+Do not add files under `tests/unit/experiments/` or unit tests that only wrap experiment drivers, chart generators, regression tests, CI tests, or integration tests. Product code under `growingnn/` still gets unit tests. Experiment scripts under `experiments/` and other tests do not.
 
 ## Page order
 

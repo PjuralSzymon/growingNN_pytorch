@@ -5,7 +5,8 @@ description: >-
   dependency order, one-line feat/fix/refactor(R5) subjects, git add commands,
   and short per-file roles. Use when the user asks for a commit plan, commit
   summary, what to commit next, how to split commits, or git add + commit
-  grouping for current changes.
+  grouping for current changes. Never create or plan unit tests for
+  experiments or for other tests.
 ---
 
 # Commit plan writing
@@ -48,9 +49,11 @@ Order commits so the tree stays coherent after each step:
 
 1. Core abstraction / API first
 2. Call-site wiring that depends on that API
-3. Tests for the new behavior (with the feature, or immediately after)
-4. Experiments / drivers
+3. Product unit tests for `growingnn/` behavior (with the feature, or immediately after)
+4. Experiments / drivers (no unit tests for these)
 5. Docs / skills last
+
+Do not create any tests for experiments. No unit tests should be created for an experiment, and no unit tests should be created for other regression, CI, or integration tests. Everything test-related or experiment-related should not have a separate unit test. Do not plan `tests/unit/experiments/` files or unit tests that wrap regression, CI, integration, or experiment scripts.
 
 Put mechanical rename-only import retargets in their own `refactor(R5)` commit when they dominate the diff.
 Do not mix unrelated features into one commit.
