@@ -30,10 +30,9 @@ def get_action(
     rollouts = 0
     max_depth = 0
 
+    # First pass: grade every root action once (may overrun simulation_time).
     frontier: list[dict] = []
     for action in root_actions:
-        if time.time() >= deadline:
-            break
         child = copy.deepcopy(traced)
         action.execute(child)
         value = score_fn(child.gm, running_config)

@@ -16,6 +16,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from growingnn.actions.registry import generate_all_actions
 from growingnn.core.config import RunningConfig
 from growingnn.core.traced_model import TracedModel
 import growingnn.simulation.simulation_algorithms.beam_search_alg as beam_search_alg
@@ -43,7 +44,7 @@ class _TinyNet(nn.Module):
         return self.fc(x.flatten(1))
 
 
-def _running_config(*, simulation_time: float = 0.75) -> RunningConfig:
+def _running_config(*, simulation_time: float = 0.75, score_fn=None) -> RunningConfig:
     x = torch.randn(16, 1, 8, 8)
     y = torch.randint(0, 2, (16,))
     train = DataLoader(TensorDataset(x[:12], y[:12]), batch_size=4, shuffle=True)
@@ -53,7 +54,7 @@ def _running_config(*, simulation_time: float = 0.75) -> RunningConfig:
     cfg.simulation_scheduler.simulation_time = simulation_time
     # Fast deterministic grades: avoid real simulation GD in unit tests.
     cfg.simulation_score = SimpleNamespace(
-        score=lambda _gm, _cfg: 0.5,
+        score=score_fn if score_fn is not None else (lambda _gm, _cfg: 0.5),
     )
     cfg.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_01 = False
     cfg.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_02 = False
@@ -84,6 +85,34 @@ def test_keep_set_algorithm_returns_executable_action(alg):
     assert action is not None
     assert rollouts >= 1
     assert max_depth >= 0
+    action.execute(traced)
+
+
+@pytest.mark.parametrize("alg", KEEP_SET_ALGS, ids=[m.__name__.split(".")[-1] for m in KEEP_SET_ALGS])
+def test_keep_set_algorithm_grades_every_root_action_even_with_zero_budget(alg):
+    """
+    Each keep-set alg should grade every legal root action once before timed exploration.
+    """
+    # Arrange
+    gm = fx.symbolic_trace(_TinyNet())
+    traced = TracedModel.create(gm, (1, 1, 8, 8))
+    score_calls = {"n": 0}
+
+    def counting_score(_gm, _cfg):
+        score_calls["n"] += 1
+        return 0.5
+
+    cfg = _running_config(simulation_time=0.0, score_fn=counting_score)
+    n_root = len(generate_all_actions(traced, cfg))
+    assert n_root > 0
+
+    # Act
+    action, _max_depth, rollouts = alg.get_action(traced, cfg)
+
+    # Assert
+    assert action is not None
+    assert score_calls["n"] >= n_root
+    assert rollouts >= n_root
     action.execute(traced)
 
 

@@ -55,9 +55,8 @@ def get_action(
         arm["n"] += 1
         arm["mean"] += (value - arm["mean"]) / arm["n"]
 
+    # First pass: grade every root arm once (may overrun simulation_time).
     for arm in arms:
-        if time.time() >= root_deadline:
-            break
         pull(arm)
 
     while time.time() < root_deadline:

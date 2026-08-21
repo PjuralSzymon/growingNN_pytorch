@@ -41,6 +41,13 @@ def get_action(
         action.execute(child)
         arms.append({"action": action, "child": child, "mean": 0.0, "n": 0})
 
+    # First pass: grade every root arm once (may overrun simulation_time).
+    for arm in arms:
+        value = score_fn(arm["child"].gm, running_config)
+        rollouts += 1
+        arm["n"] = 1
+        arm["mean"] = value
+
     living = list(arms)
     while len(living) > 1 and time.time() < root_deadline:
         for arm in living:
@@ -52,13 +59,6 @@ def get_action(
             arm["mean"] += (value - arm["mean"]) / arm["n"]
         living.sort(key=lambda item: item["mean"], reverse=True)
         living = living[: max(1, math.ceil(len(living) / 2))]
-
-    for arm in living:
-        if arm["n"] == 0 and time.time() < deadline:
-            value = score_fn(arm["child"].gm, running_config)
-            rollouts += 1
-            arm["n"] = 1
-            arm["mean"] = value
 
     survivors = [arm for arm in living if arm["n"] > 0] or arms[:1]
     beam = [
