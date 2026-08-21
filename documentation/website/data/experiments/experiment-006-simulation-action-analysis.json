@@ -1,0 +1,119 @@
+{
+  "n_simulations": 56,
+  "overall_chosen_mix": {
+    "Add Res Conv Layer Action": 40,
+    "Add Seq Conv Layer Action": 4,
+    "Add Seq Linear Layer Action": 9,
+    "Add Res Linear Layer Action": 1,
+    "Add Seq Dropout Layer Action": 2
+  },
+  "groups": {
+    "none": {
+      "sims": 15,
+      "chosen_mix": {
+        "Add Res Conv Layer Action": 9,
+        "Add Seq Linear Layer Action": 4,
+        "Add Seq Dropout Layer Action": 1,
+        "Add Seq Conv Layer Action": 1
+      },
+      "sims_with_neuron_in_pool": 0,
+      "sims_with_neuron_scored": 0,
+      "neuron_pool_count": 0,
+      "neuron_scored_count": 0,
+      "neuron_unscored_count": 0,
+      "neuron_chosen": 0,
+      "add_pool": 0,
+      "del_pool": 0,
+      "mean_neuron_rank": null,
+      "mean_gap_to_best": null,
+      "min_gap_to_best": null,
+      "near_misses": []
+    },
+    "add11_del01": {
+      "sims": 15,
+      "chosen_mix": {
+        "Add Res Conv Layer Action": 12,
+        "Add Seq Conv Layer Action": 1,
+        "Add Seq Linear Layer Action": 2
+      },
+      "sims_with_neuron_in_pool": 15,
+      "sims_with_neuron_scored": 2,
+      "neuron_pool_count": 15,
+      "neuron_scored_count": 2,
+      "neuron_unscored_count": 13,
+      "neuron_chosen": 0,
+      "add_pool": 15,
+      "del_pool": 0,
+      "mean_neuron_rank": 10.5,
+      "mean_gap_to_best": 0.04996945668700334,
+      "min_gap_to_best": 0.01635492846801656,
+      "near_misses": [
+        {
+          "seed": "seed_100",
+          "generation": 3,
+          "kind": "AddNeurons",
+          "score": 0.7453579209902481,
+          "scored": true,
+          "chosen": false,
+          "rank": 7,
+          "gap_to_best": 0.01635492846801656,
+          "winner": "Add Res Conv Layer Action",
+          "winner_score": 0.7617128494582647
+        },
+        {
+          "seed": "seed_100",
+          "generation": 0,
+          "kind": "AddNeurons",
+          "score": 0.23632410810388388,
+          "scored": true,
+          "chosen": false,
+          "rank": 14,
+          "gap_to_best": 0.08358398490599012,
+          "winner": "Add Res Conv Layer Action",
+          "winner_score": 0.319908093009874
+        }
+      ]
+    },
+    "add15_del05": {
+      "sims": 10,
+      "chosen_mix": {
+        "Add Res Conv Layer Action": 9,
+        "Add Seq Linear Layer Action": 1
+      },
+      "sims_with_neuron_in_pool": 10,
+      "sims_with_neuron_scored": 0,
+      "neuron_pool_count": 22,
+      "neuron_scored_count": 0,
+      "neuron_unscored_count": 22,
+      "neuron_chosen": 0,
+      "add_pool": 11,
+      "del_pool": 11,
+      "mean_neuron_rank": null,
+      "mean_gap_to_best": null,
+      "min_gap_to_best": null,
+      "near_misses": []
+    },
+    "add20_del09": {
+      "sims": 16,
+      "chosen_mix": {
+        "Add Res Conv Layer Action": 10,
+        "Add Seq Conv Layer Action": 2,
+        "Add Seq Linear Layer Action": 2,
+        "Add Res Linear Layer Action": 1,
+        "Add Seq Dropout Layer Action": 1
+      },
+      "sims_with_neuron_in_pool": 16,
+      "sims_with_neuron_scored": 0,
+      "neuron_pool_count": 35,
+      "neuron_scored_count": 0,
+      "neuron_unscored_count": 35,
+      "neuron_chosen": 0,
+      "add_pool": 19,
+      "del_pool": 16,
+      "mean_neuron_rank": null,
+      "mean_gap_to_best": null,
+      "min_gap_to_best": null,
+      "near_misses": []
+    }
+  }
+}

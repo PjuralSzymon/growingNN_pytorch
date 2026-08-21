@@ -2,7 +2,7 @@
 
 We keep the Experiment 005 / train-ci package (`sequential_halving_beam` + `composed_exponential` + `big` starter). We change only which AddNeurons / DelNeurons ratio pair is enabled.
 
-The goal is to learn whether the six neuron-resize flags in `RunningConfig` are all useful on a short MNIST probe, or whether some ratio pairs add nothing and should stay off.
+The goal is to learn whether the six neuron-resize flags in `RunningConfig` are useful on a short MNIST probe, or whether search ignores them and they should stay off.
 
 Script: `experiments/train_mnist_exp006_neuron_resize_actions.py`
 
@@ -12,7 +12,9 @@ Folder: `experiments/output/train_mnist/runs/exp006_neuron_resize_actions`
 
 Snapshot: `documentation/website/data/experiments/experiment-006-neuron-resize-actions.json`
 
-This page is a report template. Fill tables and conclusions after the grid finishes. Charts appear once `generate_experiment_006_charts.py` has boards or a snapshot.
+Simulation-candidate analysis: `documentation/website/data/experiments/experiment-006-simulation-action-analysis.json`
+
+This page is a live report. Tables and charts use only boards with `status=completed` (`11` / `12` cells, `91.7%`). Simulation tables use `board/simulations/simulation_gen_*.json` from those completed runs (`56` simulation calls).
 
 ## Experiment parameters
 
@@ -25,6 +27,7 @@ This page is a report template. Fill tables and conclusions after the grid finis
 | --- | ---: | --- |
 | Dataset | MNIST | Classification task |
 | Planned cells | `12` | `4` groups × `3` seeds |
+| Completed cells in this refresh | `11` | Missing only stale `add15_del05` seed `101` |
 | Simulation algorithm | `sequential_halving_beam` | Best keep-set method from Experiment 005 |
 | LR package | `composed_exponential` × logistic recovery | Best package from Experiment 004 |
 | Standard cell `lr_alpha` | `0.01` | Target / peak learning rate |
@@ -35,6 +38,7 @@ This page is a report template. Fill tables and conclusions after the grid finis
 | Total training epochs | `64` | `8 × 8` |
 | Simulation time | `120 s` | Same budget as Exp 005 |
 | Starter | `big` (`BigAvgPoolMnistNet`) | Same as Exp 004 / train-ci |
+| Start params | `420` | Shared starter size |
 | Layer add / delete / dropout | on | Only neuron-resize flags vary |
 
 Group meanings:
@@ -65,14 +69,22 @@ Supporting checks:
 
 ## Result timeline
 
-Progress: `0` / `12` completed (`0.0%`). Re-run this section after the grid finishes.
+Progress in this refresh: `11` / `12` completed (`91.7%`).
+
+Board timestamps in this refresh span `2026-08-20T20:59:07Z` to `2026-08-21T11:27:51Z` (board metadata).
 
 | Group | Seeds done | Notes |
 | --- | ---: | --- |
-| `none` | `0` / `3` | control |
-| `add11_del01` | `0` / `3` | mild pair |
-| `add15_del05` | `0` / `3` | medium pair |
-| `add20_del09` | `0` / `3` | aggressive pair |
+| `none` | `3` / `3` | complete |
+| `add11_del01` | `3` / `3` | complete |
+| `add15_del05` | `2` / `3` | seeds `100` and `102` done; seed `101` stuck `running` (stale folder skipped by driver) |
+| `add20_del09` | `3` / `3` | complete |
+
+To finish the last cell, delete the stale folder and re-run the driver:
+
+```text
+experiments/output/train_mnist/runs/exp006_neuron_resize_actions/add15_del05/.../seed_101
+```
 
 ## Why this experiment
 
@@ -82,7 +94,9 @@ This short probe asks whether those six flags deserve to stay on for new runs. W
 
 ## Measurements and charts
 
-Generate charts after runs exist:
+Charts below use the `11` completed boards only.
+
+Generate / refresh:
 
 ```text
 python documentation/website/scripts/generate_experiment_006_charts.py
@@ -90,55 +104,148 @@ python documentation/website/scripts/generate_experiment_006_charts.py
 
 ### Final accuracy by group
 
+Mean final validation (completed seeds):
+
+| Group | Seeds | Mean val (%) |
+| --- | ---: | ---: |
+| `none` | `3` | `84.52` |
+| `add11_del01` | `3` | `82.64` |
+| `add15_del05` | `2` | `84.76` |
+| `add20_del09` | `3` | `84.60` |
+
 ![Final accuracy by neuron-resize group](/assets/experiments/006-final-accuracy-by-group.png)
 
-> [!CAPTION] Figure 1. Mean final train and validation accuracy by neuron-resize group. Gray markers are individual seeds.
+> [!CAPTION] Figure 1. Mean final train and validation accuracy by neuron-resize group. Gray markers are individual completed seeds.
+
+On full three-seed groups, `add20_del09` is essentially tied with `none` (`84.60` vs `84.52`). The mild pair is worse. The medium pair looks slightly high on two seeds, but seed `101` is still missing.
 
 ### Parameter growth by group
+
+All completed runs start at `420` params. Mean finals: `none` `2080`, `add11_del01` `2407`, `add15_del05` `2776` (two seeds), `add20_del09` `2088`.
 
 ![Parameter growth by neuron-resize group](/assets/experiments/006-param-growth-by-group.png)
 
 > [!CAPTION] Figure 2. Mean start and final parameter counts by group. Gray markers are individual final counts.
 
-### Action mix by group
+Growth comes from residual and sequential layer adds. It is not evidence that width-resize actions ran.
+
+### Chosen simulation actions
+
+Across `56` simulation calls on completed runs, the winner was always a layer-structure action:
+
+| Chosen short label | Count |
+| --- | ---: |
+| `Add Res Conv Layer Action` | `40` |
+| `Add Seq Linear Layer Action` | `9` |
+| `Add Seq Conv Layer Action` | `4` |
+| `Add Seq Dropout Layer Action` | `2` |
+| `Add Res Linear Layer Action` | `1` |
+| `Add Neurons` / `Delete Neurons` | `0` |
+
+![Chosen simulation actions by neuron-resize group](/assets/experiments/006-simulation-chosen-actions-by-group.png)
+
+> [!CAPTION] Figure 3. Count of winning simulation actions by group. Residual convolution wins most calls.
 
 ![Executed action mix by neuron-resize group](/assets/experiments/006-action-composition-by-group.png)
 
-> [!CAPTION] Figure 3. Mean executed action counts by short label and group. Neuron-resize labels should appear only when that group enables them.
+> [!CAPTION] Figure 4. Mean executed live actions by short label and group after training.
+
+### Were AddNeurons / DelNeurons even possible?
+
+Yes. Candidate lists in `simulation_gen_*.json` show neuron-resize actions in the root pool whenever the matching flags were on. They were almost never scored, and never chosen.
+
+| Group | Sims | Sims with neuron in pool | Sims with neuron scored | Neuron entries in pool | Scored | Unscored (`visits=0`) | Chosen |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `none` | `15` | `0` | `0` | `0` | `0` | `0` | `0` |
+| `add11_del01` | `15` | `15` | `2` | `15` Add / `0` Del | `2` | `13` | `0` |
+| `add15_del05` | `10` | `10` | `0` | `11` Add / `11` Del | `0` | `22` | `0` |
+| `add20_del09` | `16` | `16` | `0` | `19` Add / `16` Del | `0` | `35` | `0` |
+
+![Neuron-resize presence vs scoring in simulation](/assets/experiments/006-neuron-candidate-scoring.png)
+
+> [!CAPTION] Figure 5. For each group: how many simulations listed a neuron-resize candidate, and how many actually scored one.
+
+Reading notes:
+
+1. In enabled groups, neuron actions were in the candidate pool in `100%` of recorded simulations (`15/15`, `10/10`, `16/16`).
+2. `DelNeurons` with ratio `0.1` never appears in the pool (`add11_del01` del count `0`). That matches `MINIMUM_MATRIX_SIZE_FOR_NEURONS_REMOVAL = 5`: on width `16`, `int(16*0.1)=1` is illegal.
+3. Most neuron candidates stay at `visits=0` and `score=null`. `sequential_halving_beam` scores root arms in registry order. Neuron actions are registered after residual/seq/dropout actions, so the `120 s` root budget often ends before they are scored.
+4. Only `2` scored neuron candidates appear in the whole completed grid, both `AddNeurons@1.1` on `add11_del01` seed `100`.
+
+### Grades and how close neuron actions were
+
+Composite simulation scores come from `SimulationScore` (`val_acc` term weight `1.0`, param-count weight `0.1`). Higher is better.
+
+The only scored near-misses:
+
+| Seed | Gen | Candidate | Score | Rank among scored | Winner | Winner score | Gap to best |
+| --- | ---: | --- | ---: | ---: | --- | ---: | ---: |
+| `100` | `3` | `AddNeurons@1.1` | `0.7454` | `7` / `15` | `Add Res Conv Layer Action` | `0.7617` | `0.0164` |
+| `100` | `0` | `AddNeurons@1.1` | `0.2363` | `14` / `14` | `Add Res Conv Layer Action` | `0.3199` | `0.0836` |
+
+So when neuron-resize was actually graded, the closest miss was about `0.016` composite points behind a residual-conv winner. It was not near first place (`rank 7`). The other scored case was last among scored arms.
+
+For `add15_del05` and `add20_del09`, every neuron candidate in the pool was unscored (`visits=0`). Those groups never got a fair graded comparison inside Sequential Halving.
 
 ### Training curves by group
 
 ![Training accuracy curves by neuron-resize group](/assets/experiments/006-training-curves.png)
 
-> [!CAPTION] Figure 4. Training accuracy over epochs for every completed seed, colored by group.
+> [!CAPTION] Figure 6. Training accuracy over epochs for every completed seed, colored by group.
+
+Curves overlap by group. Seed variance is larger than most group gaps.
 
 ## Grouped final results
 
-Fill after completion.
+Completed cells only.
 
-| Group | Mean train (%) | Mean val (%) | Mean final params | Neuron-resize actions used |
-| --- | ---: | ---: | ---: | ---: |
-| `none` |  |  |  |  |
-| `add11_del01` |  |  |  |  |
-| `add15_del05` |  |  |  |  |
-| `add20_del09` |  |  |  |  |
+| Group | Seeds | Mean train (%) | Mean val (%) | Mean final params | Neuron-resize actions used |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `none` | `3` | `82.41` | `84.52` | `2080` | `0` |
+| `add11_del01` | `3` | `83.80` | `82.64` | `2407` | `0` |
+| `add15_del05` | `2` | `82.16` | `84.76` | `2776` | `0` |
+| `add20_del09` | `3` | `82.78` | `84.60` | `2088` | `0` |
+
+Per-seed validation for completed cells:
+
+| Group | seed `100` val (%) | seed `101` val (%) | seed `102` val (%) |
+| --- | ---: | ---: | ---: |
+| `none` | `83.38` | `88.97` | `81.22` |
+| `add11_del01` | `74.00` | `89.88` | `84.04` |
+| `add15_del05` | `82.33` |  | `87.19` |
+| `add20_del09` | `78.45` | `92.22` | `83.14` |
+
+Matched two-seed check for `add15_del05` (seeds `100` and `102` only): mean val `84.76` versus `none` on the same seeds `82.30`. That looks helpful, but it is only two seeds and the missing seed prevents a full matched comparison.
+
+## Training-history analysis
+
+Completed runs usually execute five architecture actions over eight generations. Most actions are residual convolution inserts. Training accuracy often jumps after the first residual add, then climbs more slowly.
+
+The mild pair has one weak seed (`add11_del01` seed `100`, val `74.00%`). The aggressive pair has one very strong seed (`add20_del09` seed `101`, val `92.22%`). Those seed swings are larger than the mean gaps between groups.
+
+Because no neuron-resize action was executed, group differences are not caused by width change. They come from ordinary seed noise in layer-add search, plus a larger unused candidate list that often never gets scored.
 
 ## Limitations and seed effects
 
-- Short run (`64` epochs) can understate late width changes.
+- One cell is still incomplete: stale `add15_del05` seed `101`.
+- Short run (`64` epochs) can understate late width changes if those actions ever get selected.
 - Three seeds are enough for a first ranking, not for a hard reject of a close second place.
-- MNIST `big` may need fewer growth steps than a harder starter, so a useful pair here should still be re-checked on a harder task.
+- MNIST `big` may need few growth steps, so residual adds dominate the legal move list.
+- Neuron-resize candidates are registered late in `generate_all_actions`. Under a finite Sequential Halving budget they are often left at `visits=0`, so “enabled” does not mean “graded.”
+- `DEL_NEURONS_01` is effectively dead on this starter width because of the minimum matrix size rule.
 
 ## Conclusions
 
-To fill after the grid:
+Based on the completed cells and simulation candidate files in this refresh:
 
-1. State which group beats `none` on mean validation accuracy.
-2. State whether unused ratio pairs should be turned off in default config.
-3. State the recommended default: keep all three pairs, keep one pair, or keep none.
+1. Neuron-resize actions were legal in the simulation pool for every enabled-group call (`41/41` sims with flags on), but they were chosen `0` times.
+2. They were almost never graded: only `2` scored AddNeurons events in `56` simulations. The closest scored miss was `0.016` behind a residual-conv winner (`rank 7/15`).
+3. On full three-seed groups, `none` and `add20_del09` are effectively tied on mean validation (`84.52%` vs `84.60%`). The mild pair is worse (`82.64%`).
+4. Enabling the flags on this package mostly adds unscored candidates and does not change the executed action family. Prefer keeping neuron-resize off for Exp 001–005-style runs until a probe both scores and selects them.
 
 ## Next experiments
 
-1. If one pair wins clearly, re-test it with Exp 005 length (`10×10`) and the medium starter.
-2. If all three pairs help, keep the six default flags on and move to a harder dataset.
-3. If none beats the control, turn neuron-resize defaults back off and keep only layer add/delete.
+1. Delete the stale `add15_del05` seed `101` folder and finish that one cell, then refresh this page to `12` / `12`.
+2. Re-run with neuron-resize registered earlier, or with a longer root Sequential Halving budget, so AddNeurons / DelNeurons get `visits>0` before elimination.
+3. If graded neuron actions still lose by a clear score gap, turn the six `ACTIONS_ENABLE_*_NEURONS_*` defaults back off for normal training.
+4. Re-test only one candidate pair on a harder starter or dataset where width change is more likely to be useful.
