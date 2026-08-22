@@ -6,6 +6,7 @@ Measured figures (boards or snapshot):
 - executed action mix by group
 - chosen simulation actions by group
 - neuron-resize candidate presence vs scoring
+- mean composite SimulationScore by action family
 - training-accuracy curves colored by group
 """
 
@@ -51,6 +52,16 @@ GROUP_COLORS = {
     "add15_del05": "#4f8a63",
     "add20_del09": "#d18b2c",
 }
+ACTION_SCORE_ORDER = (
+    "Add Neurons Action",
+    "Delete Neurons Action",
+    "Add Res Conv Layer Action",
+    "Add Res Linear Layer Action",
+    "Add Seq Conv Layer Action",
+    "Add Seq Linear Layer Action",
+    "Add Seq Dropout Layer Action",
+    "Delete Layer Action",
+)
 
 
 def _resolve_under_allowed_root(path: Path, allowed_root: Path) -> Path:
@@ -245,6 +256,24 @@ def _short_action(action: str | None) -> str:
     return str(action)[:60]
 
 
+def summarize_action_scores(
+    scores_by_label: dict[str, list[float]],
+) -> dict[str, dict[str, float | int | None]]:
+    """Return n, mean, min, and max composite score for each action label."""
+    labels = [label for label in ACTION_SCORE_ORDER if label in scores_by_label]
+    extra = sorted(label for label in scores_by_label if label not in ACTION_SCORE_ORDER)
+    summary: dict[str, dict[str, float | int | None]] = {}
+    for label in (*labels, *extra):
+        values = scores_by_label.get(label, [])
+        summary[label] = {
+            "n": len(values),
+            "mean": _mean(values) if values else None,
+            "min": min(values) if values else None,
+            "max": max(values) if values else None,
+        }
+    return summary
+
+
 def build_simulation_action_analysis(runs_dir: Path) -> dict[str, object]:
     """Aggregate simulation candidate scores from completed boards."""
     rows: list[dict[str, object]] = []
@@ -273,11 +302,15 @@ def build_simulation_action_analysis(runs_dir: Path) -> dict[str, object]:
                 else sim.get("scoreChosen")
             )
             neuron_entries = []
+            scored_by_label: dict[str, list[float]] = defaultdict(list)
             for cand in candidates:
+                label = _short_action(str(cand.get("action") or ""))
+                score = cand.get("score")
+                if score is not None:
+                    scored_by_label[label].append(float(score))
                 kind = _neuron_kind(str(cand.get("action") or ""))
                 if not kind:
                     continue
-                score = cand.get("score")
                 neuron_entries.append(
                     {
                         "kind": kind,
@@ -302,6 +335,7 @@ def build_simulation_action_analysis(runs_dir: Path) -> dict[str, object]:
                     ),
                     "chosen_score": float(chosen_score) if chosen_score is not None else None,
                     "neuron_entries": neuron_entries,
+                    "scored_by_label": dict(scored_by_label),
                 }
             )
 
@@ -331,6 +365,10 @@ def build_simulation_action_analysis(runs_dir: Path) -> dict[str, object]:
             ),
             key=lambda item: item["gap_to_best"] if item["gap_to_best"] is not None else 9e9,
         )
+        group_scores: dict[str, list[float]] = defaultdict(list)
+        for row in group_rows:
+            for label, values in dict(row.get("scored_by_label") or {}).items():
+                group_scores[str(label)].extend(float(v) for v in values)
         groups[group_id] = {
             "sims": len(group_rows),
             "chosen_mix": dict(Counter(str(r["chosen_label"]) for r in group_rows)),
@@ -348,10 +386,16 @@ def build_simulation_action_analysis(runs_dir: Path) -> dict[str, object]:
             "mean_gap_to_best": _mean([float(v) for v in gaps]) if gaps else None,
             "min_gap_to_best": min(gaps) if gaps else None,
             "near_misses": near[:10],
+            "mean_score_by_action": summarize_action_scores(group_scores),
         }
+    overall_scores: dict[str, list[float]] = defaultdict(list)
+    for row in rows:
+        for label, values in dict(row.get("scored_by_label") or {}).items():
+            overall_scores[str(label)].extend(float(v) for v in values)
     return {
         "n_simulations": len(rows),
         "overall_chosen_mix": dict(Counter(str(r["chosen_label"]) for r in rows)),
+        "overall_mean_score_by_action": summarize_action_scores(overall_scores),
         "groups": groups,
     }
 
@@ -407,6 +451,65 @@ def plot_neuron_candidate_scoring(analysis: dict[str, object], output_dir: Path)
     plt.close(fig)
 
 
+def plot_mean_simulation_scores(analysis: dict[str, object], output_dir: Path) -> None:
+    groups = analysis["groups"]
+    labels = [
+        label
+        for label in ACTION_SCORE_ORDER
+        if any(
+            int((groups[g].get("mean_score_by_action") or {}).get(label, {}).get("n") or 0) > 0
+            for g in GROUP_ORDER
+        )
+    ]
+    extra = sorted(
+        {
+            label
+            for g in GROUP_ORDER
+            for label in (groups[g].get("mean_score_by_action") or {})
+            if label not in ACTION_SCORE_ORDER
+            and int((groups[g]["mean_score_by_action"][label].get("n") or 0)) > 0
+        }
+    )
+    labels.extend(extra)
+    if not labels:
+        return
+    fig, ax = plt.subplots(figsize=(10.5, 5.0))
+    x = np.arange(len(labels))
+    width = 0.18
+    offsets = (np.arange(len(GROUP_ORDER)) - (len(GROUP_ORDER) - 1) / 2) * width
+    for i, group_id in enumerate(GROUP_ORDER):
+        stats = groups[group_id].get("mean_score_by_action") or {}
+        xs: list[float] = []
+        ys: list[float] = []
+        for j, label in enumerate(labels):
+            item = stats.get(label) or {}
+            mean = item.get("mean")
+            if not item.get("n") or mean is None:
+                continue
+            xs.append(float(x[j] + offsets[i]))
+            ys.append(float(mean))
+        ax.bar(
+            xs,
+            ys,
+            width,
+            label=GROUP_LABELS[group_id],
+            color=GROUP_COLORS[group_id],
+        )
+    ax.set_xticks(x)
+    ax.set_xticklabels(
+        [label.replace(" Action", "").replace(" Layer", "") for label in labels],
+        rotation=20,
+        ha="right",
+    )
+    ax.set_ylabel("Mean composite SimulationScore")
+    ax.set_xlabel("Scored root action")
+    ax.set_title("Mean simulation score by action")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(output_dir / "006-mean-simulation-score-by-action.png", dpi=150)
+    plt.close(fig)
+
+
 def plot_training_curves(runs: list[dict[str, object]], output_dir: Path) -> None:
     fig, ax = plt.subplots(figsize=(8, 4.5))
     for run in runs:
@@ -449,10 +552,15 @@ def main() -> None:
     plot_param_growth(runs, output_dir)
     plot_action_composition(runs, output_dir)
     sim_analysis = build_simulation_action_analysis(runs_dir)
-    DEFAULT_SIM_ANALYSIS.parent.mkdir(parents=True, exist_ok=True)
-    DEFAULT_SIM_ANALYSIS.write_text(json.dumps(sim_analysis, indent=2), encoding="utf-8")
+    sim_snapshot = _resolve_under_allowed_root(DEFAULT_SIM_ANALYSIS, _ALLOWED_SNAPSHOT_ROOT)
+    if sim_analysis["n_simulations"]:
+        sim_snapshot.parent.mkdir(parents=True, exist_ok=True)
+        sim_snapshot.write_text(json.dumps(sim_analysis, indent=2), encoding="utf-8")
+    elif sim_snapshot.exists():
+        sim_analysis = json.loads(sim_snapshot.read_text(encoding="utf-8"))
     plot_simulation_chosen_actions(sim_analysis, output_dir)
     plot_neuron_candidate_scoring(sim_analysis, output_dir)
+    plot_mean_simulation_scores(sim_analysis, output_dir)
     plot_training_curves(runs, output_dir)
     print(
         f"Wrote Exp 006 charts for {len(runs)} completed runs "
