@@ -1,18 +1,14 @@
 # Experiment 007: Simulation-set generators
 
-We keep the best finished GrowingNN package from Experiments 004 and 005. We change only how the simulation set is built. Experiment 006 is unfinished, so neuron-resize actions stay off.
-
-The goal is to learn whether a smarter tiny train set for simulation scoring beats class-balanced random sampling.
+We keep the best configs from the previous experiments. Experiment 004 gives the learning-rate package. Experiment 005 gives `sequential_halving_beam`. Experiment 006 is unfinished, so neuron-resize actions stay off. Only the simulation set changes.
 
 Script: `experiments/train_mnist_exp007_simulation_sets.py`
 
 Charts: `documentation/website/scripts/generate_experiment_007_charts.py`
 
-Folder: `experiments/output/train_mnist/runs/exp007_simulation_sets`
-
 Snapshot: `documentation/website/data/experiments/experiment-007-simulation-sets.json`
 
-This page is a report template. Fill tables and conclusions after the grid finishes. Charts appear once `generate_experiment_007_charts.py` has boards or a snapshot. Untracked chart and snapshot files must be committed before raw `experiments/output/` data is deleted.
+This page is a live report. Tables and charts use only boards with `status=completed` (`26` / `27` cells, `96.3%`). Untracked chart and snapshot files must be committed before raw data is deleted.
 
 ## Experiment parameters
 
@@ -25,6 +21,7 @@ This page is a report template. Fill tables and conclusions after the grid finis
 | --- | ---: | --- |
 | Dataset | MNIST | Classification task |
 | Planned cells | `27` | `9` generators × `3` seeds |
+| Completed cells in this refresh | `26` | `protected` seed `102` is missing |
 | Simulation algorithm | `sequential_halving_beam` | Best keep-set method from Experiment 005 |
 | LR package | `composed_exponential` × logistic recovery | Best package from Experiment 004 |
 | Effective LR rule | `max(0.001, base_lr(epoch) * recovery_factor)` | Global exponential base times action recovery |
@@ -46,12 +43,11 @@ This page is a report template. Fill tables and conclusions after the grid finis
 | Simulation time | `120 s` | Same budget as Experiment 005 |
 | Simulation set size | `2000` | Same as Experiment 005 |
 | Starter | `big` (`BigAvgPoolMnistNet`) | Channels `4`, hidden `16`, same as Experiment 004 |
+| Start parameter count | `420` | Same for every completed cell |
 | Neuron-resize flags | off | Experiment 006 is unfinished |
 | Deterministic seeding | on | `configure_deterministic_seeding()` then `seed_all(seed)` |
 
-How the set is built: `experiments_common._train_run` calls `RunningConfig.simulation_set_generator.generate` on the unaugmented train loader (`clean_train_loader`), the val loader, size `2000`, `seed=seed`, and `model=gm`. The ready pair is passed into `train_generations` as `sim_train_loader` / `sim_val_loader`. Live training still uses the augmented train loader. The trainer does not rebuild the set later.
-
-Generator meanings:
+## Generator meanings
 
 | ID | Class | Paper | Hypothesis |
 | --- | --- | --- | --- |
@@ -65,136 +61,96 @@ Generator meanings:
 | `model_drift` | `ModelDriftSimulationSet` | none | Refreshing the inner set when embeddings move matters. Default inner picker is `ProtectedSimulationSet`. |
 | `hcdc` | `HcdcSimulationSet` | Ding et al. 2024 (`ding2024calibrated`); this code is a last-layer val-gradient simplification | A synthetic last-layer-gradient proxy matters. |
 
-HCDC construction time counts against the run wall clock. This grid does not compute Spearman or Kendall of action ranks. Live train and validation accuracy are the product metrics.
-
-Run path:
-
-```text
-exp007_simulation_sets/<set_id>/<hp_folder>/seed_<seed>/
-```
-
-## Research questions
-
-Main question: does any simulation-set generator beat `protected` on mean final validation accuracy?
-
-Supporting checks:
-
-1. Which hypothesis wins: difficulty, diversity, SGD direction, refresh, or synthetic data?
-2. Is construction cost visible as worse actions under the same 120 s search budget?
-3. Do any generators collapse the executed action mix to one family?
-4. Do training curves separate early, or only after architecture actions?
-
 ## Result timeline
 
-Progress: `0` / `27` completed (`0.0%`). Re-run this section after the grid finishes. Dates should come from board metadata, not filesystem timestamps.
+Progress in this refresh: `26` / `27` completed (`96.3%`). Dates come from board fields `experimentStartedOn` and `lastUpdate`, not filesystem timestamps.
+
+Board span for completed cells: `2026-08-20T22:37:05Z` to `2026-08-22T03:07:32Z`. Summed `trainingTimeElapsedSec` for the 26 completed boards is `68504 s` (about `19.0 hours`). Every completed board recorded `100` epochs on `cuda`.
 
 | Generator | Seeds done | Notes |
 | --- | ---: | --- |
-| `protected` | `0` / `3` | control |
-| `moderate_difficulty` | `0` / `3` | |
-| `kcenter` | `0` / `3` | |
-| `el2n` | `0` / `3` | |
-| `grand` | `0` / `3` | |
-| `grad_match` | `0` / `3` | |
-| `craig` | `0` / `3` | |
-| `model_drift` | `0` / `3` | wraps `protected` by default |
-| `hcdc` | `0` / `3` | synthetic, time-capped |
+| `protected` | `2` / `3` | control. Seed `102` is stuck at `50` epochs and must be rerun |
+| `moderate_difficulty` | `3` / `3` | finished |
+| `kcenter` | `3` / `3` | finished |
+| `el2n` | `3` / `3` | finished |
+| `grand` | `3` / `3` | finished |
+| `grad_match` | `3` / `3` | finished |
+| `craig` | `3` / `3` | finished |
+| `model_drift` | `3` / `3` | finished |
+| `hcdc` | `3` / `3` | finished |
 
 ## Why this experiment
 
-Simulation scoring trains for a few epochs on a small set. Until now that set was a class-balanced random sample from `ProtectedSimulationSet`. The generators in `growingnn/simulation/simulation_sets/` try to keep a more useful subset, or a synthetic proxy, without changing search or scoring.
+Does any simulation-set generator beat `protected` on mean final validation accuracy?
 
-Search, LR, starter, and length stay fixed. Only `cfg.simulation_set_generator` changes.
+Simulation scoring trains for a few epochs on a small set. Until now that set was a class-balanced random sample from `ProtectedSimulationSet`. The generators in `growingnn/simulation/simulation_sets/` try to keep a more useful subset, or a synthetic proxy, without changing search or scoring.
 
 ## Measurements and charts
 
-Generate charts after runs exist:
-
-```text
-python documentation/website/scripts/generate_experiment_007_charts.py
-```
-
-The script reads completed boards under the run folder. If raw output is absent, it falls back to the JSON snapshot.
+Charts sort generators by mean final validation accuracy, lower on the left, higher on the right. `protected` uses two seeds. Every other generator uses three.
 
 ### Final accuracy by generator
 
-The chart compares mean final train and validation accuracy across generators. Individual seeds are markers.
+The chart compares mean final train and validation accuracy. Gray markers are individual seeds.
 
 ![Final accuracy by simulation-set generator](/assets/experiments/007-final-accuracy-by-set.png)
 
-> [!CAPTION] Figure 1. Mean final train and validation accuracy (%) by simulation-set generator. Gray markers are individual seeds.
+> [!CAPTION] Figure 1. Mean final train and validation accuracy (%) by simulation-set generator. Gray markers are individual seeds. Sorted by mean validation, higher on the right.
+
+| Generator | Seeds | Mean train (%) | Mean val (%) |
+| --- | ---: | ---: | ---: |
+| `model_drift` | `3` | `92.25` | `93.10` |
+| `el2n` | `3` | `89.91` | `92.05` |
+| `craig` | `3` | `89.97` | `91.36` |
+| `moderate_difficulty` | `3` | `88.63` | `90.70` |
+| `kcenter` | `3` | `88.36` | `90.00` |
+| `protected` | `2` | `87.48` | `89.44` |
+| `grad_match` | `3` | `86.91` | `88.62` |
+| `grand` | `3` | `86.48` | `87.65` |
+| `hcdc` | `3` | `84.02` | `87.37` |
+
+The means sit close together. `hcdc`, `grand`, and `grad_match` are already behind and are not needed in the next grid.
+
+### Seed stability
+
+The chart shows every completed validation seed and the group mean.
+
+![Seed scatter of final validation accuracy](/assets/experiments/007-seed-stability-final-val.png)
+
+> [!CAPTION] Figure 2. Final validation accuracy (%) for each completed seed. Colored circles are seeds. Orange diamonds are means. Sorted by mean validation, higher on the right.
+
+The seeds overlap. Size `2000` is too easy to separate the generators. The next grid should use smaller simulation sets.
 
 ### Training curves by generator
 
-The chart shows training accuracy over epochs so early vs late separation is visible.
+Faint lines are seeds. Bold lines are means.
 
 ![Training accuracy curves by simulation-set generator](/assets/experiments/007-training-curves.png)
 
-> [!CAPTION] Figure 2. Training accuracy (%) over epochs for every completed seed, colored by generator.
+> [!CAPTION] Figure 3. Training accuracy (%) over epochs. Faint lines are completed seeds. Bold lines are per-generator means.
 
-### Parameter growth by generator
-
-The chart compares start and final parameter counts. It shows whether a generator leads search to grow the network more.
-
-![Parameter growth by simulation-set generator](/assets/experiments/007-param-growth-by-set.png)
-
-> [!CAPTION] Figure 3. Mean start and final parameter counts by generator. Gray markers are individual final counts.
+Generation `0` still lines up inside a seed. The split appears after the first architecture action.
 
 ### Action mix by generator
 
-The chart shows which architecture actions were executed. A collapsed mix would mean search locked onto one family.
+The chart shows which architecture actions were executed.
 
 ![Executed action mix by simulation-set generator](/assets/experiments/007-action-composition-by-set.png)
 
-> [!CAPTION] Figure 4. Mean executed action counts by short label and generator.
+> [!CAPTION] Figure 4. Mean executed action counts by short label and generator. Sorted by mean validation, higher on the right.
 
-## Grouped final results
-
-Fill after completion. Report means over the three seeds. Accuracy in percent.
-
-| Generator | Mean train (%) | Mean val (%) | Mean final params |
-| --- | ---: | ---: | ---: |
-| `protected` |  |  |  |
-| `moderate_difficulty` |  |  |  |
-| `kcenter` |  |  |  |
-| `el2n` |  |  |  |
-| `grand` |  |  |  |
-| `grad_match` |  |  |  |
-| `craig` |  |  |  |
-| `model_drift` |  |  |  |
-| `hcdc` |  |  |  |
-
-## Training-history analysis
-
-Fill after Figure 2 exists. Describe shapes, not the table means:
-
-- when curves separate
-- whether a drop follows an architecture action
-- whether recovery follows that drop
-- whether a plateau appears before repeated actions
-- whether late actions keep or destroy an earlier peak
-
-Pick one representative seed only if the three seeds agree. If they disagree, say so and show the disagreement.
-
-## Limitations and seed effects
-
-- Three seeds are enough for a first ranking, not for a hard reject of a close second place.
-- HCDC construction time can steal search budget inside the same wall-clock run.
-- Action-rank correlation on a frozen model is not measured here.
-- The set is built once before training. Model-aware generators see the untrained starter `gm`, not later weights.
-- The `big` MNIST starter may need fewer growth steps than a harder task.
+The mix is narrow. Residual conv adds dominate. Search used only a small part of the legal action list.
 
 ## Conclusions
 
-To fill after the grid:
+It is hard to grade these generators at simulation set size `2000`. The means are close. The task needs to be harder.
 
-1. State which generator beats `protected` on mean validation accuracy, or that none does.
-2. State which hypothesis that result supports.
-3. State whether construction cost made a generator worse despite a better sampling idea.
+`hcdc`, `grand`, and `grad_match` can be dropped. The next comparison can keep the other six: `protected`, `moderate_difficulty`, `kcenter`, `el2n`, `craig`, and `model_drift`.
+
+`sequential_halving_beam` is not stable yet. Experiment 006 should finish first. Then this grid should be rerun.
 
 ## Next experiments
 
-1. If one real-subset generator wins clearly, re-test it with a smaller `simulation_set_size`.
-2. If HCDC is too slow, keep it out of default config and re-test only after a cheaper condensation cap.
-3. Re-test the winner on the medium starter or a harder dataset.
-4. If a model-aware generator looks promising, re-test it with a rebuild after each architecture action.
+1. Rerun with three smaller simulation set sizes: `100`, `500`, and `1000`.
+2. Keep only the six generators above.
+3. Wait for Experiment 006, then rerun with a more stable simulation algorithm.

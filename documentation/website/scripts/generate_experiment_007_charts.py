@@ -2,9 +2,10 @@
 
 Measured figures (boards or snapshot):
 - final train/val accuracy by generator with seed markers
+- seed scatter of final validation accuracy
 - start vs final parameter counts by generator
 - executed action mix by generator
-- training-accuracy curves colored by generator
+- training-accuracy curves (faint seeds, bold mean) colored by generator
 """
 
 from __future__ import annotations
@@ -154,21 +155,36 @@ def _grouped(runs: list[dict[str, object]]) -> dict[str, list[dict[str, object]]
     return by_group
 
 
+def _present_groups(runs: list[dict[str, object]]) -> tuple[str, ...]:
+    present = {str(run["group_id"]) for run in runs}
+    groups = tuple(group_id for group_id in GROUP_ORDER if group_id in present)
+    by_group = _grouped(runs)
+    return tuple(
+        sorted(
+            groups,
+            key=lambda group_id: _mean(
+                [float(run["final_val_acc"]) for run in by_group[group_id]]
+            ),
+        )
+    )
+
+
 def plot_final_accuracy(runs: list[dict[str, object]], output_dir: Path) -> None:
     by_group = _grouped(runs)
-    fig, ax = plt.subplots(figsize=(8, 4.5))
-    x = np.arange(len(GROUP_ORDER))
+    groups = _present_groups(runs)
+    fig, ax = plt.subplots(figsize=(10, 4.8))
+    x = np.arange(len(groups))
     width = 0.35
-    train_means = [_mean([float(r["final_train_acc"]) for r in by_group.get(g, [])]) * 100 for g in GROUP_ORDER]
-    val_means = [_mean([float(r["final_val_acc"]) for r in by_group.get(g, [])]) * 100 for g in GROUP_ORDER]
+    train_means = [_mean([float(r["final_train_acc"]) for r in by_group.get(g, [])]) * 100 for g in groups]
+    val_means = [_mean([float(r["final_val_acc"]) for r in by_group.get(g, [])]) * 100 for g in groups]
     ax.bar(x - width / 2, train_means, width, label="train", color="#9db7d8")
     ax.bar(x + width / 2, val_means, width, label="val", color="#6f9e7d")
-    for i, group_id in enumerate(GROUP_ORDER):
+    for i, group_id in enumerate(groups):
         for run in by_group.get(group_id, []):
             ax.scatter(i - width / 2, float(run["final_train_acc"]) * 100, color="#444", s=18, zorder=3)
             ax.scatter(i + width / 2, float(run["final_val_acc"]) * 100, color="#444", s=18, zorder=3)
     ax.set_xticks(x)
-    ax.set_xticklabels([GROUP_LABELS[g] for g in GROUP_ORDER], rotation=15, ha="right")
+    ax.set_xticklabels([GROUP_LABELS[g] for g in groups], rotation=25, ha="right")
     ax.set_ylabel("Final accuracy (%)")
     ax.set_xlabel("Simulation-set generator")
     ax.legend()
@@ -180,18 +196,19 @@ def plot_final_accuracy(runs: list[dict[str, object]], output_dir: Path) -> None
 
 def plot_param_growth(runs: list[dict[str, object]], output_dir: Path) -> None:
     by_group = _grouped(runs)
-    fig, ax = plt.subplots(figsize=(8, 4.5))
-    x = np.arange(len(GROUP_ORDER))
+    groups = _present_groups(runs)
+    fig, ax = plt.subplots(figsize=(10, 4.8))
+    x = np.arange(len(groups))
     width = 0.35
-    start_means = [_mean([float(r["start_params"]) for r in by_group.get(g, [])]) for g in GROUP_ORDER]
-    final_means = [_mean([float(r["final_params"]) for r in by_group.get(g, [])]) for g in GROUP_ORDER]
+    start_means = [_mean([float(r["start_params"]) for r in by_group.get(g, [])]) for g in groups]
+    final_means = [_mean([float(r["final_params"]) for r in by_group.get(g, [])]) for g in groups]
     ax.bar(x - width / 2, start_means, width, label="start", color="#c5c9d0")
     ax.bar(x + width / 2, final_means, width, label="final", color="#3568a8")
-    for i, group_id in enumerate(GROUP_ORDER):
+    for i, group_id in enumerate(groups):
         for run in by_group.get(group_id, []):
             ax.scatter(i + width / 2, float(run["final_params"]), color="#444", s=18, zorder=3)
     ax.set_xticks(x)
-    ax.set_xticklabels([GROUP_LABELS[g] for g in GROUP_ORDER], rotation=15, ha="right")
+    ax.set_xticklabels([GROUP_LABELS[g] for g in groups], rotation=25, ha="right")
     ax.set_ylabel("Parameter count")
     ax.set_xlabel("Simulation-set generator")
     ax.legend()
@@ -206,23 +223,21 @@ def plot_action_composition(runs: list[dict[str, object]], output_dir: Path) -> 
     labels = sorted({label for run in runs for label in run["action_labels"]})
     if not labels:
         labels = ["(no actions)"]
-    fig, ax = plt.subplots(figsize=(9, 4.8))
-    x = np.arange(len(GROUP_ORDER))
-    bottoms = np.zeros(len(GROUP_ORDER))
+    groups = _present_groups(runs)
+    fig, ax = plt.subplots(figsize=(10, 4.8))
+    x = np.arange(len(groups))
+    bottoms = np.zeros(len(groups))
     cmap = plt.get_cmap("tab20")
     for idx, label in enumerate(labels):
         heights = []
-        for group_id in GROUP_ORDER:
+        for group_id in groups:
             group_runs = by_group.get(group_id, [])
-            if not group_runs:
-                heights.append(0.0)
-                continue
             counts = [Counter(run["action_labels"])[label] for run in group_runs]
             heights.append(_mean(counts))
         ax.bar(x, heights, bottom=bottoms, label=label, color=cmap(idx % 20))
         bottoms = bottoms + np.array(heights)
     ax.set_xticks(x)
-    ax.set_xticklabels([GROUP_LABELS[g] for g in GROUP_ORDER], rotation=15, ha="right")
+    ax.set_xticklabels([GROUP_LABELS[g] for g in groups], rotation=25, ha="right")
     ax.set_ylabel("Mean executed actions")
     ax.set_xlabel("Simulation-set generator")
     ax.legend(fontsize=8, ncols=2)
@@ -233,7 +248,9 @@ def plot_action_composition(runs: list[dict[str, object]], output_dir: Path) -> 
 
 
 def plot_training_curves(runs: list[dict[str, object]], output_dir: Path) -> None:
-    fig, ax = plt.subplots(figsize=(8, 4.5))
+    by_group = _grouped(runs)
+    groups = _present_groups(runs)
+    fig, ax = plt.subplots(figsize=(10, 4.8))
     for run in runs:
         group_id = str(run["group_id"])
         ys = [v * 100 for v in run["train_acc"]]
@@ -241,20 +258,55 @@ def plot_training_curves(runs: list[dict[str, object]], output_dir: Path) -> Non
             range(1, len(ys) + 1),
             ys,
             color=GROUP_COLORS.get(group_id, "#333"),
-            alpha=0.75,
-            linewidth=1.2,
+            alpha=0.22,
+            linewidth=1.0,
+        )
+    for group_id in groups:
+        series = [run["train_acc"] for run in by_group[group_id]]
+        length = min(len(row) for row in series)
+        mean_ys = [
+            _mean([float(row[index]) for row in series]) * 100 for index in range(length)
+        ]
+        ax.plot(
+            range(1, length + 1),
+            mean_ys,
+            color=GROUP_COLORS.get(group_id, "#333"),
+            linewidth=2.2,
             label=GROUP_LABELS.get(group_id, group_id),
         )
-    handles, labels = ax.get_legend_handles_labels()
-    seen: dict[str, object] = {}
-    for handle, label in zip(handles, labels):
-        seen.setdefault(label, handle)
-    ax.legend(seen.values(), seen.keys())
+    ax.legend(fontsize=8, ncols=2)
     ax.set_xlabel("Epoch")
     ax.set_ylabel("Training accuracy (%)")
     ax.set_title("Training accuracy curves by simulation-set generator")
     fig.tight_layout()
     fig.savefig(output_dir / "007-training-curves.png", dpi=150)
+    plt.close(fig)
+
+
+def plot_seed_stability(runs: list[dict[str, object]], output_dir: Path) -> None:
+    by_group = _grouped(runs)
+    groups = _present_groups(runs)
+    fig, ax = plt.subplots(figsize=(10, 4.8))
+    for index, group_id in enumerate(groups):
+        vals = [float(run["final_val_acc"]) * 100 for run in by_group[group_id]]
+        ax.scatter(
+            [index] * len(vals),
+            vals,
+            color=GROUP_COLORS.get(group_id, "#333"),
+            s=28,
+            zorder=3,
+        )
+        ax.scatter([index], [_mean(vals)], color="#d97706", s=42, marker="D", zorder=4)
+    ax.scatter([], [], color="#444", s=28, label="seed")
+    ax.scatter([], [], color="#d97706", s=42, marker="D", label="mean")
+    ax.legend()
+    ax.set_xticks(range(len(groups)))
+    ax.set_xticklabels([GROUP_LABELS[g] for g in groups], rotation=25, ha="right")
+    ax.set_ylabel("Final validation accuracy (%)")
+    ax.set_xlabel("Simulation-set generator")
+    ax.set_title("Seed scatter of final validation accuracy")
+    fig.tight_layout()
+    fig.savefig(output_dir / "007-seed-stability-final-val.png", dpi=150)
     plt.close(fig)
 
 
@@ -271,6 +323,7 @@ def main() -> None:
         )
         return
     plot_final_accuracy(runs, output_dir)
+    plot_seed_stability(runs, output_dir)
     plot_param_growth(runs, output_dir)
     plot_action_composition(runs, output_dir)
     plot_training_curves(runs, output_dir)
