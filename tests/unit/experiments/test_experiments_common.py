@@ -116,16 +116,12 @@ def test_run_experiment_grid_trains_and_saves_metric_artifacts(tmp_path, monkeyp
     }
     captured = {}
 
-    def _fake_train(model, _train, _val, config, **_kwargs):
+    def _fake_train(model, _train, _val, config, **kwargs):
         captured["config"] = config
+        captured["kwargs"] = kwargs
         return model, summary
 
     monkeypatch.setattr(common, "train_generations", _fake_train)
-    monkeypatch.setattr(
-        common,
-        "sample_loaders",
-        lambda clean_train, val, _size, *, seed: (clean_train, val),
-    )
     definition = _definition(tmp_path)
 
     # Act
@@ -146,6 +142,8 @@ def test_run_experiment_grid_trains_and_saves_metric_artifacts(tmp_path, monkeyp
         f"{key}.png" for key in common.METRIC_KEYS
     }
     assert captured["config"].generations == 1
+    assert captured["kwargs"]["sim_train_loader"] is not None
+    assert captured["kwargs"]["sim_val_loader"] is not None
     assert captured["config"].ACTIONS_ENABLE_ADD_NEURONS_15 is True
     assert captured["config"].ACTIONS_ENABLE_DEL_NEURONS_05 is True
 

@@ -19,7 +19,6 @@ from growingnn.core.logger import logger
 import growingnn.simulation.simulation_algorithms.montecarlo_alg as montecarlo_alg
 from growingnn.simulation.score_functions.simulation_score import SimulationScore
 from growingnn.simulation.simulation_schedulers import AlwaysSimulationScheduler
-from growingnn.simulation.simulation_set import sample_loaders
 from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import AccuracyStopper
 from growingnn.training.trainer import train_generations
@@ -124,6 +123,7 @@ def _running_config(
             weight_countW=float(hp["score_weight_countw"]),
             accuracy_metric=str(hp.get("score_accuracy_metric", "val_acc")),
         ),
+        simulation_set_generator=hp.get("simulation_set_generator"),
         simulation_set_size=int(hp["simulation_set_size"]),
         criterion=nn.CrossEntropyLoss(),
         quiet=False,
@@ -190,11 +190,12 @@ def _train_run(
     )
     config = _running_config(hp, device, board)
     train_loader, val_loader, clean_train_loader = definition.loader_factory(hp)
-    sim_train, sim_val = sample_loaders(
+    sim_train, sim_val = config.simulation_set_generator.generate(
         clean_train_loader,
         val_loader,
-        int(hp["simulation_set_size"]),
+        config.simulation_set_size,
         seed=seed,
+        model=gm,
     )
 
     try:
