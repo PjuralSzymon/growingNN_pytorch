@@ -73,15 +73,6 @@ N_INIT = 5
 TAU = 0.15
 BETA = 0.3
 
-_NEURON_RESIZE_FLAGS = (
-    "ACTIONS_ENABLE_ADD_NEURONS_11",
-    "ACTIONS_ENABLE_ADD_NEURONS_15",
-    "ACTIONS_ENABLE_ADD_NEURONS_20",
-    "ACTIONS_ENABLE_DEL_NEURONS_01",
-    "ACTIONS_ENABLE_DEL_NEURONS_05",
-    "ACTIONS_ENABLE_DEL_NEURONS_09",
-)
-
 STARTERS = {
     "narrow": (4, 32),  # 33390 params
     "base": (8, 38),  # 79060 params
@@ -220,8 +211,6 @@ def _simulation_scheduler_for_combo(combo: dict[str, object], hp: dict[str, obje
 
 def _running_config(hp: dict[str, object], combo: dict[str, object], device: torch.device, board) -> RunningConfig:
     cfg = common._running_config(hp, device, board)
-    for flag in _NEURON_RESIZE_FLAGS:
-        setattr(cfg, flag, False)
     cfg.simulation_scheduler = _simulation_scheduler_for_combo(combo, hp)
     return cfg
 
