@@ -7,6 +7,7 @@ import random
 import time
 
 from growingnn.actions.registry import generate_all_actions
+import growingnn.core.config as project_config
 from growingnn.core.config import RunningConfig
 from growingnn.core.traced_model import TracedModel
 from growingnn.utils.quaziIdentity import clear_reshepers_cache
@@ -22,7 +23,7 @@ def get_action(
 
     board = running_config.experiment_board
     params_before = traced.param_count() if board else None
-    deadline = time.time() + running_config.simulation_scheduler.simulation_time
+    min_runs = project_config.SIMULATION_MIN_ALGORITHM_ITERATION_RUNS
     t0 = time.time()
     best_action = None
     best_score = float("-inf")
@@ -30,7 +31,9 @@ def get_action(
     remaining = list(all_actions)
     candidates: list[dict] = []
 
-    while time.time() < deadline and remaining:
+    # Score every remaining root even after simulation_time. If N >= min_runs,
+    # that first pass already meets SIMULATION_MIN_ALGORITHM_ITERATION_RUNS.
+    while remaining:
         action = random.choice(remaining)
         remaining.remove(action)
         candidate = copy.deepcopy(traced)

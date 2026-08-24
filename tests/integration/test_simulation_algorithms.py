@@ -2,6 +2,7 @@
 
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 import torch
@@ -19,11 +20,22 @@ import growingnn.core.config
 growingnn.core.config.ENABLE_LOGGING = False
 
 from growingnn.core.config import RunningConfig
-from growingnn.simulation.score_functions.simulation_score import SimulationScore
 import growingnn.simulation.simulation_algorithms.greedy_alg as greedy_alg
 import growingnn.simulation.simulation_algorithms.random_alg as random_alg
 from growingnn.utils.fx import GraphStructureQuery
 from growingnn.core.traced_model import TracedModel
+
+
+class _TinyNet(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.conv = nn.Conv2d(3, 4, 3, padding=1)
+        self.fc = nn.Linear(4 * 8 * 8, 2)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = torch.relu(self.conv(x))
+        x = torch.nn.functional.adaptive_avg_pool2d(x, (8, 8))
+        return self.fc(x.flatten(1))
 
 
 def _running_config(*, simulation_time: float = 1.0, simulation_score=None):
@@ -64,17 +76,26 @@ def test_random_alg_returns_executable_action():
     assert GraphStructureQuery.get_amount_of_parameters(gm) != params_before
 
 
-def test_greedy_alg_returns_action_within_time_budget():
+def test_greedy_alg_returns_action_after_scoring_remaining_roots():
     """
-    greedy_alg should finish within the allotted time and return an action.
+    greedy_alg should score remaining root actions and return one of them.
     """
     # Arrange
-    gm = fx.symbolic_trace(resnet18(weights=None, num_classes=2))
-    traced = TracedModel.create(gm, (1, 3, 32, 32))
+    gm = fx.symbolic_trace(_TinyNet())
+    traced = TracedModel.create(gm, (1, 3, 8, 8))
     cfg = _running_config(
-        simulation_time=2.0,
-        simulation_score=SimulationScore(weight_acc=1.0, weight_countW=0.0),
+        simulation_time=0.0,
+        simulation_score=SimpleNamespace(score=lambda _gm, _cfg: 0.5),
     )
+    cfg.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_01 = False
+    cfg.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_02 = False
+    cfg.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_05 = False
+    cfg.ACTIONS_ENABLE_ADD_NEURONS_11 = False
+    cfg.ACTIONS_ENABLE_ADD_NEURONS_15 = False
+    cfg.ACTIONS_ENABLE_ADD_NEURONS_20 = False
+    cfg.ACTIONS_ENABLE_DEL_NEURONS_01 = False
+    cfg.ACTIONS_ENABLE_DEL_NEURONS_05 = False
+    cfg.ACTIONS_ENABLE_DEL_NEURONS_09 = False
 
     # Act
     action, _, rollouts = greedy_alg.get_action(traced, cfg)
