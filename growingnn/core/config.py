@@ -66,6 +66,10 @@ MCTS_ROLLOUT_LR = ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.000
 MCTS_UCB1_USE_SQRT = False  # False: legacy sum + log(N)/n; True: mean + sqrt(log(N)/n)
 MCTS_PROPAGATE_ROLLOUT_VALUE = False  # False: return node.value; True: return latest rollout only
 
+# Minimum sequential simulation algorithm iteration runs after the first pass.
+# Complete these even if simulation_time is already gone.
+SIMULATION_MIN_ALGORITHM_ITERATION_RUNS = 3
+
 # LOGGING
 ENABLE_LOGGING = True
 LOG_LEVEL = "INFO"  # str: NOTSET | DEBUG | INFO | WARNING | WARN | ERROR | CRITICAL; or int

@@ -7,6 +7,7 @@ import heapq
 import time
 
 from growingnn.actions.registry import generate_all_actions
+import growingnn.core.config as project_config
 from growingnn.core.config import RunningConfig
 from growingnn.core.traced_model import TracedModel
 from growingnn.utils.quaziIdentity import clear_reshepers_cache
@@ -27,6 +28,7 @@ def get_action(
 
     board = running_config.experiment_board
     params_before = traced.param_count() if board else None
+    min_runs = project_config.SIMULATION_MIN_ALGORITHM_ITERATION_RUNS
     deadline = time.time() + running_config.simulation_scheduler.simulation_time
     t0 = time.time()
     score_fn = running_config.simulation_score.score
@@ -38,9 +40,8 @@ def get_action(
     best: dict | None = None
     root_rows: list[dict] = []
 
+    # First pass: grade every root action once (may overrun simulation_time).
     for action in root_actions:
-        if time.time() >= deadline:
-            break
         child = copy.deepcopy(traced)
         action.execute(child)
         value = score_fn(child.gm, running_config)
@@ -59,13 +60,16 @@ def get_action(
             best = node
         max_depth = 1
 
-    while open_heap and time.time() < deadline and expansions < MAX_EXPANSIONS:
+    while open_heap and expansions < MAX_EXPANSIONS and (
+        expansions < min_runs or time.time() < deadline
+    ):
         _, _, node = heapq.heappop(open_heap)
         if node["depth"] >= MAX_DEPTH:
             continue
+        required = expansions < min_runs
         expansions += 1
         for action in generate_all_actions(node["traced"], running_config):
-            if time.time() >= deadline:
+            if not required and time.time() >= deadline:
                 break
             child = copy.deepcopy(node["traced"])
             action.execute(child)

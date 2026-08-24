@@ -7,6 +7,7 @@ import math
 import time
 
 from growingnn.actions.registry import generate_all_actions
+import growingnn.core.config as project_config
 from growingnn.core.config import RunningConfig
 from growingnn.core.traced_model import TracedModel
 from growingnn.utils.quaziIdentity import clear_reshepers_cache
@@ -34,6 +35,7 @@ def get_action(
 
     board = running_config.experiment_board
     params_before = traced.param_count() if board else None
+    min_runs = project_config.SIMULATION_MIN_ALGORITHM_ITERATION_RUNS
     total_time = running_config.simulation_scheduler.simulation_time
     t0 = time.time()
     root_deadline = t0 + total_time * ROOT_TIME_FRACTION
@@ -55,12 +57,12 @@ def get_action(
         arm["n"] += 1
         arm["mean"] += (value - arm["mean"]) / arm["n"]
 
+    # First pass: grade every root arm once (may overrun simulation_time).
     for arm in arms:
-        if time.time() >= root_deadline:
-            break
         pull(arm)
 
-    while time.time() < root_deadline:
+    extra_pulls = 0
+    while extra_pulls < min_runs or time.time() < root_deadline:
         scored = [arm for arm in arms if arm["n"] > 0]
         if len(scored) < 2:
             break
@@ -70,6 +72,7 @@ def get_action(
             key=lambda item: _bound(item["mean"], item["n"], rollouts),
         )
         pull(best if best["n"] <= challenger["n"] else challenger)
+        extra_pulls += 1
 
     scored = [arm for arm in arms if arm["n"] > 0]
     if not scored:
@@ -89,13 +92,17 @@ def get_action(
     best_node = beam[0]
     max_depth = 1
 
-    while time.time() < deadline and beam and beam[0]["depth"] < MAX_DEPTH:
+    deepen_rounds = 0
+    while beam and beam[0]["depth"] < MAX_DEPTH and (
+        deepen_rounds < min_runs or time.time() < deadline
+    ):
+        required = deepen_rounds < min_runs
         nxt: list[dict] = []
         for node in beam:
-            if time.time() >= deadline:
+            if not required and time.time() >= deadline:
                 break
             for action in generate_all_actions(node["traced"], running_config):
-                if time.time() >= deadline:
+                if not required and time.time() >= deadline:
                     break
                 child = copy.deepcopy(node["traced"])
                 action.execute(child)
@@ -116,6 +123,7 @@ def get_action(
         max_depth = max(max_depth, beam[0]["depth"])
         if beam[0]["score"] > best_node["score"]:
             best_node = beam[0]
+        deepen_rounds += 1
 
     best_action = best_node["root_action"]
     clear_reshepers_cache()

@@ -1,144 +1,37 @@
 # Experiment 006: Neuron-resize action ratio pairs
 
-We keep the Experiment 005 / train-ci package (`sequential_halving_beam` + `composed_exponential` + `big` starter). We change only which AddNeurons / DelNeurons ratio pair is enabled.
-
-The goal is to learn whether the six neuron-resize flags in `RunningConfig` are all useful on a short MNIST probe, or whether some ratio pairs add nothing and should stay off.
+This grid is inconclusive. It cannot decide whether AddNeurons / DelNeurons should stay on. We need a rerun after we know more about simulation set size, simulation time, and the simulation algorithm.
 
 Script: `experiments/train_mnist_exp006_neuron_resize_actions.py`
 
-Charts: `documentation/website/scripts/generate_experiment_006_charts.py`
+Package: `sequential_halving_beam`, `120 s` budget, `big` MNIST starter, four groups (`none`, `add11_del01`, `add15_del05`, `add20_del09`), three seeds. `12` / `12` cells finished.
 
-Folder: `experiments/output/train_mnist/runs/exp006_neuron_resize_actions`
+## Simulation bug found while this experiment ran
 
-Snapshot: `documentation/website/data/experiments/experiment-006-neuron-resize-actions.json`
+`sequential_halving_beam_alg.get_action` scored every root action once. That first pass used up the `120 s` budget. Sequential Halving then ran zero times. The keep-set was the first three arms in `generate_all_actions` order, not the top scores. Residual conv is listed first, so it always won.
 
-This page is a report template. Fill tables and conclusions after the grid finishes. Charts appear once `generate_experiment_006_charts.py` has boards or a snapshot.
+That was fixed during this work: sort living arms by mean before `BEAM_WIDTH`, and run at least `SIMULATION_MIN_ALGORITHM_ITERATION_RUNS = 3` halving rounds even after time is gone. The published numbers here still mix a broken search with a later patched search. They are not a clean test of neuron-resize.
 
-## Experiment parameters
-
-| Parameter | Values | Purpose |
-| --- | --- | --- |
-| Neuron-resize group | `none`, `add11_del01`, `add15_del05`, `add20_del09` | Compare no width change vs mild / medium / aggressive ratio pairs |
-| Seed | `100`, `101`, `102` | Three matched seeds per group |
-
-| Fixed parameter | Value | Explanation |
-| --- | ---: | --- |
-| Dataset | MNIST | Classification task |
-| Planned cells | `12` | `4` groups × `3` seeds |
-| Simulation algorithm | `sequential_halving_beam` | Best keep-set method from Experiment 005 |
-| LR package | `composed_exponential` × logistic recovery | Best package from Experiment 004 |
-| Standard cell `lr_alpha` | `0.01` | Target / peak learning rate |
-| Accuracy metric | `val_acc` | Simulation grading |
-| Slope threshold | `3°` | `SlopeEstimationSimulationScheduler` gate |
-| Generations | `8` | Short probe (below Exp 005 `10`) |
-| Epochs per generation | `8` | Short probe (below Exp 005 `10`) |
-| Total training epochs | `64` | `8 × 8` |
-| Simulation time | `120 s` | Same budget as Exp 005 |
-| Starter | `big` (`BigAvgPoolMnistNet`) | Same as Exp 004 / train-ci |
-| Layer add / delete / dropout | on | Only neuron-resize flags vary |
-
-Group meanings:
-
-| Group ID | Enabled flags | Ratios |
-| --- | --- | --- |
-| `none` | none | control, Exp 001–005 style |
-| `add11_del01` | `ADD_NEURONS_11`, `DEL_NEURONS_01` | grow ×1.1, shrink ×0.1 |
-| `add15_del05` | `ADD_NEURONS_15`, `DEL_NEURONS_05` | grow ×1.5, shrink ×0.5 |
-| `add20_del09` | `ADD_NEURONS_20`, `DEL_NEURONS_09` | grow ×2.0, shrink ×0.9 |
-
-Run path:
-
-```text
-exp006_neuron_resize_actions/<group_id>/<hp_folder>/seed_<seed>/
-```
-
-## Research questions
-
-Main question: which neuron-resize ratio pair improves short MNIST GrowingNN runs enough to keep enabled by default?
-
-Supporting checks:
-
-1. Does any enabled pair beat the `none` control on final validation accuracy?
-2. Do mild / medium / aggressive pairs get selected by search, or do they sit unused?
-3. Does enabling a pair grow or shrink parameter count in a useful way?
-4. Should default config keep all three pairs, keep one pair, or keep none?
-
-## Result timeline
-
-Progress: `0` / `12` completed (`0.0%`). Re-run this section after the grid finishes.
-
-| Group | Seeds done | Notes |
-| --- | ---: | --- |
-| `none` | `0` / `3` | control |
-| `add11_del01` | `0` / `3` | mild pair |
-| `add15_del05` | `0` / `3` | medium pair |
-| `add20_del09` | `0` / `3` | aggressive pair |
-
-## Why this experiment
-
-Experiments 001–005 kept AddNeurons / DelNeurons off while layer resize was unstable. After the layer-resize fix, `RunningConfig` enables all six neuron-resize flags by default. Exp 001–005 still force them off locally so old grids stay comparable.
-
-This short probe asks whether those six flags deserve to stay on for new runs. We test them as three paired ratio groups against a no-resize control, instead of enabling all six at once.
-
-## Measurements and charts
-
-Generate charts after runs exist:
-
-```text
-python documentation/website/scripts/generate_experiment_006_charts.py
-```
-
-### Final accuracy by group
+## What we can see
 
 ![Final accuracy by neuron-resize group](/assets/experiments/006-final-accuracy-by-group.png)
 
 > [!CAPTION] Figure 1. Mean final train and validation accuracy by neuron-resize group. Gray markers are individual seeds.
 
-### Parameter growth by group
-
 ![Parameter growth by neuron-resize group](/assets/experiments/006-param-growth-by-group.png)
 
 > [!CAPTION] Figure 2. Mean start and final parameter counts by group. Gray markers are individual final counts.
 
-### Action mix by group
+The `add20_del09` bar grows more than the control. That is not AddNeurons with factor `2.0`. That action never ran (`0` live executions). The extra parameters come from residual and sequential layer inserts. The simulation did not grade width-doubling by executing it.
 
-![Executed action mix by neuron-resize group](/assets/experiments/006-action-composition-by-group.png)
+![Chosen simulation actions by neuron-resize group](/assets/experiments/006-simulation-chosen-actions-by-group.png)
 
-> [!CAPTION] Figure 3. Mean executed action counts by short label and group. Neuron-resize labels should appear only when that group enables them.
+> [!CAPTION] Figure 3. Count of winning simulation actions by group.
 
-### Training curves by group
+DeleteNeurons never ran (`del01`, `del05`, and `del09` are all `0` live actions). `del01` never even entered the pool. AddNeurons ran `3` times in total (`add11` once, `add15` twice, `add20` never). That is too few events to judge the flags.
 
-![Training accuracy curves by neuron-resize group](/assets/experiments/006-training-curves.png)
+## Conclusion
 
-> [!CAPTION] Figure 4. Training accuracy over epochs for every completed seed, colored by group.
+Do not use this experiment to turn neuron-resize on or off.
 
-## Grouped final results
-
-Fill after completion.
-
-| Group | Mean train (%) | Mean val (%) | Mean final params | Neuron-resize actions used |
-| --- | ---: | ---: | ---: | ---: |
-| `none` |  |  |  |  |
-| `add11_del01` |  |  |  |  |
-| `add15_del05` |  |  |  |  |
-| `add20_del09` |  |  |  |  |
-
-## Limitations and seed effects
-
-- Short run (`64` epochs) can understate late width changes.
-- Three seeds are enough for a first ranking, not for a hard reject of a close second place.
-- MNIST `big` may need fewer growth steps than a harder starter, so a useful pair here should still be re-checked on a harder task.
-
-## Conclusions
-
-To fill after the grid:
-
-1. State which group beats `none` on mean validation accuracy.
-2. State whether unused ratio pairs should be turned off in default config.
-3. State the recommended default: keep all three pairs, keep one pair, or keep none.
-
-## Next experiments
-
-1. If one pair wins clearly, re-test it with Exp 005 length (`10×10`) and the medium starter.
-2. If all three pairs help, keep the six default flags on and move to a harder dataset.
-3. If none beats the control, turn neuron-resize defaults back off and keep only layer add/delete.
+We need more information about simulation set size, simulation time, and the simulation algorithm before this question can be graded. Then rerun the grid with a working search and a budget that can actually try AddNeurons / DelNeurons, including factor `2.0`.
