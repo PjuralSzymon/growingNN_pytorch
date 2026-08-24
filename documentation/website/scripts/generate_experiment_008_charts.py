@@ -1,12 +1,12 @@
-"""Generate charts for Experiment 008: CIFAR-10 initial package.
+"""Generate charts for Experiment 008: CIFAR-10 adaptive meta-parameter search.
 
 Measured figures (boards or snapshot):
-- final train/val accuracy by variant with seed markers
-- start vs final parameter counts by variant
-- executed action mix by variant
-- simulations run vs actions executed (does 3° fire?)
-- post-action train recovery after one generation
-- training and validation accuracy curves colored by variant
+- ranked trial validation accuracy, colored by starter
+- peak vs final validation accuracy
+- per-axis search grades
+- start vs final parameter counts
+- simulations vs executed actions by scheduler
+- training and validation accuracy curves, colored by starter
 """
 
 from __future__ import annotations
@@ -27,6 +27,8 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from experiments.train_cifar10_exp008_initial_package import combo_folder_name
+
 SITE = Path(__file__).parents[1]
 _RUNS_ROOT = SITE.parents[1] / "experiments" / "output" / "train_cifar10" / "runs"
 DEFAULT_RUNS = _RUNS_ROOT / "exp008_cifar10_initial_package"
@@ -35,23 +37,48 @@ DEFAULT_SNAPSHOT = SITE / "data" / "experiments" / "experiment-008-cifar10-initi
 _ALLOWED_SNAPSHOT_ROOT = (SITE / "data" / "experiments").resolve()
 _ALLOWED_OUTPUT_ROOT = (SITE / "app" / "public" / "assets" / "experiments").resolve()
 _ALLOWED_TEMP_ROOT = Path(tempfile.gettempdir()).resolve()
+SEARCH_JSON = "adaptive_search.json"
 
-GROUP_ORDER = ("narrow", "base", "deep", "epochs20", "always", "fixed")
-GROUP_LABELS = {
-    "base": "base",
-    "narrow": "narrow",
-    "deep": "deep",
-    "epochs20": "epochs20",
-    "always": "always",
-    "fixed": "fixed",
-}
-GROUP_COLORS = {
+STARTER_ORDER = ("narrow", "base", "mid", "deep")
+STARTER_COLORS = {
+    "narrow": "#6b7280",
     "base": "#3568a8",
-    "narrow": "#4f8a63",
+    "mid": "#0f766e",
     "deep": "#d18b2c",
-    "epochs20": "#8b5cf6",
-    "always": "#0f766e",
-    "fixed": "#6b7280",
+}
+SCHEDULER_MARKERS = {
+    "always": "o",
+    "slope_2deg": "^",
+    "slope_3deg": "s",
+}
+AXIS_ORDER = (
+    "starter",
+    "epochs",
+    "generations",
+    "simulation_alg",
+    "lr_schedule",
+    "lr_alpha",
+    "simulation_time",
+    "simulation_epochs",
+    "simulation_set_size",
+    "simulation_scheduler",
+)
+ALG_LABELS = {
+    "montecarlo": "MCTS",
+    "greedy": "greedy",
+    "sequential_halving_beam": "halving+beam",
+    "ugape_deepen": "UGapE+deepen",
+    "best_first": "best-first",
+}
+LR_LABELS = {
+    "composed_exponential": "exponential",
+    "composed_step": "step",
+    "composed_cosine": "cosine",
+}
+SCHED_LABELS = {
+    "always": "always",
+    "slope_2deg": "2°",
+    "slope_3deg": "3°",
 }
 
 
@@ -70,265 +97,253 @@ def _mean(values: list[float]) -> float:
     return sum(values) / len(values) if values else 0.0
 
 
-def _epochs_per_generation(epochs: list[dict], main: dict) -> int:
-    params = main.get("trainingParameters") or {}
-    configured = params.get("epochsPerGeneration")
-    if configured:
-        return int(configured)
-    generations = [int(row.get("generation", 0)) for row in epochs]
-    if not generations:
-        return 10
-    counts = Counter(generations)
-    return max(counts.values())
+def _axis_label(axis: str, value: object) -> str:
+    text = str(value)
+    if axis == "simulation_alg":
+        return ALG_LABELS.get(text, text)
+    if axis == "lr_schedule":
+        return LR_LABELS.get(text, text)
+    if axis == "simulation_scheduler":
+        return SCHED_LABELS.get(text, text)
+    if axis == "simulation_time":
+        return str(int(float(text))) if float(text).is_integer() else text
+    return text
 
 
-def _post_action_changes(
-    train_acc: list[float],
-    actions: list[tuple[int, dict]],
-    epochs_per_generation: int,
-) -> tuple[list[float], list[float]]:
-    immediate: list[float] = []
-    recovered: list[float] = []
-    for generation, _action in actions:
-        end_g = (int(generation) + 1) * epochs_per_generation - 1
-        start_next = end_g + 1
-        end_next = (int(generation) + 2) * epochs_per_generation - 1
-        if start_next < len(train_acc):
-            immediate.append(100.0 * (train_acc[start_next] - train_acc[end_g]))
-        if end_next < len(train_acc):
-            recovered.append(100.0 * (train_acc[end_next] - train_acc[end_g]))
-    return immediate, recovered
+def _load_board_run(run_dir: Path) -> dict[str, object] | None:
+    main_path = run_dir / "board" / "main.json"
+    metrics_path = run_dir / "board" / "metrics" / "training.json"
+    if not main_path.is_file() or not metrics_path.is_file():
+        return None
+    main = json.loads(main_path.read_text(encoding="utf-8"))
+    if main.get("status") != "completed":
+        return None
+    epochs = json.loads(metrics_path.read_text(encoding="utf-8"))["epochs"]
+    actions = [
+        item["actionExecuted"]
+        for item in main.get("generationTimeline", [])
+        if item.get("actionExecuted")
+    ]
+    simulations_dir = run_dir / "board" / "simulations"
+    simulations_ran = (
+        len(list(simulations_dir.glob("simulation_gen_*.json")))
+        if simulations_dir.is_dir()
+        else 0
+    )
+    train_acc = [float(row["trainAcc"]) for row in epochs]
+    val_acc = [float(row["valAcc"]) for row in epochs]
+    param_count = [int(row.get("paramCount", 0)) for row in epochs]
+    return {
+        "status": main["status"],
+        "elapsed_sec": float(main.get("trainingTimeElapsedSec") or 0),
+        "started_on": main.get("experimentStartedOn"),
+        "simulations_ran": simulations_ran,
+        "actions": len(actions),
+        "action_labels": [action["shortLabel"] for action in actions],
+        "train_acc": train_acc,
+        "val_acc": val_acc,
+        "param_count": param_count,
+        "final_train_acc": train_acc[-1] if train_acc else 0.0,
+        "final_val_acc": val_acc[-1] if val_acc else 0.0,
+        "peak_val_acc": max(val_acc) if val_acc else 0.0,
+        "start_params": param_count[0] if param_count else 0,
+        "final_params": param_count[-1] if param_count else 0,
+    }
 
 
-def load_runs(runs_dir: Path) -> list[dict[str, object]]:
-    """Load board metrics for every variant × seed run."""
+def load_search_and_runs(runs_dir: Path) -> tuple[dict[str, object], list[dict[str, object]]]:
+    """Join adaptive_search.json trials with completed board metrics."""
+    search_path = runs_dir / SEARCH_JSON
+    if not search_path.is_file():
+        return {}, []
+    search = json.loads(search_path.read_text(encoding="utf-8"))
     runs: list[dict[str, object]] = []
-    if not runs_dir.exists():
-        return runs
-    if ".." in runs_dir.parts:
-        raise ValueError("path must not contain '..'")
-    resolved_runs = runs_dir.expanduser().resolve()
-    allowed_runs_root = _RUNS_ROOT.resolve()
-    if not (
-        resolved_runs.is_relative_to(allowed_runs_root)
-        or resolved_runs.is_relative_to(_ALLOWED_TEMP_ROOT)
-    ):
-        raise ValueError(
-            f"path {resolved_runs} is outside allowed roots "
-            f"{allowed_runs_root} and {_ALLOWED_TEMP_ROOT}"
-        )
-    for main_path in sorted(resolved_runs.rglob("board/main.json")):
-        main_resolved = main_path.resolve()
-        if not main_resolved.is_relative_to(resolved_runs):
-            continue
-        run_dir = main_resolved.parent.parent
-        parts = run_dir.relative_to(resolved_runs).parts
-        metrics_path = main_resolved.parent / "metrics" / "training.json"
-        if not metrics_path.exists() or len(parts) < 2:
-            continue
-        variant_id = parts[0]
-        main = json.loads(main_resolved.read_text(encoding="utf-8"))
-        if main.get("status") != "completed":
-            continue
-        epochs = json.loads(metrics_path.read_text(encoding="utf-8"))["epochs"]
-        timeline_actions = [
-            (item["generation"], item["actionExecuted"])
-            for item in main.get("generationTimeline", [])
-            if item.get("actionExecuted")
-        ]
-        simulations_dir = main_resolved.parent / "simulations"
-        simulations_ran = (
-            len(list(simulations_dir.glob("simulation_gen_*.json")))
-            if simulations_dir.is_dir()
-            else 0
-        )
-        train_acc = [float(row["trainAcc"]) for row in epochs]
-        val_acc = [float(row["valAcc"]) for row in epochs]
-        epg = _epochs_per_generation(epochs, main)
-        immediate, recovered = _post_action_changes(train_acc, timeline_actions, epg)
-        runs.append(
-            {
-                "group_id": variant_id,
-                "seed": int(parts[-1].removeprefix("seed_")),
-                "status": main["status"],
-                "simulations_ran": simulations_ran,
-                "actions": len(timeline_actions),
-                "action_generations": [generation for generation, _ in timeline_actions],
-                "action_labels": [action["shortLabel"] for _, action in timeline_actions],
-                "epochs_per_generation": epg,
-                "train_acc": train_acc,
-                "val_acc": val_acc,
-                "param_count": [int(row.get("paramCount", 0)) for row in epochs],
-                "final_train_acc": float(epochs[-1]["trainAcc"]) if epochs else 0.0,
-                "final_val_acc": float(epochs[-1]["valAcc"]) if epochs else 0.0,
-                "start_params": int(epochs[0].get("paramCount", 0)) if epochs else 0,
-                "final_params": int(epochs[-1].get("paramCount", 0)) if epochs else 0,
-                "immediate_post_action_train_changes": immediate,
-                "post_action_train_changes": recovered,
-            }
-        )
-    return runs
+    for index, trial in enumerate(search.get("trials") or []):
+        combo = dict(trial["combo"])
+        seed = 100 + index
+        folder = combo_folder_name(combo)
+        board = _load_board_run(runs_dir / folder / f"seed_{seed}") or {}
+        row = {
+            "trial": index + 1,
+            "seed": seed,
+            "folder": folder,
+            "combo": combo,
+            "starter": combo["starter"],
+            "simulation_alg": combo["simulation_alg"],
+            "lr_schedule": combo["lr_schedule"],
+            "simulation_scheduler": combo["simulation_scheduler"],
+            "search_val_acc": float(trial["val_acc"]),
+            "search_test_acc": float(trial["test_acc"]),
+            **board,
+        }
+        runs.append(row)
+    return search, runs
 
 
-def write_snapshot(runs: list[dict[str, object]], snapshot_path: Path, folder: str) -> None:
+def write_snapshot(
+    search: dict[str, object],
+    runs: list[dict[str, object]],
+    snapshot_path: Path,
+    folder: str,
+) -> None:
     resolved = _resolve_under_allowed_root(snapshot_path, _ALLOWED_SNAPSHOT_ROOT)
     resolved.parent.mkdir(parents=True, exist_ok=True)
-    payload = {"experiment": "008", "folder": folder, "runs": runs}
+    payload = {
+        "experiment": "008",
+        "folder": folder,
+        "iteration": search.get("iteration"),
+        "max_iters": search.get("max_iters"),
+        "unevaluated_count": search.get("unevaluated_count"),
+        "pool_size": search.get("pool_size"),
+        "best": search.get("best"),
+        "grades": search.get("grades"),
+        "probabilities": search.get("probabilities"),
+        "runs": runs,
+    }
     resolved.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
-def load_runs_or_snapshot(runs_dir: Path, snapshot_path: Path) -> list[dict[str, object]]:
-    runs = load_runs(runs_dir)
+def load_runs_or_snapshot(
+    runs_dir: Path, snapshot_path: Path
+) -> tuple[dict[str, object], list[dict[str, object]]]:
+    search, runs = load_search_and_runs(runs_dir)
     if runs:
-        write_snapshot(runs, snapshot_path, runs_dir.name)
-        return runs
+        write_snapshot(search, runs, snapshot_path, runs_dir.name)
+        return search, runs
     resolved_snapshot = _resolve_under_allowed_root(snapshot_path, _ALLOWED_SNAPSHOT_ROOT)
     if not resolved_snapshot.exists():
-        return []
+        return {}, []
     payload = json.loads(resolved_snapshot.read_text(encoding="utf-8"))
-    return list(payload.get("runs", []))
+    search = {
+        "iteration": payload.get("iteration"),
+        "max_iters": payload.get("max_iters"),
+        "unevaluated_count": payload.get("unevaluated_count"),
+        "pool_size": payload.get("pool_size"),
+        "best": payload.get("best"),
+        "grades": payload.get("grades") or {},
+        "probabilities": payload.get("probabilities") or {},
+    }
+    return search, list(payload.get("runs", []))
 
 
-def _grouped(runs: list[dict[str, object]]) -> dict[str, list[dict[str, object]]]:
-    by_group: dict[str, list[dict[str, object]]] = defaultdict(list)
-    for run in runs:
-        by_group[str(run["group_id"])].append(run)
-    return by_group
-
-
-def plot_final_accuracy(runs: list[dict[str, object]], output_dir: Path) -> None:
-    by_group = _grouped(runs)
-    fig, ax = plt.subplots(figsize=(8, 4.5))
-    x = np.arange(len(GROUP_ORDER))
-    width = 0.35
-    train_means = [_mean([float(r["final_train_acc"]) for r in by_group.get(g, [])]) * 100 for g in GROUP_ORDER]
-    val_means = [_mean([float(r["final_val_acc"]) for r in by_group.get(g, [])]) * 100 for g in GROUP_ORDER]
-    ax.bar(x - width / 2, train_means, width, label="train", color="#9db7d8")
-    ax.bar(x + width / 2, val_means, width, label="val", color="#6f9e7d")
-    for i, group_id in enumerate(GROUP_ORDER):
-        for run in by_group.get(group_id, []):
-            ax.scatter(i - width / 2, float(run["final_train_acc"]) * 100, color="#444", s=18, zorder=3)
-            ax.scatter(i + width / 2, float(run["final_val_acc"]) * 100, color="#444", s=18, zorder=3)
-    ax.set_xticks(x)
-    ax.set_xticklabels([GROUP_LABELS[g] for g in GROUP_ORDER])
-    ax.set_ylabel("Final accuracy (%)")
-    ax.set_xlabel("CIFAR-10 package variant")
-    ax.legend()
-    ax.set_title("Final accuracy by CIFAR-10 package variant")
+def plot_trial_accuracy(runs: list[dict[str, object]], output_dir: Path) -> None:
+    ordered = sorted(runs, key=lambda row: float(row["search_val_acc"]))
+    fig, ax = plt.subplots(figsize=(8.5, 5.2))
+    y = np.arange(len(ordered))
+    colors = [STARTER_COLORS[str(row["starter"])] for row in ordered]
+    ax.barh(y, [float(row["search_val_acc"]) * 100 for row in ordered], color=colors)
+    ax.set_yticks(y)
+    ax.set_yticklabels(
+        [
+            f"t{row['trial']} {row['starter']} {SCHED_LABELS.get(str(row['simulation_scheduler']), str(row['simulation_scheduler']))}"
+            for row in ordered
+        ]
+    )
+    ax.set_xlabel("Peak validation accuracy (%)")
+    ax.set_title("Peak validation accuracy by search trial")
+    handles = [
+        plt.Rectangle((0, 0), 1, 1, color=STARTER_COLORS[name], label=name)
+        for name in STARTER_ORDER
+        if any(str(row["starter"]) == name for row in runs)
+    ]
+    ax.legend(handles=handles, loc="lower right")
     fig.tight_layout()
-    fig.savefig(output_dir / "008-final-accuracy-by-variant.png", dpi=150)
+    fig.savefig(output_dir / "008-trial-val-acc.png", dpi=150)
+    plt.close(fig)
+
+
+def plot_peak_vs_final(runs: list[dict[str, object]], output_dir: Path) -> None:
+    scored = [row for row in runs if "final_val_acc" in row]
+    fig, ax = plt.subplots(figsize=(6.5, 6))
+    for row in scored:
+        starter = str(row["starter"])
+        ax.scatter(
+            float(row["search_val_acc"]) * 100,
+            float(row["final_val_acc"]) * 100,
+            color=STARTER_COLORS[starter],
+            marker=SCHEDULER_MARKERS.get(str(row["simulation_scheduler"]), "o"),
+            s=48,
+            zorder=3,
+        )
+    lims = [35, 75]
+    ax.plot(lims, lims, color="#888", linewidth=0.8)
+    ax.set_xlim(lims)
+    ax.set_ylim(lims)
+    ax.set_xlabel("Peak validation accuracy (%)")
+    ax.set_ylabel("Final validation accuracy (%)")
+    ax.set_title("Peak versus final validation accuracy")
+    handles = [
+        plt.Line2D([0], [0], color=STARTER_COLORS[name], marker="o", linestyle="", label=name)
+        for name in STARTER_ORDER
+        if any(str(row["starter"]) == name for row in scored)
+    ]
+    ax.legend(handles=handles)
+    fig.tight_layout()
+    fig.savefig(output_dir / "008-peak-vs-final-val.png", dpi=150)
+    plt.close(fig)
+
+
+def plot_axis_grades(search: dict[str, object], output_dir: Path) -> None:
+    grades = search.get("grades") or {}
+    fig, axes = plt.subplots(2, 5, figsize=(12.5, 5.8))
+    for ax, axis in zip(axes.ravel(), AXIS_ORDER):
+        table = grades.get(axis) or {}
+        labels = [_axis_label(axis, key) for key in table]
+        values = [float(value) for value in table.values()]
+        ax.barh(range(len(labels)), values, color="#3568a8")
+        ax.set_yticks(range(len(labels)))
+        ax.set_yticklabels(labels, fontsize=8)
+        ax.set_xlim(0.45, 0.75)
+        ax.axvline(0.5, color="#888", linewidth=0.8)
+        ax.set_title(axis.replace("_", " "), fontsize=9)
+        ax.tick_params(axis="x", labelsize=8)
+    fig.suptitle("Per-axis search grades after scored trials")
+    fig.tight_layout()
+    fig.savefig(output_dir / "008-axis-grades.png", dpi=150)
     plt.close(fig)
 
 
 def plot_param_growth(runs: list[dict[str, object]], output_dir: Path) -> None:
-    by_group = _grouped(runs)
-    fig, ax = plt.subplots(figsize=(8, 4.5))
-    x = np.arange(len(GROUP_ORDER))
-    width = 0.35
-    start_means = [_mean([float(r["start_params"]) for r in by_group.get(g, [])]) for g in GROUP_ORDER]
-    final_means = [_mean([float(r["final_params"]) for r in by_group.get(g, [])]) for g in GROUP_ORDER]
-    ax.bar(x - width / 2, start_means, width, label="start", color="#c5c9d0")
-    ax.bar(x + width / 2, final_means, width, label="final", color="#3568a8")
-    for i, group_id in enumerate(GROUP_ORDER):
-        for run in by_group.get(group_id, []):
-            ax.scatter(i + width / 2, float(run["final_params"]), color="#444", s=18, zorder=3)
+    scored = [row for row in runs if "start_params" in row]
+    fig, ax = plt.subplots(figsize=(8.5, 4.8))
+    x = np.arange(len(scored))
+    ax.bar(x - 0.2, [float(row["start_params"]) for row in scored], 0.4, label="start", color="#c5c9d0")
+    ax.bar(x + 0.2, [float(row["final_params"]) for row in scored], 0.4, label="final", color="#3568a8")
     ax.set_xticks(x)
-    ax.set_xticklabels([GROUP_LABELS[g] for g in GROUP_ORDER])
+    ax.set_xticklabels([f"t{row['trial']}" for row in scored])
     ax.set_ylabel("Parameter count")
-    ax.set_xlabel("CIFAR-10 package variant")
+    ax.set_xlabel("Search trial")
     ax.legend()
-    ax.set_title("Parameter growth by CIFAR-10 package variant")
+    ax.set_title("Start and final parameter counts by trial")
     fig.tight_layout()
-    fig.savefig(output_dir / "008-param-growth-by-variant.png", dpi=150)
-    plt.close(fig)
-
-
-def plot_action_composition(runs: list[dict[str, object]], output_dir: Path) -> None:
-    by_group = _grouped(runs)
-    labels = sorted({label for run in runs for label in run["action_labels"]})
-    if not labels:
-        labels = ["(no actions)"]
-    fig, ax = plt.subplots(figsize=(9, 4.8))
-    x = np.arange(len(GROUP_ORDER))
-    bottoms = np.zeros(len(GROUP_ORDER))
-    cmap = plt.get_cmap("tab20")
-    for idx, label in enumerate(labels):
-        heights = []
-        for group_id in GROUP_ORDER:
-            group_runs = by_group.get(group_id, [])
-            if not group_runs:
-                heights.append(0.0)
-                continue
-            counts = [Counter(run["action_labels"])[label] for run in group_runs]
-            heights.append(_mean(counts))
-        ax.bar(x, heights, bottom=bottoms, label=label, color=cmap(idx % 20))
-        bottoms = bottoms + np.array(heights)
-    ax.set_xticks(x)
-    ax.set_xticklabels([GROUP_LABELS[g] for g in GROUP_ORDER])
-    ax.set_ylabel("Mean executed actions")
-    ax.set_xlabel("CIFAR-10 package variant")
-    ax.legend(fontsize=8, ncols=2)
-    ax.set_title("Executed action mix by CIFAR-10 package variant")
-    fig.tight_layout()
-    fig.savefig(output_dir / "008-action-composition-by-variant.png", dpi=150)
+    fig.savefig(output_dir / "008-param-growth.png", dpi=150)
     plt.close(fig)
 
 
 def plot_search_activity(runs: list[dict[str, object]], output_dir: Path) -> None:
-    by_group = _grouped(runs)
-    fig, ax = plt.subplots(figsize=(8, 4.5))
-    x = np.arange(len(GROUP_ORDER))
-    width = 0.35
-    sim_means = [_mean([float(r.get("simulations_ran", 0)) for r in by_group.get(g, [])]) for g in GROUP_ORDER]
-    action_means = [_mean([float(r.get("actions", 0)) for r in by_group.get(g, [])]) for g in GROUP_ORDER]
-    ax.bar(x - width / 2, sim_means, width, label="simulations run", color="#d18b2c")
-    ax.bar(x + width / 2, action_means, width, label="actions executed", color="#3568a8")
-    for i, group_id in enumerate(GROUP_ORDER):
-        for run in by_group.get(group_id, []):
-            ax.scatter(i - width / 2, float(run.get("simulations_ran", 0)), color="#444", s=18, zorder=3)
-            ax.scatter(i + width / 2, float(run.get("actions", 0)), color="#444", s=18, zorder=3)
+    scored = [row for row in runs if "simulations_ran" in row]
+    by_sched: dict[str, list[dict[str, object]]] = defaultdict(list)
+    for row in scored:
+        by_sched[str(row["simulation_scheduler"])].append(row)
+    order = [key for key in ("always", "slope_2deg", "slope_3deg") if key in by_sched]
+    fig, ax = plt.subplots(figsize=(7.5, 4.5))
+    x = np.arange(len(order))
+    sim_means = [_mean([float(row["simulations_ran"]) for row in by_sched[key]]) for key in order]
+    act_means = [_mean([float(row["actions"]) for row in by_sched[key]]) for key in order]
+    ax.bar(x - 0.2, sim_means, 0.4, label="simulations run", color="#d18b2c")
+    ax.bar(x + 0.2, act_means, 0.4, label="actions executed", color="#3568a8")
+    for i, key in enumerate(order):
+        for row in by_sched[key]:
+            ax.scatter(i - 0.2, float(row["simulations_ran"]), color="#444", s=18, zorder=3)
+            ax.scatter(i + 0.2, float(row["actions"]), color="#444", s=18, zorder=3)
     ax.set_xticks(x)
-    ax.set_xticklabels([GROUP_LABELS[g] for g in GROUP_ORDER])
-    ax.set_ylabel("Mean count")
-    ax.set_xlabel("CIFAR-10 package variant")
+    ax.set_xticklabels([SCHED_LABELS[key] for key in order])
+    ax.set_ylabel("Count")
+    ax.set_xlabel("Simulation scheduler")
     ax.legend()
     ax.set_title("Simulations run versus actions executed")
     fig.tight_layout()
-    fig.savefig(output_dir / "008-search-activity-by-variant.png", dpi=150)
-    plt.close(fig)
-
-
-def plot_post_action_recovery(runs: list[dict[str, object]], output_dir: Path) -> None:
-    by_group = _grouped(runs)
-    fig, ax = plt.subplots(figsize=(8, 4.5))
-    x = np.arange(len(GROUP_ORDER))
-    width = 0.35
-    immediate_means = []
-    recovered_means = []
-    for group_id in GROUP_ORDER:
-        immediate = [
-            value
-            for run in by_group.get(group_id, [])
-            for value in run.get("immediate_post_action_train_changes", [])
-        ]
-        recovered = [
-            value
-            for run in by_group.get(group_id, [])
-            for value in run.get("post_action_train_changes", [])
-        ]
-        immediate_means.append(_mean(immediate))
-        recovered_means.append(_mean(recovered))
-    ax.bar(x - width / 2, immediate_means, width, label="next epoch", color="#d18b2c")
-    ax.bar(x + width / 2, recovered_means, width, label="after one generation", color="#3568a8")
-    ax.axhline(0.0, color="#888", linewidth=0.8)
-    ax.set_xticks(x)
-    ax.set_xticklabels([GROUP_LABELS[g] for g in GROUP_ORDER])
-    ax.set_ylabel("Train-accuracy change (percentage points)")
-    ax.set_xlabel("CIFAR-10 package variant")
-    ax.legend()
-    ax.set_title("Train accuracy change after architecture actions")
-    fig.tight_layout()
-    fig.savefig(output_dir / "008-post-action-recovery-by-variant.png", dpi=150)
+    fig.savefig(output_dir / "008-search-activity-by-scheduler.png", dpi=150)
     plt.close(fig)
 
 
@@ -340,17 +355,17 @@ def _plot_accuracy_curves(
     title: str,
     filename: str,
 ) -> None:
-    fig, ax = plt.subplots(figsize=(8, 4.5))
-    for run in runs:
-        group_id = str(run["group_id"])
-        ys = [v * 100 for v in run[metric_key]]
+    scored = [row for row in runs if metric_key in row]
+    fig, ax = plt.subplots(figsize=(8.5, 4.8))
+    for row in scored:
+        ys = [value * 100 for value in row[metric_key]]
         ax.plot(
             range(1, len(ys) + 1),
             ys,
-            color=GROUP_COLORS.get(group_id, "#333"),
-            alpha=0.75,
+            color=STARTER_COLORS[str(row["starter"])],
+            alpha=0.8,
             linewidth=1.2,
-            label=GROUP_LABELS.get(group_id, group_id),
+            label=str(row["starter"]),
         )
     handles, labels = ax.get_legend_handles_labels()
     seen: dict[str, object] = {}
@@ -371,7 +386,7 @@ def plot_training_curves(runs: list[dict[str, object]], output_dir: Path) -> Non
         output_dir,
         "train_acc",
         "Training accuracy (%)",
-        "Training accuracy curves by CIFAR-10 package variant",
+        "Training accuracy curves by starter",
         "008-training-curves.png",
     )
 
@@ -382,20 +397,47 @@ def plot_validation_curves(runs: list[dict[str, object]], output_dir: Path) -> N
         output_dir,
         "val_acc",
         "Validation accuracy (%)",
-        "Validation accuracy curves by CIFAR-10 package variant",
+        "Validation accuracy curves by starter",
         "008-validation-curves.png",
     )
+
+
+def plot_action_composition(runs: list[dict[str, object]], output_dir: Path) -> None:
+    scored = [row for row in runs if "action_labels" in row]
+    labels = sorted({label for row in scored for label in row["action_labels"]})
+    if not labels:
+        labels = ["(no actions)"]
+    fig, ax = plt.subplots(figsize=(9, 4.8))
+    x = np.arange(len(scored))
+    bottoms = np.zeros(len(scored))
+    cmap = plt.get_cmap("tab20")
+    for idx, label in enumerate(labels):
+        heights = [Counter(row.get("action_labels", []))[label] for row in scored]
+        ax.bar(x, heights, bottom=bottoms, label=label, color=cmap(idx % 20))
+        bottoms = bottoms + np.array(heights)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"t{row['trial']}" for row in scored])
+    ax.set_ylabel("Executed actions")
+    ax.set_xlabel("Search trial")
+    ax.legend(fontsize=8, ncols=2)
+    ax.set_title("Executed action mix by trial")
+    fig.tight_layout()
+    fig.savefig(output_dir / "008-action-composition.png", dpi=150)
+    plt.close(fig)
 
 
 def generate_charts(
     runs: list[dict[str, object]],
     output_dir: Path,
+    search: dict[str, object] | None = None,
 ) -> None:
-    plot_final_accuracy(runs, output_dir)
+    plot_trial_accuracy(runs, output_dir)
+    plot_peak_vs_final(runs, output_dir)
+    if search:
+        plot_axis_grades(search, output_dir)
     plot_param_growth(runs, output_dir)
-    plot_action_composition(runs, output_dir)
     plot_search_activity(runs, output_dir)
-    plot_post_action_recovery(runs, output_dir)
+    plot_action_composition(runs, output_dir)
     plot_training_curves(runs, output_dir)
     plot_validation_curves(runs, output_dir)
 
@@ -405,15 +447,15 @@ def main() -> None:
     output_dir = _resolve_under_allowed_root(DEFAULT_OUTPUT, _ALLOWED_OUTPUT_ROOT)
     snapshot_path = DEFAULT_SNAPSHOT
     output_dir.mkdir(parents=True, exist_ok=True)
-    runs = load_runs_or_snapshot(runs_dir, snapshot_path)
+    search, runs = load_runs_or_snapshot(runs_dir, snapshot_path)
     if not runs:
         print(
-            f"No completed Exp 008 runs under {runs_dir}. "
+            f"No completed Exp 008 trials under {runs_dir}. "
             f"Snapshot empty or missing: {snapshot_path}"
         )
         return
-    generate_charts(runs, output_dir)
-    print(f"Wrote Exp 008 charts for {len(runs)} completed runs to {output_dir}")
+    generate_charts(runs, output_dir, search=search)
+    print(f"Wrote Exp 008 charts for {len(runs)} scored trials to {output_dir}")
 
 
 if __name__ == "__main__":
