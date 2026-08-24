@@ -49,8 +49,24 @@ from experiments.train_mnist_exp002_initial_architectures import (
     Medium1Conv2LinearMnistNet,
 )
 from growingnn.simulation.score_functions.score_by_learning import AccuracyMetric
+from growingnn.core.config import RunningConfig
 from growingnn.simulation.simulation_schedulers import SlopeEstimationSimulationScheduler
 from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
+
+_ORIGINAL_RUNNING_CONFIG = common._running_config
+
+
+def _running_config_without_neuron_resize(hp, device, board) -> RunningConfig:
+    """Exp 003 keeps width resize off; only layer add/delete stay enabled."""
+    cfg = _ORIGINAL_RUNNING_CONFIG(hp, device, board)
+    cfg.ACTIONS_ENABLE_ADD_NEURONS_11 = False
+    cfg.ACTIONS_ENABLE_ADD_NEURONS_15 = False
+    cfg.ACTIONS_ENABLE_ADD_NEURONS_20 = False
+    cfg.ACTIONS_ENABLE_DEL_NEURONS_01 = False
+    cfg.ACTIONS_ENABLE_DEL_NEURONS_05 = False
+    cfg.ACTIONS_ENABLE_DEL_NEURONS_09 = False
+    return cfg
+
 
 # Historical grid (do not overwrite). Chart/report compare against this folder.
 BEFORE_FIX_RUNS_DIR = train_mnist.RUNS_DIR / "exp003_score_accuracy_metric"
@@ -146,6 +162,7 @@ if __name__ == "__main__":
                         k=WARMUP_STEEPNESS,
                     ),
                 ),
+                patch.object(common, "_running_config", _running_config_without_neuron_resize),
             ):
                 executed, skipped = common.run_experiment_grid(
                     definition,

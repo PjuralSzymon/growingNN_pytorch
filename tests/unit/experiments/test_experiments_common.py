@@ -146,6 +146,29 @@ def test_run_experiment_grid_trains_and_saves_metric_artifacts(tmp_path, monkeyp
         f"{key}.png" for key in common.METRIC_KEYS
     }
     assert captured["config"].generations == 1
+    assert captured["config"].ACTIONS_ENABLE_ADD_NEURONS_15 is True
+    assert captured["config"].ACTIONS_ENABLE_DEL_NEURONS_05 is True
+
+
+def test_running_config_enables_neuron_resize_by_default():
+    """
+    Shared experiment runner keeps RunningConfig neuron-resize defaults on.
+    Historical exp001-005 turn them off locally; CI and new experiments keep them on.
+    """
+    # Arrange
+    hp = _hyperparameters()
+    device = torch.device("cpu")
+
+    # Act
+    cfg = common._running_config(hp, device, None)
+
+    # Assert
+    assert cfg.ACTIONS_ENABLE_ADD_NEURONS_11 is True
+    assert cfg.ACTIONS_ENABLE_ADD_NEURONS_15 is True
+    assert cfg.ACTIONS_ENABLE_ADD_NEURONS_20 is True
+    assert cfg.ACTIONS_ENABLE_DEL_NEURONS_01 is True
+    assert cfg.ACTIONS_ENABLE_DEL_NEURONS_05 is True
+    assert cfg.ACTIONS_ENABLE_DEL_NEURONS_09 is True
 
 
 def test_draw_graphs_uses_full_and_simplified_names(tmp_path, monkeypatch):

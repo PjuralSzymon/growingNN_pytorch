@@ -66,6 +66,10 @@ MCTS_ROLLOUT_LR = ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.000
 MCTS_UCB1_USE_SQRT = False  # False: legacy sum + log(N)/n; True: mean + sqrt(log(N)/n)
 MCTS_PROPAGATE_ROLLOUT_VALUE = False  # False: return node.value; True: return latest rollout only
 
+# Minimum sequential simulation algorithm iteration runs after the first pass.
+# Complete these even if simulation_time is already gone.
+SIMULATION_MIN_ALGORITHM_ITERATION_RUNS = 3
+
 # LOGGING
 ENABLE_LOGGING = True
 LOG_LEVEL = "INFO"  # str: NOTSET | DEBUG | INFO | WARNING | WARN | ERROR | CRITICAL; or int
@@ -122,12 +126,12 @@ class RunningConfig:
         self.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER = True
         self.ACTIONS_ENABLE_ADD_RES_CONV_LAYER = True
         self.ACTIONS_ENABLE_DEL_LAYER = True
-        self.ACTIONS_ENABLE_DEL_NEURONS_01 = False
-        self.ACTIONS_ENABLE_DEL_NEURONS_05 = False
-        self.ACTIONS_ENABLE_DEL_NEURONS_09 = False
-        self.ACTIONS_ENABLE_ADD_NEURONS_11 = False
-        self.ACTIONS_ENABLE_ADD_NEURONS_15 = False
-        self.ACTIONS_ENABLE_ADD_NEURONS_20 = False
+        self.ACTIONS_ENABLE_DEL_NEURONS_01 = True
+        self.ACTIONS_ENABLE_DEL_NEURONS_05 = True
+        self.ACTIONS_ENABLE_DEL_NEURONS_09 = True
+        self.ACTIONS_ENABLE_ADD_NEURONS_11 = True
+        self.ACTIONS_ENABLE_ADD_NEURONS_15 = True
+        self.ACTIONS_ENABLE_ADD_NEURONS_20 = True
         self.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_01 = True
         self.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_02 = True
         self.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_05 = True

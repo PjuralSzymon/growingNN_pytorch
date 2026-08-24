@@ -134,9 +134,24 @@ class NodeWidthAnalyser:
         """Output channel width reading live module attributes, walking through passthroughs and adds."""
         if n.op == "call_module":
             m = ModuleResolver.get_layer_module(n.target, gm)
-            if isinstance(m, nn.Linear): return m.out_features
-            if isinstance(m, nn.Conv2d): return m.out_channels
-            if isinstance(m, PASSTHROUGH_MODULES_TO_UPDATE): return m.num_features
+            if isinstance(m, nn.Linear):
+                return m.out_features
+            if isinstance(m, nn.Conv2d):
+                return m.out_channels
+            if isinstance(m, PASSTHROUGH_MODULES_TO_UPDATE):
+                return m.num_features
+            if isinstance(m, nn.LayerNorm):
+                shape = m.normalized_shape
+                return int(shape[-1]) if isinstance(shape, tuple) and shape else int(shape)
+            if isinstance(m, nn.Sequential):
+                # Residual Sequential (e.g. zero-conv + pool + flatten): use last Conv/Linear width.
+                width = None
+                for child in m.modules():
+                    if isinstance(child, nn.Conv2d):
+                        width = child.out_channels
+                    elif isinstance(child, nn.Linear):
+                        width = child.out_features
+                return width
         if (NodeTypeChecker.is_passthrough(gm, n) or NodeTypeChecker.is_add(n)) and n.all_input_nodes:
             return NodeWidthAnalyser.node_output_width(gm, n.all_input_nodes[0])
         return None
@@ -191,8 +206,21 @@ class NodeWidthAnalyser:
 
     @staticmethod
     def propagation_hits_unsizable(gm: fx.GraphModule, start_node: fx.Node) -> bool:
-        """True if forward propagation would hit an add whose sibling branch cannot be width-synced."""
+        """True if forward propagation would hit an add whose sibling branch cannot be width-synced,
+        or a downstream module that cannot be resized (e.g. LayerNorm, non-resizable ops)."""
         seen: set[str] = set()
+
+        def _module_blocks_resize(mod: nn.Module | None) -> bool:
+            if mod is None:
+                return False
+            if isinstance(mod, PROPAGATION_RESIZABLE_MODULES):
+                return False
+            if isinstance(mod, PASSTHROUGH_MODULES) or isinstance(mod, PASSTHROUGH_MODULES_TO_UPDATE):
+                return False
+            if isinstance(mod, nn.Sequential):
+                return not NodeWidthAnalyser._sequential_branch_resizable(mod)
+            # LayerNorm and other fixed-shape modules block safe neuron resize.
+            return True
 
         def _walk(node: fx.Node) -> bool:
             if node.name in seen:
@@ -205,6 +233,10 @@ class NodeWidthAnalyser:
                     for inp in user.all_input_nodes:
                         if inp is not node and NodeWidthAnalyser.branch_has_unsizable_module(gm, inp, seen):
                             return True
+                if user.op == "call_module":
+                    mod = ModuleResolver.get_layer_module(user.target, gm)
+                    if _module_blocks_resize(mod):
+                        return True
                 if _walk(user):
                     return True
             return False

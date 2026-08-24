@@ -2,7 +2,7 @@
 
 This page is about `growingnn/actions/delete_neurons.py` and the class `DelNeurons`.
 
-It shrinks the output width of one hidden `nn.Linear` layer and propagates the new shape through the FX graph. It does not erase graph nodes. Work is delegated to `growingnn/actions/utils/layer_resize.py` (`shrink_layer_output`, `resize_layer_output`, `propagate_neuron_change`). Width projection uses `LinearFactory.create_linear_with_rescaled_neurons` in `layer_Factory.py` and `get_reshsper` from `quaziIdentity.py`.
+It shrinks the output width of one hidden `nn.Linear` layer and propagates the new shape through the FX graph. It does not erase graph nodes. Work is delegated to `growingnn/actions/utils/layer_resize.py` (`shrink_layer_output`, `resize_layer_output`, `fix_graph_widths`). Width projection uses `LinearFactory.create_linear_with_rescaled_neurons` in `layer_Factory.py` and `get_reshsper` from `quaziIdentity.py`.
 
 ---
 
@@ -37,7 +37,7 @@ It calls `shrink_layer_output(model, layer_id, ratio)` which:
 3. Re-checks `can_resize_linear_output`.
 4. Calls `resize_layer_output(gm, layer_id, new_out)` when allowed.
 
-`resize_layer_output` replaces the linear with `LinearFactory.create_linear_with_rescaled_neurons`, then runs `propagate_neuron_change` (BFS over users, syncs `nary_add` sibling branches, rescales downstream `in_features` / `out_features` / BatchNorm channels). Full propagation rules are in `layer_resize.py`.
+`resize_layer_output` replaces the linear with `LinearFactory.create_linear_with_rescaled_neurons`, then runs `fix_graph_widths` (sequential whole-graph sweep that syncs `nary_add` sibling branches and rescales downstream `in_features` / `out_features` / BatchNorm channels). Full repair rules are in `layer_resize.py`.
 
 `can_be_infulenced` returns `False`; no action chains off a neuron delete in the current design.
 

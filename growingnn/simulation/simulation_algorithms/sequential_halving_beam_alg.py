@@ -7,6 +7,7 @@ import math
 import time
 
 from growingnn.actions.registry import generate_all_actions
+import growingnn.core.config as project_config
 from growingnn.core.config import RunningConfig
 from growingnn.core.traced_model import TracedModel
 from growingnn.utils.quaziIdentity import clear_reshepers_cache
@@ -27,6 +28,7 @@ def get_action(
 
     board = running_config.experiment_board
     params_before = traced.param_count() if board else None
+    min_runs = project_config.SIMULATION_MIN_ALGORITHM_ITERATION_RUNS
     total_time = running_config.simulation_scheduler.simulation_time
     t0 = time.time()
     root_deadline = t0 + total_time * ROOT_TIME_FRACTION
@@ -41,10 +43,21 @@ def get_action(
         action.execute(child)
         arms.append({"action": action, "child": child, "mean": 0.0, "n": 0})
 
+    # First pass: grade every root arm once (may overrun simulation_time).
+    for arm in arms:
+        value = score_fn(arm["child"].gm, running_config)
+        rollouts += 1
+        arm["n"] = 1
+        arm["mean"] = value
+
     living = list(arms)
-    while len(living) > 1 and time.time() < root_deadline:
+    halving_rounds = 0
+    while len(living) > 1 and (
+        halving_rounds < min_runs or time.time() < root_deadline
+    ):
+        required = halving_rounds < min_runs
         for arm in living:
-            if time.time() >= root_deadline:
+            if not required and time.time() >= root_deadline:
                 break
             value = score_fn(arm["child"].gm, running_config)
             rollouts += 1
@@ -52,14 +65,9 @@ def get_action(
             arm["mean"] += (value - arm["mean"]) / arm["n"]
         living.sort(key=lambda item: item["mean"], reverse=True)
         living = living[: max(1, math.ceil(len(living) / 2))]
+        halving_rounds += 1
 
-    for arm in living:
-        if arm["n"] == 0 and time.time() < deadline:
-            value = score_fn(arm["child"].gm, running_config)
-            rollouts += 1
-            arm["n"] = 1
-            arm["mean"] = value
-
+    living.sort(key=lambda item: item["mean"], reverse=True)
     survivors = [arm for arm in living if arm["n"] > 0] or arms[:1]
     beam = [
         {

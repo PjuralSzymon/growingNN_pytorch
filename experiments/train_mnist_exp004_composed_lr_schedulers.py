@@ -40,6 +40,7 @@ from experiments.train_mnist_exp002_initial_architectures import (
     HIDDEN_LINEAR_SIZE,
     BigAvgPoolMnistNet,
 )
+from growingnn.core.config import RunningConfig
 from growingnn.simulation.simulation_schedulers import SlopeEstimationSimulationScheduler
 from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 from growingnn.training.lr_scheduler_global import (
@@ -47,6 +48,20 @@ from growingnn.training.lr_scheduler_global import (
     LinearDecayLearningRate,
     build_composed_learning_rate_scheduler,
 )
+
+_ORIGINAL_RUNNING_CONFIG = common._running_config
+
+
+def _running_config_without_neuron_resize(hp, device, board) -> RunningConfig:
+    """Exp 004 keeps width resize off; only layer add/delete stay enabled."""
+    cfg = _ORIGINAL_RUNNING_CONFIG(hp, device, board)
+    cfg.ACTIONS_ENABLE_ADD_NEURONS_11 = False
+    cfg.ACTIONS_ENABLE_ADD_NEURONS_15 = False
+    cfg.ACTIONS_ENABLE_ADD_NEURONS_20 = False
+    cfg.ACTIONS_ENABLE_DEL_NEURONS_01 = False
+    cfg.ACTIONS_ENABLE_DEL_NEURONS_05 = False
+    cfg.ACTIONS_ENABLE_DEL_NEURONS_09 = False
+    return cfg
 
 RUNS_DIR = train_mnist.RUNS_DIR / "exp004_composed_lr_schedulers"
 EPOCHS_PER_GENERATION = 10
@@ -186,13 +201,16 @@ if __name__ == "__main__":
                 "MNIST",
             ),
         )
-        with patch.object(
-            common,
-            "AlwaysSimulationScheduler",
-            partial(
-                SlopeEstimationSimulationScheduler,
-                angle_threshold=SLOPE_ANGLE_THRESHOLD,
+        with (
+            patch.object(
+                common,
+                "AlwaysSimulationScheduler",
+                partial(
+                    SlopeEstimationSimulationScheduler,
+                    angle_threshold=SLOPE_ANGLE_THRESHOLD,
+                ),
             ),
+            patch.object(common, "_running_config", _running_config_without_neuron_resize),
         ):
             executed, skipped = common.run_experiment_grid(
                 definition,
