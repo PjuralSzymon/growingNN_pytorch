@@ -11,9 +11,10 @@ Fixed package from finished experiments (Exp 006 is unfinished, so neuron-resize
 - generations: 10
 - epochs per generation: 10
 - simulation time: 120 s
-- simulation set size: 2000
 
-Grid factor: simulation-set generator only.
+Grid factors: simulation-set generator and simulation set size.
+Sizes: 100, 500, 1000.
+Generators: protected, moderate_difficulty, kcenter, el2n, craig, model_drift.
 Three matched seeds (100, 101, 102).
 
 Published report target:
@@ -57,9 +58,6 @@ from growingnn.simulation.simulation_schedulers import SlopeEstimationSimulation
 from growingnn.simulation.simulation_sets import (
     CraigSimulationSet,
     El2nSimulationSet,
-    GradMatchSimulationSet,
-    GrandSimulationSet,
-    HcdcSimulationSet,
     KCenterSimulationSet,
     ModelDriftSimulationSet,
     ModerateDifficultySimulationSet,
@@ -77,6 +75,7 @@ SIMULATION_ALG = sequential_halving_beam_alg
 SEED_BASE = 100
 SEED_COUNT = 3
 SEEDS = tuple(SEED_BASE + offset for offset in range(SEED_COUNT))
+SIMULATION_SET_SIZES = (100, 500, 1000)
 
 _NEURON_RESIZE_FLAGS = (
     "ACTIONS_ENABLE_ADD_NEURONS_11",
@@ -92,11 +91,8 @@ SET_VARIANTS: tuple[tuple[str, Callable[[], object]], ...] = (
     ("moderate_difficulty", ModerateDifficultySimulationSet),
     ("kcenter", KCenterSimulationSet),
     ("el2n", El2nSimulationSet),
-    ("grand", GrandSimulationSet),
-    ("grad_match", GradMatchSimulationSet),
     ("craig", CraigSimulationSet),
     ("model_drift", ModelDriftSimulationSet),
-    ("hcdc", HcdcSimulationSet),
 )
 
 
@@ -111,14 +107,23 @@ def _running_config_for_set(set_factory: Callable[[], object]) -> Callable[..., 
     return _configure
 
 
+def exp007_folder_name(hp: dict) -> str:
+    """Keep the MNIST folder name and add simulation set size so sizes do not collide."""
+    return (
+        f"{train_mnist.build_mnist_hyperparameter_folder_name(hp)}"
+        f"_simsz{int(hp['simulation_set_size'])}"
+    )
+
+
 def print_simulation_set_ids() -> None:
-    """Print the Exp 007 simulation-set catalog and output layout."""
+    """Print the Exp 007 simulation-set catalog, sizes, and output layout."""
     print("Exp 007 simulation-set IDs:")
     for index, (set_id, factory) in enumerate(SET_VARIANTS, start=1):
         print(f"  {index:>2}. {set_id:<22} class={factory.__name__}")
+    print(f"Exp 007 simulation set sizes: {SIMULATION_SET_SIZES}")
     print(
         "Run path pattern: "
-        f"{RUNS_DIR}/<set_id>/<hp_folder>/seed_<seed>/"
+        f"{RUNS_DIR}/<set_id>/<hp_folder>_simsz<size>/seed_<seed>/"
     )
 
 
@@ -132,7 +137,10 @@ if __name__ == "__main__":
     data.prepare()
     print(f"Exp 007 write target: {RUNS_DIR}")
     print(f"Fixed package: {SIMULATION_ALG_ID} + {SCHEDULE_ID} + {MODEL_NAME}")
-    print(f"Length: gens={GENERATIONS} epochs={EPOCHS_PER_GENERATION} seeds={SEEDS}")
+    print(
+        f"Length: gens={GENERATIONS} epochs={EPOCHS_PER_GENERATION} "
+        f"seeds={SEEDS} simsz={SIMULATION_SET_SIZES}"
+    )
     print_simulation_set_ids()
 
     for set_id, set_factory in SET_VARIANTS:
@@ -141,7 +149,7 @@ if __name__ == "__main__":
             runs_dir=RUNS_DIR / set_id,
             history_filename=train_mnist.MNIST_HISTORY_FILENAME,
             seeds=SEEDS,
-            folder_name=train_mnist.build_mnist_hyperparameter_folder_name,
+            folder_name=exp007_folder_name,
             model_factory=MODEL_FACTORY,
             loader_factory=lambda hp: data.loaders(int(hp["batch_size"])),
             board_metadata=lambda hp, folder, seed, sid=set_id: (
@@ -174,6 +182,7 @@ if __name__ == "__main__":
                         "simulation_alg_id": SIMULATION_ALG_ID,
                         "simulation_alg": SIMULATION_ALG,
                         "simulation_set_id": set_id,
+                        "simulation_set_size": sim_size,
                         "model_name": MODEL_NAME,
                         "lr_scheduler_factory": (
                             lambda hp, sid=SCHEDULE_ID: build_learning_rate_scheduler_for_schedule_id(
@@ -182,6 +191,7 @@ if __name__ == "__main__":
                         ),
                     }
                     for values in itertools.product(*train_mnist.METAPARAM_LISTS)
+                    for sim_size in SIMULATION_SET_SIZES
                 ),
                 device=device,
                 board=args.board,
@@ -189,5 +199,6 @@ if __name__ == "__main__":
         print(
             f"set={set_id}: executed {executed}, skipped {skipped}, "
             f"seeds={SEEDS}, gens={GENERATIONS}, epochs={EPOCHS_PER_GENERATION}, "
-            f"simt={SIMULATION_TIME_SEC}, output {definition.runs_dir}"
+            f"simt={SIMULATION_TIME_SEC}, simsz={SIMULATION_SET_SIZES}, "
+            f"output {definition.runs_dir}"
         )
