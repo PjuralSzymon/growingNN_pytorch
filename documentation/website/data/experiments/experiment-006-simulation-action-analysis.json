@@ -1,57 +1,72 @@
 {
   "n_simulations": 60,
   "overall_chosen_mix": {
-    "Add Res Conv Layer Action": 60
+    "Add Res Conv Layer Action": 29,
+    "Add Neurons Action": 3,
+    "Add Seq Dropout Layer Action": 5,
+    "Delete Layer Action": 1,
+    "Add Seq Conv Layer Action": 12,
+    "Add Seq Linear Layer Action": 8,
+    "Add Res Linear Layer Action": 2
   },
   "overall_mean_score_by_action": {
     "Add Neurons Action": {
-      "n": 45,
-      "mean": 0.6725379520398671,
+      "n": 46,
+      "mean": 0.6784838225918832,
       "min": 0.18175822139206305,
-      "max": 0.9050599024616309
+      "max": 0.8674974848362936
     },
     "Delete Neurons Action": {
       "n": 30,
-      "mean": 0.5932372942785002,
+      "mean": 0.6114898684465849,
       "min": 0.18178274109460948,
-      "max": 0.8761738515752318
+      "max": 0.8616283970297772
     },
     "Add Res Conv Layer Action": {
-      "n": 236,
-      "mean": 0.6970577836925409,
+      "n": 266,
+      "mean": 0.73239460800045,
       "min": 0.18176657476735034,
-      "max": 0.9197874074079448
+      "max": 0.9393712435759705
+    },
+    "Add Res Linear Layer Action": {
+      "n": 30,
+      "mean": 0.808254701969699,
+      "min": 0.7044310532365583,
+      "max": 0.9334683112330511
     },
     "Add Seq Conv Layer Action": {
-      "n": 176,
-      "mean": 0.6981404941226775,
+      "n": 138,
+      "mean": 0.6955066646108101,
       "min": 0.18176657476735034,
-      "max": 0.9234103813297264
+      "max": 0.9234639639230916
     },
     "Add Seq Linear Layer Action": {
-      "n": 221,
-      "mean": 0.7159507806992021,
+      "n": 202,
+      "mean": 0.7206450290809048,
       "min": 0.18175531623025956,
-      "max": 0.9215636238895727
+      "max": 0.9325646550472462
     },
     "Add Seq Dropout Layer Action": {
-      "n": 444,
-      "mean": 0.661402123249118,
+      "n": 438,
+      "mean": 0.6810061971942738,
       "min": 0.18178001602963118,
-      "max": 0.9325682785577849
+      "max": 0.9434755576754355
     },
     "Delete Layer Action": {
-      "n": 185,
-      "mean": 0.7228396998844892,
-      "min": 0.21632547057508575,
-      "max": 0.9179826192590164
+      "n": 145,
+      "mean": 0.6633679688755719,
+      "min": 0.1754163796659948,
+      "max": 0.9253162108219801
     }
   },
   "groups": {
     "none": {
       "sims": 15,
       "chosen_mix": {
-        "Add Res Conv Layer Action": 15
+        "Add Res Conv Layer Action": 7,
+        "Add Seq Linear Layer Action": 4,
+        "Add Seq Dropout Layer Action": 2,
+        "Add Seq Conv Layer Action": 2
       },
       "sims_with_neuron_in_pool": 0,
       "sims_with_neuron_scored": 0,
@@ -67,577 +82,614 @@
       "near_misses": [],
       "mean_score_by_action": {
         "Add Res Conv Layer Action": {
-          "n": 73,
-          "mean": 0.6732726760043152,
+          "n": 69,
+          "mean": 0.7366546810949658,
           "min": 0.18176657476735034,
-          "max": 0.8815921995115444
+          "max": 0.9393712435759705
+        },
+        "Add Res Linear Layer Action": {
+          "n": 6,
+          "mean": 0.7886555937808436,
+          "min": 0.7044310532365583,
+          "max": 0.9334683112330511
         },
         "Add Seq Conv Layer Action": {
-          "n": 58,
-          "mean": 0.6758894409498902,
+          "n": 39,
+          "mean": 0.7010649428213067,
           "min": 0.18176657476735034,
-          "max": 0.876177835066511
+          "max": 0.9234639639230916
         },
         "Add Seq Linear Layer Action": {
-          "n": 58,
-          "mean": 0.6849417889101553,
+          "n": 55,
+          "mean": 0.7266431196406227,
           "min": 0.18175531623025956,
-          "max": 0.8780076072123342
+          "max": 0.9325646550472462
         },
         "Add Seq Dropout Layer Action": {
-          "n": 132,
-          "mean": 0.6434955819033069,
+          "n": 114,
+          "mean": 0.6854638004728024,
           "min": 0.18178001602963118,
-          "max": 0.878009418468546
+          "max": 0.9434755576754355
         },
         "Delete Layer Action": {
-          "n": 49,
-          "mean": 0.6816732932752644,
-          "min": 0.21814365239326755,
-          "max": 0.8725679161937092
+          "n": 41,
+          "mean": 0.7070608442153936,
+          "min": 0.2454163796659948,
+          "max": 0.9253162108219801
         }
       }
     },
     "add11_del01": {
       "sims": 15,
       "chosen_mix": {
-        "Add Res Conv Layer Action": 15
+        "Add Res Conv Layer Action": 7,
+        "Add Neurons Action": 1,
+        "Add Seq Dropout Layer Action": 1,
+        "Delete Layer Action": 1,
+        "Add Seq Conv Layer Action": 1,
+        "Add Seq Linear Layer Action": 2,
+        "Add Res Linear Layer Action": 2
       },
-      "sims_with_neuron_in_pool": 15,
-      "sims_with_neuron_scored": 15,
-      "neuron_pool_count": 15,
-      "neuron_scored_count": 15,
+      "sims_with_neuron_in_pool": 13,
+      "sims_with_neuron_scored": 13,
+      "neuron_pool_count": 13,
+      "neuron_scored_count": 13,
       "neuron_unscored_count": 0,
-      "neuron_chosen": 0,
-      "add_pool": 15,
+      "neuron_chosen": 1,
+      "add_pool": 13,
       "del_pool": 0,
-      "mean_neuron_rank": 12.533333333333333,
-      "mean_gap_to_best": 0.05962899783249489,
-      "min_gap_to_best": 0.02908556388463568,
+      "mean_neuron_rank": 12.923076923076923,
+      "mean_gap_to_best": 0.038399740808087675,
+      "min_gap_to_best": 0.0,
       "near_misses": [
         {
-          "seed": "seed_102",
-          "generation": 4,
-          "kind": "AddNeurons",
-          "score": 0.7853008964913311,
-          "scored": true,
-          "chosen": false,
-          "rank": 5,
-          "gap_to_best": 0.02908556388463568,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.7888917101681071
-        },
-        {
-          "seed": "seed_102",
+          "seed": "seed_100",
           "generation": 3,
           "kind": "AddNeurons",
-          "score": 0.7217215573538844,
+          "score": 0.7489942846266117,
           "scored": true,
-          "chosen": false,
-          "rank": 9,
-          "gap_to_best": 0.030860130709371103,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.7525816880632555
-        },
-        {
-          "seed": "seed_101",
-          "generation": 6,
-          "kind": "AddNeurons",
-          "score": 0.8870052438889201,
-          "scored": true,
-          "chosen": false,
-          "rank": 15,
-          "gap_to_best": 0.03455838000065259,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.9160573987196006
+          "chosen": true,
+          "rank": 1,
+          "gap_to_best": 0.0,
+          "winner": "Add Neurons Action",
+          "winner_score": 0.7489942846266117
         },
         {
           "seed": "seed_101",
           "generation": 4,
           "kind": "AddNeurons",
-          "score": 0.85439180558224,
+          "score": 0.8446948358852704,
           "scored": true,
           "chosen": false,
-          "rank": 7,
-          "gap_to_best": 0.03813626822223071,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.8925280738044707
+          "rank": 3,
+          "gap_to_best": 0.012894102209436764,
+          "winner": "Delete Layer Action",
+          "winner_score": 0.8575889380947072
         },
         {
-          "seed": "seed_101",
+          "seed": "seed_102",
           "generation": 5,
           "kind": "AddNeurons",
-          "score": 0.870698489017592,
+          "score": 0.8080815652247192,
+          "scored": true,
+          "chosen": false,
+          "rank": 16,
+          "gap_to_best": 0.015002902771043769,
+          "winner": "Add Res Linear Layer Action",
+          "winner_score": 0.823084467995763
+        },
+        {
+          "seed": "seed_102",
+          "generation": 4,
+          "kind": "AddNeurons",
+          "score": 0.7962651976166926,
           "scored": true,
           "chosen": false,
           "rank": 11,
-          "gap_to_best": 0.038193221150515155,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.8979290683030257
+          "gap_to_best": 0.016366539250668333,
+          "winner": "Add Seq Linear Layer Action",
+          "winner_score": 0.8126317368673609
         },
         {
           "seed": "seed_100",
           "generation": 6,
           "kind": "AddNeurons",
-          "score": 0.8197325166161928,
+          "score": 0.768976145061733,
           "scored": true,
           "chosen": false,
           "rank": 14,
-          "gap_to_best": 0.04188646627918702,
+          "gap_to_best": 0.016809477400808848,
           "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.8560573987196004
+          "winner_score": 0.7857856224625418
         },
         {
           "seed": "seed_102",
           "generation": 6,
           "kind": "AddNeurons",
-          "score": 0.8506850987152641,
+          "score": 0.8080797510870509,
           "scored": true,
           "chosen": false,
-          "rank": 22,
-          "gap_to_best": 0.05090710079628036,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.9015921995115445
+          "rank": 40,
+          "gap_to_best": 0.0213610966926705,
+          "winner": "Add Res Linear Layer Action",
+          "winner_score": 0.8294408477797214
         },
         {
           "seed": "seed_100",
-          "generation": 3,
+          "generation": 4,
           "kind": "AddNeurons",
-          "score": 0.7417215573538845,
+          "score": 0.7447471434000867,
           "scored": true,
           "chosen": false,
-          "rank": 13,
-          "gap_to_best": 0.05817311028619854,
+          "rank": 10,
+          "gap_to_best": 0.02696098997862184,
           "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.7998544153359829
+          "winner_score": 0.7717081333787086
+        },
+        {
+          "seed": "seed_100",
+          "generation": 5,
+          "kind": "AddNeurons",
+          "score": 0.7507943268799147,
+          "scored": true,
+          "chosen": false,
+          "rank": 20,
+          "gap_to_best": 0.02909562468061211,
+          "winner": "Add Seq Dropout Layer Action",
+          "winner_score": 0.7798899515605268
         },
         {
           "seed": "seed_101",
           "generation": 3,
           "kind": "AddNeurons",
-          "score": 0.7944488300811572,
+          "score": 0.7980851937175208,
           "scored": true,
           "chosen": false,
-          "rank": 13,
-          "gap_to_best": 0.06727744474689856,
+          "rank": 9,
+          "gap_to_best": 0.04222376707300746,
           "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.8562180516996192
+          "winner_score": 0.8403089607905283
         },
         {
-          "seed": "seed_100",
-          "generation": 0,
+          "seed": "seed_102",
+          "generation": 3,
           "kind": "AddNeurons",
-          "score": 0.23632410810388388,
+          "score": 0.7553579209902481,
           "scored": true,
           "chosen": false,
-          "rank": 14,
-          "gap_to_best": 0.06903853036053553,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.3053626384644194
+          "rank": 10,
+          "gap_to_best": 0.04773017573029992,
+          "winner": "Add Seq Linear Layer Action",
+          "winner_score": 0.803088096720548
         }
       ],
       "mean_score_by_action": {
         "Add Neurons Action": {
-          "n": 15,
-          "mean": 0.6827584129292422,
+          "n": 13,
+          "mean": 0.6482764725651504,
           "min": 0.18177865355842934,
-          "max": 0.8870052438889201
+          "max": 0.8446948358852704
         },
         "Add Res Conv Layer Action": {
-          "n": 47,
-          "mean": 0.7186537185173298,
+          "n": 59,
+          "mean": 0.7201878902711217,
           "min": 0.18176657476735034,
-          "max": 0.9160573987196006
+          "max": 0.9061984823983985
+        },
+        "Add Res Linear Layer Action": {
+          "n": 18,
+          "mean": 0.8156810434558719,
+          "min": 0.7762626577427718,
+          "max": 0.8294408477797214
         },
         "Add Seq Conv Layer Action": {
-          "n": 32,
-          "mean": 0.7170552966777917,
+          "n": 33,
+          "mean": 0.685483096069196,
           "min": 0.18176657476735034,
-          "max": 0.9051884177146805
+          "max": 0.8912118900834168
         },
         "Add Seq Linear Layer Action": {
-          "n": 52,
-          "mean": 0.7477239976594781,
+          "n": 50,
+          "mean": 0.7141441367535815,
           "min": 0.18175531623025956,
-          "max": 0.9215636238895727
+          "max": 0.88952058531548
         },
         "Add Seq Dropout Layer Action": {
-          "n": 93,
-          "mean": 0.6779976234496752,
+          "n": 111,
+          "mean": 0.6832672866522997,
           "min": 0.18178001602963118,
-          "max": 0.9124745228484803
+          "max": 0.9016664355379623
         },
         "Delete Layer Action": {
-          "n": 43,
-          "mean": 0.7600218195783978,
-          "min": 0.2454163796659948,
-          "max": 0.9179826192590164
+          "n": 33,
+          "mean": 0.6286983240199595,
+          "min": 0.18178001602963118,
+          "max": 0.8762253017310708
         }
       }
     },
     "add15_del05": {
       "sims": 15,
       "chosen_mix": {
-        "Add Res Conv Layer Action": 15
+        "Add Res Conv Layer Action": 5,
+        "Add Seq Conv Layer Action": 6,
+        "Add Neurons Action": 2,
+        "Add Seq Dropout Layer Action": 1,
+        "Add Seq Linear Layer Action": 1
       },
       "sims_with_neuron_in_pool": 15,
       "sims_with_neuron_scored": 15,
-      "neuron_pool_count": 30,
-      "neuron_scored_count": 30,
+      "neuron_pool_count": 31,
+      "neuron_scored_count": 31,
       "neuron_unscored_count": 0,
-      "neuron_chosen": 0,
-      "add_pool": 15,
+      "neuron_chosen": 2,
+      "add_pool": 16,
       "del_pool": 15,
-      "mean_neuron_rank": 15.9,
-      "mean_gap_to_best": 0.12021348628107784,
-      "min_gap_to_best": 0.010948911993471144,
+      "mean_neuron_rank": 13.451612903225806,
+      "mean_gap_to_best": 0.08578532685874679,
+      "min_gap_to_best": 0.0,
       "near_misses": [
         {
+          "seed": "seed_101",
+          "generation": 5,
+          "kind": "AddNeurons",
+          "score": 0.8498435424600714,
+          "scored": true,
+          "chosen": true,
+          "rank": 1,
+          "gap_to_best": 0.0,
+          "winner": "Add Neurons Action",
+          "winner_score": 0.8498435424600714
+        },
+        {
           "seed": "seed_102",
-          "generation": 5,
-          "kind": "AddNeurons",
-          "score": 0.832503823306645,
-          "scored": true,
-          "chosen": false,
-          "rank": 3,
-          "gap_to_best": 0.010948911993471144,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.8143328619533994
-        },
-        {
-          "seed": "seed_101",
-          "generation": 5,
-          "kind": "AddNeurons",
-          "score": 0.8198435424600715,
-          "scored": true,
-          "chosen": false,
-          "rank": 10,
-          "gap_to_best": 0.018219521960756935,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.8252821457412735
-        },
-        {
-          "seed": "seed_101",
           "generation": 6,
           "kind": "AddNeurons",
-          "score": 0.8306722549790855,
+          "score": 0.8466733221051926,
+          "scored": true,
+          "chosen": true,
+          "rank": 1,
+          "gap_to_best": 0.0,
+          "winner": "Add Neurons Action",
+          "winner_score": 0.8466733221051926
+        },
+        {
+          "seed": "seed_101",
+          "generation": 3,
+          "kind": "AddNeurons",
+          "score": 0.8335067305705632,
           "scored": true,
           "chosen": false,
-          "rank": 16,
-          "gap_to_best": 0.02006443621673326,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.8415921995115444
+          "rank": 2,
+          "gap_to_best": 0.0054788461604287075,
+          "winner": "Add Seq Conv Layer Action",
+          "winner_score": 0.8389855767309919
         },
         {
           "seed": "seed_102",
           "generation": 3,
           "kind": "AddNeurons",
-          "score": 0.767143094206927,
+          "score": 0.8012340032978361,
+          "scored": true,
+          "chosen": false,
+          "rank": 3,
+          "gap_to_best": 0.007764998802946899,
+          "winner": "Add Seq Dropout Layer Action",
+          "winner_score": 0.808999002100783
+        },
+        {
+          "seed": "seed_101",
+          "generation": 6,
+          "kind": "AddNeurons",
+          "score": 0.8531203788051109,
+          "scored": true,
+          "chosen": false,
+          "rank": 13,
+          "gap_to_best": 0.010346120998166342,
+          "winner": "Add Res Conv Layer Action",
+          "winner_score": 0.8634664998032773
+        },
+        {
+          "seed": "seed_102",
+          "generation": 6,
+          "kind": "AddNeurons",
+          "score": 0.8356466204358879,
+          "scored": true,
+          "chosen": false,
+          "rank": 10,
+          "gap_to_best": 0.01102670166930475,
+          "winner": "Add Neurons Action",
+          "winner_score": 0.8466733221051926
+        },
+        {
+          "seed": "seed_102",
+          "generation": 5,
+          "kind": "AddNeurons",
+          "score": 0.8271296799879753,
           "scored": true,
           "chosen": false,
           "rank": 5,
-          "gap_to_best": 0.02180223021996497,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.7889453244268919
+          "gap_to_best": 0.012308628262834187,
+          "winner": "Add Seq Linear Layer Action",
+          "winner_score": 0.8394383082508095
+        },
+        {
+          "seed": "seed_101",
+          "generation": 4,
+          "kind": "AddNeurons",
+          "score": 0.8295539224122177,
+          "scored": true,
+          "chosen": false,
+          "rank": 6,
+          "gap_to_best": 0.013509142008610642,
+          "winner": "Add Seq Conv Layer Action",
+          "winner_score": 0.8430630644208283
         },
         {
           "seed": "seed_100",
           "generation": 5,
           "kind": "AddNeurons",
-          "score": 0.8069823848027284,
+          "score": 0.7598435424600715,
           "scored": true,
           "chosen": false,
-          "rank": 7,
-          "gap_to_best": 0.023747786209126986,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.8197472501212075
-        },
-        {
-          "seed": "seed_102",
-          "generation": 6,
-          "kind": "AddNeurons",
-          "score": 0.8469690180333702,
-          "scored": true,
-          "chosen": false,
-          "rank": 6,
-          "gap_to_best": 0.025532272387265076,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.8579156904419533
-        },
-        {
-          "seed": "seed_100",
-          "generation": 4,
-          "kind": "AddNeurons",
-          "score": 0.7634263046783649,
-          "scored": true,
-          "chosen": false,
-          "rank": 4,
-          "gap_to_best": 0.029101769126105848,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.7925280738044708
-        },
-        {
-          "seed": "seed_100",
-          "generation": 6,
-          "kind": "AddNeurons",
-          "score": 0.8269022432931715,
-          "scored": true,
-          "chosen": false,
-          "rank": 8,
-          "gap_to_best": 0.045558901694236265,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.8724611449874078
+          "rank": 12,
+          "gap_to_best": 0.014569740890279514,
+          "winner": "Add Seq Conv Layer Action",
+          "winner_score": 0.774413283350351
         },
         {
           "seed": "seed_100",
           "generation": 3,
           "kind": "AddNeurons",
-          "score": 0.6944158214796543,
+          "score": 0.7065370336008664,
           "scored": true,
           "chosen": false,
           "rank": 10,
-          "gap_to_best": 0.052763184331802715,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.7143998698814374
-        },
-        {
-          "seed": "seed_101",
-          "generation": 0,
-          "kind": "DelNeurons",
-          "score": 0.18179091727027347,
-          "scored": true,
-          "chosen": false,
-          "rank": 3,
-          "gap_to_best": 0.063571721194146,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.18176657476735034
+          "gap_to_best": 0.028812179493762025,
+          "winner": "Add Seq Conv Layer Action",
+          "winner_score": 0.7353492130946284
         }
       ],
       "mean_score_by_action": {
         "Add Neurons Action": {
-          "n": 15,
-          "mean": 0.630734863868584,
+          "n": 16,
+          "mean": 0.6885274020405392,
           "min": 0.18176911740387464,
-          "max": 0.8469690180333702
+          "max": 0.8531203788051109
         },
         "Delete Neurons Action": {
           "n": 15,
-          "mean": 0.4979867636354748,
+          "mean": 0.5639382049188914,
           "min": 0.18179091727027347,
-          "max": 0.6762826177231728
+          "max": 0.7363094868185833
         },
         "Add Res Conv Layer Action": {
-          "n": 61,
-          "mean": 0.6689244879064222,
+          "n": 72,
+          "mean": 0.7325207480170768,
           "min": 0.18176657476735034,
-          "max": 0.8724611449874078
+          "max": 0.8634664998032773
+        },
+        "Add Res Linear Layer Action": {
+          "n": 2,
+          "mean": 0.8371583259638309,
+          "min": 0.83624923505474,
+          "max": 0.8380674168729217
         },
         "Add Seq Conv Layer Action": {
-          "n": 46,
-          "mean": 0.6693830624710656,
+          "n": 27,
+          "mean": 0.6711315019414583,
           "min": 0.18176657476735034,
-          "max": 0.8725012904206353
+          "max": 0.8630119543487318
         },
         "Add Seq Linear Layer Action": {
-          "n": 55,
-          "mean": 0.6746884339661324,
+          "n": 43,
+          "mean": 0.7049743758255839,
           "min": 0.18175531623025956,
-          "max": 0.8470355296000207
+          "max": 0.8612053669309814
         },
         "Add Seq Dropout Layer Action": {
-          "n": 114,
-          "mean": 0.6349924316626439,
+          "n": 99,
+          "mean": 0.6649895733322,
           "min": 0.18178001602963118,
-          "max": 0.8561510437715811
+          "max": 0.8598435424600714
         },
         "Delete Layer Action": {
-          "n": 47,
-          "mean": 0.7040906570303018,
-          "min": 0.2363254705750857,
-          "max": 0.8561644374408344
+          "n": 29,
+          "mean": 0.5679568649439197,
+          "min": 0.1754163796659948,
+          "max": 0.8435306684837032
         }
       }
     },
     "add20_del09": {
       "sims": 15,
       "chosen_mix": {
-        "Add Res Conv Layer Action": 15
+        "Add Res Conv Layer Action": 10,
+        "Add Seq Linear Layer Action": 1,
+        "Add Seq Dropout Layer Action": 1,
+        "Add Seq Conv Layer Action": 3
       },
       "sims_with_neuron_in_pool": 15,
       "sims_with_neuron_scored": 15,
-      "neuron_pool_count": 30,
-      "neuron_scored_count": 30,
+      "neuron_pool_count": 32,
+      "neuron_scored_count": 32,
       "neuron_unscored_count": 0,
       "neuron_chosen": 0,
-      "add_pool": 15,
+      "add_pool": 17,
       "del_pool": 15,
-      "mean_neuron_rank": 12.5,
-      "mean_gap_to_best": 0.051165374383634964,
-      "min_gap_to_best": 0.0,
+      "mean_neuron_rank": 15.0625,
+      "mean_gap_to_best": 0.05316691612142894,
+      "min_gap_to_best": 0.0028025155222222153,
       "near_misses": [
         {
-          "seed": "seed_100",
+          "seed": "seed_101",
           "generation": 4,
           "kind": "AddNeurons",
-          "score": 0.8106346491913395,
-          "scored": true,
-          "chosen": false,
-          "rank": 1,
-          "gap_to_best": 0.0,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.7943864603759667
-        },
-        {
-          "seed": "seed_102",
-          "generation": 6,
-          "kind": "AddNeurons",
-          "score": 0.8722393600495363,
+          "score": 0.8629073764640667,
           "scored": true,
           "chosen": false,
           "rank": 2,
-          "gap_to_best": 0.003858148574235165,
+          "gap_to_best": 0.0028025155222222153,
           "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.859693762355964
+          "winner_score": 0.8657098919862889
+        },
+        {
+          "seed": "seed_100",
+          "generation": 5,
+          "kind": "AddNeurons",
+          "score": 0.7898852359708238,
+          "scored": true,
+          "chosen": false,
+          "rank": 8,
+          "gap_to_best": 0.004953958068247943,
+          "winner": "Add Res Conv Layer Action",
+          "winner_score": 0.7948391940390718
+        },
+        {
+          "seed": "seed_100",
+          "generation": 6,
+          "kind": "AddNeurons",
+          "score": 0.7957406762140375,
+          "scored": true,
+          "chosen": false,
+          "rank": 7,
+          "gap_to_best": 0.007280336006852406,
+          "winner": "Add Seq Dropout Layer Action",
+          "winner_score": 0.80302101222089
+        },
+        {
+          "seed": "seed_101",
+          "generation": 5,
+          "kind": "AddNeurons",
+          "score": 0.8674974848362936,
+          "scored": true,
+          "chosen": false,
+          "rank": 10,
+          "gap_to_best": 0.0195626498443785,
+          "winner": "Add Seq Conv Layer Action",
+          "winner_score": 0.8870601346806721
+        },
+        {
+          "seed": "seed_100",
+          "generation": 6,
+          "kind": "AddNeurons",
+          "score": 0.7833467438067934,
+          "scored": true,
+          "chosen": false,
+          "rank": 24,
+          "gap_to_best": 0.019674268414096585,
+          "winner": "Add Seq Dropout Layer Action",
+          "winner_score": 0.80302101222089
+        },
+        {
+          "seed": "seed_100",
+          "generation": 5,
+          "kind": "DelNeurons",
+          "score": 0.7726295596846883,
+          "scored": true,
+          "chosen": false,
+          "rank": 29,
+          "gap_to_best": 0.0222096343543835,
+          "winner": "Add Res Conv Layer Action",
+          "winner_score": 0.7948391940390718
+        },
+        {
+          "seed": "seed_100",
+          "generation": 5,
+          "kind": "AddNeurons",
+          "score": 0.7716356400014082,
+          "scored": true,
+          "chosen": false,
+          "rank": 31,
+          "gap_to_best": 0.02320355403766361,
+          "winner": "Add Res Conv Layer Action",
+          "winner_score": 0.7948391940390718
+        },
+        {
+          "seed": "seed_102",
+          "generation": 3,
+          "kind": "DelNeurons",
+          "score": 0.7459781354893392,
+          "scored": true,
+          "chosen": false,
+          "rank": 7,
+          "gap_to_best": 0.025694461664825363,
+          "winner": "Add Res Conv Layer Action",
+          "winner_score": 0.7716725971541646
         },
         {
           "seed": "seed_100",
           "generation": 3,
-          "kind": "DelNeurons",
-          "score": 0.7890084385196423,
-          "scored": true,
-          "chosen": false,
-          "rank": 6,
-          "gap_to_best": 0.012664158634522416,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.8016725971541647
-        },
-        {
-          "seed": "seed_100",
-          "generation": 5,
           "kind": "AddNeurons",
-          "score": 0.8215303686401081,
-          "scored": true,
-          "chosen": false,
-          "rank": 10,
-          "gap_to_best": 0.012856091735858555,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.8307366911958187
-        },
-        {
-          "seed": "seed_100",
-          "generation": 5,
-          "kind": "DelNeurons",
-          "score": 0.8162207703256892,
-          "scored": true,
-          "chosen": false,
-          "rank": 13,
-          "gap_to_best": 0.01816569005027746,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.8307366911958187
-        },
-        {
-          "seed": "seed_101",
-          "generation": 6,
-          "kind": "AddNeurons",
-          "score": 0.9050599024616309,
-          "scored": true,
-          "chosen": false,
-          "rank": 13,
-          "gap_to_best": 0.018350478868095488,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.9197740176933628
-        },
-        {
-          "seed": "seed_101",
-          "generation": 4,
-          "kind": "AddNeurons",
-          "score": 0.8924528310095212,
-          "scored": true,
-          "chosen": false,
-          "rank": 6,
-          "gap_to_best": 0.023751811184627325,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.9162046421941485
-        },
-        {
-          "seed": "seed_102",
-          "generation": 4,
-          "kind": "AddNeurons",
-          "score": 0.774271012827703,
-          "scored": true,
-          "chosen": false,
-          "rank": 7,
-          "gap_to_best": 0.029206356639172815,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.7979826192590163
-        },
-        {
-          "seed": "seed_100",
-          "generation": 6,
-          "kind": "AddNeurons",
-          "score": 0.8306079102155344,
-          "scored": true,
-          "chosen": false,
-          "rank": 31,
-          "gap_to_best": 0.0292178788149815,
-          "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.8434103813297262
-        },
-        {
-          "seed": "seed_102",
-          "generation": 5,
-          "kind": "DelNeurons",
-          "score": 0.8216417974366922,
+          "score": 0.753469035825211,
           "scored": true,
           "chosen": false,
           "rank": 9,
-          "gap_to_best": 0.030872882698525395,
+          "gap_to_best": 0.026425631814872008,
           "winner": "Add Res Conv Layer Action",
-          "winner_score": 0.8452017955757528
+          "winner_score": 0.779894667640083
+        },
+        {
+          "seed": "seed_102",
+          "generation": 5,
+          "kind": "AddNeurons",
+          "score": 0.8256212777310171,
+          "scored": true,
+          "chosen": false,
+          "rank": 6,
+          "gap_to_best": 0.026438856949654865,
+          "winner": "Add Res Conv Layer Action",
+          "winner_score": 0.852060134680672
         }
       ],
       "mean_score_by_action": {
         "Add Neurons Action": {
-          "n": 15,
-          "mean": 0.7041205793217752,
+          "n": 17,
+          "mean": 0.6921307801900616,
           "min": 0.18175822139206305,
-          "max": 0.9050599024616309
+          "max": 0.8674974848362936
         },
         "Delete Neurons Action": {
           "n": 15,
-          "mean": 0.6884878249215257,
+          "mean": 0.6590415319742785,
           "min": 0.18178274109460948,
-          "max": 0.8761738515752318
+          "max": 0.8616283970297772
         },
         "Add Res Conv Layer Action": {
-          "n": 55,
-          "mean": 0.7413747831003341,
+          "n": 66,
+          "mean": 0.7387153537778993,
           "min": 0.18176657476735034,
-          "max": 0.9197874074079448
+          "max": 0.9193194722388173
+        },
+        "Add Res Linear Layer Action": {
+          "n": 4,
+          "mean": 0.7897830155681379,
+          "min": 0.7807946896001945,
+          "max": 0.7961955839603236
         },
         "Add Seq Conv Layer Action": {
-          "n": 40,
-          "mean": 0.7483437255784816,
+          "n": 39,
+          "mean": 0.7153049800912307,
           "min": 0.18176657476735034,
-          "max": 0.9234103813297264
+          "max": 0.9206831086024536
         },
         "Add Seq Linear Layer Action": {
-          "n": 56,
-          "mean": 0.7590890541304376,
+          "n": 54,
+          "mean": 0.7330336906653583,
           "min": 0.18175531623025956,
-          "max": 0.9197628023272936
+          "max": 0.9125128704832685
         },
         "Add Seq Dropout Layer Action": {
-          "n": 105,
-          "mean": 0.697887711628673,
+          "n": 114,
+          "mean": 0.688256180165784,
           "min": 0.18178001602963118,
-          "max": 0.9325682785577849
+          "max": 0.900999528620066
         },
         "Delete Layer Action": {
-          "n": 46,
-          "mean": 0.7510903040401575,
-          "min": 0.21632547057508575,
-          "max": 0.9162046421941485
+          "n": 42,
+          "mean": 0.7138349309070107,
+          "min": 0.18178001602963118,
+          "max": 0.9043462556226527
         }
       }
     }
