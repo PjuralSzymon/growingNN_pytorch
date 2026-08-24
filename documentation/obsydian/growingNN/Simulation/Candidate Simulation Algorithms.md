@@ -8,6 +8,8 @@ Implemented modules live under `growingnn/simulation/simulation_algorithms/`. Ea
 
 Baselines kept for future grids: current [[MCTS]], greedy depth-1, and random.
 
+Root first-pass rule for the four keep-set look-ahead modules below (`beam_search_alg.py`, `best_first_alg.py`, `sequential_halving_beam_alg.py`, `ugape_deepen_alg.py`): each grades every legal root action once in its own first pass before any timed cut, rival pull, or deepen. That first pass may overrun `simulation_time`. After every root arm has a grade, the algorithm continues with its normal exploration under the remaining budget. Greedy and random do not follow this rule. There is no shared cover helper; each file keeps its own loop.
+
 GrowingNN needs both:
 
 - Need A. Better ranking when many depth-1 scores are noisy or nearly tied
@@ -87,13 +89,14 @@ What it is: Phase 1 is Sequential Halving at the root. Phase 2 is Beam Search th
 
 How next node works: Phase 1 never goes past depth 1. Phase 2 expands survivors to depth 2 with the beam rule.
 
-How scoring works: Phase 1 uses repeated scores on depth-1 nodes. Phase 2 uses one score per new deeper child.
+How scoring works: first grade every root arm once, then Phase 1 rescores and halves under the root time split. Phase 2 uses one score per new deeper child.
 
 Good: clear base case first; futures only for actions that already look good.
 Bad: if Phase 1 drops the true best root action, Phase 2 cannot bring it back.
 
 ```text
-survivors = SequentialHalving(root)
+for each root action: expand once; score once
+survivors = SequentialHalving(rescored root arms, root time budget)
 beam = survivor depth-1 nodes
 best = best survivor
 while time left and depth < d:
@@ -108,13 +111,14 @@ What it is: Phase 1 is UGapE on root arms until time split or the top gap is cle
 
 How next node works: Phase 2 expands those few depth-1 nodes using the Group 1 expand rule.
 
-How scoring works: Phase 1 repeated root scores; Phase 2 common scores on deeper children.
+How scoring works: first pull every root arm once, then Phase 1 UGapE rival pulls under the root time split; Phase 2 common scores on deeper children.
 
 Good: strong when root scores are nearly tied, then still allows multi-step futures.
 Bad: two stop rules to set.
 
 ```text
-best, rivals = UGapE(root, budget1)
+for each root arm: pull once
+best, rivals = UGapE(root, remaining root budget)
 beam = depth-1 nodes of best and rivals
 while time left:
     expand and score from beam

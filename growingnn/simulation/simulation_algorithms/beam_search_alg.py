@@ -6,6 +6,7 @@ import copy
 import time
 
 from growingnn.actions.registry import generate_all_actions
+import growingnn.core.config as project_config
 from growingnn.core.config import RunningConfig
 from growingnn.core.traced_model import TracedModel
 from growingnn.utils.quaziIdentity import clear_reshepers_cache
@@ -24,16 +25,16 @@ def get_action(
 
     board = running_config.experiment_board
     params_before = traced.param_count() if board else None
+    min_runs = project_config.SIMULATION_MIN_ALGORITHM_ITERATION_RUNS
     deadline = time.time() + running_config.simulation_scheduler.simulation_time
     t0 = time.time()
     score_fn = running_config.simulation_score.score
     rollouts = 0
     max_depth = 0
 
+    # First pass: grade every root action once (may overrun simulation_time).
     frontier: list[dict] = []
     for action in root_actions:
-        if time.time() >= deadline:
-            break
         child = copy.deepcopy(traced)
         action.execute(child)
         value = score_fn(child.gm, running_config)
@@ -55,13 +56,17 @@ def get_action(
     beam = frontier[:BEAM_WIDTH]
     max_depth = 1
 
-    while time.time() < deadline and beam and beam[0]["depth"] < MAX_DEPTH:
+    deepen_rounds = 0
+    while beam and beam[0]["depth"] < MAX_DEPTH and (
+        deepen_rounds < min_runs or time.time() < deadline
+    ):
+        required = deepen_rounds < min_runs
         nxt: list[dict] = []
         for node in beam:
-            if time.time() >= deadline:
+            if not required and time.time() >= deadline:
                 break
             for action in generate_all_actions(node["traced"], running_config):
-                if time.time() >= deadline:
+                if not required and time.time() >= deadline:
                     break
                 child = copy.deepcopy(node["traced"])
                 action.execute(child)
@@ -82,6 +87,7 @@ def get_action(
         max_depth = max(max_depth, beam[0]["depth"])
         if beam[0]["score"] > best["score"]:
             best = beam[0]
+        deepen_rounds += 1
 
     best_action = best["root_action"]
     clear_reshepers_cache()

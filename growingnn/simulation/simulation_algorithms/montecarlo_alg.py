@@ -161,15 +161,22 @@ def get_action(
     params_before = traced.param_count() if board is not None else None
 
     root = TreeNode(None, None, traced, running_config)
+    min_runs = project_config.SIMULATION_MIN_ALGORITHM_ITERATION_RUNS
     deadline = time.time() + running_config.simulation_scheduler.simulation_time
     t0 = time.time()
     max_depth = 0
     rollouts = 0
-    while time.time() < deadline or rollouts <= len(actions):
+    simulate_calls = 0
+    while (
+        time.time() < deadline
+        or rollouts <= len(actions)
+        or simulate_calls < min_runs
+    ):
         prev_rollouts = rollouts
         _, max_depth, rollouts = _simulate(root, 0, rollouts)
+        simulate_calls += 1
         if time.time() >= deadline:
-            if rollouts > len(actions):
+            if rollouts > len(actions) and simulate_calls >= min_runs:
                 break
             elif rollouts <= prev_rollouts:
                 logger.error("MCTS no new rollouts after deadline (rollouts=%s, actions=%s)",rollouts,len(actions),)
