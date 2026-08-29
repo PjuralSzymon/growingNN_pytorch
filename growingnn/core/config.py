@@ -81,6 +81,8 @@ LOG_FILE_BACKUP_COUNT = 9  # 1 active + 9 backups => ~1 GB on disk total
 # DataLoader: subprocess count for loading batches (0 = main process only)
 DATALOADER_NUM_WORKERS = 0
 
+from growingnn.simulation.simulation_sets.protected import ProtectedSimulationSet
+
 
 def default_training_device() -> str:
     """Pick CUDA when available, otherwise CPU."""
@@ -99,6 +101,7 @@ class RunningConfig:
         simulation_alg: Any | None = None,
         simulation_scheduler: SimulationScheduler = NeverSimulationScheduler(),
         simulation_score: Any | None = None,
+        simulation_set_generator: Any | None = None,
         simulation_set_size: int = 32,
         criterion: nn.Module | None = None,
         quiet: bool = False,
@@ -114,6 +117,7 @@ class RunningConfig:
         self.simulation_alg = simulation_alg
         self.simulation_scheduler = simulation_scheduler
         self.simulation_score = simulation_score
+        self.simulation_set_generator = simulation_set_generator or ProtectedSimulationSet()
         self.simulation_set_size = simulation_set_size
         self.criterion = criterion
         self.quiet = quiet

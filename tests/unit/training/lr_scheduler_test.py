@@ -256,6 +256,85 @@ def test_composed_after_structure_changed_ramps_to_current_base():
     assert lr_after_warmup == pytest.approx(0.7)
 
 
+def test_composed_recovery_ramp_increases_each_epoch_when_base_is_near_floor():
+    """
+    After structure_changed, composed LR should rise every warmup epoch even when base is close to 0.001.
+    """
+
+    # Arrange
+    base_lr = 0.0016
+    composed = ComposedLearningRateScheduler(
+        global_schedule=ConstantLearningRate(lr=base_lr),
+        recovery=ActionLearningRateScheduler(
+            ScheduleMode.WARMUP_LOGISTIC, alpha=1.0, warmup_iterations=10, k=10.0
+        ),
+        total_epochs=50,
+        initial_lr=base_lr,
+    )
+
+    # Act
+    composed.structure_changed()
+    values = [composed.alpha_scheduler(0, 10) for _ in range(10)]
+
+    # Assert
+    assert values[0] == pytest.approx(MIN_LEARNING_RATE)
+    for earlier, later in zip(values, values[1:]):
+        assert later > earlier
+
+
+def test_composed_recovery_equals_current_base_after_full_warmup():
+    """
+    After warmup_iterations have elapsed, composed LR should equal the current global base.
+    """
+
+    # Arrange
+    base_lr = 0.0016
+    composed = ComposedLearningRateScheduler(
+        global_schedule=ConstantLearningRate(lr=base_lr),
+        recovery=ActionLearningRateScheduler(
+            ScheduleMode.WARMUP_LOGISTIC, alpha=1.0, warmup_iterations=10, k=10.0
+        ),
+        total_epochs=50,
+        initial_lr=base_lr,
+    )
+    composed.structure_changed()
+
+    # Act
+    for _ in range(10):
+        composed.alpha_scheduler(0, 10)
+    lr_after_warmup = composed.alpha_scheduler(0, 10)
+
+    # Assert
+    assert lr_after_warmup == pytest.approx(base_lr)
+
+
+def test_composed_recovery_factor_may_be_below_learning_rate_floor():
+    """
+    Compose should accept a recovery factor below MIN_LEARNING_RATE and still emit LR at or above the floor.
+    """
+
+    # Arrange
+    recovery = ActionLearningRateScheduler(
+        ScheduleMode.WARMUP_LOGISTIC, alpha=1.0, warmup_iterations=10, k=10.0
+    )
+    composed = ComposedLearningRateScheduler(
+        global_schedule=ConstantLearningRate(lr=0.01),
+        recovery=recovery,
+        total_epochs=20,
+        initial_lr=0.01,
+    )
+
+    # Act
+    composed.structure_changed()
+    factor = recovery._schedule.compute(0.0, 10.0)
+    lr_right_after = composed.alpha_scheduler(0, 10)
+
+    # Assert
+    assert factor < MIN_LEARNING_RATE
+    assert lr_right_after >= MIN_LEARNING_RATE
+    assert lr_right_after == pytest.approx(MIN_LEARNING_RATE)
+
+
 def test_composed_rejects_recovery_alpha_not_one():
     """
     ComposedLearningRateScheduler should require recovery.alpha == 1.0.
@@ -315,6 +394,24 @@ def test_composed_freeze_global_schedule_progress_does_not_advance_global_epoch(
     assert lr_a == lr_b == pytest.approx(0.01)
     assert composed.global_epoch == 2
     assert lr_next == pytest.approx(0.01)
+
+
+def test_standalone_warmup_logistic_still_clamps_absolute_learning_rate():
+    """
+    Standalone WARMUP_LOGISTIC with alpha=0.01 should still clamp the first post-action LR to MIN_LEARNING_RATE.
+    """
+
+    # Arrange
+    scheduler = ActionLearningRateScheduler(
+        ScheduleMode.WARMUP_LOGISTIC, alpha=0.01, warmup_iterations=10, k=10.0
+    )
+
+    # Act
+    scheduler.structure_changed()
+    lr_right_after = scheduler.alpha_scheduler(0, 10)
+
+    # Assert
+    assert lr_right_after == MIN_LEARNING_RATE
 
 
 def test_non_composed_learning_rate_scheduler_unchanged():

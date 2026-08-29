@@ -1,6 +1,6 @@
 [[Simulation]]
 
-We use Monte Carlo Tree Search with our own changes. It runs when `RunningConfig.simulation_alg` points to `montecarlo_alg.py`. Simulations use the legal move list from `growingnn/actions/registry.py`. Each rollout is graded by `SimulationScore` in `simulation_score.py` on the simulation loaders built from `sample_loaders`.
+We use Monte Carlo Tree Search with our own changes. It runs when `RunningConfig.simulation_alg` points to `montecarlo_alg.py`. Simulations use the legal move list from `growingnn/actions/registry.py`. Each rollout is graded by `SimulationScore` in `simulation_score.py` on the simulation loaders from [[Simulation Set]].
 
 There are two main modifications.
 

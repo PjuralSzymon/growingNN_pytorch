@@ -4,8 +4,9 @@ These are pure ``lr_at(global_epoch, total_epochs)`` adapters in the spirit of
 ``torch.optim.lr_scheduler`` (cosine, step, exponential, linear, constant).
 They do not react to GrowingNN architecture actions.
 
-``ComposedLearningRateScheduler`` multiplies a global schedule by the
-action-aware recovery factor from ``lr_scheduler_action``.
+``ComposedLearningRateScheduler`` interpolates from the LR floor to a
+global schedule using the action-aware recovery factor from
+``lr_scheduler_action``.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ from math import cos, isclose, pi
 from typing import Any, Iterator, Protocol, runtime_checkable
 
 from growingnn.training.lr_scheduler_action import (
+    MIN_LEARNING_RATE,
     ActionLearningRateScheduler,
     LearningRateScheduler,
     ScheduleMode,
@@ -176,7 +178,7 @@ def build_composed_learning_rate_scheduler(
     gamma: float = 0.1,
 ) -> ComposedLearningRateScheduler:
     """
-    Build global×action-recovery composition for training or experiment scripts.
+    Build floor-to-base interpolation of a global schedule with action recovery.
 
     Recovery is WARMUP_LOGISTIC with alpha=1.0 (peak factor, not absolute LR).
     """
@@ -202,13 +204,13 @@ def build_composed_learning_rate_scheduler(
 
 class ComposedLearningRateScheduler(LearningRateScheduler):
     """
-    Multiply a global LR curve by GrowingNN action recovery.
+    Interpolate from the LR floor to a global curve using GrowingNN recovery.
 
-    effective_lr = max(MIN_LEARNING_RATE, global_lr(global_epoch) * recovery_factor)
+    effective_lr = MIN_LEARNING_RATE + (global_lr(global_epoch) - MIN_LEARNING_RATE) * recovery_factor
 
-    Recovery must use alpha=1.0 so its output is a 0..1 factor. Until the first
-    structure_changed(), recovery stays fully warmed (factor ≈ 1) so training
-    follows the global schedule only.
+    The result is then clamped to MIN_LEARNING_RATE. Recovery must use alpha=1.0
+    so its output is a 0..1 factor. Until the first structure_changed(), recovery
+    stays fully warmed (factor ≈ 1) so training follows the global schedule only.
     """
 
     def __init__(
@@ -244,13 +246,17 @@ class ComposedLearningRateScheduler(LearningRateScheduler):
         global_learning_rate: float,
         recovery_factor: float,
     ) -> float:
-        return clamp_to_minimum_learning_rate(global_learning_rate * recovery_factor)
+        factor = max(0.0, min(1.0, float(recovery_factor)))
+        global_lr = float(global_learning_rate)
+        return clamp_to_minimum_learning_rate(
+            MIN_LEARNING_RATE + (global_lr - MIN_LEARNING_RATE) * factor
+        )
 
     def alpha_scheduler(self, i: int, iterations: int) -> float:
         global_learning_rate = self.global_schedule.lr_at(
             self.global_epoch, self.total_epochs
         )
-        recovery_factor = self.recovery.alpha_scheduler(i, iterations)
+        recovery_factor = self.recovery.unclamped_alpha_scheduler(i, iterations)
         if not self._global_schedule_progress_frozen:
             self.global_epoch += 1
         return self._compose_effective_learning_rate(global_learning_rate, recovery_factor)

@@ -1,6 +1,6 @@
 ---
 name: lr-scheduler-research
-description: Explains and safeguards GrowingNN learning-rate schedules, simulation schedulers, architecture-action resets, slope decisions, and the current MNIST scheduler evidence. Use when changing or analyzing training, learning rates, stagnation detection, MCTS timing, scheduler experiments, or their documentation.
+description: Explains and safeguards GrowingNN learning-rate schedules, simulation schedulers, architecture-action resets, slope decisions, and the current MNIST scheduler evidence. Use when changing or analyzing training, learning rates, stagnation detection, MCTS timing, scheduler experiments, or their documentation. Never create unit tests for experiments or for other tests.
 ---
 
 # Learning-rate and simulation scheduler research
@@ -56,9 +56,10 @@ Before editing scheduler behavior:
 2. Check whether scheduler state is copied or advanced inside simulation.
 3. Check the exact epoch attached to an action and to its next metric.
 4. Preserve the `MIN_LEARNING_RATE` floor unless the task changes it explicitly.
-5. Add one small deterministic unit test for every changed function.
-6. Use Arrange, Act, and Assert labels in each test.
+5. Add one small deterministic unit test for every changed product function under `growingnn/`.
+6. Use Arrange, Act, and Assert labels in each product unit test.
 7. Re-run the focused scheduler tests.
+8. Do not create any tests for experiments. No unit tests should be created for an experiment, and no unit tests should be created for other regression, CI, or integration tests. Everything test-related or experiment-related should not have a separate unit test.
 
 For experiments, record:
 

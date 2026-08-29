@@ -80,6 +80,10 @@ class LearningRateSchedule(ABC):
     def alpha_scheduler(self, i: int, iterations: int) -> float:
         return clamp_to_minimum_learning_rate(self.compute(float(i), float(iterations)))
 
+    def unclamped_alpha_scheduler(self, i: int, iterations: int) -> float:
+        """Advance and return the raw schedule value. Do not apply MIN_LEARNING_RATE."""
+        return self.compute(float(i), float(iterations))
+
     def structure_changed(self) -> None:
         # No-op for generation-local schedules; WarmupSchedule overrides to reset.
         pass
@@ -126,9 +130,13 @@ class WarmupSchedule(LearningRateSchedule, ABC):
 
     def alpha_scheduler(self, i: int, iterations: int) -> float:
         # i / iterations are generation-local; warmup tracks epochs since last action.
-        lr = self.compute(float(self.iterations_since_change), float(self.warmup_iterations))
+        return clamp_to_minimum_learning_rate(self.unclamped_alpha_scheduler(i, iterations))
+
+    def unclamped_alpha_scheduler(self, i: int, iterations: int) -> float:
+        """Advance warmup and return the raw 0..alpha factor. Do not apply MIN_LEARNING_RATE."""
+        value = self.compute(float(self.iterations_since_change), float(self.warmup_iterations))
         self.iterations_since_change += 1
-        return clamp_to_minimum_learning_rate(lr)
+        return value
 
     def structure_changed(self) -> None:
         self.iterations_since_change = 0
@@ -185,7 +193,7 @@ class LearningRateScheduler(ABC):
 
     Concrete kinds:
     - ``ActionLearningRateScheduler`` — GrowingNN action / generation schedules
-    - ``ComposedLearningRateScheduler`` — global epoch curve × action recovery
+    - ``ComposedLearningRateScheduler`` — global epoch curve interpolated with action recovery
     """
 
     @abstractmethod
@@ -219,6 +227,10 @@ class ActionLearningRateScheduler(LearningRateScheduler):
 
     def alpha_scheduler(self, i: int, iterations: int) -> float:
         return self._schedule.alpha_scheduler(i, iterations)
+
+    def unclamped_alpha_scheduler(self, i: int, iterations: int) -> float:
+        """Advance and return the raw schedule value for use as a 0..1 recovery factor."""
+        return self._schedule.unclamped_alpha_scheduler(i, iterations)
 
     def structure_changed(self) -> None:
         self._schedule.structure_changed()

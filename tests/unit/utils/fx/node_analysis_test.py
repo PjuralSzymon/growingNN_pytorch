@@ -13,7 +13,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[4]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from growingnn.utils.fx import ModuleResolver, NodeTypeChecker, NodeWidthAnalyser
+from growingnn.utils.fx import LayerShapeAnalyser, ModuleResolver, NodeTypeChecker, NodeWidthAnalyser
 from tests.model_factory import ModelFactory
 
 
@@ -256,6 +256,57 @@ def test_is_flatten_node_true_for_module_and_function_forms():
     assert NodeTypeChecker.is_flatten_node(mod_flat, gm_mod) is True
     fn_flat = next(n for n in gm_fn.graph.nodes if n.op == "call_function")
     assert NodeTypeChecker.is_flatten_node(fn_flat, gm_fn) is True
+
+
+def test_node_output_width_after_spatial_flatten_is_chw_not_channels():
+    """
+    node_output_width should return C*H*W after MaxPool2d flatten, not conv channel count.
+    """
+    # Arrange
+    class SpatialFlattenNet(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.conv = nn.Conv2d(3, 4, 3, padding=1)
+            self.pool = nn.MaxPool2d(2)
+            self.linear = nn.Linear(4 * 16 * 16, 32)
+
+        def forward(self, x):
+            return self.linear(torch.flatten(self.pool(self.conv(x)), 1))
+
+    gm = fx.symbolic_trace(SpatialFlattenNet())
+    LayerShapeAnalyser.collect_layer_shapes(gm, input_shape=(1, 3, 32, 32))
+    flatten_node = next(n for n in gm.graph.nodes if NodeTypeChecker.is_flatten_node(n, gm))
+
+    # Act
+    width = NodeWidthAnalyser.node_output_width(gm, flatten_node)
+
+    # Assert
+    assert width == 1024
+
+
+def test_node_output_width_after_adaptive_pool_flatten_equals_channels():
+    """
+    node_output_width should return conv channel count after AdaptiveAvgPool2d(1) flatten.
+    """
+    # Arrange
+    class AdaptiveFlattenNet(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.conv = nn.Conv2d(3, 4, 3, padding=1)
+            self.pool = nn.AdaptiveAvgPool2d(1)
+            self.linear = nn.Linear(4, 32)
+
+        def forward(self, x):
+            return self.linear(torch.flatten(self.pool(self.conv(x)), 1))
+
+    gm = fx.symbolic_trace(AdaptiveFlattenNet())
+    flatten_node = next(n for n in gm.graph.nodes if NodeTypeChecker.is_flatten_node(n, gm))
+
+    # Act
+    width = NodeWidthAnalyser.node_output_width(gm, flatten_node)
+
+    # Assert
+    assert width == 4
 
 
 def test_two_d_pool_kind_returns_adaptive_avg_for_module_pool():

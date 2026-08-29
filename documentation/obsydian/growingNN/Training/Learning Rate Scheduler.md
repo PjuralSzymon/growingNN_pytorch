@@ -1,8 +1,8 @@
-When GrowingNN changes the graph, weights need a short recovery. When nothing changes, training should follow a normal global learning rate curve. [[Composed Learning Rate Scheduler]] multiplies those two signals.
+When GrowingNN changes the graph, weights need a short recovery. When nothing changes, training should follow a normal global learning rate curve. [[Composed Learning Rate Scheduler]] interpolates those two signals.
 
-`effective_lr = max(MIN_LEARNING_RATE, global_lr(global_epoch) * recovery_factor)`
+`effective_lr = MIN_LEARNING_RATE + (global_lr(global_epoch) - MIN_LEARNING_RATE) * recovery_factor`
 
-`MIN_LEARNING_RATE` is `0.001` in `growingnn/training/lr_scheduler_action.py`.
+`MIN_LEARNING_RATE` is `0.001` in `growingnn/training/lr_scheduler_action.py`. The product form `max(MIN_LEARNING_RATE, global_lr * recovery_factor)` is not used. That form hid the recovery ramp once the global curve was close to the floor.
 
 ## Standalone GrowingNN schedules
 
@@ -32,7 +32,7 @@ config.lr_scheduler = ActionLearningRateScheduler(
 
 ## Why composition
 
-A cosine or step schedule over the whole run is the usual PyTorch mental model. GrowingNN still needs a low LR right after a mutation. Composition keeps the global curve and only multiplies a recovery factor after `structure_changed()`.
+A cosine or step schedule over the whole run is the usual PyTorch mental model. GrowingNN still needs a low LR right after a mutation. Composition keeps the global curve and interpolates from the floor back to that curve after `structure_changed()`.
 
 Details and copy-paste setup: [[Composed Learning Rate Scheduler]].
 

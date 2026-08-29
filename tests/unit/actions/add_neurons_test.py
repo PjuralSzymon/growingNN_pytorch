@@ -7,6 +7,7 @@ import pytest
 import torch
 import torch.fx as fx
 import torch.nn as nn
+import torch.nn.functional as F
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(_REPO_ROOT) not in sys.path:
@@ -214,3 +215,76 @@ def test_grow_hidden_on_cuda_cifar_style_net():
     assert next(gm.hidden.parameters()).is_cuda
     assert next(gm.output.parameters()).is_cuda
     assert y.shape == (2, 10)
+
+
+def test_add_neurons_keeps_linear_in_features_after_spatial_flatten():
+    """
+    Growing hidden linear after conv MaxPool flatten should keep in_features at C*H*W.
+    """
+    # Arrange
+    class CifarStem(nn.Module):
+        def __init__(self):
+            super().__init__()
+            channels = 4
+            spatial = 16
+            self.conv1 = nn.Conv2d(3, channels, 3, padding=1, bias=False)
+            self.bn1 = nn.BatchNorm2d(channels)
+            self.pool = nn.MaxPool2d(2)
+            self.conv2 = nn.Conv2d(channels, channels, 3, padding=1, bias=False)
+            self.linear = nn.Linear(channels * spatial * spatial, 32)
+            self.linear2 = nn.Linear(32, 10)
+
+        def forward(self, x):
+            x = F.relu(self.bn1(self.conv1(x)))
+            x = self.pool(x)
+            x = F.relu(self.conv2(x))
+            x = F.relu(self.linear(torch.flatten(x, 1)))
+            return self.linear2(x)
+
+    gm = fx.symbolic_trace(CifarStem())
+    x = torch.randn(2, 3, 32, 32)
+
+    # Act
+    AddNeurons(["linear", 1.1]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
+    y = gm(x)
+
+    # Assert
+    assert gm.linear.in_features == 1024
+    assert gm.linear.out_features == 35
+    assert gm.linear2.in_features == 35
+    assert y.shape == (2, 10)
+
+
+def test_add_neurons_spatial_flatten_does_not_print_shapeprop_traceback(capsys):
+    """
+    Growing a CIFAR-style hidden linear should not dump ShapeProp tracebacks to stderr.
+    """
+    # Arrange
+    class CifarStem(nn.Module):
+        def __init__(self):
+            super().__init__()
+            channels = 4
+            spatial = 16
+            self.conv1 = nn.Conv2d(3, channels, 3, padding=1, bias=False)
+            self.bn1 = nn.BatchNorm2d(channels)
+            self.pool = nn.MaxPool2d(2)
+            self.conv2 = nn.Conv2d(channels, channels, 3, padding=1, bias=False)
+            self.linear = nn.Linear(channels * spatial * spatial, 32)
+            self.linear2 = nn.Linear(32, 10)
+
+        def forward(self, x):
+            x = F.relu(self.bn1(self.conv1(x)))
+            x = self.pool(x)
+            x = F.relu(self.conv2(x))
+            x = F.relu(self.linear(torch.flatten(x, 1)))
+            return self.linear2(x)
+
+    gm = fx.symbolic_trace(CifarStem())
+
+    # Act
+    AddNeurons(["linear", 1.1]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
+    err = capsys.readouterr().err
+
+    # Assert
+    assert "ShapeProp error" not in err
+    assert "mat1 and mat2 shapes cannot be multiplied" not in err

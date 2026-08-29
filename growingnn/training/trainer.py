@@ -12,7 +12,6 @@ from torch.utils.data import DataLoader
 from growingnn.core.config import RunningConfig
 from growingnn.core.traced_model import TracedModel
 from growingnn.core.logger import logger
-from growingnn.simulation.simulation_set import sample_loaders
 from growingnn.training.gradient_descent import gradient_descent
 from growingnn.utils.quaziIdentity import clear_reshepers_cache
 
@@ -36,8 +35,8 @@ def train_generations(
         board.on_run_start(traced.gm, config)
 
     if sim_train_loader is None or sim_val_loader is None:
-        sim_train_loader, sim_val_loader = sample_loaders(
-            train_loader, val_loader, config.simulation_set_size
+        sim_train_loader, sim_val_loader = config.simulation_set_generator.generate(
+            train_loader, val_loader, config.simulation_set_size,
         )
     config.set_simulation_loaders(sim_train_loader, sim_val_loader)
 

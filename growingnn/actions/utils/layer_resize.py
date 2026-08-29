@@ -5,7 +5,13 @@ import torch.nn as nn
 from growingnn.core import config
 from growingnn.core.config import PASSTHROUGH_MODULES_TO_UPDATE, PROPAGATION_RESIZABLE_MODULES, PASSTHROUGH_MODULES
 from growingnn.core.logger import logger
-from growingnn.utils.fx import ModuleResolver, NodeEditor, NodeTypeChecker, NodeWidthAnalyser
+from growingnn.utils.fx import (
+    LayerShapeAnalyser,
+    ModuleResolver,
+    NodeEditor,
+    NodeTypeChecker,
+    NodeWidthAnalyser,
+)
 from growingnn.actions.utils.layer_Factory import ConvFactory, LinearFactory
 from growingnn.utils.quaziIdentity import get_reshsper
 
@@ -369,6 +375,17 @@ def _graph_has_width_mismatch(gm: fx.GraphModule) -> bool:
     return False
 
 
+def _graph_has_flatten(gm: fx.GraphModule) -> bool:
+    return any(NodeTypeChecker.is_flatten_node(node, gm) for node in gm.graph.nodes)
+
+
+def _refresh_flatten_shape_meta(gm: fx.GraphModule, input_shape: tuple[int, ...] | None) -> None:
+    """Run ShapeProp on a still-valid graph so spatial flatten exposes C*H*W in FX meta."""
+    if input_shape is None or not _graph_has_flatten(gm):
+        return
+    LayerShapeAnalyser.collect_layer_shapes(gm, input_shape=input_shape)
+
+
 def fix_graph_widths(
     gm: fx.GraphModule,
     *,
@@ -438,13 +455,19 @@ def can_resize_linear_output(
     return not NodeWidthAnalyser.propagation_hits_unsizable(gm, node)
 
 
-def resize_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, new_width: int) -> fx.GraphModule:
+def resize_layer_output(
+    gm: nn.Module | fx.GraphModule,
+    layer_id: str,
+    new_width: int,
+    input_shape: tuple[int, ...] | None = None,
+) -> fx.GraphModule:
     """Resize a Linear layer's output to new_width, then fix all graph width mismatches."""
     gm = gm if isinstance(gm, fx.GraphModule) else fx.symbolic_trace(gm)
     mod = ModuleResolver.get_layer_module(layer_id, gm)
     if not isinstance(mod, nn.Linear):
         raise TypeError(f"{layer_id} is {type(mod).__name__}, not nn.Linear")
     head_name, pinned_head_out = _snapshot_pinned_head_out(gm)
+    _refresh_flatten_shape_meta(gm, input_shape)
     NodeEditor.replace_submodule(gm, layer_id, LinearFactory.create_linear_with_rescaled_neurons(mod, new_width))
     fix_graph_widths(
         gm,
