@@ -2,11 +2,14 @@
 
 Measured figures (boards or snapshot):
 - ranked trial validation accuracy, colored by starter
+- mean and individual peak accuracy by starter
+- peak accuracy versus total training epochs
 - peak vs final validation accuracy
 - per-axis search grades
 - start vs final parameter counts
 - simulations vs executed actions by scheduler
 - training and validation accuracy curves, colored by starter
+- best-trial train and validation curves
 """
 
 from __future__ import annotations
@@ -228,7 +231,7 @@ def load_runs_or_snapshot(
 
 def plot_trial_accuracy(runs: list[dict[str, object]], output_dir: Path) -> None:
     ordered = sorted(runs, key=lambda row: float(row["search_val_acc"]))
-    fig, ax = plt.subplots(figsize=(8.5, 5.2))
+    fig, ax = plt.subplots(figsize=(8.8, max(5.2, 0.28 * len(ordered) + 1.6)))
     y = np.arange(len(ordered))
     colors = [STARTER_COLORS[str(row["starter"])] for row in ordered]
     ax.barh(y, [float(row["search_val_acc"]) * 100 for row in ordered], color=colors)
@@ -237,7 +240,8 @@ def plot_trial_accuracy(runs: list[dict[str, object]], output_dir: Path) -> None
         [
             f"t{row['trial']} {row['starter']} {SCHED_LABELS.get(str(row['simulation_scheduler']), str(row['simulation_scheduler']))}"
             for row in ordered
-        ]
+        ],
+        fontsize=8,
     )
     ax.set_xlabel("Peak validation accuracy (%)")
     ax.set_title("Peak validation accuracy by search trial")
@@ -265,7 +269,7 @@ def plot_peak_vs_final(runs: list[dict[str, object]], output_dir: Path) -> None:
             s=48,
             zorder=3,
         )
-    lims = [35, 75]
+    lims = [30, 85]
     ax.plot(lims, lims, color="#888", linewidth=0.8)
     ax.set_xlim(lims)
     ax.set_ylim(lims)
@@ -293,7 +297,7 @@ def plot_axis_grades(search: dict[str, object], output_dir: Path) -> None:
         ax.barh(range(len(labels)), values, color="#3568a8")
         ax.set_yticks(range(len(labels)))
         ax.set_yticklabels(labels, fontsize=8)
-        ax.set_xlim(0.45, 0.75)
+        ax.set_xlim(0.40, 0.80)
         ax.axvline(0.5, color="#888", linewidth=0.8)
         ax.set_title(axis.replace("_", " "), fontsize=9)
         ax.tick_params(axis="x", labelsize=8)
@@ -305,12 +309,12 @@ def plot_axis_grades(search: dict[str, object], output_dir: Path) -> None:
 
 def plot_param_growth(runs: list[dict[str, object]], output_dir: Path) -> None:
     scored = [row for row in runs if "start_params" in row]
-    fig, ax = plt.subplots(figsize=(8.5, 4.8))
+    fig, ax = plt.subplots(figsize=(10.2, 5.0))
     x = np.arange(len(scored))
     ax.bar(x - 0.2, [float(row["start_params"]) for row in scored], 0.4, label="start", color="#c5c9d0")
     ax.bar(x + 0.2, [float(row["final_params"]) for row in scored], 0.4, label="final", color="#3568a8")
     ax.set_xticks(x)
-    ax.set_xticklabels([f"t{row['trial']}" for row in scored])
+    ax.set_xticklabels([f"t{row['trial']}" for row in scored], fontsize=7, rotation=90)
     ax.set_ylabel("Parameter count")
     ax.set_xlabel("Search trial")
     ax.legend()
@@ -380,6 +384,72 @@ def _plot_accuracy_curves(
     plt.close(fig)
 
 
+def plot_starter_means(runs: list[dict[str, object]], output_dir: Path) -> None:
+    fig, ax = plt.subplots(figsize=(6.4, 4.4))
+    names = [name for name in STARTER_ORDER if any(str(row["starter"]) == name for row in runs)]
+    x = np.arange(len(names))
+    means = []
+    for i, name in enumerate(names):
+        values = [float(row["search_val_acc"]) * 100 for row in runs if str(row["starter"]) == name]
+        means.append(_mean(values))
+        ax.scatter(np.full(len(values), i), values, color="#444", s=22, zorder=3)
+    ax.bar(x, means, color=[STARTER_COLORS[name] for name in names], alpha=0.75)
+    ax.set_xticks(x)
+    ax.set_xticklabels(names)
+    ax.set_ylabel("Peak validation accuracy (%)")
+    ax.set_xlabel("Starter width")
+    ax.set_title("Peak validation accuracy by starter")
+    fig.tight_layout()
+    fig.savefig(output_dir / "008-starter-peak-val.png", dpi=150)
+    plt.close(fig)
+
+
+def plot_total_epochs_vs_acc(runs: list[dict[str, object]], output_dir: Path) -> None:
+    fig, ax = plt.subplots(figsize=(6.8, 4.6))
+    for row in runs:
+        total = int(row["combo"]["epochs"]) * int(row["combo"]["generations"])
+        jitter = ((int(row["trial"]) % 7) - 3) * 3
+        ax.scatter(
+            total + jitter,
+            float(row["search_val_acc"]) * 100,
+            color=STARTER_COLORS[str(row["starter"])],
+            marker=SCHEDULER_MARKERS.get(str(row["simulation_scheduler"]), "o"),
+            s=48,
+            zorder=3,
+        )
+    handles = [
+        plt.Line2D([0], [0], color=STARTER_COLORS[name], marker="o", linestyle="", label=name)
+        for name in STARTER_ORDER
+        if any(str(row["starter"]) == name for row in runs)
+    ]
+    ax.legend(handles=handles)
+    ax.set_xlabel("Total training epochs (epochs x generations)")
+    ax.set_ylabel("Peak validation accuracy (%)")
+    ax.set_title("Peak validation accuracy versus training length")
+    fig.tight_layout()
+    fig.savefig(output_dir / "008-epochs-vs-val.png", dpi=150)
+    plt.close(fig)
+
+
+def plot_best_run_curves(runs: list[dict[str, object]], output_dir: Path) -> None:
+    scored = [row for row in runs if "val_acc" in row]
+    if not scored:
+        return
+    best = max(scored, key=lambda row: float(row["search_val_acc"]))
+    fig, ax = plt.subplots(figsize=(8.5, 4.6))
+    train = [value * 100 for value in best["train_acc"]]
+    val = [value * 100 for value in best["val_acc"]]
+    ax.plot(range(1, len(train) + 1), train, color="#6b7280", linewidth=1.2, label="train")
+    ax.plot(range(1, len(val) + 1), val, color="#d18b2c", linewidth=1.4, label="val (CIFAR test split)")
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel("Accuracy (%)")
+    ax.set_title(f"Best trial t{best['trial']} train and validation accuracy")
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(output_dir / "008-best-trial-curves.png", dpi=150)
+    plt.close(fig)
+
+
 def plot_training_curves(runs: list[dict[str, object]], output_dir: Path) -> None:
     _plot_accuracy_curves(
         runs,
@@ -407,7 +477,7 @@ def plot_action_composition(runs: list[dict[str, object]], output_dir: Path) -> 
     labels = sorted({label for row in scored for label in row["action_labels"]})
     if not labels:
         labels = ["(no actions)"]
-    fig, ax = plt.subplots(figsize=(9, 4.8))
+    fig, ax = plt.subplots(figsize=(10.2, 5.2))
     x = np.arange(len(scored))
     bottoms = np.zeros(len(scored))
     cmap = plt.get_cmap("tab20")
@@ -416,7 +486,7 @@ def plot_action_composition(runs: list[dict[str, object]], output_dir: Path) -> 
         ax.bar(x, heights, bottom=bottoms, label=label, color=cmap(idx % 20))
         bottoms = bottoms + np.array(heights)
     ax.set_xticks(x)
-    ax.set_xticklabels([f"t{row['trial']}" for row in scored])
+    ax.set_xticklabels([f"t{row['trial']}" for row in scored], fontsize=7, rotation=90)
     ax.set_ylabel("Executed actions")
     ax.set_xlabel("Search trial")
     ax.legend(fontsize=8, ncols=2)
@@ -432,6 +502,8 @@ def generate_charts(
     search: dict[str, object] | None = None,
 ) -> None:
     plot_trial_accuracy(runs, output_dir)
+    plot_starter_means(runs, output_dir)
+    plot_total_epochs_vs_acc(runs, output_dir)
     plot_peak_vs_final(runs, output_dir)
     if search:
         plot_axis_grades(search, output_dir)
@@ -440,6 +512,7 @@ def generate_charts(
     plot_action_composition(runs, output_dir)
     plot_training_curves(runs, output_dir)
     plot_validation_curves(runs, output_dir)
+    plot_best_run_curves(runs, output_dir)
 
 
 def main() -> None:
