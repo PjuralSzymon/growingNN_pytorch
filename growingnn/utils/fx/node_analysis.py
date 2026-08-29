@@ -126,12 +126,60 @@ class NodeTypeChecker:
         return None
 
 
+def _spatial_size_is_one(size: object) -> bool:
+    if isinstance(size, int):
+        return size == 1
+    if isinstance(size, (tuple, list)) and size:
+        return all(int(dim) == 1 for dim in size)
+    return False
+
+
 class NodeWidthAnalyser:
     """Feature-width queries and propagation safety checks on FX graph nodes."""
 
     @staticmethod
+    def _adaptive_pool_output_is_one(gm: fx.GraphModule, n: fx.Node) -> bool:
+        """True when n is adaptive 2-D pool with output spatial size 1."""
+        kind = NodeTypeChecker.two_d_pool_kind(n, gm)
+        if kind is None or not kind.startswith("adaptive"):
+            return False
+        if n.op == "call_module":
+            module = ModuleResolver.get_layer_module(n.target, gm)
+            return module is not None and _spatial_size_is_one(getattr(module, "output_size", None))
+        size = n.args[1] if len(n.args) > 1 else n.kwargs.get("output_size")
+        return _spatial_size_is_one(size)
+
+    @staticmethod
+    def _has_adaptive_pool_to_one(gm: fx.GraphModule, start: fx.Node) -> bool:
+        seen: set[fx.Node] = set()
+        stack = list(start.all_input_nodes)
+        while stack:
+            cur = stack.pop()
+            if cur in seen:
+                continue
+            seen.add(cur)
+            if NodeWidthAnalyser._adaptive_pool_output_is_one(gm, cur):
+                return True
+            stack.extend(cur.all_input_nodes)
+        return False
+
+    @staticmethod
+    def _flatten_output_width(gm: fx.GraphModule, n: fx.Node) -> int | None:
+        """Flattened vector length (C*H*W). Never report conv channels across a spatial flatten."""
+        from growingnn.utils.fx.graph_analysis import LayerShapeAnalyser
+
+        if NodeWidthAnalyser._has_adaptive_pool_to_one(gm, n) and n.all_input_nodes:
+            return NodeWidthAnalyser.node_output_width(gm, n.all_input_nodes[0])
+        shape = LayerShapeAnalyser.node_shape(n)
+        if shape:
+            return int(shape[-1])
+        return None
+
+    @staticmethod
     def node_output_width(gm: fx.GraphModule, n: fx.Node) -> int | None:
-        """Output channel width reading live module attributes, walking through passthroughs and adds."""
+        """Output feature width. Flatten reports C*H*W, not conv channel count."""
+        if NodeTypeChecker.is_flatten_node(n, gm):
+            return NodeWidthAnalyser._flatten_output_width(gm, n)
         if n.op == "call_module":
             m = ModuleResolver.get_layer_module(n.target, gm)
             if isinstance(m, nn.Linear):

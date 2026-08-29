@@ -9,7 +9,12 @@ from growingnn.core import config
 from .action import Action
 
 
-def expand_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, ratio: float) -> fx.GraphModule:
+def expand_layer_output(
+    gm: nn.Module | fx.GraphModule,
+    layer_id: str,
+    ratio: float,
+    input_shape: tuple[int, ...] | None = None,
+) -> fx.GraphModule:
     """Grow a Linear layer's output by ratio and propagate shapes."""
     gm = gm if isinstance(gm, fx.GraphModule) else fx.symbolic_trace(gm)
     mod = ModuleResolver.get_layer_module(layer_id, gm)
@@ -18,14 +23,14 @@ def expand_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, ratio: fl
     new = max(1, int(mod.out_features * ratio))
     if not can_resize_linear_output(gm, layer_id, new):
         return gm
-    return resize_layer_output(gm, layer_id, new)
+    return resize_layer_output(gm, layer_id, new, input_shape=input_shape)
 
 
 class AddNeurons(Action):
     def _execute(self, traced: TracedModel):
         layer_id = self.params[0]
         ratio = self.params[1] if len(self.params) > 1 else config.DEFAULT_NEURONS_GROW_RATIO
-        expand_layer_output(traced.gm, layer_id, ratio)
+        expand_layer_output(traced.gm, layer_id, ratio, input_shape=traced.input_shape)
 
     def can_be_infulenced(self, by_action):
         return False
