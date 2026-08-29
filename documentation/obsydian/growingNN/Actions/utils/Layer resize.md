@@ -9,7 +9,7 @@ Weight reprojection uses `get_reshsper` from [[Quasi identity]] inside `LinearFa
 | Function | Role |
 |----------|------|
 | `can_resize_linear_output(gm, layer_id, new_width)` | Pre-check before emitting or executing a neuron action |
-| `resize_layer_output(gm, layer_id, new_width)` | Replace one linear output width, then fix the whole graph |
+| `resize_layer_output(gm, layer_id, new_width, input_shape=None)` | Replace one linear output width, then fix the whole graph |
 | `fix_graph_widths(gm, align_add_to=..., pinned_head_out=...)` | Sequential sweep that repairs width mismatches |
 
 `shrink_layer_output` and `expand_layer_output` live in `delete_neurons.py` and `add_neurons.py`; both call `resize_layer_output` after ratio math.
@@ -39,9 +39,10 @@ Entry point when a neuron action runs. Local edit first, then a whole-graph fix.
 Idea:
 
 1. snapshot the classifier Linear `out_features` (named `output` / `head` / `fc` / `classifier`, or the Linear that feeds the FX output) so class count cannot drift
-2. replace the target linear with a new module whose output neuron count matches the requested width (`LinearFactory.create_linear_with_rescaled_neurons`, `layer_id`, `new_width`)
-3. run `fix_graph_widths` with `align_add_to=new_width` and the pinned head size
-4. recompile the graph (`gm.recompile()`); connections stay the same, only weights and module sizes change
+2. run ShapeProp once while the graph still forwards (`LayerShapeAnalyser.collect_layer_shapes`, `input_shape` from `TracedModel`) so a spatial flatten has last-dim `C*H*W` in FX meta
+3. replace the target linear with a new module whose output neuron count matches the requested width (`LinearFactory.create_linear_with_rescaled_neurons`, `layer_id`, `new_width`)
+4. run `fix_graph_widths` with `align_add_to=new_width` and the pinned head size. Flatten after adaptive pool to 1 uses live conv channels (`NodeWidthAnalyser._flatten_output_width`), so the sweep does not ShapeProp a half-resized graph
+5. recompile the graph (`gm.recompile()`); connections stay the same, only weights and module sizes change
 
 ---
 
@@ -92,3 +93,5 @@ Chapter DOI 10.1007/978-3-031-63749-0_25 treats width change as a search move. `
 2. `cat`, `view`, and attention blocks are not supported on the width-fix path.
 
 3. Shared modules used at multiple FX sites need `NodeWidthAnalyser.all_sites_match_width` before input rescale.
+
+4. Flatten after a leftover spatial map (`MaxPool2d` that does not reduce to 1x1) has width `C*H*W`. `fix_graph_widths` must not set Linear `in_features` from conv `out_channels` across that flatten. Residual Sequential paths that pool to 1x1 still use conv channel count, which equals the flattened size.
