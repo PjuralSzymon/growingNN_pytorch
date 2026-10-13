@@ -168,3 +168,25 @@ def test_train_generations_runs_back_to_back_with_fresh_cache_each_run():
     # Assert
     assert params_after_first_run == params_before + 20
     assert params_after_second_run == params_before + 40
+
+
+def test_train_generations_records_validation_accuracy_around_each_action():
+    """
+    train_generations should store validation accuracy immediately before and after an executed action.
+    """
+    # Arrange
+    gm = _chain_model()
+    train_loader, val_loader = _linear_loaders()
+    cfg = _grow_only_config(generations=2)
+    cfg.simulation_alg = _deterministic_sim_alg()
+
+    # Act
+    _, summary = train_generations(gm, train_loader, val_loader, cfg)
+
+    # Assert
+    assert summary["action_generation"] == [0]
+    assert summary["action_name"] == ["AddSeqLinearLayer"]
+    assert len(summary["action_val_acc_before"]) == 1
+    assert len(summary["action_val_acc_after"]) == 1
+    assert 0.0 <= summary["action_val_acc_before"][0] <= 1.0
+    assert 0.0 <= summary["action_val_acc_after"][0] <= 1.0

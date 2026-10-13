@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 from typing import Any
 
+import torch
 import torch.fx as fx
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -13,7 +14,7 @@ from growingnn.core.config import RunningConfig
 from growingnn.core.traced_model import TracedModel
 from growingnn.core.logger import logger
 from growingnn.simulation.simulation_set import sample_loaders
-from growingnn.training.gradient_descent import gradient_descent
+from growingnn.training.gradient_descent import _evaluate, gradient_descent
 from growingnn.utils.quaziIdentity import clear_reshepers_cache
 
 
@@ -25,6 +26,7 @@ def train_generations(
     *,
     sim_train_loader: DataLoader | None = None,
     sim_val_loader: DataLoader | None = None,
+    test_loader: DataLoader | None = None,
 ) -> tuple[nn.Module | fx.GraphModule, dict[str, list[Any]]]:
     logger.info("Training generations started")
 
@@ -50,7 +52,14 @@ def train_generations(
         "val_acc": [],
         "lr": [],
         "param_count": [],
+        "action_generation": [],
+        "action_name": [],
+        "action_val_acc_before": [],
+        "action_val_acc_after": [],
     }
+    if test_loader is not None:
+        combined["test_loss"] = []
+        combined["test_acc"] = []
 
     for generation in range(config.generations):
         logger.info("Training generation %s started", generation)
@@ -70,6 +79,9 @@ def train_generations(
             experiment_board=board,
             generation=generation,
             device=config.device,
+            momentum=config.momentum,
+            weight_decay=config.weight_decay,
+            max_grad_norm=config.max_grad_norm,
         )
         val_acc = history["val_acc"][-1]
         generation_val_acc.append(val_acc)
@@ -81,6 +93,19 @@ def train_generations(
         combined["lr"].extend(history["lr"])
         param_count = traced.param_count()
         combined["param_count"].extend([param_count] * len(history["train_loss"]))
+        if test_loader is not None:
+            test_loss, test_acc = _evaluate(
+                traced.gm,
+                test_loader,
+                config.criterion,
+                torch.device(config.device),
+            )
+            combined["test_loss"].append(test_loss)
+            combined["test_acc"].append(test_acc)
+            logger.info(
+                "Generation %s test_acc %.4f test_loss %.4f",
+                generation, test_acc, test_loss,
+            )
 
         if board is not None:
             board.on_generation_end(generation, traced.gm, history, param_count)
@@ -106,9 +131,26 @@ def train_generations(
             if action is None:
                 logger.warning("Generation %s no action executed", generation)
                 continue
+            eval_device = torch.device(config.device)
+            pre_acc = None
+            post_acc = None
+            if config.criterion is not None:
+                _, pre_acc = _evaluate(traced.gm, val_loader, config.criterion, eval_device)
             action.execute(traced)
+            if config.criterion is not None:
+                _, post_acc = _evaluate(traced.gm, val_loader, config.criterion, eval_device)
             config.lr_scheduler.structure_changed()
-            logger.info("Generation %s action executed: %s", generation, action)
+            combined["action_generation"].append(generation)
+            combined["action_name"].append(type(action).__name__)
+            combined["action_val_acc_before"].append(pre_acc)
+            combined["action_val_acc_after"].append(post_acc)
+            if pre_acc is None or post_acc is None:
+                logger.info("Generation %s action executed: %s", generation, type(action).__name__)
+            else:
+                logger.info(
+                    "Generation %s action %s %s -> %s val_acc %.4f -> %.4f",
+                    generation, type(action).__name__, action.params[0], action.params[1], pre_acc, post_acc,
+                )
             if board is not None:
                 board.save_graphs(traced.gm, generation=generation, tag=f"gen_{generation}_simulation")
                 board.note_simulation_graph_saved(generation)
