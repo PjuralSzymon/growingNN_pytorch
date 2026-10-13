@@ -18,7 +18,7 @@ from growingnn.core.config import RunningConfig
 from growingnn.core.logger import logger
 import growingnn.simulation.simulation_algorithms.montecarlo_alg as montecarlo_alg
 from growingnn.simulation.score_functions.simulation_score import SimulationScore
-from growingnn.simulation.simulation_schedulers import AlwaysSimulationScheduler
+from growingnn.simulation.simulation_schedulers import AlwaysSimulationScheduler, SimulationScheduler
 from growingnn.simulation.simulation_set import sample_loaders
 from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler, LearningRateScheduler, ScheduleMode
 from growingnn.training.stoppers import AccuracyStopper
@@ -28,6 +28,13 @@ from growingnn.utils.fx_graph_drawer import draw_filtered_fx_graph, draw_torch_f
 from growingnn.utils.seed import seed_all
 
 METRIC_KEYS = ("train_loss", "train_acc", "val_loss", "val_acc", "lr", "param_count")
+OPTIONAL_METRIC_KEYS = ("test_loss", "test_acc")
+ACTION_HISTORY_KEYS = (
+    "action_generation",
+    "action_name",
+    "action_val_acc_before",
+    "action_val_acc_after",
+)
 Hyperparameters = dict[str, object]
 LoaderSet = tuple[DataLoader, DataLoader, DataLoader]
 BoardMetadata = tuple[str, str]
@@ -46,6 +53,7 @@ class ExperimentDefinition:
     loader_factory: Callable[[Hyperparameters], LoaderSet]
     board_metadata: Callable[[Hyperparameters, str, int], BoardMetadata]
     save_fx_graphs: bool = False
+    test_loader_factory: Callable[[Hyperparameters], DataLoader] | None = None
 
 
 def parse_board_cli(description: str) -> argparse.Namespace:
@@ -87,6 +95,22 @@ def require_cuda(device: torch.device) -> None:
         raise
 
 
+def _resolve_simulation_scheduler_from_hyperparameters(hp: Hyperparameters) -> SimulationScheduler:
+    """
+    Build the simulation scheduler from hp.
+
+    Prefer hp['simulation_scheduler_factory'](hp) when present. Otherwise keep
+    the historical always-on scheduler used by MNIST experiment scripts.
+    """
+    factory = hp.get("simulation_scheduler_factory")
+    if callable(factory):
+        return factory(hp)
+    return AlwaysSimulationScheduler(
+        simulation_time=float(hp["simulation_time"]),
+        simulation_epochs=int(hp["simulation_epochs"]),
+    )
+
+
 def _resolve_learning_rate_scheduler_from_hyperparameters(hp: Hyperparameters):
     """
     Build the run LR scheduler from hp.
@@ -108,16 +132,18 @@ def _running_config(
     board: ExperimentBoard | None,
 ) -> RunningConfig:
     simulation_alg = hp.get("simulation_alg", montecarlo_alg)
-    return RunningConfig(
+    cfg = RunningConfig(
         generations=int(hp["generations"]),
         epochs=int(hp["epochs"]),
         device=device,
         lr_scheduler=_resolve_learning_rate_scheduler_from_hyperparameters(hp),
         simulation_alg=simulation_alg,
-        simulation_scheduler=AlwaysSimulationScheduler(
-            simulation_time=float(hp["simulation_time"]),
-            simulation_epochs=int(hp["simulation_epochs"]),
-        ),
+        simulation_scheduler=_resolve_simulation_scheduler_from_hyperparameters(hp),
+        momentum=float(hp.get("momentum", 0.0)),
+        weight_decay=float(hp.get("weight_decay", 0.0)),
+        max_grad_norm=hp.get("max_grad_norm"),
+        seq_conv_bn_relu=bool(hp.get("seq_conv_bn_relu", False)),
+        seq_conv_before_global_pool=bool(hp.get("seq_conv_before_global_pool", True)),
         stopper=AccuracyStopper(target_accuracy=float(hp["target_accuracy"])),
         simulation_score=SimulationScore(
             weight_acc=float(hp["score_weight_acc"]),
@@ -130,6 +156,19 @@ def _running_config(
         enable_experiment_board=board is not None,
         experiment_board=board,
     )
+    if bool(hp.get("disable_del_neurons", False)) or bool(hp.get("plain_growth", False)):
+        cfg.ACTIONS_ENABLE_DEL_NEURONS_01 = False
+        cfg.ACTIONS_ENABLE_DEL_NEURONS_05 = False
+        cfg.ACTIONS_ENABLE_DEL_NEURONS_09 = False
+    if bool(hp.get("plain_growth", False)):
+        cfg.ACTIONS_ENABLE_DEL_LAYER = False
+        cfg.ACTIONS_ENABLE_ADD_NEURONS_11 = False
+        cfg.ACTIONS_ENABLE_ADD_NEURONS_15 = False
+        cfg.ACTIONS_ENABLE_ADD_NEURONS_20 = False
+        cfg.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_01 = False
+        cfg.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_02 = False
+        cfg.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_05 = False
+    return cfg
 
 
 def _draw_graphs(run_dir: Path, suffix: str, gm: fx.GraphModule) -> None:
@@ -148,8 +187,13 @@ def _save_artifacts(
     summary: dict[str, list[Any]],
 ) -> None:
     history = {key: summary[key] for key in METRIC_KEYS}
+    for key in OPTIONAL_METRIC_KEYS + ACTION_HISTORY_KEYS:
+        if key in summary and summary[key]:
+            history[key] = summary[key]
     torch.save(history, run_dir / history_filename)
     for name, values in history.items():
+        if name in ACTION_HISTORY_KEYS:
+            continue
         fig, ax = plt.subplots(figsize=(6, 4))
         ax.plot(range(1, len(values) + 1), values)
         ax.set_xlabel("step")
@@ -190,6 +234,11 @@ def _train_run(
     )
     config = _running_config(hp, device, board)
     train_loader, val_loader, clean_train_loader = definition.loader_factory(hp)
+    test_loader = (
+        definition.test_loader_factory(hp)
+        if definition.test_loader_factory is not None
+        else None
+    )
     sim_train, sim_val = sample_loaders(
         clean_train_loader,
         val_loader,
@@ -205,6 +254,7 @@ def _train_run(
             config,
             sim_train_loader=sim_train,
             sim_val_loader=sim_val,
+            test_loader=test_loader,
         )
     except Exception:
         if definition.save_fx_graphs:

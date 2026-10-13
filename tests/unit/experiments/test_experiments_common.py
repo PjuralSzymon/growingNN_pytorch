@@ -10,6 +10,10 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from experiments import experiments_common as common
+from growingnn.simulation.simulation_schedulers import (
+    AlwaysSimulationScheduler,
+    NeverSimulationScheduler,
+)
 
 
 def _hyperparameters() -> dict[str, object]:
@@ -169,6 +173,99 @@ def test_running_config_enables_neuron_resize_by_default():
     assert cfg.ACTIONS_ENABLE_DEL_NEURONS_01 is True
     assert cfg.ACTIONS_ENABLE_DEL_NEURONS_05 is True
     assert cfg.ACTIONS_ENABLE_DEL_NEURONS_09 is True
+
+
+def test_running_config_defaults_momentum_weight_decay_and_always_scheduler():
+    """
+    _running_config should keep MNIST defaults: momentum 0, weight decay 0, and always-on search.
+    """
+    # Arrange
+    hp = _hyperparameters()
+
+    # Act
+    cfg = common._running_config(hp, torch.device("cpu"), None)
+
+    # Assert
+    assert cfg.momentum == 0.0
+    assert cfg.weight_decay == 0.0
+    assert isinstance(cfg.simulation_scheduler, AlwaysSimulationScheduler)
+
+
+def test_running_config_reads_optimizer_settings_and_scheduler_factory():
+    """
+    _running_config should copy momentum, weight decay, and a caller-built simulation scheduler.
+    """
+    # Arrange
+    hp = _hyperparameters()
+    hp["momentum"] = 0.9
+    hp["weight_decay"] = 5e-4
+    sentinel = NeverSimulationScheduler()
+    hp["simulation_scheduler_factory"] = lambda _hp: sentinel
+
+    # Act
+    cfg = common._running_config(hp, torch.device("cpu"), None)
+
+    # Assert
+    assert cfg.momentum == 0.9
+    assert cfg.weight_decay == 5e-4
+    assert cfg.simulation_scheduler is sentinel
+
+
+def test_running_config_copies_grad_clip_and_conv_batchnorm():
+    """
+    _running_config should copy a grad-norm cap and the sequential conv BatchNorm-ReLU switch.
+    """
+    # Arrange
+    hp = _hyperparameters()
+    hp["max_grad_norm"] = 1.0
+    hp["seq_conv_bn_relu"] = True
+
+    # Act
+    cfg = common._running_config(hp, torch.device("cpu"), None)
+
+    # Assert
+    assert cfg.max_grad_norm == 1.0
+    assert cfg.seq_conv_bn_relu is True
+
+
+def test_running_config_can_disable_neuron_deletion():
+    """
+    _running_config should turn off neuron deletion when the hyperparameter flag is set.
+    """
+    # Arrange
+    hp = _hyperparameters()
+    hp["disable_del_neurons"] = True
+
+    # Act
+    cfg = common._running_config(hp, torch.device("cpu"), None)
+
+    # Assert
+    assert cfg.ACTIONS_ENABLE_DEL_NEURONS_01 is False
+    assert cfg.ACTIONS_ENABLE_DEL_NEURONS_05 is False
+    assert cfg.ACTIONS_ENABLE_DEL_NEURONS_09 is False
+    assert cfg.ACTIONS_ENABLE_DEL_LAYER is True
+
+
+def test_running_config_plain_growth_keeps_conv_and_linear_adds():
+    """
+    plain_growth should turn off shrink, neuron resize, and dropout, and leave conv and linear adds on.
+    """
+    # Arrange
+    hp = _hyperparameters()
+    hp["plain_growth"] = True
+
+    # Act
+    cfg = common._running_config(hp, torch.device("cpu"), None)
+
+    # Assert
+    assert cfg.ACTIONS_ENABLE_DEL_LAYER is False
+    assert cfg.ACTIONS_ENABLE_DEL_NEURONS_01 is False
+    assert cfg.ACTIONS_ENABLE_ADD_NEURONS_11 is False
+    assert cfg.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_01 is False
+    assert cfg.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER is True
+    assert cfg.ACTIONS_ENABLE_ADD_RES_CONV_LAYER is True
+    assert cfg.ACTIONS_ENABLE_ADD_SEQ_LAYER is True
+    assert cfg.ACTIONS_ENABLE_ADD_RES_LAYER is True
 
 
 def test_draw_graphs_uses_full_and_simplified_names(tmp_path, monkeypatch):
