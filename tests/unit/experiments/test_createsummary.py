@@ -160,6 +160,46 @@ def test_parse_hyperparameters_from_folder_name_supports_legacy_aug_token_withou
     assert parsed["augmentation_factor"] == 0.5
 
 
+def test_build_hyperparameter_folder_name_round_trips_recipe_suffixes():
+    """
+    Folder names should keep momentum, weight decay, scheduler, and LR mode, then parse them back.
+    """
+    # Arrange
+    module = _load_createsummary_module()
+    hyperparameters = _sample_hyperparameters()
+    hyperparameters["momentum"] = 0.9
+    hyperparameters["weight_decay"] = 0.0005
+    hyperparameters["scheduler"] = "slope3"
+    hyperparameters["lr_mode"] = "logistic"
+
+    # Act
+    folder_name = module.build_hyperparameter_folder_name(hyperparameters)
+    parsed = module.parse_hyperparameters_from_folder_name(folder_name)
+
+    # Assert
+    assert parsed == hyperparameters
+
+
+def test_folder_name_marks_plain_growth_and_still_parses():
+    """
+    A plain-growth folder name should end with _pgrow and still parse the numeric hyperparameters.
+    """
+    # Arrange
+    module = _load_createsummary_module()
+    hyperparameters = _sample_hyperparameters()
+    hyperparameters["plain_growth"] = True
+
+    # Act
+    folder_name = module.build_hyperparameter_folder_name(hyperparameters)
+    parsed = module.parse_hyperparameters_from_folder_name(folder_name)
+
+    # Assert
+    assert folder_name.endswith("_pgrow")
+    assert parsed is not None
+    assert parsed["generations"] == hyperparameters["generations"]
+    assert parsed["model_channels"] == hyperparameters["model_channels"]
+
+
 def test_collect_run_results_loads_history_from_seed_folders(tmp_path):
     """
     collect_run_results should scan hyperparameter_folder_name/seed_N folders and load history.
