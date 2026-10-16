@@ -190,3 +190,24 @@ def test_train_generations_records_validation_accuracy_around_each_action():
     assert len(summary["action_val_acc_after"]) == 1
     assert 0.0 <= summary["action_val_acc_before"][0] <= 1.0
     assert 0.0 <= summary["action_val_acc_after"][0] <= 1.0
+
+
+def test_train_generations_records_the_action_endpoints():
+    """
+    train_generations should store the source and destination of an executed action.
+    """
+
+    # Arrange
+    gm = _chain_model()
+    traced = TracedModel.create(gm, (1, 4))
+    expected = AddSeqLinearLayer.generate_all_actions(traced)[0]
+    train_loader, val_loader = _linear_loaders()
+    cfg = _grow_only_config(generations=2)
+    cfg.simulation_alg = _deterministic_sim_alg()
+
+    # Act
+    _, summary = train_generations(gm, train_loader, val_loader, cfg)
+
+    # Assert
+    assert summary["action_from"] == [str(expected.params[0])]
+    assert summary["action_to"] == [str(expected.params[1])]
