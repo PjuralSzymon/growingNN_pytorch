@@ -5,13 +5,18 @@ import pytest
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
+from growingnn.core.config import RunningConfig
+from growingnn.simulation.simulation_schedulers import AlwaysSimulationScheduler
 from experiments.train_cifar10_exp008_generation_only import (
     CHANNELS,
     EPOCHS,
     GENERATIONS,
     HIDDEN,
+    PHASE3_SIMULATION,
     SEEDS,
     CosineDecayScheduler,
+    apply_action_group,
+    apply_simulation_budget,
     history_from_generations,
     parse_args,
     with_cutout,
@@ -29,6 +34,7 @@ def test_parse_args_defaults_to_the_three_experiment_seeds():
     # Assert
     assert args.seeds == SEEDS
     assert args.seeds == (110, 111, 112)
+    assert args.phase == 1
 
 
 def test_parse_args_rejects_a_seed_outside_the_experiment():
@@ -39,6 +45,124 @@ def test_parse_args_rejects_a_seed_outside_the_experiment():
     # Arrange / Act / Assert
     with pytest.raises(ValueError):
         parse_args(["--seeds", "1"])
+
+
+def test_parse_args_phase_two_defaults_to_the_three_action_groups():
+    """
+    Phase 2 should run the all, grow, and seq_res groups on the experiment seeds.
+    """
+
+    # Arrange / Act
+    args = parse_args(["--phase", "2"])
+
+    # Assert
+    assert args.phase == 2
+    assert args.groups == ("all", "grow", "seq_res")
+    assert args.seeds == (110, 111, 112)
+
+
+def test_parse_args_phase_three_defaults_to_the_experiment_seeds():
+    """
+    Phase 3 should train seeds 110, 111, and 112 unless a subset is requested.
+    """
+
+    # Arrange / Act
+    args = parse_args(["--phase", "3"])
+
+    # Assert
+    assert args.phase == 3
+    assert args.seeds == (110, 111, 112)
+
+
+def test_parse_args_phase_three_rejects_an_action_group_list():
+    """
+    Phase 3 should reject --groups because it always uses the all-action list.
+    """
+
+    # Arrange / Act / Assert
+    with pytest.raises(ValueError):
+        parse_args(["--phase", "3", "--groups", "grow"])
+
+
+def test_phase_three_budget_is_one_hundred_seconds_on_the_all_group():
+    """
+    The phase 3 budget should be 100 seconds, 8 epochs, and 2000 images, with every action still enabled.
+    """
+
+    # Arrange
+    cfg = RunningConfig(generations=1, epochs=1)
+    apply_action_group(cfg, "all")
+
+    # Act
+    apply_simulation_budget(cfg, PHASE3_SIMULATION)
+
+    # Assert
+    assert PHASE3_SIMULATION == (100.0, 8, 2000)
+    assert isinstance(cfg.simulation_scheduler, AlwaysSimulationScheduler)
+    assert cfg.simulation_scheduler.simulation_time == 100.0
+    assert cfg.simulation_scheduler.simulation_epochs == 8
+    assert cfg.simulation_set_size == 2000
+    assert cfg.ACTIONS_ENABLE_DEL_LAYER is True
+    assert cfg.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER is True
+
+
+def test_grow_group_keeps_add_neurons_and_turns_delete_off():
+    """
+    The grow group should allow layer adds and neuron adds, and disallow deletes.
+    """
+
+    # Arrange
+    cfg = RunningConfig(generations=1, epochs=1)
+
+    # Act
+    apply_action_group(cfg, "grow")
+
+    # Assert
+    assert cfg.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER is True
+    assert cfg.ACTIONS_ENABLE_ADD_RES_CONV_LAYER is True
+    assert cfg.ACTIONS_ENABLE_ADD_NEURONS_11 is True
+    assert cfg.ACTIONS_ENABLE_DEL_LAYER is False
+    assert cfg.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_01 is False
+
+
+def test_seq_res_group_turns_add_neurons_off():
+    """
+    The seq_res group should allow sequential and residual adds, and disallow neuron adds.
+    """
+
+    # Arrange
+    cfg = RunningConfig(generations=1, epochs=1)
+
+    # Act
+    apply_action_group(cfg, "seq_res")
+
+    # Assert
+    assert cfg.ACTIONS_ENABLE_ADD_SEQ_LAYER is True
+    assert cfg.ACTIONS_ENABLE_ADD_RES_LAYER is True
+    assert cfg.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER is True
+    assert cfg.ACTIONS_ENABLE_ADD_RES_CONV_LAYER is True
+    assert cfg.ACTIONS_ENABLE_ADD_NEURONS_11 is False
+    assert cfg.ACTIONS_ENABLE_DEL_NEURONS_05 is False
+
+
+def test_all_group_enables_delete_and_dropout():
+    """
+    The all group should leave every structure-action flag on.
+    """
+
+    # Arrange
+    cfg = RunningConfig(generations=1, epochs=1)
+    apply_action_group(cfg, "seq_conv")
+
+    # Act
+    apply_action_group(cfg, "all")
+
+    # Assert
+    assert cfg.ACTIONS_ENABLE_DEL_LAYER is True
+    assert cfg.ACTIONS_ENABLE_DEL_NEURONS_09 is True
+    assert cfg.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_05 is True
+    assert cfg.ACTIONS_ENABLE_ADD_NEURONS_20 is True
+    assert cfg.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER is True
 
 
 def test_recipe_is_the_twelve_by_ten_cosine_generation_loop():
