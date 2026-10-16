@@ -9,7 +9,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Subset, random_split
+from torch.utils.data import DataLoader, Dataset, Subset, random_split
 from torchvision import datasets, transforms
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -81,6 +81,59 @@ CIFAR10_MEAN = (0.4914, 0.4822, 0.4465)
 CIFAR10_STD = (0.2023, 0.1994, 0.2010)
 TRAIN_SIZE = 45_000
 VAL_SIZE = 5_000
+_NORM = transforms.Normalize(CIFAR10_MEAN, CIFAR10_STD)
+
+
+def _prepare_batch(images: torch.Tensor, augment: bool) -> torch.Tensor:
+    """Scale a uint8 NCHW CUDA batch. Training batches also get a pad-4 crop and a flip."""
+    batch = images.to(dtype=torch.float32).div_(255)
+    if not augment:
+        return _NORM(batch)
+    batch = F.pad(batch, (4, 4, 4, 4))
+    count, _, height, width = batch.shape
+    top = torch.randint(0, height - 32 + 1, (count,), device=batch.device)
+    left = torch.randint(0, width - 32 + 1, (count,), device=batch.device)
+    rows = top[:, None, None] + torch.arange(32, device=batch.device).view(1, 32, 1)
+    cols = left[:, None, None] + torch.arange(32, device=batch.device).view(1, 1, 32)
+    picked = batch[torch.arange(count, device=batch.device)[:, None, None], :, rows, cols]
+    batch = picked.permute(0, 3, 1, 2).contiguous()
+    flip = torch.rand(count, device=batch.device) < 0.5
+    batch = torch.where(flip[:, None, None, None], batch.flip(-1), batch)
+    return _NORM(batch)
+
+
+class _CudaCIFAR(Dataset):
+    """One CIFAR split stored as uint8 on CUDA."""
+
+    def __init__(self, images: torch.Tensor, labels: torch.Tensor, augment: bool) -> None:
+        self.images = images
+        self.labels = labels
+        self.targets = labels.detach().cpu()
+        self.augment = augment
+
+    def __len__(self) -> int:
+        return int(self.labels.shape[0])
+
+    def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor]:
+        image = _prepare_batch(self.images[index : index + 1], self.augment)
+        return image[0], self.labels[index]
+
+
+class _BatchLoader(DataLoader):
+    """Yield a whole CUDA batch per step instead of cropping one image at a time."""
+
+    def __init__(self, dataset: _CudaCIFAR, batch_size: int, shuffle: bool) -> None:
+        super().__init__(dataset, batch_size=batch_size)
+        self._shuffle = shuffle
+
+    def __iter__(self):
+        data = self.dataset
+        count = len(data)
+        device = data.images.device
+        order = torch.randperm(count, device=device) if self._shuffle else torch.arange(count, device=device)
+        for start in range(0, count, self.batch_size):
+            chosen = order[start : start + self.batch_size]
+            yield _prepare_batch(data.images[chosen], data.augment), data.labels[chosen]
 
 
 class Cifar10Data:
@@ -92,6 +145,7 @@ class Cifar10Data:
         self._datasets: tuple[Subset, Subset, Subset, datasets.CIFAR10] | None = None
         self._loader_cache: dict[int, tuple[DataLoader, DataLoader, DataLoader]] = {}
         self._test_loader_cache: dict[int, DataLoader] = {}
+        self._cuda: dict[str, tuple[torch.Tensor, torch.Tensor]] = {}
 
     @staticmethod
     def _eval_transform() -> transforms.Compose:
@@ -136,12 +190,48 @@ class Cifar10Data:
             len(train), len(val), len(test),
         )
 
+    def _cuda_set(self, dataset: Subset | datasets.CIFAR10, augment: bool) -> _CudaCIFAR | None:
+        """Move one train tensor and one test tensor to CUDA, then return this split."""
+        if not torch.cuda.is_available():
+            return None
+        base = dataset.dataset if isinstance(dataset, Subset) else dataset
+        data = getattr(base, "data", None)
+        targets = getattr(base, "targets", None)
+        if data is None or targets is None or tuple(getattr(data, "shape", ()))[1:] != (32, 32, 3):
+            return None
+        slot = "test" if getattr(base, "train", True) is False else "train"
+        if slot not in self._cuda:
+            images = torch.as_tensor(data).permute(0, 3, 1, 2).contiguous().to(device="cuda", dtype=torch.uint8)
+            labels = torch.as_tensor(targets, dtype=torch.long, device="cuda")
+            self._cuda[slot] = (images, labels)
+            logger.info("CIFAR-10 %s moved to cuda (%s)", slot, images.shape[0])
+        images, labels = self._cuda[slot]
+        if isinstance(dataset, Subset):
+            index = torch.as_tensor(dataset.indices, dtype=torch.long, device="cuda")
+            images, labels = images[index], labels[index]
+        return _CudaCIFAR(images, labels, augment)
+
+    def _loader(self, dataset: Subset | datasets.CIFAR10, batch_size: int, shuffle: bool, augment: bool) -> DataLoader | None:
+        cuda_set = self._cuda_set(dataset, augment)
+        if cuda_set is None:
+            return None
+        return _BatchLoader(cuda_set, batch_size, shuffle)
+
     def loaders(self, batch_size: int) -> tuple[DataLoader, DataLoader, DataLoader]:
         """Return augmented train, held-out val, and clean train. The official test set is excluded."""
         self.prepare()
         if batch_size in self._loader_cache:
             return self._loader_cache[batch_size]
         train, val, train_clean, _test = self._datasets
+        train_loader = self._loader(train, batch_size, True, True)
+        if train_loader is not None:
+            loaders = (
+                train_loader,
+                self._loader(val, batch_size, False, False),
+                self._loader(train_clean, batch_size, False, False),
+            )
+            self._loader_cache[batch_size] = loaders
+            return loaders
         kwargs: dict[str, object] = {"batch_size": batch_size, "num_workers": self._num_workers}
         if self._num_workers > 0:
             kwargs["persistent_workers"] = True
@@ -160,6 +250,10 @@ class Cifar10Data:
         if batch_size in self._test_loader_cache:
             return self._test_loader_cache[batch_size]
         test = self._datasets[3]
+        gpu_test = self._loader(test, batch_size, False, False)
+        if gpu_test is not None:
+            self._test_loader_cache[batch_size] = gpu_test
+            return gpu_test
         pin_memory = torch.cuda.is_available()
         loader = DataLoader(
             test,
