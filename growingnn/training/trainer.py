@@ -54,6 +54,8 @@ def train_generations(
         "param_count": [],
         "action_generation": [],
         "action_name": [],
+        "action_from": [],
+        "action_to": [],
         "action_val_acc_before": [],
         "action_val_acc_after": [],
     }
@@ -140,16 +142,24 @@ def train_generations(
             if config.criterion is not None:
                 _, post_acc = _evaluate(traced.gm, val_loader, config.criterion, eval_device)
             config.lr_scheduler.structure_changed()
+            params = list(getattr(action, "params", []) or [])
+            action_from = params[0] if params else ""
+            action_to = params[1] if len(params) > 1 else ""
             combined["action_generation"].append(generation)
             combined["action_name"].append(type(action).__name__)
+            combined["action_from"].append(str(action_from))
+            combined["action_to"].append(str(action_to))
             combined["action_val_acc_before"].append(pre_acc)
             combined["action_val_acc_after"].append(post_acc)
             if pre_acc is None or post_acc is None:
-                logger.info("Generation %s action executed: %s", generation, type(action).__name__)
+                logger.info(
+                    "Generation %s action executed: %s %s -> %s",
+                    generation, type(action).__name__, action_from, action_to,
+                )
             else:
                 logger.info(
                     "Generation %s action %s %s -> %s val_acc %.4f -> %.4f",
-                    generation, type(action).__name__, action.params[0], action.params[1], pre_acc, post_acc,
+                    generation, type(action).__name__, action_from, action_to, pre_acc, post_acc,
                 )
             if board is not None:
                 board.save_graphs(traced.gm, generation=generation, tag=f"gen_{generation}_simulation")
