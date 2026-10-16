@@ -13,6 +13,14 @@ import torch
 from documentation.website.scripts.generate_experiment_008_charts import (
     experiment_has_finished,
     load_measurement,
+    plot_history,
+    plot_parameters,
+    plot_phase2_group_means,
+    plot_phase2_mode_grid,
+    plot_phase2_official_test,
+    plot_phase2_param_grid,
+    plot_phase3_mode_grid,
+    plot_phase3_parameters,
     write_charts,
 )
 
@@ -100,6 +108,201 @@ def test_write_charts_refuses_before_the_experiment(tmp_path: Path):
     assert refused is True
     assert not out_dir.exists()
     assert not snapshot.exists()
+
+
+def test_plot_parameters_writes_the_parameter_chart(tmp_path: Path):
+    """
+    plot_parameters should write the parameter-count chart when every seed has param_count.
+    """
+
+    # Arrange
+    data = {
+        "runs": [
+            {"seed": seed, "param_count": [10, 20]}
+            for seed in (110, 111, 112)
+        ],
+    }
+
+    # Act
+    plot_parameters(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-parameters.png").is_file()
+
+
+def test_plot_history_writes_one_row_for_train_test_and_validation(tmp_path: Path):
+    """
+    plot_history should write phase 1 train, official test, and validation as one row.
+    """
+
+    # Arrange
+    data = {
+        "runs": [
+            {
+                "seed": seed,
+                "train": [0.3, 0.8],
+                "val": [0.4, 0.7],
+                "test": [0.5, 0.75],
+                "test_epoch": [10, 20],
+            }
+            for seed in (110, 111, 112)
+        ]
+    }
+
+    # Act
+    plot_history(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-history.png").is_file()
+
+
+def test_plot_phase2_group_means_writes_the_four_group_chart(tmp_path: Path):
+    """
+    plot_phase2_group_means should write one chart of mean final accuracy for all four groups.
+    """
+
+    # Arrange
+    def rows(test: float) -> list[dict[str, object]]:
+        return [
+            {"final_train": 0.9, "final_val": 0.8, "final_test": test, "train": [0.9], "val": [0.8], "test": [test]}
+            for _seed in (110, 111, 112)
+        ]
+
+    data = {
+        "runs": rows(0.91),
+        "phase2_all": rows(0.85),
+        "phase2_grow": rows(0.86),
+        "phase2_seq_res": rows(0.83),
+    }
+
+    # Act
+    plot_phase2_group_means(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase2-group-means.png").is_file()
+
+
+def test_plot_phase2_mode_grid_writes_four_by_three_accuracy_panels(tmp_path: Path):
+    """
+    plot_phase2_mode_grid should write one panel per action group and accuracy.
+    """
+
+    # Arrange
+    rows = [
+        {
+            "seed": seed,
+            "train": [0.3, 0.8],
+            "val": [0.4, 0.7],
+            "test": [0.5, 0.75],
+            "test_epoch": [10, 20],
+        }
+        for seed in (110, 111, 112)
+    ]
+    data = {
+        "runs": rows,
+        "phase2_all": rows,
+        "phase2_grow": rows,
+        "phase2_seq_res": rows,
+    }
+
+    # Act
+    plot_phase2_mode_grid(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase2-mode-grid.png").is_file()
+
+
+def test_plot_phase2_param_grid_writes_one_panel_per_action_group(tmp_path: Path):
+    """
+    plot_phase2_param_grid should write one parameter-count panel for each of the four groups.
+    """
+
+    # Arrange
+    rows = [
+        {"seed": seed, "param_count": [187008, 187008 + seed]}
+        for seed in (110, 111, 112)
+    ]
+    data = {
+        "runs": rows,
+        "phase2_all": rows,
+        "phase2_grow": rows,
+        "phase2_seq_res": rows,
+    }
+
+    # Act
+    plot_phase2_param_grid(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase2-param-grid.png").is_file()
+
+
+def test_plot_phase2_official_test_writes_the_comparison_chart(tmp_path: Path):
+    """
+    plot_phase2_official_test should write the phase 1 versus all-group chart when phase2_all is present.
+    """
+
+    # Arrange
+    data = {
+        "runs": [
+            {"seed": seed, "test": [0.5, 0.9], "test_epoch": [10, 20]}
+            for seed in (110, 111, 112)
+        ],
+        "phase2_all": [
+            {"seed": seed, "test": [0.4, 0.8], "test_epoch": [10, 20]}
+            for seed in (110, 111, 112)
+        ],
+    }
+
+    # Act
+    plot_phase2_official_test(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase2-official-test.png").is_file()
+
+
+def test_plot_phase3_mode_grid_writes_three_budgets_by_three_accuracies(tmp_path: Path):
+    """
+    plot_phase3_mode_grid should write train, official test, and validation for each saved budget.
+    """
+
+    # Arrange
+    rows = [
+        {
+            "seed": seed,
+            "train": [0.3, 0.8],
+            "val": [0.4, 0.7],
+            "test": [0.5, 0.9],
+            "test_epoch": [10, 20],
+        }
+        for seed in (110, 111, 112)
+    ]
+    data = {"runs": rows, "phase2_all": rows, "phase3_all": rows}
+
+    # Act
+    plot_phase3_mode_grid(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase3-mode-grid.png").is_file()
+
+
+def test_plot_phase3_parameters_writes_the_long_all_count(tmp_path: Path):
+    """
+    plot_phase3_parameters should write the long all-group parameter count when those rows exist.
+    """
+
+    # Arrange
+    data = {
+        "phase3_all": [
+            {"seed": seed, "param_count": [187008, 200000 + seed]}
+            for seed in (110, 111, 112)
+        ]
+    }
+
+    # Act
+    plot_phase3_parameters(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase3-parameters.png").is_file()
 
 
 def test_write_charts_falls_back_to_snapshot(tmp_path: Path):
