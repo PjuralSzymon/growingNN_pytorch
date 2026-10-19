@@ -498,6 +498,45 @@ def plot_phase3_mode_grid(data: dict[str, object], out_dir: Path) -> None:
     )
 
 
+def plot_phase4_mode_grid(data: dict[str, object], out_dir: Path) -> None:
+    """Only convolution and the finished 1-epoch phase 4 grade, with three accuracy columns."""
+    rows = data.get("phase4_epochs_1")
+    if not rows or not data.get("runs"):
+        return
+    _plot_accuracy_grid(
+        (
+            ("Only convolution", data.get("runs")),
+            ("1 epoch", rows),
+        ),
+        out_dir / "008-phase4-mode-grid.png",
+    )
+
+
+def plot_phase4_parameters(data: dict[str, object], out_dir: Path) -> None:
+    """Parameter count for the phase 4 one-epoch grade. Each seed has its own list."""
+    rows = data.get("phase4_epochs_1")
+    if not rows or any("param_count" not in row for row in rows):
+        return
+    fig, ax = plt.subplots(figsize=(8.4, 3.8), dpi=140)
+    for row in rows:
+        epochs = list(range(1, len(row["param_count"]) + 1))
+        ax.plot(
+            epochs,
+            [int(value) for value in row["param_count"]],
+            color=SEED_COLORS[int(row["seed"])],
+            linewidth=1.6,
+            label=f"Seed {row['seed']}",
+        )
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel("Parameter count")
+    ax.set_title("Parameter count, 1 simulation epoch")
+    ax.legend(frameon=False, fontsize=8)
+    ax.grid(True, axis="y", color="#e2e8f0")
+    fig.tight_layout()
+    fig.savefig(out_dir / "008-phase4-parameters.png")
+    plt.close(fig)
+
+
 def plot_phase3_parameters(data: dict[str, object], out_dir: Path) -> None:
     """Parameter count for the phase 3 long all group. Each seed has its own list."""
     rows = data.get("phase3_all")
@@ -544,6 +583,11 @@ def write_charts(
     phase3_rows = _saved_group(phase3_dir / "all")
     if phase3_rows:
         data["phase3_all"] = phase3_rows
+    phase4_dir = run_dir.parent / "exp008_generation_only_phase4"
+    for sim_epochs in (1, 2, 4):
+        rows = _saved_group(phase4_dir / f"epochs_{sim_epochs}")
+        if len(rows) == len(SEEDS):
+            data[f"phase4_epochs_{sim_epochs}"] = rows
     out_dir.mkdir(parents=True, exist_ok=True)
     if experiment_has_finished(run_dir):
         snapshot_path.parent.mkdir(parents=True, exist_ok=True)
@@ -560,6 +604,8 @@ def write_charts(
     plot_phase2_param_grid(data, out_dir)
     plot_phase3_mode_grid(data, out_dir)
     plot_phase3_parameters(data, out_dir)
+    plot_phase4_mode_grid(data, out_dir)
+    plot_phase4_parameters(data, out_dir)
 
 
 if __name__ == "__main__":

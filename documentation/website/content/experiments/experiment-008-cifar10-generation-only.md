@@ -1,11 +1,13 @@
 # Experiment 008: CIFAR-10 generation loop without a finish stage
 
-This page has four sections, in this order.
+This page has six sections, in this order.
 
 1. [Improvements that make CIFAR-10 work in the growing algorithm](#improvements-that-make-cifar-10-work-in-the-growing-algorithm). How the recipe worked before, and how it works now.
 2. [Phase 1: sequential convolution only](#phase-1-sequential-convolution-only). The finished run that allows only `AddSeqConvLayer`. Last official test is `91.11%`, `91.17%`, and `91.36%`. The mean is `91.21%`.
 3. [Phase 2: which actions search can choose](#phase-2-which-actions-search-can-choose). The same recipe with three action lists. Last-official-test means are `85.68%` for `all`, `86.21%` for `grow`, and `83.68%` for `seq_res`.
 4. [Phase 3: how long search looks](#phase-3-how-long-search-looks). The all-action list with a `100` second simulation. Last official test is `88.45%`, `85.04%`, and `89.35%`. The mean is `87.61%`.
+5. [Phase 4: full augmented grade](#phase-4-full-augmented-grade). Search grades every action on all `45,000` augmented training images. Only the `1` epoch grade finished. Last official test is `88.58%`, `88.15%`, and `87.57%`. The mean is `88.10%`. The `2` epoch and `4` epoch grades have no `history.pt`, because that amount of data took too much time.
+6. [Phase 5: first 5,000 clean images](#phase-5-first-5000-clean-images). The same epoch comparison on the first `5,000` clean training images. This phase has no saved `history.pt`.
 
 Script: `experiments/train_cifar10_exp008_generation_only.py`
 
@@ -14,6 +16,10 @@ Phase 1 output: `experiments/output/train_cifar10/runs/exp008_generation_only`
 Phase 2 output: `experiments/output/train_cifar10/runs/exp008_generation_only_phase2`
 
 Phase 3 output: `experiments/output/train_cifar10/runs/exp008_generation_only_phase3`
+
+Phase 4 output: `experiments/output/train_cifar10/runs/exp008_generation_only_phase4`
+
+Phase 5 output: `experiments/output/train_cifar10/runs/exp008_generation_only_phase5`
 
 Charts: `documentation/website/scripts/generate_experiment_008_charts.py`
 
@@ -568,3 +574,35 @@ The `history.pt` save times, from the filesystem, are `2026-10-16 00:09` for see
 The longer all-action simulation does not reach the only convolution official-test mean of `91.21%`. Its mean is `87.61%`. That is `1.93` percentage points above the short all mean of `85.68%`, and the gain is not on every seed. Seed `111` is `5.36` percentage points below its own short-all result.
 
 The three long seeds do not execute the same actions. Two early actions match on seeds `111` and `112`. None match on all three seeds. The saved long actions include delete-neurons and dropout, and they include no residual linear add.
+
+## Phase 4: full augmented grade
+
+Phase 4 grades every legal action on the full training set. The simulation training set is all `45,000` augmented images. The simulation validation set is all `5,000` validation images. The compared simulation epoch counts are `1`, `2`, and `4`. Simulation time is `300` seconds. Extra actions inside the score are `0`.
+
+This amount of data is too much. Each search trains every legal action for the full simulation-epoch count. A seed writes `history.pt` only when its `12` generations finish. The `2` epoch and `4` epoch grades have no `history.pt`. Those runs were not finished because the `45,000` image grade took too much time.
+
+The `1` epoch grade did finish, for seeds `110`, `111`, and `112`. The files are `experiments/output/train_cifar10/runs/exp008_generation_only_phase4/epochs_1/seed_<seed>/history.pt`. Each file stores `simulation_epochs` `1`, `simulation_set_size` `45000`, and `simulation_augmented` true. The filesystem save times are `2026-10-16 23:11` for seed `110`, `2026-10-17 11:45` for seed `111`, and `2026-10-17 13:44` for seed `112`.
+
+| Seed | Last train | Last validation | Last official test |
+| --- | ---: | ---: | ---: |
+| `110` | `90.94%` | `88.48%` | `88.58%` |
+| `111` | `91.62%` | `88.48%` | `88.15%` |
+| `112` | `90.55%` | `87.68%` | `87.57%` |
+| Mean | `91.04%` | `88.21%` | `88.10%` |
+
+The finished mean official test is `88.10%`. The phase 1 only-convolution mean is `91.21%`. The `1` epoch grade is `3.11` percentage points below that mean. The `2` epoch and `4` epoch grades are not part of this comparison.
+
+## Phase 5: first 5,000 clean images
+
+Phase 5 asks the same epoch comparison on a smaller simulation training set. `prefix_clean_loader` keeps the first `5,000` images of the clean training loader. That slice has no crop, flip, or cutout. The grade still uses all `5,000` validation images. Simulation epochs stay `1`, `2`, and `4`. Simulation time stays `300` seconds. Extra actions inside the score stay `0`.
+
+| Setting | Phase 4 | Phase 5 |
+| --- | --- | --- |
+| Simulation training images | `45,000`, augmented | `5,000`, clean, the first `5,000` |
+| Simulation validation images | `5,000` | same |
+| Simulation epochs | `1`, `2`, `4` | same |
+| Simulation time | `300` seconds | same |
+| Extra actions inside the score | `0` | same |
+| Output | `exp008_generation_only_phase4/epochs_<N>/seed_<seed>` | `exp008_generation_only_phase5/epochs_<N>/seed_<seed>` |
+
+Phase 5 has no saved `history.pt`. A seed writes that file only when its `12` generations finish. Start it with `--phase 5`.
