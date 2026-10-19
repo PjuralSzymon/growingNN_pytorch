@@ -23,6 +23,8 @@ from documentation.website.scripts.generate_experiment_008_charts import (
     plot_phase3_parameters,
     plot_phase4_mode_grid,
     plot_phase4_parameters,
+    plot_phase5_mode_grid,
+    plot_phase5_parameters,
     write_charts,
 )
 
@@ -350,6 +352,51 @@ def test_plot_phase4_parameters_writes_the_one_epoch_count(tmp_path: Path):
 
     # Assert
     assert (tmp_path / "008-phase4-parameters.png").is_file()
+
+
+def test_plot_phase5_mode_grid_writes_three_grades_by_three_accuracies(tmp_path: Path):
+    """
+    plot_phase5_mode_grid should write train, official test, and validation for the 5,000-image grade.
+    """
+
+    # Arrange
+    rows = [
+        {
+            "seed": seed,
+            "train": [0.3, 0.8],
+            "val": [0.4, 0.7],
+            "test": [0.5, 0.9],
+            "test_epoch": [10, 20],
+        }
+        for seed in (110, 111, 112)
+    ]
+    data = {"runs": rows, "phase4_epochs_1": rows, "phase5_epochs_1": rows}
+
+    # Act
+    plot_phase5_mode_grid(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase5-mode-grid.png").is_file()
+
+
+def test_plot_phase5_parameters_writes_the_clean_prefix_count(tmp_path: Path):
+    """
+    plot_phase5_parameters should write the 5,000-image parameter count when those rows exist.
+    """
+
+    # Arrange
+    data = {
+        "phase5_epochs_1": [
+            {"seed": seed, "param_count": [187008, 200000 + seed]}
+            for seed in (110, 111, 112)
+        ]
+    }
+
+    # Act
+    plot_phase5_parameters(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase5-parameters.png").is_file()
 
 
 def test_write_charts_falls_back_to_snapshot(tmp_path: Path):
