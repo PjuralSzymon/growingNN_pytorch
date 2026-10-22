@@ -20,6 +20,10 @@ from experiments.train_cifar10_exp008_generation_only import (
     PHASE5_CLEAN_PREFIX,
     PHASE5_ROLLOUT_DEPTH,
     PHASE5_SIMULATIONS,
+    PHASE6_EPOCHS,
+    PHASE6_ROLLOUT_DEPTH,
+    PHASE6_SIMULATIONS,
+    PHASE6_SIZES,
     SEEDS,
     CosineDecayScheduler,
     apply_action_group,
@@ -164,9 +168,9 @@ def test_parse_args_phase_five_rejects_an_action_group_list():
         parse_args(["--phase", "5", "--groups", "grow"])
 
 
-def test_phase_five_compares_one_two_and_four_epochs_on_the_clean_prefix():
+def test_phase_five_compares_epochs_one_through_seven_on_the_clean_prefix():
     """
-    Phase 5 should score every action for 1, 2, and 4 epochs on the first 5,000 clean images.
+    Phase 5 should score every action for 1, 2, 4, 5, 6, and 7 epochs on the first 5,000 clean images.
     """
 
     # Arrange
@@ -179,11 +183,65 @@ def test_phase_five_compares_one_two_and_four_epochs_on_the_clean_prefix():
 
     # Assert
     assert PHASE5_CLEAN_PREFIX == 5000
-    assert PHASE5_SIMULATIONS == ((300.0, 1, 5000), (300.0, 2, 5000), (300.0, 4, 5000))
+    assert PHASE5_SIMULATIONS == (
+        (300.0, 1, 5000),
+        (300.0, 2, 5000),
+        (300.0, 4, 5000),
+        (300.0, 5, 5000),
+        (300.0, 6, 5000),
+        (300.0, 7, 5000),
+    )
     assert PHASE5_ROLLOUT_DEPTH == 0
     assert cfg.simulation_scheduler.simulation_time == 300.0
-    assert cfg.simulation_scheduler.simulation_epochs == 4
+    assert cfg.simulation_scheduler.simulation_epochs == 7
     assert cfg.simulation_set_size == 5000
+
+
+def test_parse_args_phase_six_defaults_to_the_experiment_seeds():
+    """
+    Phase 6 should train seeds 110, 111, and 112 unless a subset is requested.
+    """
+
+    # Arrange / Act
+    args = parse_args(["--phase", "6"])
+
+    # Assert
+    assert args.phase == 6
+    assert args.seeds == (110, 111, 112)
+
+
+def test_parse_args_phase_six_rejects_an_action_group_list():
+    """
+    Phase 6 should reject --groups because it always uses the all-action list.
+    """
+
+    # Arrange / Act / Assert
+    with pytest.raises(ValueError):
+        parse_args(["--phase", "6", "--groups", "grow"])
+
+
+def test_phase_six_halves_the_clean_prefix_six_times_at_four_epochs():
+    """
+    Phase 6 should score every action for 4 epochs on clean prefixes 5000, 2500, 1250, 625, 312, 156, and 78.
+    """
+
+    # Arrange
+    cfg = RunningConfig(generations=1, epochs=1)
+    apply_action_group(cfg, "all")
+
+    # Act
+    for simulation in PHASE6_SIMULATIONS:
+        apply_simulation_budget(cfg, simulation)
+
+    # Assert
+    assert PHASE6_EPOCHS == 4
+    assert PHASE6_SIZES == (5000, 2500, 1250, 625, 312, 156, 78)
+    assert tuple(size // 2 for size in PHASE6_SIZES[:-1]) == PHASE6_SIZES[1:]
+    assert PHASE6_SIMULATIONS == tuple((300.0, 4, size) for size in PHASE6_SIZES)
+    assert PHASE6_ROLLOUT_DEPTH == 0
+    assert cfg.simulation_scheduler.simulation_time == 300.0
+    assert cfg.simulation_scheduler.simulation_epochs == 4
+    assert cfg.simulation_set_size == 78
 
 
 def test_prefix_clean_loader_keeps_the_first_cuda_images_without_augmentation():

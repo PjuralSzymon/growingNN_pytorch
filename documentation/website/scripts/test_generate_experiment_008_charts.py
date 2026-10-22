@@ -23,8 +23,13 @@ from documentation.website.scripts.generate_experiment_008_charts import (
     plot_phase3_parameters,
     plot_phase4_mode_grid,
     plot_phase4_parameters,
+    plot_phase5_action_counts,
+    plot_phase5_epoch_grid,
     plot_phase5_mode_grid,
     plot_phase5_parameters,
+    plot_phase6_action_counts,
+    plot_phase6_epoch_grid,
+    plot_phase6_parameters,
     write_charts,
 )
 
@@ -379,6 +384,54 @@ def test_plot_phase5_mode_grid_writes_three_grades_by_three_accuracies(tmp_path:
     assert (tmp_path / "008-phase5-mode-grid.png").is_file()
 
 
+def test_plot_phase5_epoch_grid_writes_each_saved_simulation_length(tmp_path: Path):
+    """
+    plot_phase5_epoch_grid should write train, official test, and validation for each saved grade.
+    """
+
+    # Arrange
+    rows = [
+        {
+            "seed": seed,
+            "train": [0.3, 0.8],
+            "val": [0.4, 0.7],
+            "test": [0.5, 0.9],
+            "test_epoch": [10, 20],
+        }
+        for seed in (110, 111, 112)
+    ]
+    data = {"phase5_epochs_1": rows, "phase5_epochs_2": rows, "phase5_epochs_4": rows}
+
+    # Act
+    plot_phase5_epoch_grid(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase5-epoch-grid.png").is_file()
+
+
+def test_plot_phase5_action_counts_writes_one_bar_group_per_action(tmp_path: Path):
+    """
+    plot_phase5_action_counts should write the chosen-action counts when each seed stored actions.
+    """
+
+    # Arrange
+    data = {
+        "phase5_epochs_1": [
+            {
+                "seed": seed,
+                "actions": [{"name": "AddSeqConvLayer"}, {"name": "DelNeurons"}],
+            }
+            for seed in (110, 111, 112)
+        ]
+    }
+
+    # Act
+    plot_phase5_action_counts(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase5-action-counts.png").is_file()
+
+
 def test_plot_phase5_parameters_writes_the_clean_prefix_count(tmp_path: Path):
     """
     plot_phase5_parameters should write the 5,000-image parameter count when those rows exist.
@@ -397,6 +450,74 @@ def test_plot_phase5_parameters_writes_the_clean_prefix_count(tmp_path: Path):
 
     # Assert
     assert (tmp_path / "008-phase5-parameters.png").is_file()
+
+
+def test_plot_phase6_epoch_grid_writes_each_saved_prefix_size(tmp_path: Path):
+    """
+    plot_phase6_epoch_grid should write train, official test, and validation for each saved prefix size.
+    """
+
+    # Arrange
+    rows = [
+        {
+            "seed": seed,
+            "train": [0.3, 0.8],
+            "val": [0.4, 0.7],
+            "test": [0.5, 0.9],
+            "test_epoch": [10, 20],
+        }
+        for seed in (110, 111, 112)
+    ]
+    data = {"phase6_size_5000": rows, "phase6_size_2500": rows}
+
+    # Act
+    plot_phase6_epoch_grid(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase6-epoch-grid.png").is_file()
+
+
+def test_plot_phase6_action_counts_writes_one_bar_group_per_action(tmp_path: Path):
+    """
+    plot_phase6_action_counts should write the chosen-action counts when each seed stored actions.
+    """
+
+    # Arrange
+    data = {
+        "phase6_size_5000": [
+            {
+                "seed": seed,
+                "actions": [{"name": "AddSeqConvLayer"}, {"name": "DelNeurons"}],
+            }
+            for seed in (110, 111, 112)
+        ]
+    }
+
+    # Act
+    plot_phase6_action_counts(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase6-action-counts.png").is_file()
+
+
+def test_plot_phase6_parameters_writes_the_prefix_count(tmp_path: Path):
+    """
+    plot_phase6_parameters should write the parameter count when a finished prefix size exists.
+    """
+
+    # Arrange
+    data = {
+        "phase6_size_2500": [
+            {"seed": seed, "param_count": [187008, 200000 + seed]}
+            for seed in (110, 111, 112)
+        ]
+    }
+
+    # Act
+    plot_phase6_parameters(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase6-parameters.png").is_file()
 
 
 def test_write_charts_falls_back_to_snapshot(tmp_path: Path):

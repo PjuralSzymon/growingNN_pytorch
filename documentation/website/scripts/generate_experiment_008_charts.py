@@ -528,29 +528,183 @@ def plot_phase5_mode_grid(data: dict[str, object], out_dir: Path) -> None:
     )
 
 
-def plot_phase5_parameters(data: dict[str, object], out_dir: Path) -> None:
-    """Parameter count for the phase 5 one-epoch grade. Each seed has its own list."""
-    rows = data.get("phase5_epochs_1")
-    if not rows or any("param_count" not in row for row in rows):
+_ACTION_LABELS = {
+    "AddSeqConvLayer": "Seq conv",
+    "AddResConvLayer": "Res conv",
+    "AddSeqLinearLayer": "Seq linear",
+    "AddResLinearLayer": "Res linear",
+    "AddNeurons": "Add neurons",
+    "DelNeurons": "Delete neurons",
+    "AddSeqDropoutLayer": "Dropout",
+    "DelLayer": "Delete layer",
+}
+
+
+def _labeled_grades(
+    data: dict[str, object],
+    keys: tuple[tuple[str, str], ...],
+    required: str,
+) -> list[tuple[str, list[dict[str, object]]]]:
+    """Saved grades that contain one field, in the given order."""
+    grades = []
+    for key, label in keys:
+        rows = data.get(key)
+        if rows and all(required in row for row in rows):
+            grades.append((label, list(rows)))
+    return grades
+
+
+def _phase5_grades(data: dict[str, object], required: str) -> list[tuple[str, list[dict[str, object]]]]:
+    """Saved phase 5 grades that contain one field, in simulation-epoch order."""
+    keys = tuple(
+        (f"phase5_epochs_{epochs}", "1 epoch" if epochs == 1 else f"{epochs} epochs")
+        for epochs in (1, 2, 4, 5, 6, 7)
+    )
+    return _labeled_grades(data, keys, required)
+
+
+def _phase6_grades(data: dict[str, object], required: str) -> list[tuple[str, list[dict[str, object]]]]:
+    """Saved phase 6 grades that contain one field, from the largest clean prefix down."""
+    keys = tuple(
+        (f"phase6_size_{size}", f"{size:,} images")
+        for size in (5000, 2500, 1250, 625, 312, 156, 78)
+    )
+    return _labeled_grades(data, keys, required)
+
+
+def plot_phase5_epoch_grid(data: dict[str, object], out_dir: Path) -> None:
+    """Train, official test, and validation for each saved phase 5 simulation length."""
+    grades = _phase5_grades(data, "test")
+    if not grades:
         return
-    fig, ax = plt.subplots(figsize=(8.4, 3.8), dpi=140)
-    for row in rows:
-        epochs = list(range(1, len(row["param_count"]) + 1))
-        ax.plot(
-            epochs,
-            [int(value) for value in row["param_count"]],
-            color=SEED_COLORS[int(row["seed"])],
-            linewidth=1.6,
-            label=f"Seed {row['seed']}",
-        )
-    ax.set_xlabel("Epoch")
-    ax.set_ylabel("Parameter count")
-    ax.set_title("Parameter count, 5,000 clean images")
-    ax.legend(frameon=False, fontsize=8)
-    ax.grid(True, axis="y", color="#e2e8f0")
+    _plot_accuracy_grid(tuple(grades), out_dir / "008-phase5-epoch-grid.png")
+
+
+def plot_phase6_epoch_grid(data: dict[str, object], out_dir: Path) -> None:
+    """Train, official test, and validation for each saved phase 6 clean-prefix size."""
+    grades = _phase6_grades(data, "test")
+    if not grades:
+        return
+    _plot_accuracy_grid(tuple(grades), out_dir / "008-phase6-epoch-grid.png")
+
+
+def _plot_action_counts(grades: list[tuple[str, list[dict[str, object]]]], out_path: Path) -> None:
+    """One panel per grade. Each bar group is one executed action type."""
+    tallies: list[list[dict[str, int]]] = []
+    seen: list[str] = []
+    for _label, rows in grades:
+        grade_counts: list[dict[str, int]] = []
+        for row in rows:
+            tally: dict[str, int] = {}
+            for action in row["actions"]:
+                name = str(action["name"])
+                tally[name] = tally.get(name, 0) + 1
+                if name not in seen:
+                    seen.append(name)
+            grade_counts.append(tally)
+        tallies.append(grade_counts)
+    order = sorted(seen, key=lambda name: (-sum(tally.get(name, 0) for grade in tallies for tally in grade), name))
+    if not order:
+        return
+    labels = [_ACTION_LABELS.get(name, name) for name in order]
+    ncols = 3 if len(grades) > 3 else len(grades)
+    nrows = (len(grades) + ncols - 1) // ncols
+    fig, axes = plt.subplots(
+        nrows,
+        ncols,
+        figsize=(4.2 * ncols + 0.4, 3.5 * nrows + 0.3),
+        dpi=140,
+        sharey=True,
+        squeeze=False,
+    )
+    flat = list(axes.ravel())
+    centers = list(range(len(order)))
+    width = 0.24
+    for ax, (label, rows), grade_counts in zip(flat, grades, tallies):
+        for index, (row, tally) in enumerate(zip(rows, grade_counts)):
+            offset = (index - 1) * width
+            ax.bar(
+                [center + offset for center in centers],
+                [tally.get(name, 0) for name in order],
+                width=width,
+                color=SEED_COLORS[int(row["seed"])],
+                label=f"Seed {row['seed']}",
+            )
+        ax.set_xticks(centers)
+        ax.set_xticklabels(labels, rotation=25, ha="right")
+        ax.set_title(label)
+        ax.set_ylim(0, 11)
+        ax.grid(True, axis="y", color="#e2e8f0")
+    for ax in flat[len(grades):]:
+        ax.axis("off")
+    flat[0].set_ylabel("Times chosen")
+    flat[0].legend(frameon=False, fontsize=7)
     fig.tight_layout()
-    fig.savefig(out_dir / "008-phase5-parameters.png")
+    fig.savefig(out_path)
     plt.close(fig)
+
+
+def plot_phase5_action_counts(data: dict[str, object], out_dir: Path) -> None:
+    """How many times each seed chose each action type, one panel per saved grade."""
+    grades = _phase5_grades(data, "actions")
+    if grades:
+        _plot_action_counts(grades, out_dir / "008-phase5-action-counts.png")
+
+
+def plot_phase6_action_counts(data: dict[str, object], out_dir: Path) -> None:
+    """How many times each seed chose each action type, one panel per saved prefix size."""
+    grades = _phase6_grades(data, "actions")
+    if grades:
+        _plot_action_counts(grades, out_dir / "008-phase6-action-counts.png")
+
+
+def _plot_parameter_grades(grades: list[tuple[str, list[dict[str, object]]]], out_path: Path) -> None:
+    """Parameter count for each grade. Each seed has its own line."""
+    ncols = 3 if len(grades) > 3 else len(grades)
+    nrows = (len(grades) + ncols - 1) // ncols
+    fig, axes = plt.subplots(
+        nrows,
+        ncols,
+        figsize=(4.0 * ncols + 0.4, 3.2 * nrows + 0.3),
+        dpi=140,
+        sharey=True,
+        squeeze=False,
+    )
+    flat = list(axes.ravel())
+    for ax, (label, rows) in zip(flat, grades):
+        for row in rows:
+            epochs = list(range(1, len(row["param_count"]) + 1))
+            ax.plot(
+                epochs,
+                [int(value) for value in row["param_count"]],
+                color=SEED_COLORS[int(row["seed"])],
+                linewidth=1.6,
+                label=f"Seed {row['seed']}",
+            )
+        ax.set_title(label)
+        ax.set_xlabel("Epoch")
+        ax.grid(True, axis="y", color="#e2e8f0")
+    for ax in flat[len(grades):]:
+        ax.axis("off")
+    flat[0].set_ylabel("Parameter count")
+    flat[0].legend(frameon=False, fontsize=7)
+    fig.tight_layout()
+    fig.savefig(out_path)
+    plt.close(fig)
+
+
+def plot_phase5_parameters(data: dict[str, object], out_dir: Path) -> None:
+    """Parameter count for each saved phase 5 grade. Each seed has its own line."""
+    grades = _phase5_grades(data, "param_count")
+    if grades:
+        _plot_parameter_grades(grades, out_dir / "008-phase5-parameters.png")
+
+
+def plot_phase6_parameters(data: dict[str, object], out_dir: Path) -> None:
+    """Parameter count for each saved phase 6 grade. Each seed has its own line."""
+    grades = _phase6_grades(data, "param_count")
+    if grades:
+        _plot_parameter_grades(grades, out_dir / "008-phase6-parameters.png")
 
 
 def plot_phase4_parameters(data: dict[str, object], out_dir: Path) -> None:
@@ -630,9 +784,15 @@ def write_charts(
         rows = _saved_group(phase4_dir / f"epochs_{sim_epochs}")
         if len(rows) == len(SEEDS):
             data[f"phase4_epochs_{sim_epochs}"] = rows
+    for sim_epochs in (1, 2, 4, 5, 6, 7):
         rows = _saved_group(phase5_dir / f"epochs_{sim_epochs}")
         if len(rows) == len(SEEDS):
             data[f"phase5_epochs_{sim_epochs}"] = rows
+    phase6_dir = run_dir.parent / "exp008_generation_only_phase6"
+    for size in (5000, 2500, 1250, 625, 312, 156, 78):
+        rows = _saved_group(phase6_dir / f"size_{size}")
+        if len(rows) == len(SEEDS):
+            data[f"phase6_size_{size}"] = rows
     out_dir.mkdir(parents=True, exist_ok=True)
     if experiment_has_finished(run_dir):
         snapshot_path.parent.mkdir(parents=True, exist_ok=True)
@@ -652,7 +812,12 @@ def write_charts(
     plot_phase4_mode_grid(data, out_dir)
     plot_phase4_parameters(data, out_dir)
     plot_phase5_mode_grid(data, out_dir)
+    plot_phase5_epoch_grid(data, out_dir)
+    plot_phase5_action_counts(data, out_dir)
     plot_phase5_parameters(data, out_dir)
+    plot_phase6_epoch_grid(data, out_dir)
+    plot_phase6_action_counts(data, out_dir)
+    plot_phase6_parameters(data, out_dir)
 
 
 if __name__ == "__main__":

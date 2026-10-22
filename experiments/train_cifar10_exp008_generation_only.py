@@ -34,11 +34,19 @@ actions. Seeds are 110, 111, and 112.
 
     pipenv run python -u experiments/train_cifar10_exp008_generation_only.py --phase 4
 
-Phase 5 keeps the phase 4 epoch counts, budget, validation slice, and rollout
-depth. The simulation training set is the first 5,000 clean training images.
-Those images have no crop, flip, or cutout.
+Phase 5 keeps the phase 4 budget, validation slice, and rollout depth. It
+compares simulation epoch counts 1, 2, 4, 5, 6, and 7. The simulation training
+set is the first 5,000 clean training images. Those images have no crop, flip,
+or cutout. Finished epoch counts are skipped when history.pt already exists.
 
     pipenv run python -u experiments/train_cifar10_exp008_generation_only.py --phase 5
+
+Phase 6 keeps the phase 5 recipe and the 4 epoch grade. It compares smaller
+clean prefixes. Each size is the previous size divided by two, rounded down:
+5,000, 2,500, 1,250, 625, 312, 156, and 78. Finished sizes are skipped when
+history.pt already exists.
+
+    pipenv run python -u experiments/train_cifar10_exp008_generation_only.py --phase 6
 """
 
 from __future__ import annotations
@@ -88,12 +96,15 @@ PHASE4_SIMULATIONS = (
 )
 PHASE4_ROLLOUT_DEPTH = 0
 PHASE5_CLEAN_PREFIX = 5000
-PHASE5_SIMULATIONS = (
-    (300.0, 1, PHASE5_CLEAN_PREFIX),
-    (300.0, 2, PHASE5_CLEAN_PREFIX),
-    (300.0, 4, PHASE5_CLEAN_PREFIX),
+PHASE5_SIMULATIONS = tuple(
+    (300.0, epochs, PHASE5_CLEAN_PREFIX) for epochs in (1, 2, 4, 5, 6, 7)
 )
 PHASE5_ROLLOUT_DEPTH = 0
+PHASE6_DIR = Path(__file__).resolve().parent / "output" / "train_cifar10" / "runs" / "exp008_generation_only_phase6"
+PHASE6_EPOCHS = 4
+PHASE6_SIZES = (5000, 2500, 1250, 625, 312, 156, 78)
+PHASE6_SIMULATIONS = tuple((300.0, PHASE6_EPOCHS, size) for size in PHASE6_SIZES)
+PHASE6_ROLLOUT_DEPTH = 0
 _ACTION_FLAGS = (
     "ACTIONS_ENABLE_ADD_SEQ_LAYER",
     "ACTIONS_ENABLE_ADD_RES_LAYER",
@@ -263,7 +274,7 @@ def rollout_depth(depth: int | None):
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Select a phase and an optional seed subset. Phase 2 also accepts action groups."""
     parser = argparse.ArgumentParser(description="Experiment 008: CIFAR-10 generation loop only.")
-    parser.add_argument("--phase", type=int, choices=(1, 2, 3, 4, 5), default=1)
+    parser.add_argument("--phase", type=int, choices=(1, 2, 3, 4, 5, 6), default=1)
     parser.add_argument("--groups", nargs="*", default=None)
     parser.add_argument("--seeds", type=int, nargs="*", default=None)
     args = parser.parse_args(argv)
@@ -277,7 +288,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         raise ValueError(f"groups must be among {list(PHASE2_GROUPS)}: {unknown_groups}")
     if args.phase == 1 and args.groups:
         raise ValueError("phase 1 does not take --groups")
-    if args.phase in (3, 4, 5) and args.groups:
+    if args.phase in (3, 4, 5, 6) and args.groups:
         raise ValueError(f"phase {args.phase} does not take --groups")
     args.seeds = seeds
     args.groups = groups
@@ -407,7 +418,7 @@ def run_seed(
 
 
 def main(argv: list[str] | None = None) -> None:
-    """Run one experiment phase. Phase 5 grades the first 5,000 clean images."""
+    """Run one experiment phase. Phase 6 grades smaller clean prefixes for 4 epochs."""
     args = parse_args(argv)
     data = Cifar10Data(DATA_DIR)
     data.prepare()
@@ -470,6 +481,28 @@ def main(argv: list[str] | None = None) -> None:
                     simulation,
                     rollout_depth_value=PHASE5_ROLLOUT_DEPTH,
                     clean_prefix=PHASE5_CLEAN_PREFIX,
+                )
+        return
+    if args.phase == 6:
+        size_list = ", ".join(str(size) for size in PHASE6_SIZES)
+        print(
+            f"Exp 008 phase 6 all seeds {', '.join(str(seed) for seed in args.seeds)} "
+            f"sim {PHASE6_SIMULATIONS[0][0]}s epochs {PHASE6_EPOCHS} "
+            f"clean prefixes {size_list} rollout depth {PHASE6_ROLLOUT_DEPTH}.",
+            flush=True,
+        )
+        print(f"Write target: {PHASE6_DIR}", flush=True)
+        for simulation in PHASE6_SIMULATIONS:
+            clean_prefix = simulation[2]
+            for seed in args.seeds:
+                run_seed(
+                    data,
+                    PHASE6_DIR / f"size_{clean_prefix}" / f"seed_{seed}",
+                    seed,
+                    "all",
+                    simulation,
+                    rollout_depth_value=PHASE6_ROLLOUT_DEPTH,
+                    clean_prefix=clean_prefix,
                 )
         return
     print(
