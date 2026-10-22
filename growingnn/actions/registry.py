@@ -24,7 +24,13 @@ def generate_all_actions(traced: TracedModel, config: RunningConfig) -> list[Act
     if config.ACTIONS_ENABLE_ADD_SEQ_LAYER:
         actions.extend(AddSeqLinearLayer.generate_all_actions(traced))
     if config.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER:
-        actions.extend(AddSeqConvLayer.generate_all_actions(traced))
+        actions.extend(
+            AddSeqConvLayer.generate_all_actions(
+                traced,
+                with_bn_relu=config.seq_conv_bn_relu,
+                before_global_pool=config.seq_conv_before_global_pool,
+            )
+        )
     if config.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_01:
         actions.extend(AddSeqDropoutLayer.generate_all_actions(traced, p=0.1))
     if config.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_02:

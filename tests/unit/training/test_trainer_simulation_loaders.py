@@ -72,3 +72,42 @@ def test_train_generations_uses_prebuilt_simulation_loaders():
     mock_sample.assert_not_called()
     assert cfg.sim_train_loader is sim_train_loader
     assert cfg.sim_val_loader is sim_val_loader
+
+
+def test_train_generations_records_official_test_accuracy_once_per_generation():
+    """
+    train_generations should append one official test accuracy per generation.
+    """
+    # Arrange
+    torch.manual_seed(0)
+    gm = fx.symbolic_trace(_TinyNet())
+    x = torch.randn(16, 3, 32, 32)
+    y = torch.randint(0, 2, (16,))
+    train_loader = DataLoader(TensorDataset(x[:12], y[:12]), batch_size=4, shuffle=True)
+    val_loader = DataLoader(TensorDataset(x[12:], y[12:]), batch_size=4)
+    test_loader = DataLoader(TensorDataset(x[:4], y[:4]), batch_size=4)
+    cfg = RunningConfig(
+        generations=2,
+        epochs=1,
+        lr_scheduler=ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01),
+        stopper=TrainingStopper(StopperMode.EMPTY),
+        simulation_scheduler=NeverSimulationScheduler(),
+        simulation_set_size=8,
+        criterion=nn.CrossEntropyLoss(),
+        quiet=True,
+    )
+
+    # Act
+    _, summary = train_generations(
+        gm,
+        train_loader,
+        val_loader,
+        cfg,
+        test_loader=test_loader,
+    )
+
+    # Assert
+    assert len(summary["test_acc"]) == 2
+    assert len(summary["test_loss"]) == 2
+    assert all(0.0 <= value <= 1.0 for value in summary["test_acc"])
+    assert summary["action_generation"] == []
