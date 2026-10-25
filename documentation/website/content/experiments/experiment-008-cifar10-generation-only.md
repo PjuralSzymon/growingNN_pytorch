@@ -1,6 +1,6 @@
 # Experiment 008: CIFAR-10 generation loop without a finish stage
 
-This page has seven sections, in this order.
+This page has nine sections, in this order.
 
 1. [Improvements that make CIFAR-10 work in the growing algorithm](#improvements-that-make-cifar-10-work-in-the-growing-algorithm). How the recipe worked before, and how it works now.
 2. [Phase 1: sequential convolution only](#phase-1-sequential-convolution-only). The finished run that allows only `AddSeqConvLayer`. Last official test is `91.11%`, `91.17%`, and `91.36%`. The mean is `91.21%`.
@@ -8,7 +8,9 @@ This page has seven sections, in this order.
 4. [Phase 3: how long search looks](#phase-3-how-long-search-looks). The all-action list with a `100` second simulation. Last official test is `88.45%`, `85.04%`, and `89.35%`. The mean is `87.61%`.
 5. [Phase 4: full augmented grade](#phase-4-full-augmented-grade). Search grades every action on all `45,000` augmented training images. Only the `1` epoch grade finished. Last official test is `88.58%`, `88.15%`, and `87.57%`. The mean is `88.10%`. The `2` epoch and `4` epoch grades have no `history.pt`, because that amount of data took too much time.
 6. [Phase 5: first 5,000 clean images](#phase-5-first-5000-clean-images). The same search, graded on the first `5,000` clean images, at simulation lengths `1`, `2`, `4`, `5`, `6`, and `7`. All six grades finished. The highest mean is the `4` epoch grade, `87.69%`.
-7. [Phase 6: smaller clean prefixes](#phase-6-smaller-clean-prefixes). The `4` epoch grade, with the clean prefix halved six times: `5,000`, `2,500`, `1,250`, `625`, `312`, `156`, and `78`. The finished means are `85.65%`, `89.01%`, and `88.24%`. The `2,500` image mean is the highest. The `625` image grade has only seed `110`. The `312`, `156`, and `78` image grades have no `history.pt`.
+7. [Phase 6: smaller clean prefixes](#phase-6-smaller-clean-prefixes). The `4` epoch grade, with the clean prefix halved six times: `5,000`, `2,500`, `1,250`, `625`, `312`, `156`, and `78`. All seven grades finished. The means are `85.65%`, `89.01%`, `88.24%`, `84.48%`, `81.03%`, `83.62%`, and `83.20%`. The `2,500` image mean is the highest.
+8. [Phase 7: longer real training](#phase-7-longer-real-training). The same `1,250` image grade at `10`, `20`, and `30` real epochs per generation. The means are `88.24%`, `84.65%`, and `87.48%`. The `10` epoch mean is the highest.
+9. [Phase 8: how many generations](#phase-8-how-many-generations). The same `1,250` image grade at `10` real epochs, with `10`, `12`, `15`, and `20` generations. The means are `80.65%`, `88.24%`, `90.04%`, and `88.35%`. The `15` generation mean is the highest.
 
 Script: `experiments/train_cifar10_exp008_generation_only.py`
 
@@ -23,6 +25,10 @@ Phase 4 output: `experiments/output/train_cifar10/runs/exp008_generation_only_ph
 Phase 5 output: `experiments/output/train_cifar10/runs/exp008_generation_only_phase5`
 
 Phase 6 output: `experiments/output/train_cifar10/runs/exp008_generation_only_phase6`
+
+Phase 7 output: `experiments/output/train_cifar10/runs/exp008_generation_only_phase7`
+
+Phase 8 output: `experiments/output/train_cifar10/runs/exp008_generation_only_phase8`
 
 Charts: `documentation/website/scripts/generate_experiment_008_charts.py`
 
@@ -680,38 +686,44 @@ Phase 6 asks whether a smaller simulation training slice changes the actions sea
 | Extra actions inside the score | `0` |
 | Output | `exp008_generation_only_phase6/size_<N>/seed_<seed>` |
 
-Official test accuracy is the fraction correct on the `10,000` image test set, at epoch `120`. The `5,000`, `2,500`, and `1,250` image grades finished, for seeds `110`, `111`, and `112`. The `625` image grade has only seed `110`. The `312`, `156`, and `78` image cells are empty because those grades have no `history.pt`.
+Official test accuracy is the fraction correct on the `10,000` image test set, at epoch `120`. All seven grades finished, for seeds `110`, `111`, and `112`.
 
 | Seed | `5,000` | `2,500` | `1,250` | `625` | `312` | `156` | `78` |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `110` | `81.84%` | `88.75%` | `90.12%` | `81.67%` | | | |
-| `111` | `85.68%` | `88.86%` | `85.85%` | | | | |
-| `112` | `89.44%` | `89.41%` | `88.76%` | | | | |
-| Mean | `85.65%` | `89.01%` | `88.24%` | | | | |
+| `110` | `81.84%` | `88.75%` | `90.12%` | `81.67%` | `74.00%` | `88.15%` | `81.46%` |
+| `111` | `85.68%` | `88.86%` | `85.85%` | `82.48%` | `81.36%` | `81.20%` | `79.94%` |
+| `112` | `89.44%` | `89.41%` | `88.76%` | `89.28%` | `87.72%` | `81.50%` | `88.21%` |
+| Mean | `85.65%` | `89.01%` | `88.24%` | `84.48%` | `81.03%` | `83.62%` | `83.20%` |
 
-The `2,500` image mean, `89.01%`, is the highest finished mean. It is `1.32` percentage points above the phase 5 `4` epoch mean of `87.69%`. The `1,250` image mean is `0.77` percentage points below the `2,500` image mean. The `5,000` image mean is `3.36` percentage points below it. The files are `experiments/output/train_cifar10/runs/exp008_generation_only_phase6/size_<N>/seed_<seed>/history.pt`. Each finished file stores `simulation_epochs` `4`, `simulation_augmented` false, and `simulation_clean_prefix` equal to that size. Save times, from the filesystem, run from `2026-10-21 00:35` for the `5,000` image seed `110` to `2026-10-21 13:28` for the `1,250` image seed `112`. The `625` image seed `110` was saved at `2026-10-22 05:08`. `history.pt` stores the chosen action. It does not store the other candidates search graded.
+Figure 18 plots that table. The horizontal axis is the clean prefix size, in the same order as the columns.
+
+![Official test by clean prefix size](/assets/experiments/008-phase6-final-test.png)
+
+> [!CAPTION] Figure 18. Official test accuracy at epoch 120, in percent. The horizontal axis is the number of clean simulation images. The solid line is the mean of the three seeds. Blue is seed 110, orange is seed 111, and green is seed 112. The dotted line is 90%. The vertical axis runs from 70% to 95%.
+
+The `2,500` image mean, `89.01%`, is the highest. It is `1.32` percentage points above the phase 5 `4` epoch mean of `87.69%`. The `312` image mean, `81.03%`, is the lowest. It is `7.98` percentage points below the `2,500` image mean. The `156` image mean is `2.59` percentage points above the `312` image mean. The `78` image mean is `2.17` percentage points above it. The files are `experiments/output/train_cifar10/runs/exp008_generation_only_phase6/size_<N>/seed_<seed>/history.pt`. Each file stores `simulation_epochs` `4`, `simulation_augmented` false, and `simulation_clean_prefix` equal to that size. Save times, from the filesystem, run from `2026-10-21 00:35` for the `5,000` image seed `110` to `2026-10-23 17:23` for the `78` image seed `112`. `history.pt` stores the chosen action. It does not store the other candidates search graded.
 
 The `5,000` image grade uses the same settings as the phase 5 `4` epoch grade. It is a new run. Monte Carlo stops at `300` seconds of wall-clock time, in `montecarlo_alg`, so a later run can grade a different number of candidates. This run ends at `81.84%`, `85.68%`, and `89.44%`. The phase 5 `4` epoch run ended at `88.85%`, `86.42%`, and `87.80%`.
 
 ### How did the finished sizes move?
 
-Figure 18 is one row per finished prefix size. The middle column is official test. The `625` image grade is not in the figure because seeds `111` and `112` have no `history.pt`.
+Figure 19 is one row per prefix size. The middle column is official test.
 
-![Train, official test, and validation for three prefix sizes](/assets/experiments/008-phase6-epoch-grid.png)
+![Train, official test, and validation for seven prefix sizes](/assets/experiments/008-phase6-epoch-grid.png)
 
-> [!CAPTION] Figure 18. Three rows are the 5,000, 2,500, and 1,250 image grades, each rehearsed for 4 epochs. Three columns are training accuracy, official test accuracy, and validation accuracy, in percent. Blue is seed 110, orange is seed 111, and green is seed 112. Official test markers are the 12 generation-end measurements. The dashed line is 90%. Every panel uses the same vertical axis, from 0% to 100%.
+> [!CAPTION] Figure 19. Seven rows are the 5,000, 2,500, 1,250, 625, 312, 156, and 78 image grades, each rehearsed for 4 epochs. Three columns are training accuracy, official test accuracy, and validation accuracy, in percent. Blue is seed 110, orange is seed 111, and green is seed 112. Official test markers are the 12 generation-end measurements. The dashed line is 90%. Every panel uses the same vertical axis, from 0% to 100%.
 
-The `5,000` image last values span `7.60` percentage points. Seed `111` is `86.14%` at generation `10` and `85.68%` at generation `11`. The `2,500` image last values span `0.66` percentage points, from `88.75%` to `89.41%`. Seed `110` falls from `80.85%` at generation `2` to `69.59%` at generation `3`, then ends at `88.75%`. The `1,250` image last values span `4.27` percentage points. Seed `110` ends at `90.12%`, the highest seed in this phase. Seed `112` falls from `84.20%` at generation `4` to `79.73%` at generation `5`.
+The `5,000` image last values span `7.60` percentage points. Seed `111` is `86.14%` at generation `10` and `85.68%` at generation `11`. The `2,500` image last values span `0.66` percentage points, from `88.75%` to `89.41%`. Seed `110` falls from `80.85%` at generation `2` to `69.59%` at generation `3`, then ends at `88.75%`. The `1,250` image last values span `4.27` percentage points. Seed `110` ends at `90.12%`. Seed `112` falls from `84.20%` at generation `4` to `79.73%` at generation `5`. The `625` image last values span `7.61` percentage points. Seed `111` falls from `58.29%` at generation `0` to `46.17%` at generation `3`, then ends at `82.48%`. Seed `112` is `89.31%` at generation `10` and `89.28%` at generation `11`. The `312` image last values span `13.72` percentage points, from `74.00%` to `87.72%`. Seed `111` is `81.64%` at generation `10` and `81.36%` at generation `11`. The `156` image last values span `6.95` percentage points. Seed `110` falls from `78.86%` at generation `3` to `71.84%` at generation `4`, then ends at `88.15%`. The `78` image last values span `8.27` percentage points, from `79.94%` to `88.21%`.
 
 ### Which actions did each finished size choose?
 
-Figure 19 counts the executed action type. Each seed executed `11` actions in each finished grade. A missing bar means that seed never chose that type in that grade.
+Figure 20 counts the executed action type. Each seed executed `11` actions in each finished grade. A missing bar means that seed never chose that type in that grade.
 
 ![Chosen action counts by prefix size](/assets/experiments/008-phase6-action-counts.png)
 
-> [!CAPTION] Figure 19. Times each action type was executed. Three panels are the 5,000, 2,500, and 1,250 image grades. Each group is one action type. Blue is seed 110, orange is seed 111, and green is seed 112. The vertical axis runs from 0 to 11, the number of searches in a grade.
+> [!CAPTION] Figure 20. Times each action type was executed. Seven panels are the 5,000, 2,500, 1,250, 625, 312, 156, and 78 image grades. Each group is one action type. Blue is seed 110, orange is seed 111, and green is seed 112. The vertical axis runs from 0 to 11, the number of searches in a grade.
 
-The `5,000` image seed `110` chooses no convolution and ends at `81.84%`. The `2,500` image grade chooses at least one convolution on every seed. Seed `112` chooses `5` neuron adds and ends at `89.41%`. The `1,250` image seed `110` chooses `2` residual convolutions and `1` sequential convolution, and ends at `90.12%`.
+The `5,000` image seed `110` chooses no convolution and ends at `81.84%`. The `2,500` image grade chooses at least one convolution on every seed. Seed `112` chooses `5` neuron adds and ends at `89.41%`. The `1,250` image seed `110` chooses `2` residual convolutions and `1` sequential convolution, and ends at `90.12%`. The `625` image seeds `110` and `111` choose residual convolutions and no sequential convolution. Seed `112` chooses `2` sequential convolutions and `1` residual convolution, and ends at `89.28%`. The `312` image seed `111` chooses no convolution and ends at `81.36%`. Seed `110` chooses `3` neuron deletes and ends at `74.00%`. The `156` image seed `110` chooses `3` sequential convolutions and `2` residual convolutions, and ends at `88.15%`. Seed `111` chooses no convolution. The `78` image seeds `110` and `111` choose no convolution. Seed `112` chooses `2` sequential convolutions and `3` residual convolutions, and ends at `88.21%`.
 
 ### How did the parameter count move?
 
@@ -719,16 +731,116 @@ The `5,000` image seed `110` chooses no convolution and ends at `81.84%`. The `2
 
 ![Parameter count by prefix size](/assets/experiments/008-phase6-parameters.png)
 
-> [!CAPTION] Figure 20. Parameter count by epoch. Three panels are the 5,000, 2,500, and 1,250 image grades. Blue is seed 110, orange is seed 111, and green is seed 112. The count is flat inside a generation and changes at the first epoch after an action that changes the parameter count. Every panel uses the same vertical axis.
+> [!CAPTION] Figure 21. Parameter count by epoch. Seven panels are the 5,000, 2,500, 1,250, 625, 312, 156, and 78 image grades. Blue is seed 110, orange is seed 111, and green is seed 112. The count is flat inside a generation and changes at the first epoch after an action that changes the parameter count. Every panel uses the same vertical axis.
 
-The `5,000` image grade ends at `674,968`, `1,142,080`, and `1,330,115` parameters. The `2,500` image grade ends at `684,902`, `1,643,979`, and `1,550,720`. The `1,250` image grade ends at `1,895,355`, `660,871`, and `545,049`. Seed `110` is the high line in the `1,250` image panel.
+The `5,000` image grade ends at `674,968`, `1,142,080`, and `1,330,115` parameters. The `2,500` image grade ends at `684,902`, `1,643,979`, and `1,550,720`. The `1,250` image grade ends at `1,895,355`, `660,871`, and `545,049`. The `625` image grade ends at `2,781,568`, `1,627,326`, and `860,040`. The `312` image grade ends at `279,663`, `943,270`, and `329,949`. The `156` image grade ends at `1,336,192`, `298,856`, and `807,125`. The `78` image grade ends at `279,673`, `260,894`, and `1,155,584`. Seed `112` is the high line in the `78` image panel.
 
 ### Conclusions
 
-A smaller rehearsal does not keep raising the mean. The finished means are `85.65%`, `89.01%`, and `88.24%` for `5,000`, `2,500`, and `1,250` clean images. The `2,500` image mean is the highest, and the three seeds end within `0.66` percentage points.
+A smaller rehearsal does not keep raising the mean. The means are `85.65%`, `89.01%`, `88.24%`, `84.48%`, `81.03%`, `83.62%`, and `83.20%` for `5,000`, `2,500`, `1,250`, `625`, `312`, `156`, and `78` clean images. The `2,500` image mean is the highest, and the three seeds end within `0.66` percentage points. The `312` image mean is the lowest. The `156` image mean is `5.39` percentage points below the `2,500` image mean. The `78` image mean is `5.81` percentage points below it.
 
-The best single seed in this phase is the `1,250` image seed `110`, at `90.12%`. The best single seed in phase 5 is still the `1` epoch seed `111`, at `90.35%`.
+The best single seed in this phase is the `1,250` image seed `110`, at `90.12%`. The best single seed in phase 5 is still the `1` epoch seed `111`, at `90.35%`. The lowest seed is the `312` image seed `110`, at `74.00%`.
 
 The phase 1 only-convolution mean is `91.21%`. The phase 4 `1` epoch mean is `88.10%`. The `2,500` image mean is `0.91` percentage points above that phase 4 mean and `2.20` percentage points below the phase 1 mean.
 
-The `625` image seed `110` ends at `81.67%`. Seeds `111` and `112` at `625` images, and the `312`, `156`, and `78` image grades, have no `history.pt`.
+## Phase 7: longer real training
+
+Phase 7 asks whether more SGD in each generation changes the result of the `1,250` image grade. The action list, the Monte Carlo algorithm, the `300` second budget, the `4` simulation epochs, the first `1,250` clean images, the `5,000` validation images, and the extra rollout depth of `0` stay as they are in phase 6. The real training stays `12` generations on the `45,000` augmented images. The only change is the number of epochs inside each generation: `20`, then `30`. Phases 1 through 6 use `10`. The cosine still runs from `0.1` to `0.001`, across `240` epochs for the `20` epoch grade and across `360` epochs for the `30` epoch grade.
+
+| Setting | Value |
+| --- | --- |
+| Simulation training images | `1,250`, clean, the first `1,250` |
+| Simulation validation images | `5,000` |
+| Simulation epochs | `4` |
+| Simulation time | `300` seconds |
+| Extra actions inside the score | `0` |
+| Real epochs per generation | `20`, `30` |
+| Generations | `12` |
+| Output | `exp008_generation_only_phase7/epochs_<N>/seed_<seed>` |
+
+Official test accuracy is the fraction correct on the `10,000` image test set, at the last epoch of the run. The `10` epoch column is the phase 6 run with the same settings: seeds `110`, `111`, and `112`, `12` generations of `10` epochs, `4` simulation epochs, the first `1,250` clean images, a `300` second budget, and rollout depth `0`. The `20` and `30` epoch columns are the phase 7 runs. Each file stores `simulation_epochs` `4`, `simulation_set_size` `1250`, `simulation_clean_prefix` `1250`, `simulation_time` `300.0`, `simulation_rollout_depth` `0`, and `simulation_augmented` false. The phase 7 files also store `train_epochs` `20` or `30`. Save times, from the filesystem, run from `2026-10-23 20:21` for the `20` epoch seed `110` to `2026-10-24 08:07` for the `30` epoch seed `112`.
+
+| Seed | `10` epochs | `20` epochs | `30` epochs |
+| --- | ---: | ---: | ---: |
+| `110` | `90.12%` | `86.92%` | `82.79%` |
+| `111` | `85.85%` | `82.67%` | `90.91%` |
+| `112` | `88.76%` | `84.35%` | `88.74%` |
+| Mean | `88.24%` | `84.65%` | `87.48%` |
+
+The `10` epoch mean, `88.24%`, is the highest. The `20` epoch mean is `3.59` percentage points below it. The `30` epoch mean is `0.76` percentage points below it. The `20` epoch last values span `4.25` percentage points. The `30` epoch last values span `8.12` percentage points.
+
+Figure 22 is one row per real training length. The middle column is official test.
+
+![Train, official test, and validation for three training lengths](/assets/experiments/008-phase7-epoch-grid.png)
+
+> [!CAPTION] Figure 22. Three rows are 10, 20, and 30 real epochs in each of 12 generations, on the 1,250-image 4-epoch grade. The 10 epoch row is the phase 6 run. Three columns are training accuracy, official test accuracy, and validation accuracy, in percent. Blue is seed 110, orange is seed 111, and green is seed 112. Official test markers are the 12 generation-end measurements. The dashed line is 90%. Every panel uses the same vertical axis, from 0% to 100%.
+
+Seed `112` at `20` epochs falls from `72.32%` at generation `2` to `60.55%` at generation `4`, then ends at `84.35%`. Seed `111` at `30` epochs is `91.02%` at generation `10` and `90.91%` at generation `11`. That is the highest seed in this comparison. Its training accuracy ends at `97.08%`. Seed `112` at `30` epochs ends with training accuracy `97.43%` and official test `88.74%`.
+
+The `20` epoch seed `111` chooses no convolution, deletes neurons `4` times, and ends at `246,401` parameters. The `30` epoch seed `110` chooses no convolution and ends at `205,342` parameters. The `30` epoch seed `111` chooses `3` sequential convolutions and ends at `728,444` parameters. The `30` epoch seed `112` chooses `2` residual convolutions and `4` neuron adds, and ends at `2,808,473` parameters.
+
+### Conclusions
+
+More epochs in each generation do not raise the mean. The means are `88.24%`, `84.65%`, and `87.48%` for `10`, `20`, and `30` real epochs. The `10` epoch mean is the highest.
+
+The best single seed in this comparison is the `30` epoch seed `111`, at `90.91%`. That is `0.56` percentage points above the phase 5 `1` epoch seed `111`, at `90.35%`. The phase 1 only-convolution mean is `91.21%`. The `30` epoch seed `111` is `0.30` percentage points below that mean.
+
+## Phase 8: how many generations
+
+Phase 8 asks whether a different number of generations changes the result of the `1,250` image grade. Phase 7 found that `10` real epochs per generation had the highest mean, so that length stays. The action list, the Monte Carlo algorithm, the `300` second budget, the `4` simulation epochs, the first `1,250` clean images, the `5,000` validation images, and the extra rollout depth of `0` stay as they are in phase 7. The real training stays on the `45,000` augmented images. The only change is the generation count: `10`, `15`, and `20`. The existing comparison is `12` generations. The last generation trains and does not search, so those counts execute `9`, `11`, `14`, and `19` actions. The cosine still runs from `0.1` to `0.001`, across `100`, `120`, `150`, and `200` epochs.
+
+| Setting | Value |
+| --- | --- |
+| Simulation training images | `1,250`, clean, the first `1,250` |
+| Simulation validation images | `5,000` |
+| Simulation epochs | `4` |
+| Simulation time | `300` seconds |
+| Extra actions inside the score | `0` |
+| Real epochs per generation | `10` |
+| Generations | `10`, `15`, `20`. The `12` generation column is the phase 6 run |
+| Output | `exp008_generation_only_phase8/generations_<N>/seed_<seed>` |
+
+Official test accuracy is the fraction correct on the `10,000` image test set, at the last epoch of the run. The `12` generation column is the phase 6 run with the same settings. The `10`, `15`, and `20` generation columns are the phase 8 runs. Each file stores `train_epochs` `10`, `simulation_epochs` `4`, `simulation_clean_prefix` `1250`, `simulation_time` `300.0`, and `simulation_rollout_depth` `0`. The phase 8 files also store `train_generations` `10`, `15`, or `20`. Save times, from the filesystem, run from `2026-10-24 10:32` for the `10` generation seed `110` to `2026-10-25 02:45` for the `20` generation seed `112`.
+
+| Seed | `10` generations | `12` generations | `15` generations | `20` generations |
+| --- | ---: | ---: | ---: | ---: |
+| `110` | `81.78%` | `90.12%` | `90.62%` | `91.50%` |
+| `111` | `80.51%` | `85.85%` | `90.51%` | `83.08%` |
+| `112` | `79.67%` | `88.76%` | `88.99%` | `90.46%` |
+| Mean | `80.65%` | `88.24%` | `90.04%` | `88.35%` |
+
+The `15` generation mean, `90.04%`, is the highest. It is `1.80` percentage points above the `12` generation mean and `1.17` percentage points below the phase 1 only-convolution mean of `91.21%`. The `10` generation mean is `7.59` percentage points below the `12` generation mean. The `20` generation mean is `0.11` percentage points above it. The `15` generation last values span `1.63` percentage points, the smallest span of the four. The `20` generation last values span `8.42` percentage points.
+
+Figure 23 is one row per generation count. The middle column is official test.
+
+![Train, official test, and validation for four generation counts](/assets/experiments/008-phase8-epoch-grid.png)
+
+> [!CAPTION] Figure 23. Four rows are 10, 12, 15, and 20 generations of 10 real epochs, on the 1,250-image 4-epoch grade. The 12 generation row is the phase 6 run. Three columns are training accuracy, official test accuracy, and validation accuracy, in percent. Blue is seed 110, orange is seed 111, and green is seed 112. Official test markers are the generation-end measurements. The dashed line is 90%. Every panel uses the same vertical axis, from 0% to 100%.
+
+The `10` generation grade chooses no convolution on any seed. Seed `112` is `79.86%` at generation `8` and `79.67%` at generation `9`. The `15` generation grade chooses at least one convolution on every seed. Seed `110` chooses `3` sequential convolutions and `6` neuron adds, and ends at `90.62%`. The `20` generation seed `110` chooses `4` sequential convolutions and `2` residual convolutions, and ends at `91.50%`. Seed `111` chooses no convolution and ends at `83.08%`. Seed `112` falls from `80.26%` at generation `3` to `74.77%` at generation `4`, then ends at `90.46%`.
+
+### How did the parameter count move?
+
+`param_count` is recorded after each generation's SGD and before that generation's action, then copied onto every epoch of the generation. The last generation does not search, so the last value is the parameter count of the finished network.
+
+| Seed | `10` generations | `12` generations | `15` generations | `20` generations |
+| --- | ---: | ---: | ---: | ---: |
+| `110` | `531,423` | `1,895,355` | `932,741` | `2,516,716` |
+| `111` | `188,121` | `660,871` | `2,252,688` | `458,069` |
+| `112` | `162,018` | `545,049` | `1,311,095` | `983,625` |
+
+Figure 24 is one panel per generation count.
+
+![Parameter count by generation count](/assets/experiments/008-phase8-parameters.png)
+
+> [!CAPTION] Figure 24. Parameter count by epoch. Four panels are 10, 12, 15, and 20 generations of 10 real epochs. The 12 generation panel is the phase 6 run. Blue is seed 110, orange is seed 111, and green is seed 112. The count is flat inside a generation and changes at the first epoch after an action that changes the parameter count. Every panel uses the same vertical axis.
+
+The `15` generation seed `111` ends at `2,252,688` parameters and `90.51%` official test. The `20` generation seed `111` ends at `458,069` parameters and `83.08%`. The `20` generation seed `110` is the high line in that panel, at `2,516,716` parameters and `91.50%`.
+
+### Conclusions
+
+Ten generations are too few for this grade. The mean is `80.65%`, and none of the three seeds chooses a convolution.
+
+Fifteen generations give the highest mean, `90.04%`. The three seeds end within `1.63` percentage points. Twenty generations do not keep that mean: it falls to `88.35%`, because seed `111` ends at `83.08%` after choosing no convolution.
+
+The best single seed is the `20` generation seed `110`, at `91.50%`. That is `0.29` percentage points above the phase 1 only-convolution mean of `91.21%`. The `15` generation mean remains `1.17` percentage points below that phase 1 mean.

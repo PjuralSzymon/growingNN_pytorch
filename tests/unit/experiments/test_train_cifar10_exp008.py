@@ -24,6 +24,14 @@ from experiments.train_cifar10_exp008_generation_only import (
     PHASE6_ROLLOUT_DEPTH,
     PHASE6_SIMULATIONS,
     PHASE6_SIZES,
+    PHASE7_CLEAN_PREFIX,
+    PHASE7_ROLLOUT_DEPTH,
+    PHASE7_SIMULATION,
+    PHASE7_TRAIN_EPOCHS,
+    PHASE8_CLEAN_PREFIX,
+    PHASE8_GENERATIONS,
+    PHASE8_ROLLOUT_DEPTH,
+    PHASE8_SIMULATION,
     SEEDS,
     CosineDecayScheduler,
     apply_action_group,
@@ -242,6 +250,96 @@ def test_phase_six_halves_the_clean_prefix_six_times_at_four_epochs():
     assert cfg.simulation_scheduler.simulation_time == 300.0
     assert cfg.simulation_scheduler.simulation_epochs == 4
     assert cfg.simulation_set_size == 78
+
+
+def test_parse_args_phase_seven_defaults_to_the_experiment_seeds():
+    """
+    Phase 7 should train seeds 110, 111, and 112 unless a subset is requested.
+    """
+
+    # Arrange / Act
+    args = parse_args(["--phase", "7"])
+
+    # Assert
+    assert args.phase == 7
+    assert args.seeds == (110, 111, 112)
+
+
+def test_parse_args_phase_seven_rejects_an_action_group_list():
+    """
+    Phase 7 should reject --groups because it always uses the all-action list.
+    """
+
+    # Arrange / Act / Assert
+    with pytest.raises(ValueError):
+        parse_args(["--phase", "7", "--groups", "grow"])
+
+
+def test_phase_seven_lengthens_real_training_at_the_1250_image_grade():
+    """
+    Phase 7 should train 20 and 30 epochs per generation on the 1,250-image, 4-epoch clean grade.
+    """
+
+    # Arrange
+    cfg = RunningConfig(generations=1, epochs=1)
+    apply_action_group(cfg, "all")
+
+    # Act
+    apply_simulation_budget(cfg, PHASE7_SIMULATION)
+
+    # Assert
+    assert PHASE7_TRAIN_EPOCHS == (20, 30)
+    assert PHASE7_CLEAN_PREFIX == 1250
+    assert PHASE7_SIMULATION == (300.0, 4, 1250)
+    assert PHASE7_ROLLOUT_DEPTH == 0
+    assert cfg.simulation_scheduler.simulation_time == 300.0
+    assert cfg.simulation_scheduler.simulation_epochs == 4
+    assert cfg.simulation_set_size == 1250
+
+
+def test_parse_args_phase_eight_defaults_to_the_experiment_seeds():
+    """
+    Phase 8 should train seeds 110, 111, and 112 unless a subset is requested.
+    """
+
+    # Arrange / Act
+    args = parse_args(["--phase", "8"])
+
+    # Assert
+    assert args.phase == 8
+    assert args.seeds == (110, 111, 112)
+
+
+def test_parse_args_phase_eight_rejects_an_action_group_list():
+    """
+    Phase 8 should reject --groups because it always uses the all-action list.
+    """
+
+    # Arrange / Act / Assert
+    with pytest.raises(ValueError):
+        parse_args(["--phase", "8", "--groups", "grow"])
+
+
+def test_phase_eight_compares_generation_counts_at_ten_real_epochs():
+    """
+    Phase 8 should compare 10, 15, and 20 generations on the 1,250-image, 4-epoch clean grade.
+    """
+
+    # Arrange
+    cfg = RunningConfig(generations=1, epochs=1)
+    apply_action_group(cfg, "all")
+
+    # Act
+    apply_simulation_budget(cfg, PHASE8_SIMULATION)
+
+    # Assert
+    assert PHASE8_GENERATIONS == (10, 15, 20)
+    assert PHASE8_CLEAN_PREFIX == 1250
+    assert PHASE8_SIMULATION == (300.0, 4, 1250)
+    assert PHASE8_ROLLOUT_DEPTH == 0
+    assert cfg.simulation_scheduler.simulation_time == 300.0
+    assert cfg.simulation_scheduler.simulation_epochs == 4
+    assert cfg.simulation_set_size == 1250
 
 
 def test_prefix_clean_loader_keeps_the_first_cuda_images_without_augmentation():

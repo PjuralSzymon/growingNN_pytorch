@@ -29,7 +29,11 @@ from documentation.website.scripts.generate_experiment_008_charts import (
     plot_phase5_parameters,
     plot_phase6_action_counts,
     plot_phase6_epoch_grid,
+    plot_phase6_final_test,
     plot_phase6_parameters,
+    plot_phase7_epoch_grid,
+    plot_phase8_epoch_grid,
+    plot_phase8_parameters,
     write_charts,
 )
 
@@ -450,6 +454,96 @@ def test_plot_phase5_parameters_writes_the_clean_prefix_count(tmp_path: Path):
 
     # Assert
     assert (tmp_path / "008-phase5-parameters.png").is_file()
+
+
+def test_plot_phase7_epoch_grid_writes_the_matching_ten_epoch_grade(tmp_path: Path):
+    """
+    plot_phase7_epoch_grid should write the phase 6 1,250-image grade as the 10-epoch comparison.
+    """
+
+    # Arrange
+    data = {
+        "phase6_size_1250": [
+            {
+                "seed": seed,
+                "train": [0.3, 0.8],
+                "val": [0.4, 0.7],
+                "test": [0.5, 0.9],
+                "test_epoch": [10, 20],
+            }
+            for seed in (110, 111, 112)
+        ]
+    }
+
+    # Act
+    plot_phase7_epoch_grid(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase7-epoch-grid.png").is_file()
+
+
+def test_plot_phase8_epoch_grid_writes_the_matching_twelve_generation_grade(tmp_path: Path):
+    """
+    plot_phase8_epoch_grid should write the phase 6 1,250-image grade as the 12-generation comparison.
+    """
+
+    # Arrange
+    data = {
+        "phase6_size_1250": [
+            {
+                "seed": seed,
+                "train": [0.3, 0.8],
+                "val": [0.4, 0.7],
+                "test": [0.5, 0.9],
+                "test_epoch": [10, 20],
+            }
+            for seed in (110, 111, 112)
+        ]
+    }
+
+    # Act
+    plot_phase8_epoch_grid(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase8-epoch-grid.png").is_file()
+
+
+def test_plot_phase8_parameters_writes_the_generation_counts(tmp_path: Path):
+    """
+    plot_phase8_parameters should write parameter count for the 12-generation comparison.
+    """
+
+    # Arrange
+    data = {
+        "phase6_size_1250": [
+            {"seed": seed, "param_count": [187008, 200000 + seed]}
+            for seed in (110, 111, 112)
+        ]
+    }
+
+    # Act
+    plot_phase8_parameters(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase8-parameters.png").is_file()
+
+
+def test_plot_phase6_final_test_writes_each_seed_and_the_mean(tmp_path: Path):
+    """
+    plot_phase6_final_test should write last official test by prefix size for each seed.
+    """
+
+    # Arrange
+    data = {
+        "phase6_size_5000": [{"seed": seed, "final_test": 0.80 + seed / 10000} for seed in (110, 111, 112)],
+        "phase6_size_78": [{"seed": seed, "final_test": 0.70 + seed / 10000} for seed in (110, 111, 112)],
+    }
+
+    # Act
+    plot_phase6_final_test(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase6-final-test.png").is_file()
 
 
 def test_plot_phase6_epoch_grid_writes_each_saved_prefix_size(tmp_path: Path):

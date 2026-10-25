@@ -47,6 +47,21 @@ clean prefixes. Each size is the previous size divided by two, rounded down:
 history.pt already exists.
 
     pipenv run python -u experiments/train_cifar10_exp008_generation_only.py --phase 6
+
+Phase 7 keeps the phase 6 recipe at the 1,250 image clean prefix and 4
+simulation epochs. It compares real training lengths of 20 and 30 epochs in
+each of the 12 generations. The cosine still runs from 0.1 to 0.001 across the
+whole run. Finished lengths are skipped when history.pt already exists.
+
+    pipenv run python -u experiments/train_cifar10_exp008_generation_only.py --phase 7
+
+Phase 8 keeps 10 real epochs per generation and the phase 7 simulation grade:
+1,250 clean images and 4 simulation epochs. It compares 10, 15, and 20
+generations. The cosine still runs from 0.1 to 0.001 across the whole run.
+The last generation does not search. Finished counts are skipped when
+history.pt already exists.
+
+    pipenv run python -u experiments/train_cifar10_exp008_generation_only.py --phase 8
 """
 
 from __future__ import annotations
@@ -105,6 +120,16 @@ PHASE6_EPOCHS = 4
 PHASE6_SIZES = (5000, 2500, 1250, 625, 312, 156, 78)
 PHASE6_SIMULATIONS = tuple((300.0, PHASE6_EPOCHS, size) for size in PHASE6_SIZES)
 PHASE6_ROLLOUT_DEPTH = 0
+PHASE7_DIR = Path(__file__).resolve().parent / "output" / "train_cifar10" / "runs" / "exp008_generation_only_phase7"
+PHASE7_CLEAN_PREFIX = 1250
+PHASE7_SIMULATION = (300.0, 4, PHASE7_CLEAN_PREFIX)
+PHASE7_TRAIN_EPOCHS = (20, 30)
+PHASE7_ROLLOUT_DEPTH = 0
+PHASE8_DIR = Path(__file__).resolve().parent / "output" / "train_cifar10" / "runs" / "exp008_generation_only_phase8"
+PHASE8_GENERATIONS = (10, 15, 20)
+PHASE8_CLEAN_PREFIX = 1250
+PHASE8_SIMULATION = (300.0, 4, PHASE8_CLEAN_PREFIX)
+PHASE8_ROLLOUT_DEPTH = 0
 _ACTION_FLAGS = (
     "ACTIONS_ENABLE_ADD_SEQ_LAYER",
     "ACTIONS_ENABLE_ADD_RES_LAYER",
@@ -274,7 +299,7 @@ def rollout_depth(depth: int | None):
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Select a phase and an optional seed subset. Phase 2 also accepts action groups."""
     parser = argparse.ArgumentParser(description="Experiment 008: CIFAR-10 generation loop only.")
-    parser.add_argument("--phase", type=int, choices=(1, 2, 3, 4, 5, 6), default=1)
+    parser.add_argument("--phase", type=int, choices=(1, 2, 3, 4, 5, 6, 7, 8), default=1)
     parser.add_argument("--groups", nargs="*", default=None)
     parser.add_argument("--seeds", type=int, nargs="*", default=None)
     args = parser.parse_args(argv)
@@ -288,7 +313,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         raise ValueError(f"groups must be among {list(PHASE2_GROUPS)}: {unknown_groups}")
     if args.phase == 1 and args.groups:
         raise ValueError("phase 1 does not take --groups")
-    if args.phase in (3, 4, 5, 6) and args.groups:
+    if args.phase in (3, 4, 5, 6, 7, 8) and args.groups:
         raise ValueError(f"phase {args.phase} does not take --groups")
     args.seeds = seeds
     args.groups = groups
@@ -340,14 +365,18 @@ def run_seed(
     augmented_simulation: bool = False,
     rollout_depth_value: int | None = None,
     clean_prefix: int | None = None,
+    epochs: int | None = None,
+    generations: int | None = None,
 ) -> None:
     """Train one seed with the generation loop. Official test is logged and does not stop the run."""
     if (out_dir / "history.pt").is_file():
         print(f"SKIP seed {seed} history exists at {out_dir / 'history.pt'}", flush=True)
         return
+    train_epochs = EPOCHS if epochs is None else int(epochs)
+    n_generations = GENERATIONS if generations is None else int(generations)
     hp = added_hyperparameters()
-    hp["generations"] = GENERATIONS
-    hp["epochs"] = EPOCHS
+    hp["generations"] = n_generations
+    hp["epochs"] = train_epochs
     hp["model_channels"] = CHANNELS
     hp["model_hidden_dim"] = HIDDEN
     if simulation is not None:
@@ -368,10 +397,10 @@ def run_seed(
     else:
         sim_train, sim_val = sample_loaders(clean_loader, val_loader, int(hp["simulation_set_size"]), seed=seed)
     cfg = running_config_for_group("added", device)
-    cfg.generations = GENERATIONS
-    cfg.epochs = EPOCHS
+    cfg.generations = n_generations
+    cfg.epochs = train_epochs
     cfg.device = str(device)
-    cfg.lr_scheduler = CosineDecayScheduler(GENERATIONS * EPOCHS)
+    cfg.lr_scheduler = CosineDecayScheduler(n_generations * train_epochs)
     cfg.simulation_alg = simulation_alg or montecarlo_alg
     cfg.simulation_score = SimulationScore(weight_acc=1.0, weight_countW=0.0)
     cfg.stopper = AccuracyStopper(target_accuracy=0.999)
@@ -384,7 +413,7 @@ def run_seed(
     elif augmented_simulation:
         cfg.simulation_set_size = len(train_loader.dataset)
     print(
-        f"EXP008 seed {seed} group {group} device {device} generations {GENERATIONS} epochs {EPOCHS} "
+        f"EXP008 seed {seed} group {group} device {device} generations {n_generations} epochs {train_epochs} "
         f"channels {CHANNELS} hidden {HIDDEN} smooth {LABEL_SMOOTHING} cutout True "
         f"sim {cfg.simulation_scheduler.simulation_time}s "
         f"{cfg.simulation_scheduler.simulation_epochs} epochs set {cfg.simulation_set_size} "
@@ -398,7 +427,9 @@ def run_seed(
         )
     print(f"TEST seed {seed}", [round(float(value), 4) for value in summary["test_acc"]], flush=True)
     out_dir.mkdir(parents=True, exist_ok=True)
-    history = history_from_generations(summary, seed, EPOCHS)
+    history = history_from_generations(summary, seed, train_epochs)
+    history["train_epochs"] = train_epochs
+    history["train_generations"] = n_generations
     history["action_group"] = group
     history["simulation_time"] = float(cfg.simulation_scheduler.simulation_time)
     history["simulation_epochs"] = int(cfg.simulation_scheduler.simulation_epochs)
@@ -418,7 +449,7 @@ def run_seed(
 
 
 def main(argv: list[str] | None = None) -> None:
-    """Run one experiment phase. Phase 6 grades smaller clean prefixes for 4 epochs."""
+    """Run one experiment phase. Phase 8 changes how many generations the real run has."""
     args = parse_args(argv)
     data = Cifar10Data(DATA_DIR)
     data.prepare()
@@ -503,6 +534,52 @@ def main(argv: list[str] | None = None) -> None:
                     simulation,
                     rollout_depth_value=PHASE6_ROLLOUT_DEPTH,
                     clean_prefix=clean_prefix,
+                )
+        return
+    if args.phase == 7:
+        epoch_list = ", ".join(str(epochs) for epochs in PHASE7_TRAIN_EPOCHS)
+        print(
+            f"Exp 008 phase 7 all seeds {', '.join(str(seed) for seed in args.seeds)} "
+            f"train epochs {epoch_list} generations {GENERATIONS} "
+            f"sim {PHASE7_SIMULATION[0]}s {PHASE7_SIMULATION[1]} epochs "
+            f"clean prefix {PHASE7_CLEAN_PREFIX} rollout depth {PHASE7_ROLLOUT_DEPTH}.",
+            flush=True,
+        )
+        print(f"Write target: {PHASE7_DIR}", flush=True)
+        for train_epochs in PHASE7_TRAIN_EPOCHS:
+            for seed in args.seeds:
+                run_seed(
+                    data,
+                    PHASE7_DIR / f"epochs_{train_epochs}" / f"seed_{seed}",
+                    seed,
+                    "all",
+                    PHASE7_SIMULATION,
+                    rollout_depth_value=PHASE7_ROLLOUT_DEPTH,
+                    clean_prefix=PHASE7_CLEAN_PREFIX,
+                    epochs=train_epochs,
+                )
+        return
+    if args.phase == 8:
+        generation_list = ", ".join(str(count) for count in PHASE8_GENERATIONS)
+        print(
+            f"Exp 008 phase 8 all seeds {', '.join(str(seed) for seed in args.seeds)} "
+            f"generations {generation_list} epochs {EPOCHS} "
+            f"sim {PHASE8_SIMULATION[0]}s {PHASE8_SIMULATION[1]} epochs "
+            f"clean prefix {PHASE8_CLEAN_PREFIX} rollout depth {PHASE8_ROLLOUT_DEPTH}.",
+            flush=True,
+        )
+        print(f"Write target: {PHASE8_DIR}", flush=True)
+        for n_generations in PHASE8_GENERATIONS:
+            for seed in args.seeds:
+                run_seed(
+                    data,
+                    PHASE8_DIR / f"generations_{n_generations}" / f"seed_{seed}",
+                    seed,
+                    "all",
+                    PHASE8_SIMULATION,
+                    rollout_depth_value=PHASE8_ROLLOUT_DEPTH,
+                    clean_prefix=PHASE8_CLEAN_PREFIX,
+                    generations=n_generations,
                 )
         return
     print(

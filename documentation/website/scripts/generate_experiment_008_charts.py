@@ -580,12 +580,108 @@ def plot_phase5_epoch_grid(data: dict[str, object], out_dir: Path) -> None:
     _plot_accuracy_grid(tuple(grades), out_dir / "008-phase5-epoch-grid.png")
 
 
+def plot_phase6_final_test(data: dict[str, object], out_dir: Path) -> None:
+    """Last official test by clean prefix size. One line per seed, plus the three-seed mean."""
+    grades = _phase6_grades(data, "final_test")
+    if len(grades) < 2:
+        return
+    positions = list(range(len(grades)))
+    fig, ax = plt.subplots(figsize=(8.4, 4.8), dpi=140)
+    seeds = [int(row["seed"]) for row in grades[0][1]]
+    for seed in seeds:
+        values = []
+        for _label, rows in grades:
+            row = next(item for item in rows if int(item["seed"]) == seed)
+            values.append(100.0 * float(row["final_test"]))
+        ax.plot(
+            positions,
+            values,
+            color=SEED_COLORS[seed],
+            marker="o",
+            linewidth=1.6,
+            alpha=0.35,
+            label=f"Seed {seed}",
+        )
+    means = [
+        sum(100.0 * float(row["final_test"]) for row in rows) / len(rows)
+        for _label, rows in grades
+    ]
+    ax.plot(
+        positions,
+        means,
+        color="#111827",
+        marker="o",
+        linewidth=2.2,
+        zorder=3,
+        label="Mean",
+    )
+    ax.axhline(90, color="#64748b", linestyle=":", linewidth=1)
+    ax.set_xticks(positions)
+    ax.set_xticklabels([label.replace(" images", "") for label, _rows in grades])
+    ax.set_ylim(70, 95)
+    ax.set_xlabel("Clean simulation images")
+    ax.set_ylabel("Official test accuracy (%)")
+    ax.set_title("Official test at epoch 120")
+    handles, labels = ax.get_legend_handles_labels()
+    order = [labels.index("Mean"), *[index for index, label in enumerate(labels) if label != "Mean"]]
+    ax.legend(
+        [handles[index] for index in order],
+        [labels[index] for index in order],
+        frameon=False,
+        fontsize=8,
+    )
+    ax.grid(True, axis="y", color="#e2e8f0")
+    fig.tight_layout()
+    fig.savefig(out_dir / "008-phase6-final-test.png")
+    plt.close(fig)
+
+
 def plot_phase6_epoch_grid(data: dict[str, object], out_dir: Path) -> None:
     """Train, official test, and validation for each saved phase 6 clean-prefix size."""
     grades = _phase6_grades(data, "test")
     if not grades:
         return
     _plot_accuracy_grid(tuple(grades), out_dir / "008-phase6-epoch-grid.png")
+
+
+def _phase7_grades(data: dict[str, object], required: str) -> list[tuple[str, list[dict[str, object]]]]:
+    """Phase 7 lengths, with the matching phase 6 10-epoch grade first."""
+    keys = (("phase6_size_1250", "10 epochs"), ("phase7_epochs_20", "20 epochs"), ("phase7_epochs_30", "30 epochs"))
+    return _labeled_grades(data, keys, required)
+
+
+def plot_phase7_epoch_grid(data: dict[str, object], out_dir: Path) -> None:
+    """Train, official test, and validation for the 1,250-image grade at each real training length."""
+    grades = _phase7_grades(data, "test")
+    if not grades:
+        return
+    _plot_accuracy_grid(tuple(grades), out_dir / "008-phase7-epoch-grid.png")
+
+
+def _phase8_grades(data: dict[str, object], required: str) -> list[tuple[str, list[dict[str, object]]]]:
+    """Phase 8 generation counts, with the matching phase 6 12-generation grade included."""
+    keys = (
+        ("phase8_generations_10", "10 generations"),
+        ("phase6_size_1250", "12 generations"),
+        ("phase8_generations_15", "15 generations"),
+        ("phase8_generations_20", "20 generations"),
+    )
+    return _labeled_grades(data, keys, required)
+
+
+def plot_phase8_epoch_grid(data: dict[str, object], out_dir: Path) -> None:
+    """Train, official test, and validation for each real generation count on the 1,250-image grade."""
+    grades = _phase8_grades(data, "test")
+    if not grades:
+        return
+    _plot_accuracy_grid(tuple(grades), out_dir / "008-phase8-epoch-grid.png")
+
+
+def plot_phase8_parameters(data: dict[str, object], out_dir: Path) -> None:
+    """Parameter count for each phase 8 generation count. Each seed has its own line."""
+    grades = _phase8_grades(data, "param_count")
+    if grades:
+        _plot_parameter_grades(grades, out_dir / "008-phase8-parameters.png")
 
 
 def _plot_action_counts(grades: list[tuple[str, list[dict[str, object]]]], out_path: Path) -> None:
@@ -660,7 +756,7 @@ def plot_phase6_action_counts(data: dict[str, object], out_dir: Path) -> None:
 
 def _plot_parameter_grades(grades: list[tuple[str, list[dict[str, object]]]], out_path: Path) -> None:
     """Parameter count for each grade. Each seed has its own line."""
-    ncols = 3 if len(grades) > 3 else len(grades)
+    ncols = 2 if len(grades) == 4 else (3 if len(grades) > 3 else len(grades))
     nrows = (len(grades) + ncols - 1) // ncols
     fig, axes = plt.subplots(
         nrows,
@@ -793,6 +889,16 @@ def write_charts(
         rows = _saved_group(phase6_dir / f"size_{size}")
         if len(rows) == len(SEEDS):
             data[f"phase6_size_{size}"] = rows
+    phase7_dir = run_dir.parent / "exp008_generation_only_phase7"
+    for train_epochs in (20, 30):
+        rows = _saved_group(phase7_dir / f"epochs_{train_epochs}")
+        if len(rows) == len(SEEDS):
+            data[f"phase7_epochs_{train_epochs}"] = rows
+    phase8_dir = run_dir.parent / "exp008_generation_only_phase8"
+    for n_generations in (10, 15, 20):
+        rows = _saved_group(phase8_dir / f"generations_{n_generations}")
+        if len(rows) == len(SEEDS):
+            data[f"phase8_generations_{n_generations}"] = rows
     out_dir.mkdir(parents=True, exist_ok=True)
     if experiment_has_finished(run_dir):
         snapshot_path.parent.mkdir(parents=True, exist_ok=True)
@@ -815,9 +921,13 @@ def write_charts(
     plot_phase5_epoch_grid(data, out_dir)
     plot_phase5_action_counts(data, out_dir)
     plot_phase5_parameters(data, out_dir)
+    plot_phase6_final_test(data, out_dir)
     plot_phase6_epoch_grid(data, out_dir)
     plot_phase6_action_counts(data, out_dir)
     plot_phase6_parameters(data, out_dir)
+    plot_phase7_epoch_grid(data, out_dir)
+    plot_phase8_epoch_grid(data, out_dir)
+    plot_phase8_parameters(data, out_dir)
 
 
 if __name__ == "__main__":
