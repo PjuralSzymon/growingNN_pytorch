@@ -34,6 +34,11 @@ from documentation.website.scripts.generate_experiment_008_charts import (
     plot_phase7_epoch_grid,
     plot_phase8_epoch_grid,
     plot_phase8_parameters,
+    plot_phase10_epoch_grid,
+    plot_phase10_final_test,
+    plot_phase10_learning_rate,
+    plot_phase10_mean_curves,
+    plot_phase10_parameters,
     write_charts,
 )
 
@@ -526,6 +531,98 @@ def test_plot_phase8_parameters_writes_the_generation_counts(tmp_path: Path):
 
     # Assert
     assert (tmp_path / "008-phase8-parameters.png").is_file()
+
+
+def _phase10_rows() -> list[dict[str, object]]:
+    """Five synthetic phase 10 seeds with the fields the phase 10 charts read."""
+    return [
+        {
+            "seed": seed,
+            "train": [0.3, 0.8],
+            "val": [0.4, 0.7],
+            "test": [0.5, 0.9],
+            "test_epoch": [10, 20],
+            "final_test": 0.8 + seed / 10000,
+            "lr": [0.1, 0.05, 0.001],
+            "param_count": [187008, 200000 + seed],
+        }
+        for seed in (110, 111, 112, 113, 114)
+    ]
+
+
+def test_plot_phase10_epoch_grid_writes_four_arms(tmp_path: Path):
+    """
+    plot_phase10_epoch_grid should write train, official test, and validation for the four arms.
+    """
+
+    # Arrange
+    data = {f"phase10_{arm}": _phase10_rows() for arm in ("base", "lr", "conv", "lr_conv")}
+
+    # Act
+    plot_phase10_epoch_grid(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase10-epoch-grid.png").is_file()
+
+
+def test_plot_phase10_learning_rate_writes_one_panel_per_arm(tmp_path: Path):
+    """
+    plot_phase10_learning_rate should write the saved learning rate for each arm.
+    """
+
+    # Arrange
+    data = {f"phase10_{arm}": _phase10_rows() for arm in ("base", "lr", "conv", "lr_conv")}
+
+    # Act
+    plot_phase10_learning_rate(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase10-learning-rate.png").is_file()
+
+
+def test_plot_phase10_parameters_writes_the_four_arms(tmp_path: Path):
+    """
+    plot_phase10_parameters should write parameter count for each arm.
+    """
+
+    # Arrange
+    data = {f"phase10_{arm}": _phase10_rows() for arm in ("base", "lr", "conv", "lr_conv")}
+
+    # Act
+    plot_phase10_parameters(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase10-parameters.png").is_file()
+
+
+def test_plot_phase10_final_test_writes_the_seed_and_mean_lines(tmp_path: Path):
+    """
+    plot_phase10_final_test should write the last official test of each seed and the five-seed mean.
+    """
+
+    # Arrange
+    data = {f"phase10_{arm}": _phase10_rows() for arm in ("base", "lr", "conv", "lr_conv")}
+
+    # Act
+    plot_phase10_final_test(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase10-final-test.png").is_file()
+
+
+def test_plot_phase10_mean_curves_writes_the_five_seed_means(tmp_path: Path):
+    """
+    plot_phase10_mean_curves should write the five-seed mean of train, official test, and validation.
+    """
+
+    # Arrange
+    data = {f"phase10_{arm}": _phase10_rows() for arm in ("base", "lr", "conv", "lr_conv")}
+
+    # Act
+    plot_phase10_mean_curves(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase10-mean-curves.png").is_file()
 
 
 def test_plot_phase6_final_test_writes_each_seed_and_the_mean(tmp_path: Path):

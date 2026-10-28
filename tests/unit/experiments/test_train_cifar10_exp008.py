@@ -32,9 +32,17 @@ from experiments.train_cifar10_exp008_generation_only import (
     PHASE8_GENERATIONS,
     PHASE8_ROLLOUT_DEPTH,
     PHASE8_SIMULATION,
+    PHASE10_ARMS,
+    PHASE10_CLEAN_PREFIX,
+    PHASE10_EPOCHS,
+    PHASE10_GENERATIONS,
+    PHASE10_ROLLOUT_DEPTH,
+    PHASE10_SEEDS,
+    PHASE10_SIMULATION,
     SEEDS,
     CosineDecayScheduler,
     apply_action_group,
+    apply_phase10_switches,
     apply_simulation_budget,
     history_from_generations,
     parse_args,
@@ -340,6 +348,105 @@ def test_phase_eight_compares_generation_counts_at_ten_real_epochs():
     assert cfg.simulation_scheduler.simulation_time == 300.0
     assert cfg.simulation_scheduler.simulation_epochs == 4
     assert cfg.simulation_set_size == 1250
+
+
+def test_parse_args_phase_ten_defaults_to_five_seeds():
+    """
+    Phase 10 should train seeds 110, 111, 112, 113, and 114 unless a subset is requested.
+    """
+
+    # Arrange / Act
+    args = parse_args(["--phase", "10"])
+
+    # Assert
+    assert args.phase == 10
+    assert args.seeds == PHASE10_SEEDS
+    assert args.seeds == (110, 111, 112, 113, 114)
+
+
+def test_parse_args_phase_ten_rejects_an_action_group_list():
+    """
+    Phase 10 should reject --groups because it always uses the all-action list.
+    """
+
+    # Arrange / Act / Assert
+    with pytest.raises(ValueError):
+        parse_args(["--phase", "10", "--groups", "grow"])
+
+
+def test_parse_args_phase_eight_rejects_a_phase_ten_seed():
+    """
+    Phases before phase 10 should keep the original seed list of 110, 111, and 112.
+    """
+
+    # Arrange / Act / Assert
+    with pytest.raises(ValueError):
+        parse_args(["--phase", "8", "--seeds", "113"])
+
+
+def test_phase_ten_keeps_every_action_on_the_locked_grade():
+    """
+    Phase 10 should keep all actions and the 15 by 10 run on the 1,250-image, 4-epoch grade.
+    """
+
+    # Arrange
+    cfg = RunningConfig(generations=1, epochs=1)
+    apply_action_group(cfg, "all")
+
+    # Act
+    apply_simulation_budget(cfg, PHASE10_SIMULATION)
+
+    # Assert
+    assert PHASE10_ARMS == ("base", "lr", "conv", "lr_conv")
+    assert PHASE10_GENERATIONS == 15
+    assert PHASE10_EPOCHS == 10
+    assert PHASE10_CLEAN_PREFIX == 1250
+    assert PHASE10_SIMULATION == (300.0, 4, 1250)
+    assert PHASE10_ROLLOUT_DEPTH == 0
+    assert cfg.simulation_scheduler.simulation_time == 300.0
+    assert cfg.simulation_scheduler.simulation_epochs == 4
+    assert cfg.simulation_set_size == 1250
+    assert cfg.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER is True
+    assert cfg.ACTIONS_ENABLE_ADD_RES_CONV_LAYER is True
+    assert cfg.ACTIONS_ENABLE_ADD_SEQ_LAYER is True
+    assert cfg.ACTIONS_ENABLE_ADD_RES_LAYER is True
+    assert cfg.ACTIONS_ENABLE_DEL_LAYER is True
+    assert cfg.ACTIONS_ENABLE_DEL_NEURONS_05 is True
+
+
+def test_phase_ten_arms_turn_the_learning_rate_and_conv_placement_on_or_off():
+    """
+    Each phase 10 arm should set the new cosine and the before-pool conv insert as its row requires.
+    """
+
+    # Arrange
+    expected = {
+        "base": (False, False),
+        "lr": (True, False),
+        "conv": (False, True),
+        "lr_conv": (True, True),
+    }
+
+    # Act / Assert
+    for arm, (new_lr, new_conv) in expected.items():
+        cfg = RunningConfig(generations=1, epochs=1)
+        apply_action_group(cfg, "all")
+        apply_phase10_switches(cfg, arm, PHASE10_GENERATIONS, PHASE10_EPOCHS)
+        assert isinstance(cfg.lr_scheduler, CosineDecayScheduler) is new_lr
+        assert cfg.seq_conv_before_global_pool is new_conv
+        assert cfg.seq_conv_bn_relu is new_conv
+        assert cfg.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER is True
+        assert cfg.ACTIONS_ENABLE_DEL_LAYER is True
+        if new_lr:
+            before = cfg.lr_scheduler.global_epoch
+            cfg.lr_scheduler.structure_changed()
+            assert cfg.lr_scheduler.global_epoch == before
+            assert cfg.lr_scheduler.alpha_scheduler(0, 1) == pytest.approx(0.1)
+        else:
+            assert cfg.lr_scheduler.initial_lr == pytest.approx(0.01)
+            assert cfg.lr_scheduler.total_epochs == PHASE10_GENERATIONS * PHASE10_EPOCHS
+            cfg.lr_scheduler.structure_changed()
+            assert cfg.lr_scheduler.recovery._schedule.iterations_since_change == 0
 
 
 def test_prefix_clean_loader_keeps_the_first_cuda_images_without_augmentation():

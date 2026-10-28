@@ -62,6 +62,13 @@ The last generation does not search. Finished counts are skipped when
 history.pt already exists.
 
     pipenv run python -u experiments/train_cifar10_exp008_generation_only.py --phase 8
+
+Phase 10 keeps that 15 generation grade and the full action list. It turns
+the learning rate and the new conv placement on and off. The four arms are
+base, lr, conv, and lr_conv. Seeds are 110, 111, 112, 113, and 114. Finished
+arms are skipped when history.pt already exists.
+
+    pipenv run python -u experiments/train_cifar10_exp008_generation_only.py --phase 10
 """
 
 from __future__ import annotations
@@ -83,7 +90,13 @@ if str(_REPO_ROOT) not in sys.path:
 
 import growingnn.core.config as project_config
 import growingnn.simulation.simulation_algorithms.montecarlo_alg as montecarlo_alg
-from experiments.train_cifar10 import DATA_DIR, Cifar10Data, _BatchLoader, _CudaCIFAR
+from experiments.train_cifar10 import (
+    DATA_DIR,
+    Cifar10Data,
+    _BatchLoader,
+    _CudaCIFAR,
+    learning_rate_scheduler_factory,
+)
 from experiments.train_cifar10_exp007_test90_package import (
     added_hyperparameters,
     build_model,
@@ -130,6 +143,20 @@ PHASE8_GENERATIONS = (10, 15, 20)
 PHASE8_CLEAN_PREFIX = 1250
 PHASE8_SIMULATION = (300.0, 4, PHASE8_CLEAN_PREFIX)
 PHASE8_ROLLOUT_DEPTH = 0
+PHASE10_DIR = Path(__file__).resolve().parent / "output" / "train_cifar10" / "runs" / "exp008_generation_only_phase10"
+PHASE10_SEEDS = (110, 111, 112, 113, 114)
+PHASE10_ARMS = ("base", "lr", "conv", "lr_conv")
+PHASE10_ARM_SETTINGS = {
+    "base": {"new_learning_rate": False, "new_conv": False},
+    "lr": {"new_learning_rate": True, "new_conv": False},
+    "conv": {"new_learning_rate": False, "new_conv": True},
+    "lr_conv": {"new_learning_rate": True, "new_conv": True},
+}
+PHASE10_GENERATIONS = 15
+PHASE10_EPOCHS = 10
+PHASE10_CLEAN_PREFIX = 1250
+PHASE10_SIMULATION = (300.0, 4, PHASE10_CLEAN_PREFIX)
+PHASE10_ROLLOUT_DEPTH = 0
 _ACTION_FLAGS = (
     "ACTIONS_ENABLE_ADD_SEQ_LAYER",
     "ACTIONS_ENABLE_ADD_RES_LAYER",
@@ -282,6 +309,25 @@ def apply_simulation_budget(cfg, simulation: tuple[float, int, int]) -> None:
     cfg.simulation_scheduler = AlwaysSimulationScheduler(float(time_s), int(epochs))
 
 
+def apply_phase10_switches(cfg, arm: str, generations: int, epochs: int) -> None:
+    """Turn the phase 10 learning rate and conv placement on or off. The action list stays as it is."""
+    settings = PHASE10_ARM_SETTINGS[arm]
+    if settings["new_learning_rate"]:
+        cfg.lr_scheduler = CosineDecayScheduler(int(generations) * int(epochs))
+    else:
+        cfg.lr_scheduler = learning_rate_scheduler_factory(
+            {
+                "lr_alpha": 0.01,
+                "lr_mode": "cosine",
+                "generations": int(generations),
+                "epochs": int(epochs),
+            }
+        )
+    new_conv = bool(settings["new_conv"])
+    cfg.seq_conv_before_global_pool = new_conv
+    cfg.seq_conv_bn_relu = new_conv
+
+
 @contextmanager
 def rollout_depth(depth: int | None):
     """Use one Monte Carlo rollout depth for the block, then restore the previous value."""
@@ -299,21 +345,22 @@ def rollout_depth(depth: int | None):
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Select a phase and an optional seed subset. Phase 2 also accepts action groups."""
     parser = argparse.ArgumentParser(description="Experiment 008: CIFAR-10 generation loop only.")
-    parser.add_argument("--phase", type=int, choices=(1, 2, 3, 4, 5, 6, 7, 8), default=1)
+    parser.add_argument("--phase", type=int, choices=(1, 2, 3, 4, 5, 6, 7, 8, 10), default=1)
     parser.add_argument("--groups", nargs="*", default=None)
     parser.add_argument("--seeds", type=int, nargs="*", default=None)
     args = parser.parse_args(argv)
-    seeds = tuple(args.seeds) if args.seeds else SEEDS
-    unknown = [seed for seed in seeds if seed not in SEEDS]
+    allowed_seeds = PHASE10_SEEDS if args.phase == 10 else SEEDS
+    seeds = tuple(args.seeds) if args.seeds else allowed_seeds
+    unknown = [seed for seed in seeds if seed not in allowed_seeds]
     if unknown:
-        raise ValueError(f"seeds must be among {list(SEEDS)}: {unknown}")
+        raise ValueError(f"seeds must be among {list(allowed_seeds)}: {unknown}")
     groups = tuple(args.groups) if args.groups else PHASE2_GROUPS
     unknown_groups = [group for group in groups if group not in PHASE2_GROUPS]
     if unknown_groups:
         raise ValueError(f"groups must be among {list(PHASE2_GROUPS)}: {unknown_groups}")
     if args.phase == 1 and args.groups:
         raise ValueError("phase 1 does not take --groups")
-    if args.phase in (3, 4, 5, 6, 7, 8) and args.groups:
+    if args.phase in (3, 4, 5, 6, 7, 8, 10) and args.groups:
         raise ValueError(f"phase {args.phase} does not take --groups")
     args.seeds = seeds
     args.groups = groups
@@ -367,6 +414,7 @@ def run_seed(
     clean_prefix: int | None = None,
     epochs: int | None = None,
     generations: int | None = None,
+    arm: str | None = None,
 ) -> None:
     """Train one seed with the generation loop. Official test is logged and does not stop the run."""
     if (out_dir / "history.pt").is_file():
@@ -406,6 +454,8 @@ def run_seed(
     cfg.stopper = AccuracyStopper(target_accuracy=0.999)
     cfg.criterion = nn.CrossEntropyLoss(label_smoothing=LABEL_SMOOTHING)
     apply_action_group(cfg, group)
+    if arm is not None:
+        apply_phase10_switches(cfg, arm, n_generations, train_epochs)
     if simulation is not None:
         apply_simulation_budget(cfg, simulation)
     if clean_prefix is not None:
@@ -415,6 +465,8 @@ def run_seed(
     print(
         f"EXP008 seed {seed} group {group} device {device} generations {n_generations} epochs {train_epochs} "
         f"channels {CHANNELS} hidden {HIDDEN} smooth {LABEL_SMOOTHING} cutout True "
+        f"arm {arm or '-'} lr {type(cfg.lr_scheduler).__name__} "
+        f"conv_before_pool {cfg.seq_conv_before_global_pool} conv_bn_relu {cfg.seq_conv_bn_relu} "
         f"sim {cfg.simulation_scheduler.simulation_time}s "
         f"{cfg.simulation_scheduler.simulation_epochs} epochs set {cfg.simulation_set_size} "
         f"rollout depth {project_config.MCTS_ROLLOUT_DEPTH if rollout_depth_value is None else rollout_depth_value}",
@@ -440,6 +492,11 @@ def run_seed(
     history["simulation_rollout_depth"] = (
         project_config.MCTS_ROLLOUT_DEPTH if rollout_depth_value is None else int(rollout_depth_value)
     )
+    if arm is not None:
+        history["arm"] = arm
+        history["seq_conv_before_global_pool"] = bool(cfg.seq_conv_before_global_pool)
+        history["seq_conv_bn_relu"] = bool(cfg.seq_conv_bn_relu)
+        history["learning_rate"] = type(cfg.lr_scheduler).__name__
     torch.save(history, out_dir / "history.pt")
     torch.save(
         {"state_dict": grown.state_dict(), "test_acc": summary["test_acc"], "seed": seed},
@@ -449,7 +506,7 @@ def run_seed(
 
 
 def main(argv: list[str] | None = None) -> None:
-    """Run one experiment phase. Phase 8 changes how many generations the real run has."""
+    """Run one experiment phase. Phase 10 turns the learning rate and conv placement on and off."""
     args = parse_args(argv)
     data = Cifar10Data(DATA_DIR)
     data.prepare()
@@ -580,6 +637,31 @@ def main(argv: list[str] | None = None) -> None:
                     rollout_depth_value=PHASE8_ROLLOUT_DEPTH,
                     clean_prefix=PHASE8_CLEAN_PREFIX,
                     generations=n_generations,
+                )
+        return
+    if args.phase == 10:
+        print(
+            f"Exp 008 phase 10 arms {', '.join(PHASE10_ARMS)} "
+            f"seeds {', '.join(str(seed) for seed in args.seeds)} "
+            f"generations {PHASE10_GENERATIONS} epochs {PHASE10_EPOCHS} "
+            f"sim {PHASE10_SIMULATION[0]}s {PHASE10_SIMULATION[1]} epochs "
+            f"clean prefix {PHASE10_CLEAN_PREFIX} rollout depth {PHASE10_ROLLOUT_DEPTH}.",
+            flush=True,
+        )
+        print(f"Write target: {PHASE10_DIR}", flush=True)
+        for arm in PHASE10_ARMS:
+            for seed in args.seeds:
+                run_seed(
+                    data,
+                    PHASE10_DIR / arm / f"seed_{seed}",
+                    seed,
+                    "all",
+                    PHASE10_SIMULATION,
+                    rollout_depth_value=PHASE10_ROLLOUT_DEPTH,
+                    clean_prefix=PHASE10_CLEAN_PREFIX,
+                    epochs=PHASE10_EPOCHS,
+                    generations=PHASE10_GENERATIONS,
+                    arm=arm,
                 )
         return
     print(

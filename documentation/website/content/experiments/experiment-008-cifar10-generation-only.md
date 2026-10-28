@@ -1,6 +1,6 @@
 # Experiment 008: CIFAR-10 generation loop without a finish stage
 
-This page has nine sections, in this order.
+This page has ten sections, in this order.
 
 1. [Improvements that make CIFAR-10 work in the growing algorithm](#improvements-that-make-cifar-10-work-in-the-growing-algorithm). How the recipe worked before, and how it works now.
 2. [Phase 1: sequential convolution only](#phase-1-sequential-convolution-only). The finished run that allows only `AddSeqConvLayer`. Last official test is `91.11%`, `91.17%`, and `91.36%`. The mean is `91.21%`.
@@ -11,6 +11,7 @@ This page has nine sections, in this order.
 7. [Phase 6: smaller clean prefixes](#phase-6-smaller-clean-prefixes). The `4` epoch grade, with the clean prefix halved six times: `5,000`, `2,500`, `1,250`, `625`, `312`, `156`, and `78`. All seven grades finished. The means are `85.65%`, `89.01%`, `88.24%`, `84.48%`, `81.03%`, `83.62%`, and `83.20%`. The `2,500` image mean is the highest.
 8. [Phase 7: longer real training](#phase-7-longer-real-training). The same `1,250` image grade at `10`, `20`, and `30` real epochs per generation. The means are `88.24%`, `84.65%`, and `87.48%`. The `10` epoch mean is the highest.
 9. [Phase 8: how many generations](#phase-8-how-many-generations). The same `1,250` image grade at `10` real epochs, with `10`, `12`, `15`, and `20` generations. The means are `80.65%`, `88.24%`, `90.04%`, and `88.35%`. The `15` generation mean is the highest.
+10. [Phase 10: learning rate and conv placement](#phase-10-learning-rate-and-conv-placement). The `15` generation grade, with the learning rate and the conv placement turned on and off. Every arm uses all actions. Five seeds. The means are `82.17%`, `83.23%`, `83.33%`, and `88.04%`. The arm with both changes is the highest.
 
 Script: `experiments/train_cifar10_exp008_generation_only.py`
 
@@ -29,6 +30,8 @@ Phase 6 output: `experiments/output/train_cifar10/runs/exp008_generation_only_ph
 Phase 7 output: `experiments/output/train_cifar10/runs/exp008_generation_only_phase7`
 
 Phase 8 output: `experiments/output/train_cifar10/runs/exp008_generation_only_phase8`
+
+Phase 10 output: `experiments/output/train_cifar10/runs/exp008_generation_only_phase10`
 
 Charts: `documentation/website/scripts/generate_experiment_008_charts.py`
 
@@ -844,3 +847,117 @@ Ten generations are too few for this grade. The mean is `80.65%`, and none of th
 Fifteen generations give the highest mean, `90.04%`. The three seeds end within `1.63` percentage points. Twenty generations do not keep that mean: it falls to `88.35%`, because seed `111` ends at `83.08%` after choosing no convolution.
 
 The best single seed is the `20` generation seed `110`, at `91.50%`. That is `0.29` percentage points above the phase 1 only-convolution mean of `91.21%`. The `15` generation mean remains `1.17` percentage points below that phase 1 mean.
+
+## Phase 10: learning rate and conv placement
+
+Phase 10 asks whether the new learning rate and the new conv placement change the result of the `15` generation grade. Phase 8 found that `15` generations of `10` real epochs had the highest mean, so that length stays. The simulation stays at `4` epochs on the first `1,250` clean images, with a `300` second budget and an extra rollout depth of `0`. Every arm uses the full action list. The starter stays `FourLayerCifarNet` at `128` channels and hidden size `256`. Cutout, label smoothing `0.1`, momentum `0.9`, weight decay `0.0001`, and gradient clip `1.0` stay on. Seeds are `110`, `111`, `112`, `113`, and `114`.
+
+The old learning rate is the composed cosine from `learning_rate_scheduler_factory`. It starts at `0.01`, and an action restarts its warmup. The new learning rate is `CosineDecayScheduler`, from `0.1` to `0.001` across the `150` epochs, and an action does not restart it. The old conv placement sets `seq_conv_before_global_pool` and `seq_conv_bn_relu` to false, so a new conv sits on the `1×1` pooled map with no BatchNorm or ReLU. The new placement sets both flags to true, so the new conv sits at `8×8`, before the global pool, with BatchNorm and ReLU.
+
+| Arm | Learning rate | Conv placement | Actions | Seeds |
+| --- | --- | --- | --- | --- |
+| `base` | old cosine, restarts after an action | after the global pool, no BatchNorm or ReLU | all | `5` |
+| `lr` | new cosine, `0.1` to `0.001`, no restart | after the global pool, no BatchNorm or ReLU | all | `5` |
+| `conv` | old cosine, restarts after an action | before the global pool, with BatchNorm and ReLU | all | `5` |
+| `lr_conv` | new cosine, `0.1` to `0.001`, no restart | before the global pool, with BatchNorm and ReLU | all | `5` |
+
+| Setting | Value |
+| --- | --- |
+| Generations | `15` |
+| Real epochs per generation | `10` |
+| Simulation training images | `1,250`, clean, the first `1,250` |
+| Simulation epochs | `4` |
+| Simulation time | `300` seconds |
+| Extra actions inside the score | `0` |
+| Actions | all |
+| Output | `exp008_generation_only_phase10/<arm>/seed_<seed>` |
+
+Official test accuracy is the fraction correct on the `10,000` image test set, at the last epoch of the run. Each file stores `train_generations` `15`, `train_epochs` `10`, `simulation_epochs` `4`, `simulation_clean_prefix` `1250`, `simulation_time` `300.0`, and `simulation_rollout_depth` `0`. Save times, from the filesystem, run from `2026-10-26 01:32` for `base` seed `110` to `2026-10-28 16:41` for `lr_conv` seed `114`.
+
+| Seed | `base` | `lr` | `conv` | `lr_conv` |
+| --- | ---: | ---: | ---: | ---: |
+| `110` | `81.36%` | `82.15%` | `82.14%` | `89.08%` |
+| `111` | `81.57%` | `82.44%` | `85.13%` | `89.10%` |
+| `112` | `83.27%` | `81.25%` | `83.47%` | `88.93%` |
+| `113` | `81.21%` | `87.82%` | `82.28%` | `86.60%` |
+| `114` | `83.42%` | `82.48%` | `83.62%` | `86.50%` |
+| Mean | `82.17%` | `83.23%` | `83.33%` | `88.04%` |
+
+The `lr_conv` mean, `88.04%`, is the highest. It is `5.87` percentage points above `base`, `4.81` percentage points above `lr`, and `4.71` percentage points above `conv`. `lr` is `1.06` percentage points above `base`. `conv` is `1.16` percentage points above `base`. The `lr_conv` last values span `2.60` percentage points. The `base` span is `2.21` percentage points, and the `conv` span is `2.99`. The `lr` span is `6.57` percentage points, because seed `113` ends at `87.82%` and the other four end between `81.25%` and `82.48%`.
+
+Seeds `110`, `111`, and `112` in `lr_conv` end at `89.08%`, `89.10%`, and `88.93%`. Their mean is `89.04%`. The phase 8 `15` generation mean on those same three seeds is `90.04%`. The phase 10 mean is `1.00` percentage point below it. Seeds `113` and `114` end at `86.60%` and `86.50%`, so the five-seed mean is `88.04%`.
+
+Figure 25 is one row per arm. The middle column is official test.
+
+![Train, official test, and validation for the four phase 10 arms](/assets/experiments/008-phase10-epoch-grid.png)
+
+> [!CAPTION] Figure 25. Four rows are the arms base, lr, conv, and lr_conv. Three columns are training accuracy, official test accuracy, and validation accuracy, in percent. Blue is seed 110, orange is seed 111, green is seed 112, purple is seed 113, and red is seed 114. Official test markers are the generation-end measurements. The dashed line is 90%. Every panel uses the same vertical axis, from 0% to 100%.
+
+`lr_conv` is the only row whose official-test lines finish near `90%`. `base`, `lr`, and `conv` stay in a band around `80%` to `85%`, except `lr` seed `113`. On `lr_conv`, the mean training accuracy ends at `91.78%` and the mean official test ends at `88.04%`. On `conv`, the mean training accuracy ends at `81.65%`, below the mean official test of `83.33%`.
+
+| Seed | `base` train | `lr` train | `conv` train | `lr_conv` train | `base` validation | `lr` validation | `conv` validation | `lr_conv` validation |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `110` | `77.40%` | `84.69%` | `80.61%` | `91.57%` | `80.66%` | `81.90%` | `81.94%` | `89.00%` |
+| `111` | `82.85%` | `84.24%` | `81.80%` | `93.33%` | `81.68%` | `82.30%` | `84.94%` | `88.82%` |
+| `112` | `84.91%` | `82.52%` | `84.08%` | `94.22%` | `83.12%` | `81.00%` | `83.08%` | `89.10%` |
+| `113` | `81.95%` | `94.88%` | `79.81%` | `88.58%` | `81.36%` | `87.52%` | `82.06%` | `86.60%` |
+| `114` | `85.07%` | `84.56%` | `81.97%` | `91.22%` | `82.84%` | `82.22%` | `83.44%` | `86.34%` |
+| Mean | `82.44%` | `86.18%` | `81.65%` | `91.78%` | `81.93%` | `82.99%` | `83.09%` | `87.97%` |
+
+Figure 26 is the five-seed mean of those three curves.
+
+![Five-seed mean train, official test, and validation](/assets/experiments/008-phase10-mean-curves.png)
+
+> [!CAPTION] Figure 26. Five-seed mean accuracy by epoch. Three panels are training accuracy, official test accuracy, and validation accuracy, in percent. Gray is base, blue is lr, orange is conv, and green is lr_conv. Official test markers are the generation-end measurements. The dashed line is 90%. Every panel uses the same vertical axis, from 0% to 100%.
+
+The green line separates from the other three during training and stays above them on validation. On official test, the green mean stays above the other three from the first marker. The orange mean starts lower, then the gray, blue, and orange means finish close together.
+
+Figure 27 is the last official test of each seed, with the five-seed mean drawn over them.
+
+![Last official test by arm](/assets/experiments/008-phase10-final-test.png)
+
+> [!CAPTION] Figure 27. Official test accuracy at epoch 150, in percent. The horizontal axis is the arm. Blue is seed 110, orange is seed 111, green is seed 112, purple is seed 113, and red is seed 114. Those seed lines are drawn lighter than the mean. The black line is the five-seed mean. The dotted line is 90%.
+
+The black line steps up only at `lr_conv`. Purple is the high seed on `lr` and one of the two low seeds on `lr_conv`.
+
+### How did the learning rate move?
+
+`lr` is the learning rate stored on each training epoch. Within one arm the five seeds stored the same list. `base` and `conv` use `ComposedLearningRateScheduler`. The saved rate starts at `0.01`. After an action it falls to `0.001` and climbs back toward `0.01`. An action runs after every generation except the last, so that drop repeats through the run. `lr` and `lr_conv` use `CosineDecayScheduler`. The saved rate starts at `0.1` and falls to `0.001` across the `150` epochs. An action does not restart it. The last value of every arm is `0.001`.
+
+Figure 28 is one panel per arm. The vertical axis is shared, so the old rate occupies the bottom tenth of the panel.
+
+![Learning rate by arm](/assets/experiments/008-phase10-learning-rate.png)
+
+> [!CAPTION] Figure 28. Learning rate by epoch. Four panels are base, lr, conv, and lr_conv. Each panel has one line because the five seeds stored the same rate. The vertical axis is shared. The rate has no percent unit.
+
+The two old panels show the repeated drop and climb. The two new panels show one smooth fall from `0.1` to `0.001`.
+
+### How did the parameter count move?
+
+`param_count` is recorded after each generation's SGD and before that generation's action, then copied onto every epoch of the generation. The last generation does not search, so the last value is the parameter count of the finished network. Every seed executes `14` actions.
+
+| Seed | `base` | `lr` | `conv` | `lr_conv` |
+| --- | ---: | ---: | ---: | ---: |
+| `110` | `1,943,427` | `379,891` | `2,819,658` | `375,602` |
+| `111` | `720,960` | `576,079` | `627,554` | `434,117` |
+| `112` | `1,630,592` | `167,048` | `1,413,568` | `1,336,601` |
+| `113` | `892,928` | `4,306,551` | `1,957,822` | `2,057,949` |
+| `114` | `3,229,493` | `820,776` | `1,721,748` | `2,007,296` |
+
+Figure 29 is one panel per arm.
+
+![Parameter count by arm](/assets/experiments/008-phase10-parameters.png)
+
+> [!CAPTION] Figure 29. Parameter count by epoch. Four panels are base, lr, conv, and lr_conv. Blue is seed 110, orange is seed 111, green is seed 112, purple is seed 113, and red is seed 114. The count is flat inside a generation and changes at the first epoch after an action that changes the parameter count. Every panel uses the same vertical axis.
+
+On `lr`, four seeds end below `1,000,000` parameters and choose no convolution. Seed `113` chooses one residual convolution, ends at `4,306,551` parameters, and is the `87.82%` seed. On `lr_conv`, seeds `110` and `111` end at `375,602` and `434,117` parameters and at `89.08%` and `89.10%`. Seeds `113` and `114` end near `2,000,000` parameters and at `86.60%` and `86.50%`.
+
+`lr` seed `114` falls from `75.02%` at generation `6` to `69.52%` at generation `7`, then ends at `82.48%`. `lr_conv` seed `113` falls from `69.44%` at generation `5` to `64.09%` at generation `6`, then ends at `86.60%`. `lr_conv` seed `114` falls from `68.81%` at generation `1` to `62.95%` at generation `2`, and from `69.40%` at generation `3` to `63.06%` at generation `4`, then ends at `86.50%`.
+
+### Conclusions
+
+The two changes together give the highest mean. `lr_conv` ends at `88.04%`. Either change alone stays near the arm with both changes off: `lr` ends at `83.23%` and `conv` ends at `83.33%`, against `82.17%` for `base`.
+
+The new learning rate alone does not raise the four seeds that choose no convolution. Those four end at `82.15%`, `82.44%`, `81.25%`, and `82.48%`. Their mean is `82.08%`, `0.09` percentage points below the `base` mean.
+
+The best single seed is `lr_conv` seed `111`, at `89.10%`. That is `1.52` percentage points below the phase 8 `15` generation seed `110`, at `90.62%`. It is `2.11` percentage points below the phase 1 only-convolution mean of `91.21%`.

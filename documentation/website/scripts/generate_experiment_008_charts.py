@@ -28,7 +28,21 @@ RUN_DIR = (
     / "exp008_generation_only"
 )
 SEEDS = (110, 111, 112)
-SEED_COLORS = {110: "#1d4ed8", 111: "#d97706", 112: "#059669"}
+PHASE10_SEEDS = (110, 111, 112, 113, 114)
+PHASE10_ARMS = ("base", "lr", "conv", "lr_conv")
+SEED_COLORS = {
+    110: "#1d4ed8",
+    111: "#d97706",
+    112: "#059669",
+    113: "#7c3aed",
+    114: "#e11d48",
+}
+ARM_COLORS = {
+    "base": "#64748b",
+    "lr": "#1d4ed8",
+    "conv": "#d97706",
+    "lr_conv": "#059669",
+}
 # Seed 112 is the highest last official test. These edges are the Generation action
 # lines in growingnn.log from 2026-10-14 09:15 to 09:41, matched to that seed's
 # saved validation accuracy before each action.
@@ -197,11 +211,16 @@ def _plot_accuracy_grid(
                 ax.axhline(90, color="#64748b", linestyle="--", linewidth=1)
             ax.set_ylim(*ylim)
             ax.grid(True, axis="y", color="#e2e8f0")
-        if row_index == 0:
+        if row_index == 0 and len(list(rows)) <= 3:
             axes[0][0].legend(frameon=False, fontsize=7)
     for ax in axes[-1]:
         ax.set_xlabel("Epoch")
-    fig.tight_layout()
+    if len(list(modes[0][1])) > 3:
+        handles, labels = axes[0][0].get_legend_handles_labels()
+        fig.legend(handles, labels, loc="upper center", ncol=len(labels), frameon=False, fontsize=8)
+        fig.tight_layout(rect=(0, 0, 1, 0.96))
+    else:
+        fig.tight_layout()
     fig.savefig(out_path)
     plt.close(fig)
 
@@ -303,10 +322,10 @@ def plot_learning_rate(data: dict[str, object], out_dir: Path) -> None:
     plt.close(fig)
 
 
-def _saved_group(group_dir: Path) -> list[dict[str, object]]:
-    """Load the seeds of one phase 2 group that already have history.pt."""
+def _saved_group(group_dir: Path, seeds: tuple[int, ...] = SEEDS) -> list[dict[str, object]]:
+    """Load the seeds of one group that already have history.pt."""
     rows = []
-    for seed in SEEDS:
+    for seed in seeds:
         path = group_dir / f"seed_{seed}" / "history.pt"
         if path.is_file():
             rows.append(_load_history(path, seed))
@@ -684,6 +703,156 @@ def plot_phase8_parameters(data: dict[str, object], out_dir: Path) -> None:
         _plot_parameter_grades(grades, out_dir / "008-phase8-parameters.png")
 
 
+def _phase10_grades(data: dict[str, object], required: str) -> list[tuple[str, list[dict[str, object]]]]:
+    """Phase 10 arms that contain one field, in switch order."""
+    keys = (
+        ("phase10_base", "base"),
+        ("phase10_lr", "lr"),
+        ("phase10_conv", "conv"),
+        ("phase10_lr_conv", "lr_conv"),
+    )
+    return _labeled_grades(data, keys, required)
+
+
+def plot_phase10_epoch_grid(data: dict[str, object], out_dir: Path) -> None:
+    """Train, official test, and validation for each phase 10 arm."""
+    grades = _phase10_grades(data, "test")
+    if not grades:
+        return
+    _plot_accuracy_grid(tuple(grades), out_dir / "008-phase10-epoch-grid.png")
+
+
+def plot_phase10_learning_rate(data: dict[str, object], out_dir: Path) -> None:
+    """Learning rate for each phase 10 arm. One line when every seed stored the same schedule."""
+    grades = _phase10_grades(data, "lr")
+    if not grades:
+        return
+    fig, axes = plt.subplots(2, 2, figsize=(8.8, 6.6), dpi=140, sharex=True, sharey=True, squeeze=False)
+    flat = list(axes.ravel())
+    for ax, (label, rows) in zip(flat, grades):
+        same = all(row["lr"] == rows[0]["lr"] for row in rows[1:])
+        drawn = rows[:1] if same else rows
+        for row in drawn:
+            epochs = list(range(1, len(row["lr"]) + 1))
+            ax.plot(
+                epochs,
+                [float(value) for value in row["lr"]],
+                color="#1d4ed8" if same else SEED_COLORS[int(row["seed"])],
+                linewidth=1.6,
+                label="All seeds" if same else f"Seed {row['seed']}",
+            )
+        ax.set_title(label)
+        ax.grid(True, axis="y", color="#e2e8f0")
+        ax.legend(frameon=False, fontsize=7)
+    for ax in flat[len(grades):]:
+        ax.axis("off")
+    flat[0].set_ylabel("Learning rate")
+    flat[2].set_ylabel("Learning rate")
+    flat[2].set_xlabel("Epoch")
+    flat[3].set_xlabel("Epoch")
+    fig.tight_layout()
+    fig.savefig(out_dir / "008-phase10-learning-rate.png")
+    plt.close(fig)
+
+
+def plot_phase10_parameters(data: dict[str, object], out_dir: Path) -> None:
+    """Parameter count for each phase 10 arm. Each seed has its own line."""
+    grades = _phase10_grades(data, "param_count")
+    if grades:
+        _plot_parameter_grades(grades, out_dir / "008-phase10-parameters.png")
+
+
+def plot_phase10_final_test(data: dict[str, object], out_dir: Path) -> None:
+    """Last official test by arm. One line per seed, plus the five-seed mean."""
+    grades = _phase10_grades(data, "final_test")
+    if len(grades) < 2:
+        return
+    positions = list(range(len(grades)))
+    fig, ax = plt.subplots(figsize=(8.4, 4.8), dpi=140)
+    seeds = [int(row["seed"]) for row in grades[0][1]]
+    for seed in seeds:
+        values = []
+        for _label, rows in grades:
+            row = next(item for item in rows if int(item["seed"]) == seed)
+            values.append(100.0 * float(row["final_test"]))
+        ax.plot(
+            positions,
+            values,
+            color=SEED_COLORS[seed],
+            marker="o",
+            linewidth=1.6,
+            alpha=0.35,
+            label=f"Seed {seed}",
+        )
+    means = [
+        sum(100.0 * float(row["final_test"]) for row in rows) / len(rows)
+        for _label, rows in grades
+    ]
+    ax.plot(positions, means, color="#111827", marker="o", linewidth=2.2, zorder=3, label="Mean")
+    ax.axhline(90, color="#64748b", linestyle=":", linewidth=1)
+    ax.set_xticks(positions)
+    ax.set_xticklabels([label for label, _rows in grades])
+    ax.set_ylim(75, 95)
+    ax.set_xlabel("Arm")
+    ax.set_ylabel("Official test accuracy (%)")
+    ax.set_title("Official test at epoch 150")
+    handles, labels = ax.get_legend_handles_labels()
+    order = [labels.index("Mean"), *[index for index, label in enumerate(labels) if label != "Mean"]]
+    ax.legend(
+        [handles[index] for index in order],
+        [labels[index] for index in order],
+        frameon=False,
+        fontsize=8,
+    )
+    ax.grid(True, axis="y", color="#e2e8f0")
+    fig.tight_layout()
+    fig.savefig(out_dir / "008-phase10-final-test.png")
+    plt.close(fig)
+
+
+def plot_phase10_mean_curves(data: dict[str, object], out_dir: Path) -> None:
+    """Five-seed mean of train, official test, and validation for each phase 10 arm."""
+    grades = _phase10_grades(data, "test")
+    if not grades:
+        return
+    metrics = (
+        ("train", None, "Mean train accuracy"),
+        ("test", "test_epoch", "Mean official test accuracy"),
+        ("val", None, "Mean validation accuracy"),
+    )
+    fig, axes = plt.subplots(1, 3, figsize=(11.4, 4.2), dpi=140, sharey=True, squeeze=False)
+    for ax, (key, epoch_key, title) in zip(axes[0], metrics):
+        for label, rows in grades:
+            series = [list(row[key]) for row in rows]
+            length = min(len(values) for values in series)
+            mean = [sum(values[index] for values in series) / len(series) for index in range(length)]
+            if epoch_key is None:
+                epochs = list(range(1, length + 1))
+                marker = None
+            else:
+                epochs = [int(value) for value in rows[0][epoch_key][:length]]
+                marker = "o"
+            ax.plot(
+                epochs,
+                [100.0 * value for value in mean],
+                color=ARM_COLORS[label],
+                marker=marker,
+                linewidth=1.8,
+                label=label,
+            )
+        ax.set_title(title)
+        ax.set_xlabel("Epoch")
+        ax.set_ylim(0, 100)
+        ax.grid(True, axis="y", color="#e2e8f0")
+        if key == "test":
+            ax.axhline(90, color="#64748b", linestyle="--", linewidth=1)
+    axes[0][0].set_ylabel("Accuracy (%)")
+    axes[0][0].legend(frameon=False, fontsize=8)
+    fig.tight_layout()
+    fig.savefig(out_dir / "008-phase10-mean-curves.png")
+    plt.close(fig)
+
+
 def _plot_action_counts(grades: list[tuple[str, list[dict[str, object]]]], out_path: Path) -> None:
     """One panel per grade. Each bar group is one executed action type."""
     tallies: list[list[dict[str, int]]] = []
@@ -899,6 +1068,11 @@ def write_charts(
         rows = _saved_group(phase8_dir / f"generations_{n_generations}")
         if len(rows) == len(SEEDS):
             data[f"phase8_generations_{n_generations}"] = rows
+    phase10_dir = run_dir.parent / "exp008_generation_only_phase10"
+    for arm in PHASE10_ARMS:
+        rows = _saved_group(phase10_dir / arm, PHASE10_SEEDS)
+        if len(rows) == len(PHASE10_SEEDS):
+            data[f"phase10_{arm}"] = rows
     out_dir.mkdir(parents=True, exist_ok=True)
     if experiment_has_finished(run_dir):
         snapshot_path.parent.mkdir(parents=True, exist_ok=True)
@@ -928,6 +1102,11 @@ def write_charts(
     plot_phase7_epoch_grid(data, out_dir)
     plot_phase8_epoch_grid(data, out_dir)
     plot_phase8_parameters(data, out_dir)
+    plot_phase10_epoch_grid(data, out_dir)
+    plot_phase10_learning_rate(data, out_dir)
+    plot_phase10_parameters(data, out_dir)
+    plot_phase10_final_test(data, out_dir)
+    plot_phase10_mean_curves(data, out_dir)
 
 
 if __name__ == "__main__":
