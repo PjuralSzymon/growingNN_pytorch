@@ -289,7 +289,7 @@ def write_architecture(data: dict[str, object], out_dir: Path) -> None:
 
     _draw(0)
     for index, insert in enumerate(list(inserts), start=1):
-        actions = AddSeqConvLayer.generate_all_actions(traced, with_bn_relu=True, before_global_pool=True)
+        actions = AddSeqConvLayer.generate_all_actions(traced, add_batchnorm_and_relu=True, before_global_pool=True)
         match = [
             action for action in actions
             if action.params[0] == insert["from"] and action.params[1] == insert["to"]

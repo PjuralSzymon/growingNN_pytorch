@@ -54,15 +54,15 @@ How it is working now. Experiment 008 starts from `FourLayerCifarNet` with `128`
 
 ### Where a new convolution is inserted
 
-How it was working. A new sequential convolution was placed on the output of the global pool. That map is `1×1`. The original group in Experiment 007 still uses that placement, because `seq_conv_before_global_pool` is `False`.
+How it was working. A new sequential convolution was placed on the output of the global pool. That map is `1×1`. The original group in Experiment 007 still uses that placement, because `seq_conv_insert_before_global_pool` is `False`.
 
-How it is working now. `GraphStructureQuery.conv_insert_after_node_before_flatten` skips the trailing global pool. The new convolution runs at `8×8`, after the two max-pools and before the global pool. `seq_conv_before_global_pool` is `True`. The convolution still starts as an eye, so the network function barely changes at the moment of the insert.
+How it is working now. `GraphStructureQuery.conv_insert_after_node_before_flatten` skips the trailing global pool. The new convolution runs at `8×8`, after the two max-pools and before the global pool. `seq_conv_insert_before_global_pool` is `True`. The convolution still starts as an eye, so the network function barely changes at the moment of the insert.
 
 ### BatchNorm and ReLU after each new convolution
 
-How it was working. The new convolution was only the eye convolution. A second eye convolution, with nothing between the two, stayed a linear copy of the first. The original group keeps `seq_conv_bn_relu` at `False`.
+How it was working. The new convolution was only the eye convolution. A second eye convolution, with nothing between the two, stayed a linear copy of the first.
 
-How it is working now. `ModelStructureEditor._append_bn_relu` places `BatchNorm2d` and ReLU after every new sequential convolution. Each of the `11` inserted convolutions has its own BatchNorm. The saved step is `147,840` parameters, which is one `128`-channel `3×3` convolution, its bias, and one `BatchNorm2d`.
+How it is working now. Search is offered both variants. One is the convolution alone. The other uses `_append_batchnorm_and_relu`, which places `BatchNorm2d` and ReLU after the new sequential convolution. Each inserted convolution that takes the second variant has its own BatchNorm. The saved step for that variant is `147,840` parameters, which is one `128`-channel `3×3` convolution, its bias, and one `BatchNorm2d`.
 
 ### Which actions search can choose
 
@@ -855,7 +855,7 @@ The best single seed is the `20` generation seed `110`, at `91.50%`. That is `0.
 
 Phase 10 asks whether the new learning rate and the new conv placement change the result of the `15` generation grade. Phase 8 found that `15` generations of `10` real epochs had the highest mean, so that length stays. The simulation stays at `4` epochs on the first `1,250` clean images, with a `300` second budget and an extra rollout depth of `0`. Every arm uses the full action list. The starter stays `FourLayerCifarNet` at `128` channels and hidden size `256`. Cutout, label smoothing `0.1`, momentum `0.9`, weight decay `0.0001`, and gradient clip `1.0` stay on. Seeds are `110`, `111`, `112`, `113`, and `114`.
 
-The old learning rate is the composed cosine from `learning_rate_scheduler_factory`. It starts at `0.01`, and an action restarts its warmup. The new learning rate is `CosineDecayScheduler`, from `0.1` to `0.001` across the `150` epochs, and an action does not restart it. The old conv placement sets `seq_conv_before_global_pool` and `seq_conv_bn_relu` to false, so a new conv sits on the `1×1` pooled map with no BatchNorm or ReLU. The new placement sets both flags to true, so the new conv sits at `8×8`, before the global pool, with BatchNorm and ReLU.
+The old learning rate is the composed cosine from `learning_rate_scheduler_factory`. It starts at `0.01`, and an action restarts its warmup. The new learning rate is `CosineDecayScheduler`, from `0.1` to `0.001` across the `150` epochs, and an action does not restart it. The old conv placement sets `seq_conv_insert_before_global_pool` to false, so a new conv sits on the `1×1` pooled map. The new placement sets it to true, so the new conv sits at `8×8`, before the global pool. Search can choose the convolution alone or the convolution followed by BatchNorm and ReLU in either placement.
 
 | Arm | Learning rate | Conv placement | Actions | Seeds |
 | --- | --- | --- | --- | --- |
@@ -969,7 +969,7 @@ The best single seed is `lr_conv` seed `111`, at `89.10%`. That is `1.52` percen
 
 Phase 11 asks which one of the remaining changes is carrying the phase 10 `base` result. Phase 10 turned the learning rate and the conv placement off together and the mean stayed at `82.17%`. Those two stay off. Every arm copies `base` and changes one setting. The control is not rerun. Seeds `110` and `111` of phase 10 `base` ended at `81.36%` and `81.57%`.
 
-The copied recipe is the old composed cosine from `0.01`, with a warmup restart after an action, a new conv after the global pool with no BatchNorm and no ReLU, all actions, `15` generations of `10` epochs, simulation `4` epochs on the first `1,250` clean images, `300` seconds, and rollout depth `0`. `FourLayerCifarNet` at `128` channels and hidden size `256`, cutout, label smoothing `0.1`, gradient clip `1.0`, weight decay `0.0001`, and search after every generation except the last stay on unless the arm names that setting.
+The copied recipe is the old composed cosine from `0.01`, with a warmup restart after an action, and `seq_conv_insert_before_global_pool` false, so a new conv sits after the global pool. Search can still choose the convolution alone or the convolution followed by BatchNorm and ReLU. All actions stay on, with `15` generations of `10` epochs, simulation `4` epochs on the first `1,250` clean images, `300` seconds, and rollout depth `0`. `FourLayerCifarNet` at `128` channels and hidden size `256`, cutout, label smoothing `0.1`, gradient clip `1.0`, weight decay `0.0001`, and search after every generation except the last stay on unless the arm names that setting.
 
 | Arm | The one change | Seeds |
 | --- | --- | ---: |

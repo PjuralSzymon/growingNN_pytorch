@@ -443,8 +443,7 @@ def test_phase_ten_arms_turn_the_learning_rate_and_conv_placement_on_or_off():
         apply_action_group(cfg, "all")
         apply_phase10_switches(cfg, arm, PHASE10_GENERATIONS, PHASE10_EPOCHS)
         assert isinstance(cfg.lr_scheduler, CosineDecayScheduler) is new_lr
-        assert cfg.seq_conv_before_global_pool is new_conv
-        assert cfg.seq_conv_bn_relu is new_conv
+        assert cfg.seq_conv_insert_before_global_pool is new_conv
         assert cfg.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER is True
         assert cfg.ACTIONS_ENABLE_DEL_LAYER is True
         if new_lr:
@@ -550,8 +549,7 @@ def test_phase_eleven_slope_arm_keeps_the_base_budget_and_all_actions():
     assert cfg.simulation_scheduler.simulation_time == 300.0
     assert cfg.simulation_scheduler.simulation_epochs == 4
     assert type(cfg.simulation_scheduler).__name__ == "SlopeEstimationSimulationScheduler"
-    assert cfg.seq_conv_before_global_pool is False
-    assert cfg.seq_conv_bn_relu is False
+    assert cfg.seq_conv_insert_before_global_pool is False
     assert cfg.lr_scheduler.initial_lr == pytest.approx(0.01)
     assert cfg.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER is True
     assert cfg.ACTIONS_ENABLE_DEL_LAYER is True

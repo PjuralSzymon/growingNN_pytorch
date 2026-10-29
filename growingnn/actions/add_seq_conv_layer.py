@@ -24,17 +24,17 @@ class AddSeqConvLayer(Action):
 
     def _execute(self, traced: TracedModel):
         from_id, to_id, layer, name, insert_before_flatten = self.params[:5]
-        with_bn_relu = bool(self.params[5]) if len(self.params) > 5 else False
+        add_batchnorm_and_relu = bool(self.params[5]) if len(self.params) > 5 else False
         before_global_pool = bool(self.params[6]) if len(self.params) > 6 else True
         if insert_before_flatten:
             ModelStructureEditor.add_new_seq_layer_before_flatten(
                 traced.gm, from_id, to_id, layer, name,
-                with_bn_relu=with_bn_relu,
+                add_batchnorm_and_relu=add_batchnorm_and_relu,
                 before_global_pool=before_global_pool,
             )
             return
         ModelStructureEditor.add_new_seq_layer(
-            traced.gm, from_id, to_id, layer, name, with_bn_relu=with_bn_relu,
+            traced.gm, from_id, to_id, layer, name, add_batchnorm_and_relu=add_batchnorm_and_relu,
         )
 
     def can_be_infulenced(self, by_action):
@@ -156,7 +156,7 @@ class AddSeqConvLayer(Action):
     @staticmethod
     def generate_all_actions(
         traced: TracedModel,
-        with_bn_relu: bool = False,
+        add_batchnorm_and_relu: bool = False,
         before_global_pool: bool = True,
     ) -> List[Action]:
         gm = traced.gm
@@ -203,8 +203,8 @@ class AddSeqConvLayer(Action):
 
             name = ModuleResolver.unique_call_module_name("seq_conv", gm)
             params = [layer_from_id, layer_to_id, layer, name, insert_before_flatten]
-            if with_bn_relu or not before_global_pool:
-                params.append(bool(with_bn_relu))
+            if add_batchnorm_and_relu or not before_global_pool:
+                params.append(bool(add_batchnorm_and_relu))
                 params.append(bool(before_global_pool))
             actions.append(AddSeqConvLayer(params))
         return actions

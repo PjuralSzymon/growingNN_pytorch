@@ -40,8 +40,7 @@ The loop is `train_generations` in `growingnn/training/trainer.py`. One generati
 | Search gate | slope `3°` | `AlwaysSimulationScheduler` |
 | Simulation time / epochs / set | `90 s` / `8` / `2,000` | `8 s` / `1` / `128` |
 | Weight decay | `0.0005` | `0.0001` |
-| `seq_conv_before_global_pool` | `False` | `True` |
-| `seq_conv_bn_relu` | `False` | `True` |
+| `seq_conv_insert_before_global_pool` | `False` | `True` |
 | `max_grad_norm` | unset | `1.0` |
 | Structure actions | plain growth: conv and linear adds stay on | `AddSeqConvLayer` only |
 | Finish stage | none | `24` chunks × `5` epochs, label smoothing `0.1` |
@@ -52,9 +51,9 @@ The comparison is the whole original recipe against the whole added group. It is
 
 ## What the added group changes
 
-`GraphStructureQuery.conv_insert_after_node_before_flatten` skips a trailing global pool. `ModelStructureEditor.add_new_seq_layer_before_flatten` then inserts the new conv on the map before that pool when `before_global_pool` is `True`. The original group sets `RunningConfig.seq_conv_before_global_pool` to `False`, so `AddSeqConvLayer._execute` inserts after the pool.
+`GraphStructureQuery.conv_insert_after_node_before_flatten` skips a trailing global pool. `ModelStructureEditor.add_new_seq_layer_before_flatten` then inserts the new conv on the map before that pool when `before_global_pool` is `True`. The original group sets `RunningConfig.seq_conv_insert_before_global_pool` to `False`, so `AddSeqConvLayer._execute` inserts after the pool.
 
-`RunningConfig.seq_conv_bn_relu` stays `False` for the original group. The added group sets it to `True`. `ModelStructureEditor._append_bn_relu` then places `BatchNorm2d` and `F.relu` after each new sequential conv.
+Search always receives both sequential-convolution variants. One is the convolution alone. The other calls `_append_batchnorm_and_relu`, which places `BatchNorm2d` and `F.relu` after the new convolution. That choice is not a config flag.
 
 `RunningConfig.max_grad_norm` is `1.0` only in the added group. `gradient_descent` clips with that value and skips a non-finite loss.
 

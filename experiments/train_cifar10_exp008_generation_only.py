@@ -339,9 +339,7 @@ def apply_phase10_switches(cfg, arm: str, generations: int, epochs: int) -> None
                 "epochs": int(epochs),
             }
         )
-    new_conv = bool(settings["new_conv"])
-    cfg.seq_conv_before_global_pool = new_conv
-    cfg.seq_conv_bn_relu = new_conv
+    cfg.seq_conv_insert_before_global_pool = bool(settings["new_conv"])
 
 
 def phase11_settings(arm: str) -> dict[str, object]:
@@ -549,7 +547,7 @@ def run_seed(
         f"EXP008 seed {seed} group {group} device {device} generations {n_generations} epochs {train_epochs} "
         f"starter {starter} channels {channels} hidden {hidden} smooth {smoothing} cutout {use_cutout} "
         f"arm {arm or '-'} lr {type(cfg.lr_scheduler).__name__} "
-        f"conv_before_pool {cfg.seq_conv_before_global_pool} conv_bn_relu {cfg.seq_conv_bn_relu} "
+        f"conv_insert_before_global_pool {cfg.seq_conv_insert_before_global_pool} "
         f"wd {cfg.weight_decay} clip {cfg.max_grad_norm} "
         f"search {type(cfg.simulation_scheduler).__name__} "
         f"sim {cfg.simulation_scheduler.simulation_time}s "
@@ -579,8 +577,7 @@ def run_seed(
     )
     if arm is not None:
         history["arm"] = arm
-        history["seq_conv_before_global_pool"] = bool(cfg.seq_conv_before_global_pool)
-        history["seq_conv_bn_relu"] = bool(cfg.seq_conv_bn_relu)
+        history["seq_conv_insert_before_global_pool"] = bool(cfg.seq_conv_insert_before_global_pool)
         history["learning_rate"] = type(cfg.lr_scheduler).__name__
     if phase11 is not None:
         history["starter"] = starter

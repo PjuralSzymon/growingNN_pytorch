@@ -22,7 +22,7 @@ def _insert_call_module_after(gm, insert_after, module_name, module_input):
         return gm.graph.call_module(module_name, args=(module_input,))
 
 
-def _append_bn_relu(gm, conv_node, conv_module: nn.Conv2d, name: str):
+def _append_batchnorm_and_relu(gm, conv_node, conv_module: nn.Conv2d, name: str):
     """Place BatchNorm and ReLU after a new conv so stacked inserts stay nonlinear."""
     bn_name = f"{name}_bn"
     bn = _align_new_module_to_graph(gm, nn.BatchNorm2d(conv_module.out_channels))
@@ -210,7 +210,7 @@ class ModelStructureEditor:
         gm.recompile()
 
     @staticmethod
-    def add_new_seq_layer(gm, src_name, dst_name, new_layer, name, with_bn_relu: bool = False):
+    def add_new_seq_layer(gm, src_name, dst_name, new_layer, name, add_batchnorm_and_relu: bool = False):
         """Insert *new_layer* sequentially on the path from *src_name* to *dst_name*."""
         new_layer = _align_new_module_to_graph(gm, new_layer)
         gm.add_module(name, new_layer)
@@ -225,7 +225,7 @@ class ModelStructureEditor:
             raise ValueError(f"No path from {dst_name!r} back to {src_name!r} in the FX graph.")
 
         new_out = _insert_call_module_after(gm, path[1], name, path[1])
-        tail = _append_bn_relu(gm, new_out, new_layer, name) if with_bn_relu else new_out
+        tail = _append_batchnorm_and_relu(gm, new_out, new_layer, name) if add_batchnorm_and_relu else new_out
         NodeEditor.swap_node_input(dst, path[1], tail)
         gm.graph.lint()
         gm.recompile()
@@ -233,7 +233,7 @@ class ModelStructureEditor:
     @staticmethod
     def add_new_seq_layer_before_flatten(
         gm, src_name, dst_name, new_layer, name,
-        with_bn_relu: bool = False,
+        add_batchnorm_and_relu: bool = False,
         before_global_pool: bool = True,
     ):
         """Insert *new_layer* immediately before the flatten node on the src→dst sequential path."""
@@ -273,7 +273,7 @@ class ModelStructureEditor:
         consumer = path_destination_to_source[insert_index - 1] if insert_index > flatten_index else flatten_node
 
         new_out = _insert_call_module_after(gm, insert_after_node, name, insert_after_node)
-        tail = _append_bn_relu(gm, new_out, new_layer, name) if with_bn_relu else new_out
+        tail = _append_batchnorm_and_relu(gm, new_out, new_layer, name) if add_batchnorm_and_relu else new_out
         NodeEditor.swap_node_input(consumer, insert_after_node, tail)
         gm.graph.lint()
         gm.recompile()

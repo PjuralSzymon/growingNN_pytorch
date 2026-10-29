@@ -141,7 +141,7 @@ def test_seq_conv_bn_relu_preserves_eval_output_and_stacks():
     sample = torch.randn(2, 3, 32, 32)
     traced.gm.eval()
     before = traced.gm(sample).detach()
-    first = AddSeqConvLayer.generate_all_actions(traced, with_bn_relu=True)[0]
+    first = AddSeqConvLayer.generate_all_actions(traced, add_batchnorm_and_relu=True)[0]
 
     # Act
     first.execute(traced)
@@ -159,7 +159,7 @@ def test_seq_conv_bn_relu_preserves_eval_output_and_stacks():
         getattr(user.target, "__name__", "") == "adaptive_avg_pool2d" for user in relu_node.users
     )
     assert torch.allclose(before, after, atol=1e-4)
-    second = AddSeqConvLayer.generate_all_actions(traced, with_bn_relu=True)[0]
+    second = AddSeqConvLayer.generate_all_actions(traced, add_batchnorm_and_relu=True)[0]
     second.execute(traced)
     assert second.params[5] is True
     assert traced.gm(sample).shape == (2, 10)

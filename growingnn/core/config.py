@@ -109,8 +109,7 @@ class RunningConfig:
         momentum: float = 0.0,
         weight_decay: float = 0.0,
         max_grad_norm: float | None = None,
-        seq_conv_bn_relu: bool = False,
-        seq_conv_before_global_pool: bool = True,
+        seq_conv_insert_before_global_pool: bool = True,
     ):
         self.generations = generations
         self.epochs = epochs
@@ -129,8 +128,7 @@ class RunningConfig:
         self.momentum = float(momentum)
         self.weight_decay = float(weight_decay)
         self.max_grad_norm = None if max_grad_norm is None else float(max_grad_norm)
-        self.seq_conv_bn_relu = bool(seq_conv_bn_relu)
-        self.seq_conv_before_global_pool = bool(seq_conv_before_global_pool)
+        self.seq_conv_insert_before_global_pool = bool(seq_conv_insert_before_global_pool)
         self.ACTIONS_ENABLE_ADD_SEQ_LAYER = True
         self.ACTIONS_ENABLE_ADD_RES_LAYER = True
         self.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER = True

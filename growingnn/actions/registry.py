@@ -27,8 +27,15 @@ def generate_all_actions(traced: TracedModel, config: RunningConfig) -> list[Act
         actions.extend(
             AddSeqConvLayer.generate_all_actions(
                 traced,
-                with_bn_relu=config.seq_conv_bn_relu,
-                before_global_pool=config.seq_conv_before_global_pool,
+                add_batchnorm_and_relu=False,
+                before_global_pool=config.seq_conv_insert_before_global_pool,
+            )
+        )
+        actions.extend(
+            AddSeqConvLayer.generate_all_actions(
+                traced,
+                add_batchnorm_and_relu=True,
+                before_global_pool=config.seq_conv_insert_before_global_pool,
             )
         )
     if config.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_01:

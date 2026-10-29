@@ -159,8 +159,7 @@ def original_hyperparameters() -> dict[str, object]:
         "scheduler": "slope3",
         "lr_mode": "cosine",
         "plain_growth": True,
-        "seq_conv_bn_relu": False,
-        "seq_conv_before_global_pool": False,
+        "seq_conv_insert_before_global_pool": False,
         "max_grad_norm": None,
         "group_id": "original",
     }
@@ -186,8 +185,7 @@ def added_hyperparameters() -> dict[str, object]:
         "scheduler": "always",
         "lr_mode": "step",
         "plain_growth": False,
-        "seq_conv_bn_relu": True,
-        "seq_conv_before_global_pool": True,
+        "seq_conv_insert_before_global_pool": True,
         "max_grad_norm": 1.0,
         "group_id": "added",
     }

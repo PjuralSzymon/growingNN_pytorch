@@ -211,21 +211,21 @@ def test_running_config_reads_optimizer_settings_and_scheduler_factory():
     assert cfg.simulation_scheduler is sentinel
 
 
-def test_running_config_copies_grad_clip_and_conv_batchnorm():
+def test_running_config_copies_grad_clip_and_conv_placement():
     """
-    _running_config should copy a grad-norm cap and the sequential conv BatchNorm-ReLU switch.
+    _running_config should copy a grad-norm cap and the sequential-conv placement switch.
     """
     # Arrange
     hp = _hyperparameters()
     hp["max_grad_norm"] = 1.0
-    hp["seq_conv_bn_relu"] = True
+    hp["seq_conv_insert_before_global_pool"] = False
 
     # Act
     cfg = common._running_config(hp, torch.device("cpu"), None)
 
     # Assert
     assert cfg.max_grad_norm == 1.0
-    assert cfg.seq_conv_bn_relu is True
+    assert cfg.seq_conv_insert_before_global_pool is False
 
 
 def test_running_config_can_disable_neuron_deletion():

@@ -36,8 +36,7 @@ def test_original_group_keeps_the_plain_recipe():
     # Assert
     assert isinstance(model, nn.Sequential) is False
     assert not any(isinstance(module, nn.BatchNorm2d) for module in model.modules())
-    assert cfg.seq_conv_bn_relu is False
-    assert cfg.seq_conv_before_global_pool is False
+    assert cfg.seq_conv_insert_before_global_pool is False
     assert cfg.max_grad_norm is None
     assert cfg.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER is True
     assert cfg.ACTIONS_ENABLE_ADD_RES_CONV_LAYER is True
@@ -57,8 +56,7 @@ def test_added_group_enables_the_package_that_reached_90():
     # Assert
     assert isinstance(model, FourLayerCifarNet)
     assert any(isinstance(module, nn.BatchNorm2d) for module in model.modules())
-    assert cfg.seq_conv_bn_relu is True
-    assert cfg.seq_conv_before_global_pool is True
+    assert cfg.seq_conv_insert_before_global_pool is True
     assert cfg.max_grad_norm == 1.0
     assert cfg.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER is True
     assert cfg.ACTIONS_ENABLE_ADD_RES_CONV_LAYER is False

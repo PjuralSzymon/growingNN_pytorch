@@ -142,8 +142,7 @@ def _running_config(
         momentum=float(hp.get("momentum", 0.0)),
         weight_decay=float(hp.get("weight_decay", 0.0)),
         max_grad_norm=hp.get("max_grad_norm"),
-        seq_conv_bn_relu=bool(hp.get("seq_conv_bn_relu", False)),
-        seq_conv_before_global_pool=bool(hp.get("seq_conv_before_global_pool", True)),
+        seq_conv_insert_before_global_pool=bool(hp.get("seq_conv_insert_before_global_pool", True)),
         stopper=AccuracyStopper(target_accuracy=float(hp["target_accuracy"])),
         simulation_score=SimulationScore(
             weight_acc=float(hp["score_weight_acc"]),
