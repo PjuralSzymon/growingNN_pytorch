@@ -69,6 +69,12 @@ base, lr, conv, and lr_conv. Seeds are 110, 111, 112, 113, and 114. Finished
 arms are skipped when history.pt already exists.
 
     pipenv run python -u experiments/train_cifar10_exp008_generation_only.py --phase 10
+
+Phase 11 copies the phase 10 base arm and changes one setting per arm. The
+arms are minimal, slope, no_cutout, no_smooth, no_clip, old_decay, and short.
+Seeds are 110 and 111. Finished arms are skipped when history.pt already exists.
+
+    pipenv run python -u experiments/train_cifar10_exp008_generation_only.py --phase 11
 """
 
 from __future__ import annotations
@@ -96,6 +102,7 @@ from experiments.train_cifar10 import (
     _BatchLoader,
     _CudaCIFAR,
     learning_rate_scheduler_factory,
+    simulation_scheduler_factory,
 )
 from experiments.train_cifar10_exp007_test90_package import (
     added_hyperparameters,
@@ -157,6 +164,15 @@ PHASE10_EPOCHS = 10
 PHASE10_CLEAN_PREFIX = 1250
 PHASE10_SIMULATION = (300.0, 4, PHASE10_CLEAN_PREFIX)
 PHASE10_ROLLOUT_DEPTH = 0
+PHASE11_DIR = Path(__file__).resolve().parent / "output" / "train_cifar10" / "runs" / "exp008_generation_only_phase11"
+PHASE11_SEEDS = (110, 111)
+PHASE11_ARMS = ("minimal", "slope", "no_cutout", "no_smooth", "no_clip", "old_decay", "short")
+PHASE11_GENERATIONS = 15
+PHASE11_SHORT_GENERATIONS = 8
+PHASE11_EPOCHS = 10
+PHASE11_CLEAN_PREFIX = 1250
+PHASE11_SIMULATION = (300.0, 4, PHASE11_CLEAN_PREFIX)
+PHASE11_ROLLOUT_DEPTH = 0
 _ACTION_FLAGS = (
     "ACTIONS_ENABLE_ADD_SEQ_LAYER",
     "ACTIONS_ENABLE_ADD_RES_LAYER",
@@ -328,6 +344,57 @@ def apply_phase10_switches(cfg, arm: str, generations: int, epochs: int) -> None
     cfg.seq_conv_bn_relu = new_conv
 
 
+def phase11_settings(arm: str) -> dict[str, object]:
+    """Return the phase 10 base recipe with one phase 11 change applied."""
+    if arm not in PHASE11_ARMS:
+        raise ValueError(f"unknown phase 11 arm {arm}")
+    settings: dict[str, object] = {
+        "starter": "added",
+        "channels": CHANNELS,
+        "hidden": HIDDEN,
+        "cutout": True,
+        "label_smoothing": LABEL_SMOOTHING,
+        "weight_decay": 0.0001,
+        "max_grad_norm": 1.0,
+        "search": "always",
+        "generations": PHASE11_GENERATIONS,
+    }
+    if arm == "minimal":
+        settings["starter"] = "original"
+        settings["channels"] = 32
+        settings["hidden"] = 64
+    elif arm == "slope":
+        settings["search"] = "slope3"
+    elif arm == "no_cutout":
+        settings["cutout"] = False
+    elif arm == "no_smooth":
+        settings["label_smoothing"] = 0.0
+    elif arm == "no_clip":
+        settings["max_grad_norm"] = None
+    elif arm == "old_decay":
+        settings["weight_decay"] = 0.0005
+    elif arm == "short":
+        settings["generations"] = PHASE11_SHORT_GENERATIONS
+    return settings
+
+
+def apply_phase11_arm(cfg, arm: str, generations: int, epochs: int) -> None:
+    """Copy the phase 10 base switches, then apply the one phase 11 change that lives on the config."""
+    settings = phase11_settings(arm)
+    apply_phase10_switches(cfg, "base", generations, epochs)
+    cfg.weight_decay = float(settings["weight_decay"])
+    cfg.max_grad_norm = settings["max_grad_norm"]
+    cfg.criterion = nn.CrossEntropyLoss(label_smoothing=float(settings["label_smoothing"]))
+    if settings["search"] == "slope3":
+        cfg.simulation_scheduler = simulation_scheduler_factory(
+            {
+                "simulation_time": float(cfg.simulation_scheduler.simulation_time),
+                "simulation_epochs": int(cfg.simulation_scheduler.simulation_epochs),
+                "scheduler": "slope3",
+            }
+        )
+
+
 @contextmanager
 def rollout_depth(depth: int | None):
     """Use one Monte Carlo rollout depth for the block, then restore the previous value."""
@@ -345,11 +412,16 @@ def rollout_depth(depth: int | None):
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Select a phase and an optional seed subset. Phase 2 also accepts action groups."""
     parser = argparse.ArgumentParser(description="Experiment 008: CIFAR-10 generation loop only.")
-    parser.add_argument("--phase", type=int, choices=(1, 2, 3, 4, 5, 6, 7, 8, 10), default=1)
+    parser.add_argument("--phase", type=int, choices=(1, 2, 3, 4, 5, 6, 7, 8, 10, 11), default=1)
     parser.add_argument("--groups", nargs="*", default=None)
     parser.add_argument("--seeds", type=int, nargs="*", default=None)
     args = parser.parse_args(argv)
-    allowed_seeds = PHASE10_SEEDS if args.phase == 10 else SEEDS
+    if args.phase == 11:
+        allowed_seeds = PHASE11_SEEDS
+    elif args.phase == 10:
+        allowed_seeds = PHASE10_SEEDS
+    else:
+        allowed_seeds = SEEDS
     seeds = tuple(args.seeds) if args.seeds else allowed_seeds
     unknown = [seed for seed in seeds if seed not in allowed_seeds]
     if unknown:
@@ -360,7 +432,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         raise ValueError(f"groups must be among {list(PHASE2_GROUPS)}: {unknown_groups}")
     if args.phase == 1 and args.groups:
         raise ValueError("phase 1 does not take --groups")
-    if args.phase in (3, 4, 5, 6, 7, 8, 10) and args.groups:
+    if args.phase in (3, 4, 5, 6, 7, 8, 10, 11) and args.groups:
         raise ValueError(f"phase {args.phase} does not take --groups")
     args.seeds = seeds
     args.groups = groups
@@ -422,11 +494,19 @@ def run_seed(
         return
     train_epochs = EPOCHS if epochs is None else int(epochs)
     n_generations = GENERATIONS if generations is None else int(generations)
+    phase11 = phase11_settings(arm) if arm in PHASE11_ARMS else None
+    if phase11 is not None and generations is None:
+        n_generations = int(phase11["generations"])
+    starter = "added" if phase11 is None else str(phase11["starter"])
+    channels = CHANNELS if phase11 is None else int(phase11["channels"])
+    hidden = HIDDEN if phase11 is None else int(phase11["hidden"])
+    use_cutout = True if phase11 is None else bool(phase11["cutout"])
+    smoothing = LABEL_SMOOTHING if phase11 is None else float(phase11["label_smoothing"])
     hp = added_hyperparameters()
     hp["generations"] = n_generations
     hp["epochs"] = train_epochs
-    hp["model_channels"] = CHANNELS
-    hp["model_hidden_dim"] = HIDDEN
+    hp["model_channels"] = channels
+    hp["model_hidden_dim"] = hidden
     if simulation is not None:
         hp["simulation_time"] = float(simulation[0])
         hp["simulation_epochs"] = int(simulation[1])
@@ -434,9 +514,10 @@ def run_seed(
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.set_num_threads(2 if device.type == "cuda" else 4)
     seed_all(seed)
-    model = build_model("added", hp)
+    model = build_model(starter, hp)
     train_loader, val_loader, clean_loader = data.loaders(int(hp["batch_size"]))
-    train_loader = with_cutout(train_loader)
+    if use_cutout:
+        train_loader = with_cutout(train_loader)
     test_loader = data.test_loader(int(hp["batch_size"]))
     if clean_prefix is not None:
         sim_train, sim_val = prefix_clean_loader(clean_loader, int(clean_prefix)), val_loader
@@ -452,21 +533,25 @@ def run_seed(
     cfg.simulation_alg = simulation_alg or montecarlo_alg
     cfg.simulation_score = SimulationScore(weight_acc=1.0, weight_countW=0.0)
     cfg.stopper = AccuracyStopper(target_accuracy=0.999)
-    cfg.criterion = nn.CrossEntropyLoss(label_smoothing=LABEL_SMOOTHING)
+    cfg.criterion = nn.CrossEntropyLoss(label_smoothing=smoothing)
     apply_action_group(cfg, group)
-    if arm is not None:
+    if arm in PHASE10_ARM_SETTINGS:
         apply_phase10_switches(cfg, arm, n_generations, train_epochs)
     if simulation is not None:
         apply_simulation_budget(cfg, simulation)
+    if phase11 is not None:
+        apply_phase11_arm(cfg, arm, n_generations, train_epochs)
     if clean_prefix is not None:
         cfg.simulation_set_size = len(sim_train.dataset)
     elif augmented_simulation:
         cfg.simulation_set_size = len(train_loader.dataset)
     print(
         f"EXP008 seed {seed} group {group} device {device} generations {n_generations} epochs {train_epochs} "
-        f"channels {CHANNELS} hidden {HIDDEN} smooth {LABEL_SMOOTHING} cutout True "
+        f"starter {starter} channels {channels} hidden {hidden} smooth {smoothing} cutout {use_cutout} "
         f"arm {arm or '-'} lr {type(cfg.lr_scheduler).__name__} "
         f"conv_before_pool {cfg.seq_conv_before_global_pool} conv_bn_relu {cfg.seq_conv_bn_relu} "
+        f"wd {cfg.weight_decay} clip {cfg.max_grad_norm} "
+        f"search {type(cfg.simulation_scheduler).__name__} "
         f"sim {cfg.simulation_scheduler.simulation_time}s "
         f"{cfg.simulation_scheduler.simulation_epochs} epochs set {cfg.simulation_set_size} "
         f"rollout depth {project_config.MCTS_ROLLOUT_DEPTH if rollout_depth_value is None else rollout_depth_value}",
@@ -497,6 +582,15 @@ def run_seed(
         history["seq_conv_before_global_pool"] = bool(cfg.seq_conv_before_global_pool)
         history["seq_conv_bn_relu"] = bool(cfg.seq_conv_bn_relu)
         history["learning_rate"] = type(cfg.lr_scheduler).__name__
+    if phase11 is not None:
+        history["starter"] = starter
+        history["model_channels"] = channels
+        history["model_hidden_dim"] = hidden
+        history["cutout"] = use_cutout
+        history["label_smoothing"] = smoothing
+        history["weight_decay"] = float(cfg.weight_decay)
+        history["max_grad_norm"] = None if cfg.max_grad_norm is None else float(cfg.max_grad_norm)
+        history["simulation_scheduler"] = type(cfg.simulation_scheduler).__name__
     torch.save(history, out_dir / "history.pt")
     torch.save(
         {"state_dict": grown.state_dict(), "test_acc": summary["test_acc"], "seed": seed},
@@ -661,6 +755,32 @@ def main(argv: list[str] | None = None) -> None:
                     clean_prefix=PHASE10_CLEAN_PREFIX,
                     epochs=PHASE10_EPOCHS,
                     generations=PHASE10_GENERATIONS,
+                    arm=arm,
+                )
+        return
+    if args.phase == 11:
+        print(
+            f"Exp 008 phase 11 arms {', '.join(PHASE11_ARMS)} "
+            f"seeds {', '.join(str(seed) for seed in args.seeds)} "
+            f"epochs {PHASE11_EPOCHS} "
+            f"sim {PHASE11_SIMULATION[0]}s {PHASE11_SIMULATION[1]} epochs "
+            f"clean prefix {PHASE11_CLEAN_PREFIX} rollout depth {PHASE11_ROLLOUT_DEPTH}.",
+            flush=True,
+        )
+        print(f"Write target: {PHASE11_DIR}", flush=True)
+        for arm in PHASE11_ARMS:
+            n_generations = int(phase11_settings(arm)["generations"])
+            for seed in args.seeds:
+                run_seed(
+                    data,
+                    PHASE11_DIR / arm / f"seed_{seed}",
+                    seed,
+                    "all",
+                    PHASE11_SIMULATION,
+                    rollout_depth_value=PHASE11_ROLLOUT_DEPTH,
+                    clean_prefix=PHASE11_CLEAN_PREFIX,
+                    epochs=PHASE11_EPOCHS,
+                    generations=n_generations,
                     arm=arm,
                 )
         return

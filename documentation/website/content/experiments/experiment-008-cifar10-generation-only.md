@@ -1,6 +1,6 @@
 # Experiment 008: CIFAR-10 generation loop without a finish stage
 
-This page has ten sections, in this order.
+This page has eleven sections, in this order.
 
 1. [Improvements that make CIFAR-10 work in the growing algorithm](#improvements-that-make-cifar-10-work-in-the-growing-algorithm). How the recipe worked before, and how it works now.
 2. [Phase 1: sequential convolution only](#phase-1-sequential-convolution-only). The finished run that allows only `AddSeqConvLayer`. Last official test is `91.11%`, `91.17%`, and `91.36%`. The mean is `91.21%`.
@@ -12,6 +12,7 @@ This page has ten sections, in this order.
 8. [Phase 7: longer real training](#phase-7-longer-real-training). The same `1,250` image grade at `10`, `20`, and `30` real epochs per generation. The means are `88.24%`, `84.65%`, and `87.48%`. The `10` epoch mean is the highest.
 9. [Phase 8: how many generations](#phase-8-how-many-generations). The same `1,250` image grade at `10` real epochs, with `10`, `12`, `15`, and `20` generations. The means are `80.65%`, `88.24%`, `90.04%`, and `88.35%`. The `15` generation mean is the highest.
 10. [Phase 10: learning rate and conv placement](#phase-10-learning-rate-and-conv-placement). The `15` generation grade, with the learning rate and the conv placement turned on and off. Every arm uses all actions. Five seeds. The means are `82.17%`, `83.23%`, `83.33%`, and `88.04%`. The arm with both changes is the highest.
+11. [Phase 11: one change at a time](#phase-11-one-change-at-a-time). The phase 10 `base` recipe, with one remaining change turned off per arm. Seeds `110` and `111`. The new cells are empty until the runs finish.
 
 Script: `experiments/train_cifar10_exp008_generation_only.py`
 
@@ -32,6 +33,8 @@ Phase 7 output: `experiments/output/train_cifar10/runs/exp008_generation_only_ph
 Phase 8 output: `experiments/output/train_cifar10/runs/exp008_generation_only_phase8`
 
 Phase 10 output: `experiments/output/train_cifar10/runs/exp008_generation_only_phase10`
+
+Phase 11 output: `experiments/output/train_cifar10/runs/exp008_generation_only_phase11`
 
 Charts: `documentation/website/scripts/generate_experiment_008_charts.py`
 
@@ -961,3 +964,44 @@ The two changes together give the highest mean. `lr_conv` ends at `88.04%`. Eith
 The new learning rate alone does not raise the four seeds that choose no convolution. Those four end at `82.15%`, `82.44%`, `81.25%`, and `82.48%`. Their mean is `82.08%`, `0.09` percentage points below the `base` mean.
 
 The best single seed is `lr_conv` seed `111`, at `89.10%`. That is `1.52` percentage points below the phase 8 `15` generation seed `110`, at `90.62%`. It is `2.11` percentage points below the phase 1 only-convolution mean of `91.21%`.
+
+## Phase 11: one change at a time
+
+Phase 11 asks which one of the remaining changes is carrying the phase 10 `base` result. Phase 10 turned the learning rate and the conv placement off together and the mean stayed at `82.17%`. Those two stay off. Every arm copies `base` and changes one setting. The control is not rerun. Seeds `110` and `111` of phase 10 `base` ended at `81.36%` and `81.57%`.
+
+The copied recipe is the old composed cosine from `0.01`, with a warmup restart after an action, a new conv after the global pool with no BatchNorm and no ReLU, all actions, `15` generations of `10` epochs, simulation `4` epochs on the first `1,250` clean images, `300` seconds, and rollout depth `0`. `FourLayerCifarNet` at `128` channels and hidden size `256`, cutout, label smoothing `0.1`, gradient clip `1.0`, weight decay `0.0001`, and search after every generation except the last stay on unless the arm names that setting.
+
+| Arm | The one change | Seeds |
+| --- | --- | ---: |
+| `minimal` | `MinimalCifarNet`, `32` channels, hidden size `64`, no BatchNorm | `2` |
+| `slope` | search only when the training slope is under `3` degrees | `2` |
+| `no_cutout` | cutout off | `2` |
+| `no_smooth` | label smoothing `0` | `2` |
+| `no_clip` | gradient clip off | `2` |
+| `old_decay` | weight decay `0.0005` | `2` |
+| `short` | `8` generations of `10` epochs | `2` |
+
+| Setting | Value |
+| --- | --- |
+| Control | phase 10 `base`, seeds `110` and `111` |
+| Simulation training images | `1,250`, clean, the first `1,250` |
+| Simulation epochs | `4` |
+| Simulation time | `300` seconds |
+| Extra actions inside the score | `0` |
+| Actions | all |
+| Output | `exp008_generation_only_phase11/<arm>/seed_<seed>` |
+
+Official test accuracy is the fraction correct on the `10,000` image test set, at the last epoch of the run. The new cells stay empty until `history.pt` exists.
+
+| Arm | Seed `110` | Seed `111` |
+| --- | ---: | ---: |
+| `base` | `81.36%` | `81.57%` |
+| `minimal` |  |  |
+| `slope` |  |  |
+| `no_cutout` |  |  |
+| `no_smooth` |  |  |
+| `no_clip` |  |  |
+| `old_decay` |  |  |
+| `short` |  |  |
+
+No charts are drawn until those files exist. The training run is not started.

@@ -39,13 +39,23 @@ from experiments.train_cifar10_exp008_generation_only import (
     PHASE10_ROLLOUT_DEPTH,
     PHASE10_SEEDS,
     PHASE10_SIMULATION,
+    PHASE11_ARMS,
+    PHASE11_CLEAN_PREFIX,
+    PHASE11_EPOCHS,
+    PHASE11_GENERATIONS,
+    PHASE11_ROLLOUT_DEPTH,
+    PHASE11_SEEDS,
+    PHASE11_SHORT_GENERATIONS,
+    PHASE11_SIMULATION,
     SEEDS,
     CosineDecayScheduler,
     apply_action_group,
     apply_phase10_switches,
+    apply_phase11_arm,
     apply_simulation_budget,
     history_from_generations,
     parse_args,
+    phase11_settings,
     prefix_clean_loader,
     rollout_depth,
     with_cutout,
@@ -447,6 +457,106 @@ def test_phase_ten_arms_turn_the_learning_rate_and_conv_placement_on_or_off():
             assert cfg.lr_scheduler.total_epochs == PHASE10_GENERATIONS * PHASE10_EPOCHS
             cfg.lr_scheduler.structure_changed()
             assert cfg.lr_scheduler.recovery._schedule.iterations_since_change == 0
+
+
+def test_parse_args_phase_eleven_defaults_to_two_seeds():
+    """
+    Phase 11 should train seeds 110 and 111 unless a subset is requested.
+    """
+
+    # Arrange / Act
+    args = parse_args(["--phase", "11"])
+
+    # Assert
+    assert args.phase == 11
+    assert args.seeds == PHASE11_SEEDS
+    assert args.seeds == (110, 111)
+
+
+def test_parse_args_phase_eleven_rejects_an_action_group_list():
+    """
+    Phase 11 should reject --groups because it always uses the all-action list.
+    """
+
+    # Arrange / Act / Assert
+    with pytest.raises(ValueError):
+        parse_args(["--phase", "11", "--groups", "grow"])
+
+
+def test_parse_args_phase_eleven_rejects_a_seed_outside_its_pair():
+    """
+    Phase 11 should keep the seed list at 110 and 111.
+    """
+
+    # Arrange / Act / Assert
+    with pytest.raises(ValueError):
+        parse_args(["--phase", "11", "--seeds", "112"])
+
+
+def test_phase_eleven_arms_each_change_one_base_setting():
+    """
+    Each phase 11 arm should differ from the phase 10 base recipe in only its own setting.
+    """
+
+    # Arrange
+    base = {
+        "starter": "added",
+        "channels": 128,
+        "hidden": 256,
+        "cutout": True,
+        "label_smoothing": 0.1,
+        "weight_decay": 0.0001,
+        "max_grad_norm": 1.0,
+        "search": "always",
+        "generations": 15,
+    }
+    changed = {
+        "minimal": {"starter": "original", "channels": 32, "hidden": 64},
+        "slope": {"search": "slope3"},
+        "no_cutout": {"cutout": False},
+        "no_smooth": {"label_smoothing": 0.0},
+        "no_clip": {"max_grad_norm": None},
+        "old_decay": {"weight_decay": 0.0005},
+        "short": {"generations": 8},
+    }
+
+    # Act / Assert
+    assert PHASE11_ARMS == tuple(changed)
+    for arm, delta in changed.items():
+        settings = phase11_settings(arm)
+        expect = dict(base)
+        expect.update(delta)
+        assert settings == expect
+
+
+def test_phase_eleven_slope_arm_keeps_the_base_budget_and_all_actions():
+    """
+    The slope arm should use the 3 degree gate on the 1,250-image, 4-epoch grade with every action on.
+    """
+
+    # Arrange
+    cfg = RunningConfig(generations=1, epochs=1)
+    apply_action_group(cfg, "all")
+    apply_simulation_budget(cfg, PHASE11_SIMULATION)
+
+    # Act
+    apply_phase11_arm(cfg, "slope", PHASE11_GENERATIONS, PHASE11_EPOCHS)
+
+    # Assert
+    assert PHASE11_CLEAN_PREFIX == 1250
+    assert PHASE11_SIMULATION == (300.0, 4, 1250)
+    assert PHASE11_ROLLOUT_DEPTH == 0
+    assert PHASE11_SHORT_GENERATIONS == 8
+    assert cfg.simulation_scheduler.simulation_time == 300.0
+    assert cfg.simulation_scheduler.simulation_epochs == 4
+    assert type(cfg.simulation_scheduler).__name__ == "SlopeEstimationSimulationScheduler"
+    assert cfg.seq_conv_before_global_pool is False
+    assert cfg.seq_conv_bn_relu is False
+    assert cfg.lr_scheduler.initial_lr == pytest.approx(0.01)
+    assert cfg.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER is True
+    assert cfg.ACTIONS_ENABLE_DEL_LAYER is True
+    assert cfg.weight_decay == pytest.approx(0.0001)
+    assert cfg.max_grad_norm == 1.0
 
 
 def test_prefix_clean_loader_keeps_the_first_cuda_images_without_augmentation():
