@@ -29,6 +29,7 @@ RUN_DIR = (
 )
 SEEDS = (110, 111, 112)
 PHASE10_SEEDS = (110, 111, 112, 113, 114)
+PHASE11_SEEDS = (110, 111)
 PHASE10_ARMS = ("base", "lr", "conv", "lr_conv")
 SEED_COLORS = {
     110: "#1d4ed8",
@@ -714,6 +715,34 @@ def _phase10_grades(data: dict[str, object], required: str) -> list[tuple[str, l
     return _labeled_grades(data, keys, required)
 
 
+def _phase11_compare_grades(data: dict[str, object], required: str) -> list[tuple[str, list[dict[str, object]]]]:
+    """Phase 10 base seeds 110 and 111 beside the finished phase 11 minimal arm."""
+    base = [
+        row for row in list(data.get("phase10_base") or [])
+        if int(row["seed"]) in PHASE11_SEEDS and required in row
+    ]
+    minimal = list(data.get("phase11_minimal") or [])
+    if len(base) != len(PHASE11_SEEDS) or len(minimal) != len(PHASE11_SEEDS):
+        return []
+    if any(required not in row for row in minimal):
+        return []
+    return [("base", base), ("minimal", minimal)]
+
+
+def plot_phase11_epoch_grid(data: dict[str, object], out_dir: Path) -> None:
+    """Train, official test, and validation for phase 10 base and phase 11 minimal."""
+    grades = _phase11_compare_grades(data, "test")
+    if grades:
+        _plot_accuracy_grid(tuple(grades), out_dir / "008-phase11-epoch-grid.png")
+
+
+def plot_phase11_parameters(data: dict[str, object], out_dir: Path) -> None:
+    """Parameter count for phase 10 base and phase 11 minimal. Each seed has its own line."""
+    grades = _phase11_compare_grades(data, "param_count")
+    if grades:
+        _plot_parameter_grades(grades, out_dir / "008-phase11-parameters.png")
+
+
 def plot_phase10_epoch_grid(data: dict[str, object], out_dir: Path) -> None:
     """Train, official test, and validation for each phase 10 arm."""
     grades = _phase10_grades(data, "test")
@@ -1073,6 +1102,10 @@ def write_charts(
         rows = _saved_group(phase10_dir / arm, PHASE10_SEEDS)
         if len(rows) == len(PHASE10_SEEDS):
             data[f"phase10_{arm}"] = rows
+    phase11_dir = run_dir.parent / "exp008_generation_only_phase11"
+    minimal_rows = _saved_group(phase11_dir / "minimal", PHASE11_SEEDS)
+    if len(minimal_rows) == len(PHASE11_SEEDS):
+        data["phase11_minimal"] = minimal_rows
     out_dir.mkdir(parents=True, exist_ok=True)
     if experiment_has_finished(run_dir):
         snapshot_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1107,6 +1140,8 @@ def write_charts(
     plot_phase10_parameters(data, out_dir)
     plot_phase10_final_test(data, out_dir)
     plot_phase10_mean_curves(data, out_dir)
+    plot_phase11_epoch_grid(data, out_dir)
+    plot_phase11_parameters(data, out_dir)
 
 
 if __name__ == "__main__":

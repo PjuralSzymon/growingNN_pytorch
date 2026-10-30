@@ -12,7 +12,7 @@ This page has eleven sections, in this order.
 8. [Phase 7: longer real training](#phase-7-longer-real-training). The same `1,250` image grade at `10`, `20`, and `30` real epochs per generation. The means are `88.24%`, `84.65%`, and `87.48%`. The `10` epoch mean is the highest.
 9. [Phase 8: how many generations](#phase-8-how-many-generations). The same `1,250` image grade at `10` real epochs, with `10`, `12`, `15`, and `20` generations. The means are `80.65%`, `88.24%`, `90.04%`, and `88.35%`. The `15` generation mean is the highest.
 10. [Phase 10: learning rate and conv placement](#phase-10-learning-rate-and-conv-placement). The `15` generation grade, with the learning rate and the conv placement turned on and off. Every arm uses all actions. Five seeds. The means are `82.17%`, `83.23%`, `83.33%`, and `88.04%`. The arm with both changes is the highest.
-11. [Phase 11: one change at a time](#phase-11-one-change-at-a-time). The phase 10 `base` recipe, with one remaining change turned off per arm. Seeds `110` and `111`. The new cells are empty until the runs finish.
+11. [Phase 11: one change at a time](#phase-11-one-change-at-a-time). The phase 10 `base` recipe, with one remaining change turned off per arm. Seeds `110` and `111`. Only `minimal` has finished. Its official test is `43.58%` and `69.00%`. The mean is `56.29%`.
 
 Script: `experiments/train_cifar10_exp008_generation_only.py`
 
@@ -855,7 +855,7 @@ The best single seed is the `20` generation seed `110`, at `91.50%`. That is `0.
 
 Phase 10 asks whether the new learning rate and the new conv placement change the result of the `15` generation grade. Phase 8 found that `15` generations of `10` real epochs had the highest mean, so that length stays. The simulation stays at `4` epochs on the first `1,250` clean images, with a `300` second budget and an extra rollout depth of `0`. Every arm uses the full action list. The starter stays `FourLayerCifarNet` at `128` channels and hidden size `256`. Cutout, label smoothing `0.1`, momentum `0.9`, weight decay `0.0001`, and gradient clip `1.0` stay on. Seeds are `110`, `111`, `112`, `113`, and `114`.
 
-The old learning rate is the composed cosine from `learning_rate_scheduler_factory`. It starts at `0.01`, and an action restarts its warmup. The new learning rate is `CosineDecayScheduler`, from `0.1` to `0.001` across the `150` epochs, and an action does not restart it. The old conv placement sets `seq_conv_insert_before_global_pool` to false, so a new conv sits on the `1×1` pooled map. The new placement sets it to true, so the new conv sits at `8×8`, before the global pool. Search can choose the convolution alone or the convolution followed by BatchNorm and ReLU in either placement.
+The old learning rate is the composed cosine from `learning_rate_scheduler_factory`. It starts at `0.01`, and an action restarts its warmup. The new learning rate is `CosineDecayScheduler`, from `0.1` to `0.001` across the `150` epochs, and an action does not restart it. The old conv placement sets `seq_conv_before_global_pool` and `seq_conv_bn_relu` to false, so a new conv sits on the `1×1` pooled map with no BatchNorm or ReLU. The new placement sets both flags to true, so the new conv sits at `8×8`, before the global pool, with BatchNorm and ReLU.
 
 | Arm | Learning rate | Conv placement | Actions | Seeds |
 | --- | --- | --- | --- | --- |
@@ -969,7 +969,7 @@ The best single seed is `lr_conv` seed `111`, at `89.10%`. That is `1.52` percen
 
 Phase 11 asks which one of the remaining changes is carrying the phase 10 `base` result. Phase 10 turned the learning rate and the conv placement off together and the mean stayed at `82.17%`. Those two stay off. Every arm copies `base` and changes one setting. The control is not rerun. Seeds `110` and `111` of phase 10 `base` ended at `81.36%` and `81.57%`.
 
-The copied recipe is the old composed cosine from `0.01`, with a warmup restart after an action, and `seq_conv_insert_before_global_pool` false, so a new conv sits after the global pool. Search can still choose the convolution alone or the convolution followed by BatchNorm and ReLU. All actions stay on, with `15` generations of `10` epochs, simulation `4` epochs on the first `1,250` clean images, `300` seconds, and rollout depth `0`. `FourLayerCifarNet` at `128` channels and hidden size `256`, cutout, label smoothing `0.1`, gradient clip `1.0`, weight decay `0.0001`, and search after every generation except the last stay on unless the arm names that setting.
+The copied recipe is the old composed cosine from `0.01`, with a warmup restart after an action, a new conv after the global pool with no BatchNorm and no ReLU, all actions, `15` generations of `10` epochs, simulation `4` epochs on the first `1,250` clean images, `300` seconds, and rollout depth `0`. `FourLayerCifarNet` at `128` channels and hidden size `256`, cutout, label smoothing `0.1`, gradient clip `1.0`, weight decay `0.0001`, and search after every generation except the last stay on unless the arm names that setting.
 
 | Arm | The one change | Seeds |
 | --- | --- | ---: |
@@ -981,27 +981,56 @@ The copied recipe is the old composed cosine from `0.01`, with a warmup restart 
 | `old_decay` | weight decay `0.0005` | `2` |
 | `short` | `8` generations of `10` epochs | `2` |
 
-| Setting | Value |
-| --- | --- |
-| Control | phase 10 `base`, seeds `110` and `111` |
-| Simulation training images | `1,250`, clean, the first `1,250` |
-| Simulation epochs | `4` |
-| Simulation time | `300` seconds |
-| Extra actions inside the score | `0` |
-| Actions | all |
-| Output | `exp008_generation_only_phase11/<arm>/seed_<seed>` |
+The finished `minimal` files store `seq_conv_before_global_pool` false and `seq_conv_bn_relu` false. They also store `starter` `original`, `model_channels` `32`, `model_hidden_dim` `64`, `train_generations` `15`, `train_epochs` `10`, and `simulation_scheduler` `AlwaysSimulationScheduler`. Save times, from the filesystem, are `2026-10-29 01:41` for seed `110` and `2026-10-29 03:26` for seed `111`. The other six arms have no `history.pt`.
 
-Official test accuracy is the fraction correct on the `10,000` image test set, at the last epoch of the run. The new cells stay empty until `history.pt` exists.
+Official test accuracy is the fraction correct on the `10,000` image test set, at the last epoch of the run.
 
-| Arm | Seed `110` | Seed `111` |
+| Arm | Seed `110` | Seed `111` | Mean |
+| --- | ---: | ---: | ---: |
+| `base` | `81.36%` | `81.57%` | `81.46%` |
+| `minimal` | `43.58%` | `69.00%` | `56.29%` |
+| `slope` |  |  |  |
+| `no_cutout` |  |  |  |
+| `no_smooth` |  |  |  |
+| `no_clip` |  |  |  |
+| `old_decay` |  |  |  |
+| `short` |  |  |  |
+
+The `minimal` mean is `25.17` percentage points below the two-seed `base` mean. The two `minimal` seeds span `25.42` percentage points. Seed `110` ends at `43.58%`. Seed `111` ends at `69.00%`.
+
+| Seed | `base` train | `minimal` train | `base` validation | `minimal` validation |
+| --- | ---: | ---: | ---: | ---: |
+| `110` | `77.40%` | `38.02%` | `80.66%` | `43.80%` |
+| `111` | `82.85%` | `67.92%` | `81.68%` | `68.64%` |
+| Mean | `80.13%` | `52.97%` | `81.17%` | `56.22%` |
+
+Figure 30 compares those two seeds. The `base` row uses only seeds `110` and `111` of phase 10. The other three phase 10 seeds are not the control for this phase.
+
+![Train, official test, and validation for base and minimal](/assets/experiments/008-phase11-epoch-grid.png)
+
+> [!CAPTION] Figure 30. Two rows are phase 10 base and phase 11 minimal. Three columns are training accuracy, official test accuracy, and validation accuracy, in percent. Blue is seed 110 and orange is seed 111. Official test markers are the generation-end measurements. The dashed line is 90%. Every panel uses the same vertical axis, from 0% to 100%.
+
+On `minimal`, seed `110` reaches `56.12%` official test at generation `6`, then falls to `36.69%` at generation `7`. The action at generation `6` is `DelNeurons` on `linear`. Validation moves from `56.28%` to `19.18%`. The official test then stays between `37.64%` and `43.58%`. Seed `111` falls from `64.50%` at generation `4` to `60.56%` at generation `5` after `DelLayer` removes `seq_linear_0`. Validation at that action moves from `65.00%` to `11.80%`. The official test later reaches `71.41%` at generation `12` and ends at `69.00%`.
+
+Seed `110` executes `4` `AddResConvLayer`, `1` `AddSeqConvLayer`, `2` `AddSeqLinearLayer`, `2` `AddSeqDropoutLayer`, `3` `AddNeurons`, `1` `DelNeurons`, and `1` `DelLayer`. Seed `111` executes `7` `AddResConvLayer`, `2` `AddSeqLinearLayer`, `1` `DelNeurons`, and `4` `DelLayer`.
+
+### How did the parameter count move?
+
+`param_count` is recorded after each generation's SGD and before that generation's action, then copied onto every epoch of the generation. The last generation does not search, so the last value is the parameter count of the finished network. `minimal` starts at `12,832` parameters. `base` starts at `187,008`.
+
+| Seed | `base` | `minimal` |
 | --- | ---: | ---: |
-| `base` | `81.36%` | `81.57%` |
-| `minimal` |  |  |
-| `slope` |  |  |
-| `no_cutout` |  |  |
-| `no_smooth` |  |  |
-| `no_clip` |  |  |
-| `old_decay` |  |  |
-| `short` |  |  |
+| `110` | `1,943,427` | `43,106` |
+| `111` | `720,960` | `82,270` |
 
-No charts are drawn until those files exist. The training run is not started.
+Figure 31 uses the same vertical axis for both arms, so the `minimal` lines stay near the bottom.
+
+![Parameter count for base and minimal](/assets/experiments/008-phase11-parameters.png)
+
+> [!CAPTION] Figure 31. Parameter count by epoch. Two panels are phase 10 base and phase 11 minimal, using seeds 110 and 111. Blue is seed 110 and orange is seed 111. The count is flat inside a generation and changes at the first epoch after an action that changes the parameter count. Both panels use the same vertical axis.
+
+### Conclusions
+
+Only `minimal` has finished. Two of the fourteen runs have `history.pt`. `slope`, `no_cutout`, `no_smooth`, `no_clip`, `old_decay`, and `short` have no folder.
+
+On these two seeds, replacing `FourLayerCifarNet` with `MinimalCifarNet` at `32` channels and hidden size `64` is the change that is present. The official-test mean falls from `81.46%` to `56.29%`. The other six changes have no measurement yet, so this drop is not a ranking of the remaining settings.

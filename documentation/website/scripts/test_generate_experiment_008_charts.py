@@ -39,6 +39,8 @@ from documentation.website.scripts.generate_experiment_008_charts import (
     plot_phase10_learning_rate,
     plot_phase10_mean_curves,
     plot_phase10_parameters,
+    plot_phase11_epoch_grid,
+    plot_phase11_parameters,
     write_charts,
 )
 
@@ -623,6 +625,51 @@ def test_plot_phase10_mean_curves_writes_the_five_seed_means(tmp_path: Path):
 
     # Assert
     assert (tmp_path / "008-phase10-mean-curves.png").is_file()
+
+
+def _phase11_rows() -> list[dict[str, object]]:
+    """Two synthetic phase 11 seeds with the fields the phase 11 charts read."""
+    return [
+        {
+            "seed": seed,
+            "train": [0.2, 0.4],
+            "val": [0.3, 0.5],
+            "test": [0.4, 0.6],
+            "test_epoch": [10, 20],
+            "param_count": [12832, 40000 + seed],
+        }
+        for seed in (110, 111)
+    ]
+
+
+def test_plot_phase11_epoch_grid_writes_base_and_minimal(tmp_path: Path):
+    """
+    plot_phase11_epoch_grid should write train, official test, and validation for base and minimal.
+    """
+
+    # Arrange
+    data = {"phase10_base": _phase10_rows(), "phase11_minimal": _phase11_rows()}
+
+    # Act
+    plot_phase11_epoch_grid(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase11-epoch-grid.png").is_file()
+
+
+def test_plot_phase11_parameters_writes_base_and_minimal(tmp_path: Path):
+    """
+    plot_phase11_parameters should write parameter count for base and minimal.
+    """
+
+    # Arrange
+    data = {"phase10_base": _phase10_rows(), "phase11_minimal": _phase11_rows()}
+
+    # Act
+    plot_phase11_parameters(data, tmp_path)
+
+    # Assert
+    assert (tmp_path / "008-phase11-parameters.png").is_file()
 
 
 def test_plot_phase6_final_test_writes_each_seed_and_the_mean(tmp_path: Path):
