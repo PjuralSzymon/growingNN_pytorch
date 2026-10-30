@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import torch.fx as fx
+import torch.nn as nn
+import torch.nn.functional as F
 
 from growingnn.utils.fx.graph_analysis import (
     GraphStructureQuery,
@@ -18,6 +20,16 @@ from growingnn.utils.fx.sum_nodes import connect_residual_branch, is_merge_branc
 def _insert_call_module_after(gm, insert_after, module_name, module_input):
     with gm.graph.inserting_after(insert_after):
         return gm.graph.call_module(module_name, args=(module_input,))
+
+
+def _append_batchnorm_and_relu(gm, conv_node, conv_module: nn.Conv2d, name: str):
+    """Place BatchNorm and ReLU after a new conv so stacked inserts stay nonlinear."""
+    bn_name = f"{name}_bn"
+    bn = _align_new_module_to_graph(gm, nn.BatchNorm2d(conv_module.out_channels))
+    gm.add_module(bn_name, bn)
+    bn_node = _insert_call_module_after(gm, conv_node, bn_name, conv_node)
+    with gm.graph.inserting_after(bn_node):
+        return gm.graph.call_function(F.relu, args=(bn_node,))
 
 
 def _align_new_module_to_graph(gm: fx.GraphModule, new_layer):
@@ -198,7 +210,7 @@ class ModelStructureEditor:
         gm.recompile()
 
     @staticmethod
-    def add_new_seq_layer(gm, src_name, dst_name, new_layer, name):
+    def add_new_seq_layer(gm, src_name, dst_name, new_layer, name, add_batchnorm_and_relu: bool = False):
         """Insert *new_layer* sequentially on the path from *src_name* to *dst_name*."""
         new_layer = _align_new_module_to_graph(gm, new_layer)
         gm.add_module(name, new_layer)
@@ -213,12 +225,17 @@ class ModelStructureEditor:
             raise ValueError(f"No path from {dst_name!r} back to {src_name!r} in the FX graph.")
 
         new_out = _insert_call_module_after(gm, path[1], name, path[1])
-        NodeEditor.swap_node_input(dst, path[1], new_out)
+        tail = _append_batchnorm_and_relu(gm, new_out, new_layer, name) if add_batchnorm_and_relu else new_out
+        NodeEditor.swap_node_input(dst, path[1], tail)
         gm.graph.lint()
         gm.recompile()
 
     @staticmethod
-    def add_new_seq_layer_before_flatten(gm, src_name, dst_name, new_layer, name):
+    def add_new_seq_layer_before_flatten(
+        gm, src_name, dst_name, new_layer, name,
+        add_batchnorm_and_relu: bool = False,
+        before_global_pool: bool = True,
+    ):
         """Insert *new_layer* immediately before the flatten node on the src→dst sequential path."""
         from growingnn.utils.fx.graph_analysis import GraphStructureQuery
 
@@ -240,18 +257,24 @@ class ModelStructureEditor:
         if flatten_node is None:
             raise ValueError(f"No flatten on path from {src_name!r} to {dst_name!r}.")
 
-        flatten_index = path_destination_to_source.index(flatten_node)
-        if flatten_index + 1 >= len(path_destination_to_source):
-            raise ValueError("Flatten has no predecessor on the sequential path.")
-        insert_after_node = path_destination_to_source[flatten_index + 1]
         pools_before_flatten = GraphStructureQuery.find_pool_nodes_between_flatten_and_source(
             path_destination_to_source, flatten_node, gm,
         )
         if not pools_before_flatten:
             raise ValueError("Sequential conv before flatten requires at least one pool before flatten.")
+        flatten_index = path_destination_to_source.index(flatten_node)
+        if before_global_pool:
+            insert_after_node = GraphStructureQuery.conv_insert_after_node_before_flatten(
+                path_destination_to_source, flatten_node, gm,
+            )
+        else:
+            insert_after_node = path_destination_to_source[flatten_index + 1]
+        insert_index = path_destination_to_source.index(insert_after_node)
+        consumer = path_destination_to_source[insert_index - 1] if insert_index > flatten_index else flatten_node
 
         new_out = _insert_call_module_after(gm, insert_after_node, name, insert_after_node)
-        NodeEditor.swap_node_input(flatten_node, insert_after_node, new_out)
+        tail = _append_batchnorm_and_relu(gm, new_out, new_layer, name) if add_batchnorm_and_relu else new_out
+        NodeEditor.swap_node_input(consumer, insert_after_node, tail)
         gm.graph.lint()
         gm.recompile()
 

@@ -106,6 +106,10 @@ class RunningConfig:
         enable_experiment_board: bool = False,
         experiment_board: Any | None = None,
         device: str | torch.device | None = None,
+        momentum: float = 0.0,
+        weight_decay: float = 0.0,
+        max_grad_norm: float | None = None,
+        seq_conv_insert_before_global_pool: bool = True,
     ):
         self.generations = generations
         self.epochs = epochs
@@ -121,6 +125,10 @@ class RunningConfig:
         self.enable_experiment_board = enable_experiment_board
         self.experiment_board = experiment_board if enable_experiment_board else None
         self.device = str(device) if device is not None else default_training_device()
+        self.momentum = float(momentum)
+        self.weight_decay = float(weight_decay)
+        self.max_grad_norm = None if max_grad_norm is None else float(max_grad_norm)
+        self.seq_conv_insert_before_global_pool = bool(seq_conv_insert_before_global_pool)
         self.ACTIONS_ENABLE_ADD_SEQ_LAYER = True
         self.ACTIONS_ENABLE_ADD_RES_LAYER = True
         self.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER = True
