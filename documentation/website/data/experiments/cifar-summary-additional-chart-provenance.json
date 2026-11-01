@@ -1,0 +1,65 @@
+[
+  {
+    "asset": "cifar-summary-manual-widening.png",
+    "source": "D:\\repos\\growingNN_pytorch-3\\documentation\\website\\app\\public\\assets\\experiments\\008-sweep-full-history.png",
+    "source_creation": "2026-09-03T12:29:34.4774333+02:00",
+    "source_modified": "2026-09-03T13:21:58.6882840+02:00",
+    "sha256": "F765BC6FBFA0F04AE2FCC53B2629DB47B20933E48D8B1FE89265BB38C9594B21"
+  },
+  {
+    "asset": "cifar-summary-standard-training-histories.png",
+    "source": "D:\\repos\\growingNN_pytorch-3\\documentation\\website\\app\\public\\assets\\experiments\\011-histories.png",
+    "source_creation": "2026-10-07T22:40:14.1832135+02:00",
+    "source_modified": "2026-10-12T14:18:30.2317194+02:00",
+    "sha256": "07C58047606F059A64B950BEE25104C46AC8FF039EC87A5621BF225EA6D1C295"
+  },
+  {
+    "asset": "cifar-summary-long-training-plateau.png",
+    "source": "D:\\repos\\growingNN_pytorch-3\\documentation\\website\\app\\public\\assets\\experiments\\011-phase3-histories.png",
+    "source_creation": "2026-10-10T07:54:56.2601492+02:00",
+    "source_modified": "2026-10-12T14:18:31.1697399+02:00",
+    "sha256": "9F353F468381EF5F5179F7A3EC8EA7825F7D2D835491735EAE61E5B70372FF58"
+  },
+  {
+    "asset": "cifar-summary-search-budget-histories.png",
+    "source": "D:\\repos\\growingNN_pytorch\\documentation\\website\\app\\public\\assets\\experiments\\008-phase3-mode-grid.png",
+    "source_creation": "2026-10-16T08:56:34.5716437+02:00",
+    "source_modified": "2026-10-30T10:46:14.6952652+01:00",
+    "sha256": "07BFB5FD139AD6443073FDFFA9DD29FC027B6E5FE0D93D9B401510FF9A76C8B4"
+  },
+  {
+    "asset": "cifar-summary-simulation-data-histories.png",
+    "source": "D:\\repos\\growingNN_pytorch\\documentation\\website\\app\\public\\assets\\experiments\\008-phase5-mode-grid.png",
+    "source_creation": "2026-10-19T11:59:02.2841966+02:00",
+    "source_modified": "2026-10-30T10:46:15.9257566+01:00",
+    "sha256": "40F3D36C342086E45F1CC8CAC366C2FD54BD1146CAD0732B45C27F006496BEE4"
+  },
+  {
+    "asset": "cifar-summary-simulation-size-comparison.png",
+    "source": "D:\\repos\\growingNN_pytorch\\documentation\\website\\app\\public\\assets\\experiments\\008-phase6-final-test.png",
+    "source_creation": "2026-10-23T17:40:04.3389339+02:00",
+    "source_modified": "2026-10-30T10:46:18.4199398+01:00",
+    "sha256": "AA3D61F574D9F44BF40290698677FAE31587D16E1BC0E5B60C863E682BFD062B"
+  },
+  {
+    "asset": "cifar-summary-longer-generations.png",
+    "source": "D:\\repos\\growingNN_pytorch\\documentation\\website\\app\\public\\assets\\experiments\\008-phase7-epoch-grid.png",
+    "source_creation": "2026-10-23T18:45:22.8101560+02:00",
+    "source_modified": "2026-10-30T10:46:21.4645310+01:00",
+    "sha256": "4C454CD1A362E1E63929ACB95B0D1FA37B02E028A4CDB795F05A9CDCBA381A61"
+  },
+  {
+    "asset": "cifar-summary-generation-count-histories.png",
+    "source": "D:\\repos\\growingNN_pytorch\\documentation\\website\\app\\public\\assets\\experiments\\008-phase8-epoch-grid.png",
+    "source_creation": "2026-10-24T09:20:24.0522035+02:00",
+    "source_modified": "2026-10-30T10:46:22.1679398+01:00",
+    "sha256": "3672C9DC530313944A54AB3D2CAB8DB21B4DC1CC2FB8CA420BBDF41710052B2E"
+  },
+  {
+    "asset": "cifar-summary-training-convolution-histories.png",
+    "source": "D:\\repos\\growingNN_pytorch\\documentation\\website\\app\\public\\assets\\experiments\\008-phase10-mean-curves.png",
+    "source_creation": "2026-10-28T22:58:03.6433924+01:00",
+    "source_modified": "2026-10-30T10:46:24.8015717+01:00",
+    "sha256": "00A5949159057D9269201C71F760071C366C8AED952EAC103AF8630BCC6AA48A"
+  }
+]
