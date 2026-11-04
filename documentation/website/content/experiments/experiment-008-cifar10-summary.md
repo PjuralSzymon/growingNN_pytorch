@@ -200,18 +200,6 @@ This is more informative than a single high score: the combined configuration se
 
 The five final tests with both changes were **89.08%, 89.10%, 88.93%, 86.60%, and 86.50%**. All were well above the old low baseline, but none crossed 90% in this repeat. The first three average **89.04%**, versus **90.04%** in the earlier nominally matching three-seed generation-count study. The evidence is therefore that the updated all-action configuration learns substantially better, with remaining trajectory variation—not that every repetition guarantees 90%.
 
-### Returning to the minimal starter brought poor learning back
-
-We also replaced the large BatchNorm starter with the original small unnormalized model, while retaining the older learning-rate and convolution settings used by the control. On two seeds, the control finished at **81.36% and 81.57%**; the minimal starter finished at **43.58% and 69.00%**.
-
-![Poor learning returns with the minimal starting package](/assets/experiments/cifar-summary-starter-comparison.png)
-
-> [!CAPTION] **Chart date: 30 October 2026** (source metadata and first Git record). Minimal-starter runs completed 29 October. Rows: large normalized starter and minimal unnormalized starter; columns: train, official test, validation. Two seeds each, under the older learning-rate/convolution setup.
-
-The difference appears in the learning histories, not just their final test values. In one minimal run, an immediate validation drop after a neuron deletion was followed by sustained weak performance. Width, BatchNorm, and the action paths all differ, so this is a comparison of starting packages. It does show that the improved starting point was not an incidental cosmetic change in that setup.
-
-The remaining one-at-a-time checks for the search gate, random erasing, smoothing, clipping, weight decay, and shorter training were unfinished in the available report. Their absence matters: the evidence supports the combined recipe and several important interactions, but it does not assign a separate accuracy gain to each optimizer or regularization setting.
-
 ## 7. The confirmation: training now continues across generations and seeds
 
 The strongest conclusion comes from the histories, not from claiming that the latest phase always beats the preceding one. The later runs show both a more general all-action route to about 90% and a particularly consistent sequential-growth reference above 91%.
