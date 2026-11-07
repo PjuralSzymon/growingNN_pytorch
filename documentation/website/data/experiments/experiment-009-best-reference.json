@@ -421,66 +421,88 @@
         {
           "generation": 0,
           "name": "AddSeqLinearLayer",
+          "src": "linear",
+          "dst": "linear2",
           "val_before": 0.9604,
           "val_after": 0.9605
         },
         {
           "generation": 1,
           "name": "AddNeurons",
+          "src": "linear",
+          "dst": "2.0",
           "val_before": 0.9649,
           "val_after": 0.9409
         },
         {
           "generation": 2,
           "name": "DelNeurons",
+          "src": "seq_linear_0",
+          "dst": "0.9",
           "val_before": 0.9744,
           "val_after": 0.974
         },
         {
           "generation": 3,
           "name": "AddSeqLinearLayer",
+          "src": "seq_linear_0",
+          "dst": "linear2",
           "val_before": 0.9741,
           "val_after": 0.9741
         },
         {
           "generation": 4,
           "name": "AddSeqDropoutLayer",
+          "src": "seq_linear_0",
+          "dst": "seq_linear_1",
           "val_before": 0.9767,
           "val_after": 0.9767
         },
         {
           "generation": 5,
           "name": "AddResLinearLayer",
+          "src": "seq_linear_0",
+          "dst": "seq_linear_1",
           "val_before": 0.9786,
           "val_after": 0.9784
         },
         {
           "generation": 6,
           "name": "AddResConvLayer",
+          "src": "conv1",
+          "dst": "seq_linear_0",
           "val_before": 0.9771,
           "val_after": 0.9771
         },
         {
           "generation": 7,
           "name": "DelNeurons",
+          "src": "seq_linear_1",
+          "dst": "0.5",
           "val_before": 0.9794,
           "val_after": 0.9763
         },
         {
           "generation": 8,
           "name": "AddResLinearLayer",
+          "src": "linear",
+          "dst": "res_linear_EYE_0",
           "val_before": 0.9813,
           "val_after": 0.9813
         },
         {
           "generation": 9,
           "name": "AddResLinearLayer",
+          "src": "linear",
+          "dst": "res_linear_ZERO_0",
           "val_before": 0.9825,
           "val_after": 0.9825
         },
         {
           "generation": 10,
           "name": "AddResLinearLayer",
+          "src": "linear",
+          "dst": "res_linear_ZERO_0",
           "val_before": 0.9832,
           "val_after": 0.9825
         }
@@ -907,66 +929,88 @@
         {
           "generation": 0,
           "name": "AddSeqLinearLayer",
+          "src": "conv2",
+          "dst": "linear",
           "val_before": 0.9637,
           "val_after": 0.9638
         },
         {
           "generation": 1,
           "name": "AddNeurons",
+          "src": "linear",
+          "dst": "2.0",
           "val_before": 0.9652,
           "val_after": 0.9652
         },
         {
           "generation": 2,
           "name": "AddSeqDropoutLayer",
+          "src": "linear",
+          "dst": "linear2",
           "val_before": 0.9721,
           "val_after": 0.9721
         },
         {
           "generation": 3,
           "name": "AddSeqLinearLayer",
+          "src": "linear",
+          "dst": "linear2",
           "val_before": 0.9629,
           "val_after": 0.9629
         },
         {
           "generation": 4,
           "name": "AddSeqDropoutLayer",
+          "src": "seq_linear_1",
+          "dst": "linear2",
           "val_before": 0.9726,
           "val_after": 0.9726
         },
         {
           "generation": 5,
           "name": "AddResLinearLayer",
+          "src": "linear",
+          "dst": "seq_linear_1",
           "val_before": 0.9737,
           "val_after": 0.9737
         },
         {
           "generation": 6,
           "name": "AddResLinearLayer",
+          "src": "seq_linear_0",
+          "dst": "res_linear_ZERO_0",
           "val_before": 0.9741,
           "val_after": 0.974
         },
         {
           "generation": 7,
           "name": "AddResLinearLayer",
+          "src": "seq_linear_0",
+          "dst": "res_linear_EYE_0",
           "val_before": 0.9768,
           "val_after": 0.977
         },
         {
           "generation": 8,
           "name": "AddResLinearLayer",
+          "src": "seq_linear_0",
+          "dst": "res_linear_EYE_1",
           "val_before": 0.9778,
           "val_after": 0.9774
         },
         {
           "generation": 9,
           "name": "AddResLinearLayer",
+          "src": "seq_linear_0",
+          "dst": "res_linear_EYE_2",
           "val_before": 0.9793,
           "val_after": 0.979
         },
         {
           "generation": 10,
           "name": "AddResLinearLayer",
+          "src": "seq_linear_0",
+          "dst": "res_linear_EYE_2",
           "val_before": 0.9805,
           "val_after": 0.9804
         }
@@ -1393,66 +1437,88 @@
         {
           "generation": 0,
           "name": "AddNeurons",
+          "src": "linear",
+          "dst": "1.1",
           "val_before": 0.6066,
           "val_after": 0.5914
         },
         {
           "generation": 1,
           "name": "DelNeurons",
+          "src": "linear",
+          "dst": "0.5",
           "val_before": 0.631,
           "val_after": 0.574
         },
         {
           "generation": 2,
           "name": "AddSeqDropoutLayer",
+          "src": "linear",
+          "dst": "linear2",
           "val_before": 0.6526,
           "val_after": 0.6526
         },
         {
           "generation": 3,
           "name": "DelNeurons",
+          "src": "linear",
+          "dst": "0.5",
           "val_before": 0.6892,
           "val_after": 0.6782
         },
         {
           "generation": 4,
           "name": "AddSeqConvLayer",
+          "src": "conv2",
+          "dst": "linear",
           "val_before": 0.7054,
           "val_after": 0.7068
         },
         {
           "generation": 5,
           "name": "AddNeurons",
+          "src": "linear",
+          "dst": "1.5",
           "val_before": 0.7122,
           "val_after": 0.7106
         },
         {
           "generation": 6,
           "name": "AddSeqConvLayer",
+          "src": "seq_conv_0",
+          "dst": "linear",
           "val_before": 0.7444,
           "val_after": 0.7442
         },
         {
           "generation": 7,
           "name": "AddResConvLayer",
+          "src": "seq_conv_0",
+          "dst": "seq_conv_1",
           "val_before": 0.752,
           "val_after": 0.752
         },
         {
           "generation": 8,
           "name": "AddResConvLayer",
+          "src": "res_conv__0",
+          "dst": "linear",
           "val_before": 0.7936,
           "val_after": 0.7936
         },
         {
           "generation": 9,
           "name": "AddResConvLayer",
+          "src": "conv1",
+          "dst": "linear",
           "val_before": 0.8026,
           "val_after": 0.8024
         },
         {
           "generation": 10,
           "name": "DelNeurons",
+          "src": "linear",
+          "dst": "0.5",
           "val_before": 0.8194,
           "val_after": 0.8094
         }
@@ -1879,66 +1945,88 @@
         {
           "generation": 0,
           "name": "AddSeqDropoutLayer",
+          "src": "linear",
+          "dst": "linear2",
           "val_before": 0.6,
           "val_after": 0.6
         },
         {
           "generation": 1,
           "name": "DelNeurons",
+          "src": "linear",
+          "dst": "0.5",
           "val_before": 0.6852,
           "val_after": 0.6466
         },
         {
           "generation": 2,
           "name": "AddSeqLinearLayer",
+          "src": "linear",
+          "dst": "linear2",
           "val_before": 0.6484,
           "val_after": 0.6486
         },
         {
           "generation": 3,
           "name": "AddSeqLinearLayer",
+          "src": "linear",
+          "dst": "seq_linear_0",
           "val_before": 0.6598,
           "val_after": 0.6602
         },
         {
           "generation": 4,
           "name": "AddSeqLinearLayer",
+          "src": "seq_linear_0",
+          "dst": "linear2",
           "val_before": 0.6944,
           "val_after": 0.6944
         },
         {
           "generation": 5,
           "name": "AddResLinearLayer",
+          "src": "linear",
+          "dst": "seq_linear_2",
           "val_before": 0.684,
           "val_after": 0.684
         },
         {
           "generation": 6,
           "name": "AddNeurons",
+          "src": "seq_linear_2",
+          "dst": "1.5",
           "val_before": 0.741,
           "val_after": 0.7424
         },
         {
           "generation": 7,
           "name": "AddSeqLinearLayer",
+          "src": "seq_linear_1",
+          "dst": "seq_linear_0",
           "val_before": 0.7446,
           "val_after": 0.7446
         },
         {
           "generation": 8,
           "name": "AddNeurons",
+          "src": "seq_linear_1",
+          "dst": "1.1",
           "val_before": 0.7532,
           "val_after": 0.7528
         },
         {
           "generation": 9,
           "name": "AddResLinearLayer",
+          "src": "linear",
+          "dst": "res_linear_ZERO_0",
           "val_before": 0.7954,
           "val_after": 0.7954
         },
         {
           "generation": 10,
           "name": "AddNeurons",
+          "src": "linear",
+          "dst": "2.0",
           "val_before": 0.8058,
           "val_after": 0.7994
         }
@@ -2365,66 +2453,88 @@
         {
           "generation": 0,
           "name": "AddSeqDropoutLayer",
+          "src": "linear",
+          "dst": "linear2",
           "val_before": 0.2874,
           "val_after": 0.2874
         },
         {
           "generation": 1,
           "name": "DelNeurons",
+          "src": "linear",
+          "dst": "0.5",
           "val_before": 0.3564,
           "val_after": 0.2366
         },
         {
           "generation": 2,
           "name": "AddResConvLayer",
+          "src": "conv2",
+          "dst": "linear",
           "val_before": 0.3526,
           "val_after": 0.3524
         },
         {
           "generation": 3,
           "name": "DelLayer",
+          "src": "res_conv__0",
+          "dst": "",
           "val_before": 0.3206,
           "val_after": 0.2454
         },
         {
           "generation": 4,
           "name": "AddSeqConvLayer",
+          "src": "conv2",
+          "dst": "linear",
           "val_before": 0.3642,
           "val_after": 0.3658
         },
         {
           "generation": 5,
           "name": "AddNeurons",
+          "src": "linear",
+          "dst": "1.1",
           "val_before": 0.3988,
           "val_after": 0.3754
         },
         {
           "generation": 6,
           "name": "AddNeurons",
+          "src": "linear",
+          "dst": "1.1",
           "val_before": 0.4208,
           "val_after": 0.3928
         },
         {
           "generation": 7,
           "name": "DelNeurons",
+          "src": "linear",
+          "dst": "0.5",
           "val_before": 0.4478,
           "val_after": 0.3294
         },
         {
           "generation": 8,
           "name": "AddResConvLayer",
+          "src": "conv2",
+          "dst": "linear",
           "val_before": 0.4462,
           "val_after": 0.4462
         },
         {
           "generation": 9,
           "name": "DelLayer",
+          "src": "res_conv__0",
+          "dst": "",
           "val_before": 0.4682,
           "val_after": 0.4478
         },
         {
           "generation": 10,
           "name": "AddResConvLayer",
+          "src": "seq_conv_0",
+          "dst": "linear",
           "val_before": 0.4754,
           "val_after": 0.4754
         }
@@ -2851,66 +2961,88 @@
         {
           "generation": 0,
           "name": "AddSeqDropoutLayer",
+          "src": "linear",
+          "dst": "linear2",
           "val_before": 0.273,
           "val_after": 0.273
         },
         {
           "generation": 1,
           "name": "AddSeqConvLayer",
+          "src": "conv2",
+          "dst": "linear",
           "val_before": 0.3102,
           "val_after": 0.3098
         },
         {
           "generation": 2,
           "name": "AddResConvLayer",
+          "src": "conv1",
+          "dst": "linear",
           "val_before": 0.3318,
           "val_after": 0.3316
         },
         {
           "generation": 3,
           "name": "AddResConvLayer",
+          "src": "conv1",
+          "dst": "linear",
           "val_before": 0.3034,
           "val_after": 0.3034
         },
         {
           "generation": 4,
           "name": "AddNeurons",
+          "src": "linear",
+          "dst": "1.5",
           "val_before": 0.3298,
           "val_after": 0.3294
         },
         {
           "generation": 5,
           "name": "AddResConvLayer",
+          "src": "conv2",
+          "dst": "linear",
           "val_before": 0.3608,
           "val_after": 0.361
         },
         {
           "generation": 6,
           "name": "AddResConvLayer",
+          "src": "conv2",
+          "dst": "linear",
           "val_before": 0.4104,
           "val_after": 0.4104
         },
         {
           "generation": 7,
           "name": "AddNeurons",
+          "src": "linear",
+          "dst": "2.0",
           "val_before": 0.478,
           "val_after": 0.478
         },
         {
           "generation": 8,
           "name": "AddSeqConvLayer",
+          "src": "seq_conv_0",
+          "dst": "linear",
           "val_before": 0.5314,
           "val_after": 0.5314
         },
         {
           "generation": 9,
           "name": "AddResConvLayer",
+          "src": "conv2",
+          "dst": "linear",
           "val_before": 0.5648,
           "val_after": 0.5648
         },
         {
           "generation": 10,
           "name": "AddResConvLayer",
+          "src": "seq_conv_1",
+          "dst": "linear",
           "val_before": 0.5782,
           "val_after": 0.5782
         }
@@ -3337,66 +3469,88 @@
         {
           "generation": 0,
           "name": "AddSeqLinearLayer",
+          "src": "linear",
+          "dst": "linear2",
           "val_before": 0.1985,
           "val_after": 0.1988
         },
         {
           "generation": 1,
           "name": "AddSeqDropoutLayer",
+          "src": "linear",
+          "dst": "seq_linear_0",
           "val_before": 0.2307,
           "val_after": 0.2307
         },
         {
           "generation": 2,
           "name": "AddResLinearLayer",
+          "src": "linear",
+          "dst": "seq_linear_0",
           "val_before": 0.2191,
           "val_after": 0.2191
         },
         {
           "generation": 3,
           "name": "AddSeqDropoutLayer",
+          "src": "res_linear_ZERO_0",
+          "dst": "linear2",
           "val_before": 0.2454,
           "val_after": 0.2454
         },
         {
           "generation": 4,
           "name": "AddSeqLinearLayer",
+          "src": "linear",
+          "dst": "seq_linear_0",
           "val_before": 0.2708,
           "val_after": 0.2708
         },
         {
           "generation": 5,
           "name": "AddSeqConvLayer",
+          "src": "conv2",
+          "dst": "linear",
           "val_before": 0.2995,
           "val_after": 0.2996
         },
         {
           "generation": 6,
           "name": "AddResLinearLayer",
+          "src": "linear",
+          "dst": "seq_linear_0",
           "val_before": 0.356,
           "val_after": 0.356
         },
         {
           "generation": 7,
           "name": "AddResConvLayer",
+          "src": "conv2",
+          "dst": "seq_linear_1",
           "val_before": 0.3867,
           "val_after": 0.3862
         },
         {
           "generation": 8,
           "name": "AddSeqDropoutLayer",
+          "src": "linear",
+          "dst": "res_linear_ZERO_0",
           "val_before": 0.4075,
           "val_after": 0.4075
         },
         {
           "generation": 9,
           "name": "AddSeqDropoutLayer",
+          "src": "seq_linear_1",
+          "dst": "seq_linear_0",
           "val_before": 0.4305,
           "val_after": 0.4305
         },
         {
           "generation": 10,
           "name": "AddResLinearLayer",
+          "src": "linear",
+          "dst": "seq_linear_0",
           "val_before": 0.4418,
           "val_after": 0.4249
         }
@@ -3823,66 +3977,88 @@
         {
           "generation": 0,
           "name": "AddSeqConvLayer",
+          "src": "conv2",
+          "dst": "linear",
           "val_before": 0.1867,
           "val_after": 0.1865
         },
         {
           "generation": 1,
           "name": "AddSeqLinearLayer",
+          "src": "linear",
+          "dst": "linear2",
           "val_before": 0.2772,
           "val_after": 0.2769
         },
         {
           "generation": 2,
           "name": "AddSeqDropoutLayer",
+          "src": "linear",
+          "dst": "seq_linear_0",
           "val_before": 0.2933,
           "val_after": 0.2933
         },
         {
           "generation": 3,
           "name": "AddSeqDropoutLayer",
+          "src": "seq_linear_0",
+          "dst": "linear2",
           "val_before": 0.3351,
           "val_after": 0.3351
         },
         {
           "generation": 4,
           "name": "AddResLinearLayer",
+          "src": "linear",
+          "dst": "seq_linear_0",
           "val_before": 0.3667,
           "val_after": 0.3666
         },
         {
           "generation": 5,
           "name": "AddSeqDropoutLayer",
+          "src": "linear",
+          "dst": "res_linear_ZERO_0",
           "val_before": 0.3814,
           "val_after": 0.3814
         },
         {
           "generation": 6,
           "name": "AddResLinearLayer",
+          "src": "linear",
+          "dst": "res_linear_ZERO_0",
           "val_before": 0.4034,
           "val_after": 0.4034
         },
         {
           "generation": 7,
           "name": "AddResConvLayer",
+          "src": "conv1",
+          "dst": "seq_linear_0",
           "val_before": 0.4218,
           "val_after": 0.4217
         },
         {
           "generation": 8,
           "name": "AddSeqLinearLayer",
+          "src": "linear",
+          "dst": "seq_linear_0",
           "val_before": 0.4326,
           "val_after": 0.4326
         },
         {
           "generation": 9,
           "name": "AddResLinearLayer",
+          "src": "linear",
+          "dst": "seq_linear_1",
           "val_before": 0.4539,
           "val_after": 0.4539
         },
         {
           "generation": 10,
           "name": "AddSeqLinearLayer",
+          "src": "res_linear_ZERO_1",
+          "dst": "linear2",
           "val_before": 0.4657,
           "val_after": 0.4657
         }
