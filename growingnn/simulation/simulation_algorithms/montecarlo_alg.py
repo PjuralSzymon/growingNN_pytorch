@@ -55,7 +55,10 @@ class TreeNode:
                     cfg.criterion,
                     project_config.MCTS_ROLLOUT_LR,
                     quiet=True,
+                    momentum=cfg.momentum,
+                    weight_decay=cfg.weight_decay,
                     device=cfg.device,
+                    max_grad_norm=cfg.max_grad_norm,
                 )
             except Exception as e:
                 logger.error("Error in gradient_descent: %s after executing action %s", e, action)
@@ -84,7 +87,10 @@ class TreeNode:
                     cfg.criterion,
                     project_config.MCTS_ROLLOUT_LR,
                     quiet=True,
+                    momentum=cfg.momentum,
+                    weight_decay=cfg.weight_decay,
                     device=cfg.device,
+                    max_grad_norm=cfg.max_grad_norm,
                 )
             except Exception as e:
                 logger.error("Error in gradient_descent: %s after executing action %s", e, chosen)

@@ -32,6 +32,7 @@ def _resolve_optimizer(
     parameters: Iterable[torch.nn.Parameter],
     optimizer: torch.optim.Optimizer | None,
     momentum: float,
+    weight_decay: float,
 ) -> torch.optim.Optimizer:
     """
     Return the caller optimizer, or build SGD with a throwaway ctor LR.
@@ -45,7 +46,7 @@ def _resolve_optimizer(
         parameters,
         lr=MIN_LEARNING_RATE,
         momentum=momentum,
-        weight_decay=0.0,
+        weight_decay=weight_decay,
     )
 
 
@@ -83,11 +84,13 @@ def gradient_descent(
     stopper: TrainingStopper | None = None,
     optimizer: torch.optim.Optimizer | None = None,
     momentum: float = 0.0,
+    weight_decay: float = 0.0,
     device: str | torch.device = "cpu",
     quiet: bool = False,
     print_every: int = PROGRESS_PRINT_FREQUENCY,
     experiment_board: ExperimentBoard | None = None,
     generation: int = 0,
+    max_grad_norm: float | None = None,
 ) -> tuple[nn.Module | fx.GraphModule, dict[str, list[float]]]:
     if epochs <= 0:
         raise ValueError("Number of epochs must be positive")
@@ -98,7 +101,7 @@ def gradient_descent(
     device = torch.device(device)
     model = model.to(device)
 
-    optimizer = _resolve_optimizer(model.parameters(), optimizer, momentum)
+    optimizer = _resolve_optimizer(model.parameters(), optimizer, momentum, weight_decay)
     history: dict[str, list[float]] = {
         "train_loss": [],
         "train_acc": [],
@@ -120,7 +123,12 @@ def gradient_descent(
             optimizer.zero_grad()
             outputs = model(inputs.float())
             loss = criterion(outputs, targets)
+            if not torch.isfinite(loss):
+                optimizer.zero_grad(set_to_none=True)
+                continue
             loss.backward()
+            if max_grad_norm is not None:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_grad_norm)
             optimizer.step()
             running_loss += loss.item() * inputs.size(0)
             _, predicted = outputs.max(dim=1)

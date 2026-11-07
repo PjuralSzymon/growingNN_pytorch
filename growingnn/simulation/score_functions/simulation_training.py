@@ -31,5 +31,8 @@ def run_simulation_scoring_gradient_descent(
             running_config.criterion,
             running_config.lr_scheduler,
             quiet=True,
+            momentum=running_config.momentum,
+            weight_decay=running_config.weight_decay,
             device=running_config.device,
+            max_grad_norm=running_config.max_grad_norm,
         )

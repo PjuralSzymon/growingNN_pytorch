@@ -176,6 +176,31 @@ class GraphStructureQuery:
         return pools
 
     @staticmethod
+    def conv_insert_after_node_before_flatten(
+        path_destination_to_source: list[fx.Node],
+        flatten_node: fx.Node,
+        gm: fx.GraphModule,
+    ) -> fx.Node:
+        """
+        Return the node a new conv should follow so it stays before a trailing global pool.
+
+        Windowed pools stay upstream. Only adaptive pools that sit directly source-ward of
+        flatten are skipped, so the conv runs at the pre-global-pool spatial size.
+        """
+        flatten_index = path_destination_to_source.index(flatten_node)
+        idx = flatten_index + 1
+        if idx >= len(path_destination_to_source):
+            raise ValueError("Flatten has no predecessor on the sequential path.")
+        while idx < len(path_destination_to_source):
+            kind = NodeTypeChecker.two_d_pool_kind(path_destination_to_source[idx], gm)
+            if kind not in ("adaptive_avg", "adaptive_max"):
+                break
+            idx += 1
+        if idx >= len(path_destination_to_source):
+            raise ValueError("Flatten has no non-pool predecessor on the sequential path.")
+        return path_destination_to_source[idx]
+
+    @staticmethod
     def path_has_dropout(
         gm: fx.GraphModule,
         from_id: str,

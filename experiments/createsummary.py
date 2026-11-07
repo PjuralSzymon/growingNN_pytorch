@@ -45,6 +45,10 @@ CANONICAL_PARAM_KEYS = (
     "augmentation_factor",
     "model_channels",
     "model_hidden_dim",
+    "momentum",
+    "weight_decay",
+    "scheduler",
+    "lr_mode",
 )
 
 MNIST_CANONICAL_PARAM_KEYS = (
@@ -93,7 +97,13 @@ _CIFAR10_FOLDER_NAME_RE = re.compile(
     r"_wcw(?P<score_weight_countw>[\d.]+)"
     r"(?:_augf?(?P<augmentation_factor>[\d.]*))?"
     r"_ch(?P<model_channels>\d+)"
-    r"_hd(?P<model_hidden_dim>\d+)$"
+    r"_hd(?P<model_hidden_dim>\d+)"
+    r"(?:_mom(?P<momentum>[\d.]+))?"
+    r"(?:_wd(?P<weight_decay>[\d.]+))?"
+    r"(?:_sch(?P<scheduler>[A-Za-z0-9]+))?"
+    r"(?:_lrm(?P<lr_mode>[A-Za-z0-9]+))?"
+    r"(?:_ndel)?"
+    r"(?:_pgrow)?$"
 )
 # MNIST folders encode dataset plus a subset of grid params, for example:
 #   dsmnist_g10_ep30_bs64_lr0.01_wcw0.2_ch4_hl16
@@ -131,9 +141,12 @@ CIFAR10_SPEC = ExperimentSummarySpec(
     history_filename=HISTORY_FILENAME,
     canonical_param_keys=CANONICAL_PARAM_KEYS,
     int_param_keys=_INT_PARAM_KEYS,
-    string_param_keys=frozenset(),
+    string_param_keys=frozenset({"scheduler", "lr_mode"}),
     folder_name_re=_CIFAR10_FOLDER_NAME_RE,
-    test_acc_note="(CIFAR-10 test split is logged as val_acc during training.)",
+    test_acc_note=(
+        "(val_acc is a held-out slice of the CIFAR-10 training set. "
+        "Official test accuracy is test_acc when the run records it.)"
+    ),
 )
 MNIST_SPEC = ExperimentSummarySpec(
     key="mnist",
@@ -714,6 +727,20 @@ def build_hyperparameter_folder_name(hyperparameters: Hyperparameters) -> str:
     aug_part = ""
     if "augmentation_factor" in hyperparameters:
         aug_part = f"_augf{hyperparameters['augmentation_factor']}"
+    mom_part = ""
+    if "momentum" in hyperparameters:
+        mom_part = f"_mom{hyperparameters['momentum']}"
+    wd_part = ""
+    if "weight_decay" in hyperparameters:
+        wd_part = f"_wd{hyperparameters['weight_decay']}"
+    sch_part = ""
+    if "scheduler" in hyperparameters:
+        sch_part = f"_sch{hyperparameters['scheduler']}"
+    lr_mode_part = ""
+    if "lr_mode" in hyperparameters:
+        lr_mode_part = f"_lrm{hyperparameters['lr_mode']}"
+    ndel_part = "_ndel" if hyperparameters.get("disable_del_neurons") else ""
+    pgrow_part = "_pgrow" if hyperparameters.get("plain_growth") else ""
     return (
         f"g{hyperparameters['generations']}_ep{hyperparameters['epochs']}_bs{hyperparameters['batch_size']}"
         f"_lr{hyperparameters['lr_alpha']}_simt{hyperparameters['simulation_time']}"
@@ -722,6 +749,7 @@ def build_hyperparameter_folder_name(hyperparameters: Hyperparameters) -> str:
         f"_wacc{hyperparameters['score_weight_acc']}_wcw{hyperparameters['score_weight_countw']}"
         f"{aug_part}"
         f"_ch{hyperparameters['model_channels']}_hd{hyperparameters['model_hidden_dim']}"
+        f"{mom_part}{wd_part}{sch_part}{lr_mode_part}{ndel_part}{pgrow_part}"
     )
 
 
