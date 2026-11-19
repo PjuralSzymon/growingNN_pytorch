@@ -1,0 +1,2047 @@
+{
+  "experiment": "012_residual_block_multidataset",
+  "generatedAtUtc": "2026-11-19T20:52:55+00:00",
+  "generatedFrom": "saved history.pt and Experiment Board JSON artifacts",
+  "status": {
+    "completedRuns": 19,
+    "runningRuns": 1,
+    "notStartedRuns": 4,
+    "plannedRuns": 24
+  },
+  "runs": [
+    {
+      "dataset": "mnist",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "status": "completed",
+      "completed_epochs": 10,
+      "final_train_accuracy": 0.79836,
+      "final_validation_accuracy": 0.9063,
+      "final_test_accuracy": 0.9118,
+      "final_parameters": 2682,
+      "stopped_by_validation_target": true,
+      "started": "2026-11-17T22:13:56Z",
+      "updated": "2026-11-17T22:17:14Z",
+      "elapsed_seconds": 197
+    },
+    {
+      "dataset": "mnist",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "status": "completed",
+      "completed_epochs": 13,
+      "final_train_accuracy": 0.78778,
+      "final_validation_accuracy": 0.91,
+      "final_test_accuracy": 0.9121,
+      "final_parameters": 2954,
+      "stopped_by_validation_target": true,
+      "started": "2026-11-17T22:17:14Z",
+      "updated": "2026-11-17T22:22:02Z",
+      "elapsed_seconds": 287
+    },
+    {
+      "dataset": "mnist",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "status": "completed",
+      "completed_epochs": 9,
+      "final_train_accuracy": 0.79924,
+      "final_validation_accuracy": 0.9053,
+      "final_test_accuracy": 0.9124,
+      "final_parameters": 2682,
+      "stopped_by_validation_target": true,
+      "started": "2026-11-17T22:22:02Z",
+      "updated": "2026-11-17T22:25:07Z",
+      "elapsed_seconds": 185
+    },
+    {
+      "dataset": "mnist",
+      "arm": "block_actions_off",
+      "seed": 1,
+      "status": "completed",
+      "completed_epochs": 16,
+      "final_train_accuracy": 0.7911,
+      "final_validation_accuracy": 0.923,
+      "final_test_accuracy": 0.931,
+      "final_parameters": 5002,
+      "stopped_by_validation_target": true,
+      "started": "2026-11-17T22:25:07Z",
+      "updated": "2026-11-17T22:30:54Z",
+      "elapsed_seconds": 347
+    },
+    {
+      "dataset": "mnist",
+      "arm": "block_actions_off",
+      "seed": 2,
+      "status": "completed",
+      "completed_epochs": 17,
+      "final_train_accuracy": 0.73176,
+      "final_validation_accuracy": 0.9108,
+      "final_test_accuracy": 0.9142,
+      "final_parameters": 2682,
+      "stopped_by_validation_target": true,
+      "started": "2026-11-17T22:30:54Z",
+      "updated": "2026-11-17T22:37:01Z",
+      "elapsed_seconds": 366
+    },
+    {
+      "dataset": "mnist",
+      "arm": "block_actions_off",
+      "seed": 3,
+      "status": "completed",
+      "completed_epochs": 13,
+      "final_train_accuracy": 0.84978,
+      "final_validation_accuracy": 0.9254,
+      "final_test_accuracy": 0.9298,
+      "final_parameters": 5002,
+      "stopped_by_validation_target": true,
+      "started": "2026-11-17T22:37:01Z",
+      "updated": "2026-11-17T22:41:48Z",
+      "elapsed_seconds": 287
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "status": "completed",
+      "completed_epochs": 300,
+      "final_train_accuracy": 0.6716888888888889,
+      "final_validation_accuracy": 0.6776,
+      "final_test_accuracy": 0.6907,
+      "final_parameters": 47482,
+      "stopped_by_validation_target": false,
+      "started": "2026-11-17T22:41:52Z",
+      "updated": "2026-11-18T00:31:06Z",
+      "elapsed_seconds": 6554
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "status": "completed",
+      "completed_epochs": 300,
+      "final_train_accuracy": 0.5665333333333333,
+      "final_validation_accuracy": 0.5886,
+      "final_test_accuracy": 0.5953,
+      "final_parameters": 54490,
+      "stopped_by_validation_target": false,
+      "started": "2026-11-18T00:31:06Z",
+      "updated": "2026-11-18T02:15:09Z",
+      "elapsed_seconds": 6242
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "status": "completed",
+      "completed_epochs": 300,
+      "final_train_accuracy": 0.4914222222222222,
+      "final_validation_accuracy": 0.6224,
+      "final_test_accuracy": 0.6317,
+      "final_parameters": 55049,
+      "stopped_by_validation_target": false,
+      "started": "2026-11-18T02:15:09Z",
+      "updated": "2026-11-18T04:10:07Z",
+      "elapsed_seconds": 6898
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_off",
+      "seed": 1,
+      "status": "completed",
+      "completed_epochs": 300,
+      "final_train_accuracy": 0.6747333333333333,
+      "final_validation_accuracy": 0.6888,
+      "final_test_accuracy": 0.6924,
+      "final_parameters": 33964,
+      "stopped_by_validation_target": false,
+      "started": "2026-11-18T04:10:07Z",
+      "updated": "2026-11-18T05:40:17Z",
+      "elapsed_seconds": 5409
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_off",
+      "seed": 2,
+      "status": "completed",
+      "completed_epochs": 300,
+      "final_train_accuracy": 0.7132222222222222,
+      "final_validation_accuracy": 0.7584,
+      "final_test_accuracy": 0.7536,
+      "final_parameters": 48646,
+      "stopped_by_validation_target": false,
+      "started": "2026-11-18T05:40:17Z",
+      "updated": "2026-11-18T07:35:34Z",
+      "elapsed_seconds": 6917
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_off",
+      "seed": 3,
+      "status": "completed",
+      "completed_epochs": 300,
+      "final_train_accuracy": 0.7142444444444445,
+      "final_validation_accuracy": 0.7422,
+      "final_test_accuracy": 0.7394,
+      "final_parameters": 61098,
+      "stopped_by_validation_target": false,
+      "started": "2026-11-18T07:35:35Z",
+      "updated": "2026-11-18T09:56:08Z",
+      "elapsed_seconds": 8433
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "status": "completed",
+      "completed_epochs": 300,
+      "final_train_accuracy": 0.2298888888888889,
+      "final_validation_accuracy": 0.2574,
+      "final_test_accuracy": 0.2527,
+      "final_parameters": 51028,
+      "stopped_by_validation_target": false,
+      "started": "2026-11-18T09:56:10Z",
+      "updated": "2026-11-18T12:47:24Z",
+      "elapsed_seconds": 10274
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "status": "completed",
+      "completed_epochs": 300,
+      "final_train_accuracy": 0.2945111111111111,
+      "final_validation_accuracy": 0.3436,
+      "final_test_accuracy": 0.3349,
+      "final_parameters": 60276,
+      "stopped_by_validation_target": false,
+      "started": "2026-11-18T12:47:25Z",
+      "updated": "2026-11-18T15:53:35Z",
+      "elapsed_seconds": 11170
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "status": "completed",
+      "completed_epochs": 300,
+      "final_train_accuracy": 0.34144444444444444,
+      "final_validation_accuracy": 0.3718,
+      "final_test_accuracy": 0.3659,
+      "final_parameters": 58500,
+      "stopped_by_validation_target": false,
+      "started": "2026-11-18T15:53:36Z",
+      "updated": "2026-11-18T18:47:30Z",
+      "elapsed_seconds": 10434
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_off",
+      "seed": 1,
+      "status": "completed",
+      "completed_epochs": 300,
+      "final_train_accuracy": 0.3322888888888889,
+      "final_validation_accuracy": 0.3612,
+      "final_test_accuracy": 0.3476,
+      "final_parameters": 56555,
+      "stopped_by_validation_target": false,
+      "started": "2026-11-18T18:47:31Z",
+      "updated": "2026-11-18T21:36:29Z",
+      "elapsed_seconds": 10137
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_off",
+      "seed": 2,
+      "status": "completed",
+      "completed_epochs": 300,
+      "final_train_accuracy": 0.3148666666666667,
+      "final_validation_accuracy": 0.3398,
+      "final_test_accuracy": 0.3255,
+      "final_parameters": 60820,
+      "stopped_by_validation_target": false,
+      "started": "2026-11-18T21:36:30Z",
+      "updated": "2026-11-19T00:50:13Z",
+      "elapsed_seconds": 11623
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_off",
+      "seed": 3,
+      "status": "completed",
+      "completed_epochs": 300,
+      "final_train_accuracy": 0.35646666666666665,
+      "final_validation_accuracy": 0.3644,
+      "final_test_accuracy": 0.36,
+      "final_parameters": 55988,
+      "stopped_by_validation_target": false,
+      "started": "2026-11-19T00:50:14Z",
+      "updated": "2026-11-19T03:59:41Z",
+      "elapsed_seconds": 11366
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "status": "completed",
+      "completed_epochs": 300,
+      "final_train_accuracy": 0.21036666666666667,
+      "final_validation_accuracy": 0.2159,
+      "final_test_accuracy": 0.2202,
+      "final_parameters": 46056,
+      "stopped_by_validation_target": false,
+      "started": "2026-11-19T03:59:45Z",
+      "updated": "2026-11-19T14:31:00Z",
+      "elapsed_seconds": 37875
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "status": "running",
+      "completed_epochs": 200,
+      "final_train_accuracy": 0.18142222222222223,
+      "final_validation_accuracy": 0.1716,
+      "final_test_accuracy": null,
+      "final_parameters": 30024,
+      "stopped_by_validation_target": null,
+      "started": "2026-11-19T14:31:00Z",
+      "updated": "2026-11-19T20:48:02Z",
+      "elapsed_seconds": 22622
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "status": "not_started"
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_off",
+      "seed": 1,
+      "status": "not_started"
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_off",
+      "seed": 2,
+      "status": "not_started"
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_off",
+      "seed": 3,
+      "status": "not_started"
+    }
+  ],
+  "groupSummary": [
+    {
+      "dataset": "mnist",
+      "arm": "block_actions_on",
+      "completedSeeds": [
+        1,
+        2,
+        3
+      ],
+      "n": 3,
+      "meanFinalTrainAccuracy": 0.7951266666666666,
+      "meanFinalValidationAccuracy": 0.9072,
+      "meanFinalTestAccuracy": 0.9121,
+      "meanFinalParameters": 2772.6666666666665
+    },
+    {
+      "dataset": "mnist",
+      "arm": "block_actions_off",
+      "completedSeeds": [
+        1,
+        2,
+        3
+      ],
+      "n": 3,
+      "meanFinalTrainAccuracy": 0.79088,
+      "meanFinalValidationAccuracy": 0.9197333333333334,
+      "meanFinalTestAccuracy": 0.925,
+      "meanFinalParameters": 4228.666666666667
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "completedSeeds": [
+        1,
+        2,
+        3
+      ],
+      "n": 3,
+      "meanFinalTrainAccuracy": 0.5765481481481481,
+      "meanFinalValidationAccuracy": 0.6295333333333333,
+      "meanFinalTestAccuracy": 0.6392333333333333,
+      "meanFinalParameters": 52340.333333333336
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_off",
+      "completedSeeds": [
+        1,
+        2,
+        3
+      ],
+      "n": 3,
+      "meanFinalTrainAccuracy": 0.7007333333333333,
+      "meanFinalValidationAccuracy": 0.7298,
+      "meanFinalTestAccuracy": 0.7284666666666667,
+      "meanFinalParameters": 47902.666666666664
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "completedSeeds": [
+        1,
+        2,
+        3
+      ],
+      "n": 3,
+      "meanFinalTrainAccuracy": 0.2886148148148148,
+      "meanFinalValidationAccuracy": 0.3242666666666667,
+      "meanFinalTestAccuracy": 0.3178333333333333,
+      "meanFinalParameters": 56601.333333333336
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_off",
+      "completedSeeds": [
+        1,
+        2,
+        3
+      ],
+      "n": 3,
+      "meanFinalTrainAccuracy": 0.33454074074074075,
+      "meanFinalValidationAccuracy": 0.35513333333333336,
+      "meanFinalTestAccuracy": 0.34436666666666665,
+      "meanFinalParameters": 57787.666666666664
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "completedSeeds": [
+        1
+      ],
+      "n": 1,
+      "meanFinalTrainAccuracy": 0.21036666666666667,
+      "meanFinalValidationAccuracy": 0.2159,
+      "meanFinalTestAccuracy": 0.2202,
+      "meanFinalParameters": 46056.0
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_off",
+      "completedSeeds": [],
+      "n": 0,
+      "meanFinalTrainAccuracy": null,
+      "meanFinalValidationAccuracy": null,
+      "meanFinalTestAccuracy": null,
+      "meanFinalParameters": null
+    }
+  ],
+  "candidateSummary": [
+    {
+      "dataset": "mnist",
+      "kind": "duplicate",
+      "appearances": 1,
+      "meanScore": 0.8833333333333333,
+      "selected": 0
+    },
+    {
+      "dataset": "mnist",
+      "kind": "remove",
+      "appearances": 1,
+      "meanScore": 0.1,
+      "selected": 0
+    },
+    {
+      "dataset": "cifar10",
+      "kind": "duplicate",
+      "appearances": 21,
+      "meanScore": 0.4373015873015873,
+      "selected": 0
+    },
+    {
+      "dataset": "cifar10",
+      "kind": "remove",
+      "appearances": 21,
+      "meanScore": 0.273015873015873,
+      "selected": 0
+    },
+    {
+      "dataset": "cifar100",
+      "kind": "duplicate",
+      "appearances": 42,
+      "meanScore": 0.22666666666666666,
+      "selected": 0
+    },
+    {
+      "dataset": "cifar100",
+      "kind": "remove",
+      "appearances": 42,
+      "meanScore": 0.11857142857142858,
+      "selected": 0
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "kind": "duplicate",
+      "appearances": 18,
+      "meanScore": 0.1088888888888889,
+      "selected": 2
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "kind": "remove",
+      "appearances": 18,
+      "meanScore": 0.05694444444444444,
+      "selected": 0
+    }
+  ],
+  "actionCounts": [
+    {
+      "dataset": "mnist",
+      "arm": "block_actions_on",
+      "completedRuns": 3,
+      "runningRuns": 0,
+      "residualBlockExecutionsCompleted": 0,
+      "residualBlockExecutionsRunning": 0
+    },
+    {
+      "dataset": "mnist",
+      "arm": "block_actions_off",
+      "completedRuns": 3,
+      "runningRuns": 0,
+      "residualBlockExecutionsCompleted": 0,
+      "residualBlockExecutionsRunning": 0
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "completedRuns": 3,
+      "runningRuns": 0,
+      "residualBlockExecutionsCompleted": 0,
+      "residualBlockExecutionsRunning": 0
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_off",
+      "completedRuns": 3,
+      "runningRuns": 0,
+      "residualBlockExecutionsCompleted": 0,
+      "residualBlockExecutionsRunning": 0
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "completedRuns": 3,
+      "runningRuns": 0,
+      "residualBlockExecutionsCompleted": 0,
+      "residualBlockExecutionsRunning": 0
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_off",
+      "completedRuns": 3,
+      "runningRuns": 0,
+      "residualBlockExecutionsCompleted": 0,
+      "residualBlockExecutionsRunning": 0
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "completedRuns": 1,
+      "runningRuns": 1,
+      "residualBlockExecutionsCompleted": 1,
+      "residualBlockExecutionsRunning": 1
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_off",
+      "completedRuns": 0,
+      "runningRuns": 0,
+      "residualBlockExecutionsCompleted": 0,
+      "residualBlockExecutionsRunning": 0
+    }
+  ],
+  "candidates": [
+    {
+      "dataset": "mnist",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 0,
+      "kind": "remove",
+      "score": 0.1,
+      "selected": false
+    },
+    {
+      "dataset": "mnist",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 0,
+      "kind": "duplicate",
+      "score": 0.8833333333333333,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 0,
+      "kind": "duplicate",
+      "score": 0.36666666666666664,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 0,
+      "kind": "remove",
+      "score": 0.16666666666666666,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 1,
+      "kind": "duplicate",
+      "score": 0.43333333333333335,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 1,
+      "kind": "remove",
+      "score": 0.2,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 18,
+      "kind": "duplicate",
+      "score": 0.5333333333333333,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 18,
+      "kind": "remove",
+      "score": 0.3333333333333333,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 19,
+      "kind": "duplicate",
+      "score": 0.5333333333333333,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 19,
+      "kind": "remove",
+      "score": 0.43333333333333335,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 20,
+      "kind": "duplicate",
+      "score": 0.5333333333333333,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 20,
+      "kind": "remove",
+      "score": 0.4666666666666667,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 0,
+      "kind": "duplicate",
+      "score": 0.26666666666666666,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 0,
+      "kind": "remove",
+      "score": 0.0,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 11,
+      "kind": "duplicate",
+      "score": 0.3333333333333333,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 11,
+      "kind": "remove",
+      "score": 0.3,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 12,
+      "kind": "duplicate",
+      "score": 0.4,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 12,
+      "kind": "remove",
+      "score": 0.16666666666666666,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 13,
+      "kind": "duplicate",
+      "score": 0.4,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 13,
+      "kind": "remove",
+      "score": 0.1,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 18,
+      "kind": "duplicate",
+      "score": 0.43333333333333335,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 18,
+      "kind": "remove",
+      "score": 0.23333333333333334,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 19,
+      "kind": "duplicate",
+      "score": 0.4,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 19,
+      "kind": "remove",
+      "score": 0.23333333333333334,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 0,
+      "kind": "remove",
+      "score": 0.13333333333333333,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 0,
+      "kind": "duplicate",
+      "score": 0.55,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 1,
+      "kind": "duplicate",
+      "score": 0.4666666666666667,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 1,
+      "kind": "remove",
+      "score": 0.16666666666666666,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 11,
+      "kind": "remove",
+      "score": 0.6,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 11,
+      "kind": "duplicate",
+      "score": 0.3333333333333333,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 12,
+      "kind": "remove",
+      "score": 0.43333333333333335,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 12,
+      "kind": "duplicate",
+      "score": 0.4,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 13,
+      "kind": "duplicate",
+      "score": 0.5333333333333333,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 13,
+      "kind": "remove",
+      "score": 0.1,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 14,
+      "kind": "remove",
+      "score": 0.6,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 14,
+      "kind": "duplicate",
+      "score": 0.5666666666666667,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 15,
+      "kind": "remove",
+      "score": 0.6333333333333333,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 15,
+      "kind": "duplicate",
+      "score": 0.5666666666666667,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 2,
+      "kind": "duplicate",
+      "score": 0.16666666666666666,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 2,
+      "kind": "remove",
+      "score": 0.06666666666666667,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 3,
+      "kind": "duplicate",
+      "score": 0.4666666666666667,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 3,
+      "kind": "remove",
+      "score": 0.16666666666666666,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 4,
+      "kind": "duplicate",
+      "score": 0.5,
+      "selected": false
+    },
+    {
+      "dataset": "cifar10",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 4,
+      "kind": "remove",
+      "score": 0.2,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 0,
+      "kind": "remove",
+      "score": 0.02,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 0,
+      "kind": "duplicate",
+      "score": 0.155,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 1,
+      "kind": "remove",
+      "score": 0.01,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 1,
+      "kind": "duplicate",
+      "score": 0.22999999999999998,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 15,
+      "kind": "duplicate",
+      "score": 0.18,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 15,
+      "kind": "remove",
+      "score": 0.03,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 16,
+      "kind": "duplicate",
+      "score": 0.2,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 16,
+      "kind": "remove",
+      "score": 0.02,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 17,
+      "kind": "duplicate",
+      "score": 0.29,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 17,
+      "kind": "remove",
+      "score": 0.02,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 18,
+      "kind": "duplicate",
+      "score": 0.28,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 18,
+      "kind": "remove",
+      "score": 0.02,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 19,
+      "kind": "duplicate",
+      "score": 0.29,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 19,
+      "kind": "remove",
+      "score": 0.01,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 2,
+      "kind": "duplicate",
+      "score": 0.28,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 2,
+      "kind": "remove",
+      "score": 0.01,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 20,
+      "kind": "duplicate",
+      "score": 0.28,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 20,
+      "kind": "remove",
+      "score": 0.02,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 21,
+      "kind": "duplicate",
+      "score": 0.21,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 21,
+      "kind": "remove",
+      "score": 0.02,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 22,
+      "kind": "duplicate",
+      "score": 0.18,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 22,
+      "kind": "remove",
+      "score": 0.02,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 23,
+      "kind": "duplicate",
+      "score": 0.18,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 23,
+      "kind": "remove",
+      "score": 0.01,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 24,
+      "kind": "duplicate",
+      "score": 0.22,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 24,
+      "kind": "remove",
+      "score": 0.03,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 25,
+      "kind": "duplicate",
+      "score": 0.26,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 25,
+      "kind": "remove",
+      "score": 0.01,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 3,
+      "kind": "duplicate",
+      "score": 0.24,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 3,
+      "kind": "duplicate",
+      "score": 0.24,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 3,
+      "kind": "remove",
+      "score": 0.04,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 3,
+      "kind": "remove",
+      "score": 0.01,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 4,
+      "kind": "duplicate",
+      "score": 0.24,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 4,
+      "kind": "duplicate",
+      "score": 0.23,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 4,
+      "kind": "remove",
+      "score": 0.02,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 4,
+      "kind": "remove",
+      "score": 0.02,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 5,
+      "kind": "duplicate",
+      "score": 0.22,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 5,
+      "kind": "remove",
+      "score": 0.02,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 6,
+      "kind": "duplicate",
+      "score": 0.2,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 6,
+      "kind": "remove",
+      "score": 0.0,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 0,
+      "kind": "remove",
+      "score": 0.01,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 0,
+      "kind": "duplicate",
+      "score": 0.125,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 1,
+      "kind": "duplicate",
+      "score": 0.11,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 1,
+      "kind": "remove",
+      "score": 0.06,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 12,
+      "kind": "duplicate",
+      "score": 0.25,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 12,
+      "kind": "remove",
+      "score": 0.2,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 13,
+      "kind": "remove",
+      "score": 0.27,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 13,
+      "kind": "duplicate",
+      "score": 0.26,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 14,
+      "kind": "duplicate",
+      "score": 0.28,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 14,
+      "kind": "remove",
+      "score": 0.28,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 15,
+      "kind": "remove",
+      "score": 0.28,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 15,
+      "kind": "duplicate",
+      "score": 0.12,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 16,
+      "kind": "remove",
+      "score": 0.29,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 16,
+      "kind": "duplicate",
+      "score": 0.28,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 17,
+      "kind": "remove",
+      "score": 0.21,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 17,
+      "kind": "duplicate",
+      "score": 0.01,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 18,
+      "kind": "duplicate",
+      "score": 0.37,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 18,
+      "kind": "remove",
+      "score": 0.31,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 19,
+      "kind": "duplicate",
+      "score": 0.36,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 19,
+      "kind": "remove",
+      "score": 0.34,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 20,
+      "kind": "duplicate",
+      "score": 0.29,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 20,
+      "kind": "remove",
+      "score": 0.23,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 21,
+      "kind": "remove",
+      "score": 0.24,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 21,
+      "kind": "duplicate",
+      "score": 0.09,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 22,
+      "kind": "duplicate",
+      "score": 0.3,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 22,
+      "kind": "remove",
+      "score": 0.23,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 23,
+      "kind": "duplicate",
+      "score": 0.28,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 23,
+      "kind": "remove",
+      "score": 0.28,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 24,
+      "kind": "duplicate",
+      "score": 0.35,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 24,
+      "kind": "remove",
+      "score": 0.18,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 25,
+      "kind": "duplicate",
+      "score": 0.29,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 25,
+      "kind": "remove",
+      "score": 0.28,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 26,
+      "kind": "duplicate",
+      "score": 0.32,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 26,
+      "kind": "remove",
+      "score": 0.29,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 27,
+      "kind": "remove",
+      "score": 0.3,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 27,
+      "kind": "duplicate",
+      "score": 0.29,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 28,
+      "kind": "duplicate",
+      "score": 0.27,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 28,
+      "kind": "remove",
+      "score": 0.25,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 0,
+      "kind": "remove",
+      "score": 0.02,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 0,
+      "kind": "duplicate",
+      "score": 0.18,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 1,
+      "kind": "duplicate",
+      "score": 0.04,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 1,
+      "kind": "remove",
+      "score": 0.02,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 2,
+      "kind": "duplicate",
+      "score": 0.05,
+      "selected": false
+    },
+    {
+      "dataset": "cifar100",
+      "arm": "block_actions_on",
+      "seed": 3,
+      "generation": 2,
+      "kind": "remove",
+      "score": 0.05,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 0,
+      "kind": "duplicate",
+      "score": 0.125,
+      "selected": true
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 0,
+      "kind": "remove",
+      "score": 0.025,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 1,
+      "kind": "remove",
+      "score": 0.11,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 1,
+      "kind": "duplicate",
+      "score": 0.105,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 1,
+      "kind": "duplicate",
+      "score": 0.05,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 1,
+      "kind": "remove",
+      "score": 0.01,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 2,
+      "kind": "duplicate",
+      "score": 0.07,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 2,
+      "kind": "remove",
+      "score": 0.005,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 26,
+      "kind": "duplicate",
+      "score": 0.055,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 26,
+      "kind": "remove",
+      "score": 0.03,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 27,
+      "kind": "duplicate",
+      "score": 0.225,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 27,
+      "kind": "remove",
+      "score": 0.205,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 28,
+      "kind": "remove",
+      "score": 0.185,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 28,
+      "kind": "duplicate",
+      "score": 0.125,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 3,
+      "kind": "duplicate",
+      "score": 0.115,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 1,
+      "generation": 3,
+      "kind": "remove",
+      "score": 0.025,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 0,
+      "kind": "duplicate",
+      "score": 0.145,
+      "selected": true
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 0,
+      "kind": "remove",
+      "score": 0.01,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 1,
+      "kind": "duplicate",
+      "score": 0.125,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 1,
+      "kind": "duplicate",
+      "score": 0.105,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 1,
+      "kind": "remove",
+      "score": 0.105,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 1,
+      "kind": "remove",
+      "score": 0.015,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 2,
+      "kind": "duplicate",
+      "score": 0.135,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 2,
+      "kind": "duplicate",
+      "score": 0.13,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 2,
+      "kind": "remove",
+      "score": 0.075,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 2,
+      "kind": "remove",
+      "score": 0.0,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 3,
+      "kind": "duplicate",
+      "score": 0.115,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 3,
+      "kind": "remove",
+      "score": 0.07,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 3,
+      "kind": "duplicate",
+      "score": 0.035,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 3,
+      "kind": "remove",
+      "score": 0.005,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 4,
+      "kind": "remove",
+      "score": 0.08,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 4,
+      "kind": "duplicate",
+      "score": 0.045,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 5,
+      "kind": "duplicate",
+      "score": 0.115,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 5,
+      "kind": "remove",
+      "score": 0.005,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 6,
+      "kind": "duplicate",
+      "score": 0.14,
+      "selected": false
+    },
+    {
+      "dataset": "tiny_imagenet",
+      "arm": "block_actions_on",
+      "seed": 2,
+      "generation": 6,
+      "kind": "remove",
+      "score": 0.065,
+      "selected": false
+    }
+  ]
+}
