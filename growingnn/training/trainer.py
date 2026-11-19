@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import copy
-from typing import Any
+from typing import Any, Callable
 
 import torch
 import torch.fx as fx
@@ -27,6 +27,8 @@ def train_generations(
     sim_train_loader: DataLoader | None = None,
     sim_val_loader: DataLoader | None = None,
     test_loader: DataLoader | None = None,
+    generation_callback: Callable[[nn.Module | fx.GraphModule, int, dict[str, list[Any]]], None] | None = None,
+    post_action_callback: Callable[[nn.Module | fx.GraphModule, int, Any | None], None] | None = None,
 ) -> tuple[nn.Module | fx.GraphModule, dict[str, list[Any]]]:
     logger.info("Training generations started")
 
@@ -95,6 +97,8 @@ def train_generations(
         combined["lr"].extend(history["lr"])
         param_count = traced.param_count()
         combined["param_count"].extend([param_count] * len(history["train_loss"]))
+        if generation_callback is not None:
+            generation_callback(traced.gm, generation, history)
         if test_loader is not None:
             test_loss, test_acc = _evaluate(
                 traced.gm,
@@ -114,6 +118,8 @@ def train_generations(
 
         metrics = {"accuracy": history["train_acc"][-1], "val_acc": val_acc}
         if config.stopper.check(traced.gm, generation, metrics):
+            if post_action_callback is not None:
+                post_action_callback(traced.gm, generation, None)
             break
 
         # Slope estimation uses start/middle/end training accuracy from this generation;
@@ -132,6 +138,8 @@ def train_generations(
             action, _, _ = config.simulation_alg.get_action(copy.deepcopy(traced), config)
             if action is None:
                 logger.warning("Generation %s no action executed", generation)
+                if post_action_callback is not None:
+                    post_action_callback(traced.gm, generation, None)
                 continue
             eval_device = torch.device(config.device)
             pre_acc = None
@@ -164,6 +172,10 @@ def train_generations(
             if board is not None:
                 board.save_graphs(traced.gm, generation=generation, tag=f"gen_{generation}_simulation")
                 board.note_simulation_graph_saved(generation)
+            if post_action_callback is not None:
+                post_action_callback(traced.gm, generation, action)
+        elif post_action_callback is not None:
+            post_action_callback(traced.gm, generation, None)
 
     clear_reshepers_cache()
     if board is not None:
