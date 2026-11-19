@@ -419,23 +419,76 @@ def _within_linear_matrix_limit(mod: nn.Linear, new_out: int) -> bool:
     )
 
 
+def _within_model_scaled_growth_limit(
+    gm: fx.GraphModule, mod: nn.Linear, new_out: int
+) -> bool:
+    """Bound large-model width growth by added parameters, not total matrix size.
+
+    The legacy absolute matrix cap remains the rule for small models. For a
+    model whose existing projections already exceed that cap, allow a growth
+    proposal only when the newly added projection parameters stay below the
+    configured fraction of unique graph parameters (or the legacy cap, whichever
+    is larger).
+    This keeps candidate cost proportional to model scale without charging the
+    same old weights again for every proposal.
+    """
+    seen: set[int] = set()
+    model_parameters = 0
+    for parameter in gm.parameters():
+        if id(parameter) not in seen:
+            seen.add(id(parameter))
+            model_parameters += parameter.numel()
+    if (
+        model_parameters
+        < config.MIN_MODEL_PARAMETER_COUNT_FOR_RELATIVE_NEURON_GROWTH
+    ):
+        return False
+    if new_out <= mod.out_features:
+        return False
+    added_parameters = mod.in_features * (new_out - mod.out_features)
+    if mod.bias is not None:
+        added_parameters += new_out - mod.out_features
+    growth_budget = max(
+        config.MAX_ADD_SEQ_LAYER_WEIGHT_MATRIX_SIZE,
+        int(model_parameters * config.MAX_MODEL_RELATIVE_NEURON_GROWTH_FRACTION),
+    )
+    return added_parameters <= growth_budget
+
+
+def linear_output_resize_rejection_reason(
+    gm: nn.Module | fx.GraphModule,
+    layer_id: str,
+    new_width: int,
+) -> str | None:
+    """Explain why a Linear output-width edit cannot be propagated safely."""
+    gm = gm if isinstance(gm, fx.GraphModule) else fx.symbolic_trace(gm)
+    mod = ModuleResolver.get_layer_module(layer_id, gm)
+    if not isinstance(mod, nn.Linear):
+        return f"target {layer_id!r} is not a call_module nn.Linear projection"
+    if new_width == mod.out_features:
+        return f"requested width {new_width} is unchanged"
+    if new_width < mod.out_features:
+        if new_width < config.MINIMUM_MATRIX_SIZE_FOR_NEURONS_REMOVAL:
+            return (
+                f"requested width {new_width} is below the configured minimum "
+                f"{config.MINIMUM_MATRIX_SIZE_FOR_NEURONS_REMOVAL}"
+            )
+    elif not (
+        _within_linear_matrix_limit(mod, new_width)
+        or _within_model_scaled_growth_limit(gm, mod, new_width)
+    ):
+        return "added projection parameters exceed both the absolute and model-relative growth budgets"
+    node = ModuleResolver.find_call_module(gm.graph.nodes, layer_id)
+    return NodeWidthAnalyser.propagation_resize_rejection_reason(gm, node)
+
+
 def can_resize_linear_output(
     gm: nn.Module | fx.GraphModule,
     layer_id: str,
     new_width: int,
 ) -> bool:
-    """Return True when a Linear layer output can be rescaled to new_width and propagated."""
-    gm = gm if isinstance(gm, fx.GraphModule) else fx.symbolic_trace(gm)
-    mod = ModuleResolver.get_layer_module(layer_id, gm)
-    if not isinstance(mod, nn.Linear) or new_width == mod.out_features:
-        return False
-    if new_width < mod.out_features:
-        if new_width < config.MINIMUM_MATRIX_SIZE_FOR_NEURONS_REMOVAL:
-            return False
-    elif not _within_linear_matrix_limit(mod, new_width):
-        return False
-    node = ModuleResolver.find_call_module(gm.graph.nodes, layer_id)
-    return not NodeWidthAnalyser.propagation_hits_unsizable(gm, node)
+    """Return True when a Linear output width and its consumers can be updated."""
+    return linear_output_resize_rejection_reason(gm, layer_id, new_width) is None
 
 
 def resize_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, new_width: int) -> fx.GraphModule:

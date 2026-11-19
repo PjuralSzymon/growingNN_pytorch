@@ -17,11 +17,17 @@ def nary_add(*tensors: torch.Tensor) -> torch.Tensor:
     return result
 
 
-_SUM_TARGETS = (operator.add, nary_add)
+_SUM_TARGETS = (operator.add, torch.add, nary_add)
 
 
 def is_sum_node(node: fx.Node) -> bool:
-    return node.op == "call_function" and node.target in _SUM_TARGETS
+    if node.op != "call_function":
+        return False
+    if node.target in _SUM_TARGETS:
+        return True
+    # torch.export lowers Python addition to an OpOverload. Keep the check
+    # narrow: in-place add_ has mutation/aliasing semantics and is not a merge.
+    return str(node.target) in ("aten.add.Tensor", "aten::add.Tensor")
 
 
 def _flatten_terms(node: fx.Node) -> list[fx.Node]:
@@ -45,7 +51,9 @@ def _latest_node(gm: fx.GraphModule, terms: list[fx.Node]) -> fx.Node:
 
 def _create_sum(gm: fx.GraphModule, terms: list[fx.Node], *, after: fx.Node) -> fx.Node:
     with gm.graph.inserting_after(after):
-        return gm.graph.call_function(nary_add, args=tuple(terms))
+        node = gm.graph.call_function(nary_add, args=tuple(terms))
+    node.meta["growingnn_generated_merge"] = True
+    return node
 
 
 def _erase_dead_sums(gm: fx.GraphModule, node: fx.Node) -> None:

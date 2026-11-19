@@ -4,6 +4,8 @@ import sys
 from pathlib import Path
 
 import pytest
+import operator
+
 import torch
 import torch.nn as nn
 import torch.fx as fx
@@ -267,6 +269,144 @@ def test_add_new_seq_layer_raises_when_src_equals_dst():
         ModelStructureEditor.add_new_seq_layer(
             gm, "l1", "l1", nn.Linear(4, 4), name="seq_bad",
         )
+
+
+def test_insert_module_on_edge_supports_function_and_method_nodes():
+    class FunctionalModel(nn.Module):
+        def forward(self, x):
+            activated = torch.relu(x)
+            return activated.reshape(activated.shape[0], -1)
+
+    gm = fx.symbolic_trace(FunctionalModel())
+    x = torch.randn(2, 3, 4)
+    expected = gm(x)
+    source = next(node for node in gm.graph.nodes if node.op == "call_function" and node.target is torch.relu)
+    destination = next(node for node in gm.graph.nodes if node.op == "call_method" and node.target == "reshape")
+
+    inserted = ModelStructureEditor.insert_module_on_edge(
+        gm, source, destination, nn.Identity(), "edge_identity"
+    )
+
+    assert inserted.op == "call_module"
+    assert inserted.args == (source,)
+    torch.testing.assert_close(gm(x), expected)
+
+
+def test_insert_module_on_edge_rejects_non_edge():
+    gm = fx.symbolic_trace(ModelFactory.simple_chain_2())
+    nodes = list(gm.graph.nodes)
+    source = next(node for node in nodes if node.op == "call_module" and node.target == "l1")
+    destination = next(node for node in nodes if node.op == "output")
+
+    with pytest.raises(ValueError, match="non-edge"):
+        ModelStructureEditor.insert_module_on_edge(gm, source, destination, nn.Identity(), "bad_edge")
+
+
+def test_insert_module_on_repeated_edge_requires_and_honors_operand_path():
+    class RepeatedUse(nn.Module):
+        def forward(self, x):
+            return x + x
+
+    gm = fx.symbolic_trace(RepeatedUse())
+    value = torch.randn(2, 3)
+    expected = gm(value)
+    x = next(node for node in gm.graph.nodes if node.op == "placeholder")
+    add = next(node for node in gm.graph.nodes if node.op == "call_function" and node.target is operator.add)
+    with pytest.raises(ValueError, match="2 operand uses"):
+        ModelStructureEditor.insert_module_on_edge(gm, x, add, nn.Identity(), "ambiguous")
+
+    inserted = ModelStructureEditor.insert_module_on_edge(
+        gm, x, add, nn.Identity(), "one_use", use_path=("args", 0)
+    )
+    assert add.args == (inserted, x)
+    torch.testing.assert_close(gm(value), expected)
+
+
+def test_insert_module_on_edge_rejects_invalid_operand_path():
+    class RepeatedUse(nn.Module):
+        def forward(self, x):
+            return x + x
+
+    gm = fx.symbolic_trace(RepeatedUse())
+    x = next(node for node in gm.graph.nodes if node.op == "placeholder")
+    add = next(node for node in gm.graph.nodes if node.op == "call_function" and node.target is operator.add)
+    with pytest.raises(ValueError, match="not an occurrence"):
+        ModelStructureEditor.insert_module_on_edge(
+            gm, x, add, nn.Identity(), "invalid_path", use_path=("args", 2)
+        )
+
+
+def test_insert_module_on_edge_rolls_back_if_operand_rewrite_fails(monkeypatch):
+    class FunctionalModel(nn.Module):
+        def forward(self, x):
+            return torch.relu(x)
+
+    import growingnn.utils.fx.graph_editor as graph_editor
+
+    gm = fx.symbolic_trace(FunctionalModel())
+    value = torch.randn(2, 3)
+    expected = gm(value)
+    source = next(node for node in gm.graph.nodes if node.op == "placeholder")
+    destination = next(node for node in gm.graph.nodes if node.op == "call_function")
+    original_nodes = tuple(gm.graph.nodes)
+
+    def fail_replacement(*args, **kwargs):
+        raise ValueError("custom argument container cannot be rebuilt")
+
+    monkeypatch.setattr(graph_editor, "_replace_at_path", fail_replacement)
+    with pytest.raises(ValueError, match="cannot be rebuilt"):
+        ModelStructureEditor.insert_module_on_edge(
+            gm, source, destination, nn.Identity(), "rollback_layer"
+        )
+
+    assert tuple(gm.graph.nodes) == original_nodes
+    assert not hasattr(gm, "rollback_layer")
+    torch.testing.assert_close(gm(value), expected)
+
+
+def test_fx_insert_uses_source_dtype_in_mixed_dtype_graph():
+    class MixedDtype(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.proj = nn.Linear(4, 4)
+
+        def forward(self, x):
+            return self.proj(x).to(dtype=torch.bfloat16)
+
+    gm = fx.symbolic_trace(MixedDtype()).eval()
+    value = torch.randn(2, 4)
+    from torch.fx.passes.shape_prop import ShapeProp
+    ShapeProp(gm).propagate(value)
+    source = next(node for node in gm.graph.nodes if node.op == "call_method" and node.target == "to")
+    output = next(node for node in gm.graph.nodes if node.op == "output")
+    layer = nn.Linear(4, 4)
+
+    ModelStructureEditor.insert_module_on_edge(gm, source, output, layer, "bf16_edge")
+
+    assert gm.bf16_edge.weight.dtype is torch.bfloat16
+    assert gm.bf16_edge.weight.device == gm.proj.weight.device
+    assert gm(value).dtype is torch.bfloat16
+
+
+def test_insert_module_on_one_occurrence_inside_slice_argument():
+    class SliceModel(nn.Module):
+        def forward(self, x, index):
+            return x[index:index]
+
+    gm = fx.symbolic_trace(SliceModel())
+    x_value = torch.arange(8)
+    index_value = 2
+    expected = gm(x_value, index_value)
+    index = next(node for node in gm.graph.nodes if node.op == "placeholder" and node.name == "index")
+    getitem = next(node for node in gm.graph.nodes if node.op == "call_function" and node.target is operator.getitem)
+
+    inserted = ModelStructureEditor.insert_module_on_edge(
+        gm, index, getitem, nn.Identity(), "slice_bound", use_path=("args", 1, "start")
+    )
+
+    assert getitem.args[1].start is inserted
+    assert getitem.args[1].stop is index
+    torch.testing.assert_close(gm(x_value, index_value), expected)
 
 
 if __name__ == "__main__":

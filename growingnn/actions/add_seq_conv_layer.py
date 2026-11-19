@@ -5,11 +5,14 @@ import torch.nn as nn
 from growingnn.actions.utils.layer_Factory import ConvFactory
 from growingnn.core.traced_model import TracedModel
 from growingnn.utils.fx import (
+    FeatureAxisConv2dAdapter,
     GraphStructureQuery,
     LayerBridgeFinder,
     LayerShapeAnalyser,
     ModuleResolver,
     ModelStructureEditor,
+    analyze_feature_tensor,
+    pair_traversal_decision,
 )
 
 from growingnn.core.logger import logger
@@ -23,6 +26,24 @@ class AddSeqConvLayer(Action):
     """
 
     def _execute(self, traced: TracedModel):
+        if len(self.params) > 4 and self.params[4] == "fx_edge":
+            source_name, destination_name, layer, name = self.params[:4]
+            nodes = {node.name: node for node in traced.gm.graph.nodes}
+            source = nodes.get(source_name)
+            destination = nodes.get(destination_name)
+            if source is None or destination is None:
+                raise ValueError(
+                    f"FX convolution action refers to missing nodes {source_name!r} -> {destination_name!r}"
+                )
+            ModelStructureEditor.insert_module_on_edge(
+                traced.gm,
+                source,
+                destination,
+                layer,
+                name,
+                use_path=self.params[5] if len(self.params) > 5 else None,
+            )
+            return
         from_id, to_id, layer, name, insert_before_flatten = self.params[:5]
         add_batchnorm_and_relu = bool(self.params[5]) if len(self.params) > 5 else False
         before_global_pool = bool(self.params[6]) if len(self.params) > 6 else True
@@ -158,10 +179,76 @@ class AddSeqConvLayer(Action):
         traced: TracedModel,
         add_batchnorm_and_relu: bool = False,
         before_global_pool: bool = True,
+        *,
+        feature_axis: int | None = None,
     ) -> List[Action]:
         gm = traced.gm
         out_shapes, in_shapes = traced.shapes()
         actions: List[Action] = []
+        pair_decision = pair_traversal_decision(gm)
+        if not pair_decision.use_legacy_pairs:
+            logger.info(
+                "AddSeqConvLayer using rank-4 FX channel seams instead of exhaustive module-pair search: %s",
+                "; ".join(pair_decision.reasons),
+            )
+            if feature_axis is None:
+                logger.info(
+                    "AddSeqConvLayer produced no FX candidates: provide feature_axis explicitly for rank-4 channel tensors"
+                )
+                return actions
+            observed: set[tuple[object, object]] = set()
+            for site in traced.action_sites(include_rejected=False):
+                source, destination = site.edge.source, site.edge.destination
+                if (
+                    source is None
+                    or destination is None
+                    or (source, destination) in observed
+                    or not site.meaningful_seam
+                ):
+                    continue
+                observed.add((source, destination))
+                feature = analyze_feature_tensor(
+                    site.interface,
+                    feature_axis={4: feature_axis},
+                    supported_ranks=(4,),
+                )
+                if not feature.eligible:
+                    logger.debug(
+                        "AddSeqConvLayer FX skip %s -> %s: %s",
+                        source.name, destination.name, feature.rejection_reason,
+                    )
+                    continue
+                if feature.feature_axis == 0:
+                    logger.debug(
+                        "AddSeqConvLayer FX skip %s -> %s: feature axis cannot be the batch axis",
+                        source.name, destination.name,
+                    )
+                    continue
+                if feature.dtype is None or not feature.dtype.is_floating_point:
+                    logger.debug(
+                        "AddSeqConvLayer FX skip %s -> %s: dtype must be floating",
+                        source.name, destination.name,
+                    )
+                    continue
+                device = feature.device or "cpu"
+                adapter = FeatureAxisConv2dAdapter(
+                    feature.features,
+                    feature_axis=feature.feature_axis,
+                    residual=True,
+                ).to(device=device, dtype=feature.dtype)
+                use_paths = site.edge.use_paths or (None,)
+                for use_path in use_paths:
+                    name = ModuleResolver.unique_call_module_name("seq_conv", gm)
+                    layer = adapter if len(use_paths) == 1 else FeatureAxisConv2dAdapter(
+                        feature.features,
+                        feature_axis=feature.feature_axis,
+                        residual=True,
+                    ).to(device=device, dtype=feature.dtype)
+                    params = [source.name, destination.name, layer, name, "fx_edge"]
+                    if use_path is not None:
+                        params.append(use_path)
+                    actions.append(AddSeqConvLayer(params))
+            return actions
         for layer_from_id, layer_to_id in traced.sequential_pairs():
             s_out = out_shapes.get(layer_from_id)
             s_in = in_shapes.get(layer_to_id)

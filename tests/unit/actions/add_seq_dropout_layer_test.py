@@ -129,3 +129,30 @@ def test_generate_all_actions_skips_same_pair_after_dropout_already_on_path():
     # Assert
     assert all(not (a.params[0] == "l1" and a.params[1] == "l2") for a in actions)
     assert sum(isinstance(m, (nn.Dropout, nn.Dropout2d)) for m in gm.modules()) == 1
+
+
+def test_functional_graph_uses_fx_dropout_sites_and_preserves_eval_mode():
+    class FunctionalDepth(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.proj = nn.Linear(4, 4)
+
+        def forward(self, x):
+            x = self.proj(x)
+            for _ in range(40):
+                x = torch.tanh(x)
+            return x
+
+    gm = fx.symbolic_trace(FunctionalDepth()).eval()
+    sample = torch.randn(2, 3, 4)
+    expected = gm(sample)
+    traced = TracedModel.create(gm, (2, 3, 4))
+    actions = AddSeqDropoutLayer.generate_all_actions(traced, p=0.2)
+    action = next(item for item in actions if len(item.params) > 4 and item.params[4] == "fx_edge")
+
+    action.execute(traced)
+
+    inserted = gm.get_submodule(action.params[3])
+    assert isinstance(inserted, nn.Dropout)
+    assert not inserted.training
+    torch.testing.assert_close(gm(sample), expected)

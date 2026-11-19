@@ -17,6 +17,34 @@ from growingnn.utils.fx import ModuleResolver, NodeTypeChecker, NodeWidthAnalyse
 from tests.model_factory import ModelFactory
 
 
+def test_node_output_width_flows_through_elementwise_fx_operations():
+    class PointwiseProjection(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.expand = nn.Linear(4, 6)
+            self.project = nn.Linear(6, 3)
+
+        def forward(self, x):
+            hidden = self.expand(x)
+            hidden = (hidden * 0.5).pow(3) + torch.tanh(hidden)
+            return self.project(hidden)
+
+    gm = fx.symbolic_trace(PointwiseProjection())
+    expanded = next(
+        node for node in gm.graph.nodes
+        if node.op == "call_module" and node.target == "expand"
+    )
+    project = next(
+        node for node in gm.graph.nodes
+        if node.op == "call_module" and node.target == "project"
+    )
+    pointwise_input = project.args[0]
+
+    assert NodeWidthAnalyser.node_output_width(gm, expanded) == 6
+    assert NodeWidthAnalyser.node_output_width(gm, pointwise_input) == 6
+    assert NodeWidthAnalyser.propagation_hits_unsizable(gm, expanded) is False
+
+
 def test_find_call_module_raises_for_missing_target():
     """
     find_call_module should raise ValueError when no call_module matches the name.
@@ -160,6 +188,26 @@ def test_node_output_width_reads_linear_out_features():
 
     # Assert
     assert width == 4
+
+
+def test_export_linear_width_is_described_and_not_misreported_as_resizable():
+    from growingnn.utils.fx import capture_graph
+
+    model = nn.Sequential(nn.Linear(4, 6), nn.Linear(6, 3)).eval()
+    example = torch.randn(2, 5, 4)
+    gm = capture_graph(model, route="export", example_args=(example,))
+    linear_nodes = [
+        node for node in gm.graph.nodes
+        if node.op == "call_function" and "aten.linear.default" in str(node.target)
+    ]
+
+    assert len(linear_nodes) == 2
+    assert NodeWidthAnalyser.node_output_width(gm, linear_nodes[0]) == 6
+    reason = NodeWidthAnalyser.propagation_resize_rejection_reason(gm, linear_nodes[0])
+    assert reason is not None
+    assert "functional projection" in reason
+    assert "generic width propagation" in reason
+    assert "functional-chain resize" in reason
 
 
 def test_inputs_match_width_checks_all_inputs():
