@@ -65,9 +65,9 @@ The rollout learning-rate scheduler floors its applied rate at `0.001`, so the c
 
 ## Progress and runtime estimate
 
-**As of 11 November 2026, 09:58 UTC (10:58 Warsaw):** the experiment started on **10 November at 21:59 UTC (22:59 Warsaw)** and has run for about **12 hours**. **17 of 120 runs are complete**, with one more in progress; epoch-equivalent progress is **14.4%**.
+**Completed 19 November 2026 at 08:11 UTC (09:11 Warsaw):** all **120 of 120 runs** and all `24,000/24,000` epochs are complete. Total elapsed wall time was about **8 days 10 hours 12 minutes**.
 
-At the observed pace, estimate **about 51 hours remaining**, with a projected finish around **13 November 2026, 14:15 Warsaw time**. This is a rough estimate and assumes continuous sequential runs. The current study uses the CIFAR-10 tiny starter; the earlier CIFAR-100 pilot is excluded.
+The experiment used CIFAR-10 with the tiny starter; the earlier CIFAR-100 pilot was excluded from this run.
 
 ## Experiment setup
 
@@ -114,26 +114,224 @@ The runs grow from the `296`-parameter starter; completed C-sweep runs finish be
 
 #### MCTS · UCB1 formula (`MCTS_UCB1_USE_SQRT`)
 
-The `False` formula setting is still running its two-seed comparison. Seed 1 completed at `43.20%` final validation; seed 2 is at `101/200` epochs with `52.44%` current validation and `54.98%` best validation so far. The `True` setting has not started, so there is no winner yet.
+Both formula settings have completed two seeds. `False` leads with `50.52%` mean final validation accuracy and remains the selected setting.
 
-| UCB1 formula | Seed | Status | Epochs | Final/latest validation | Best validation | Final test | Runtime |
-|---|---:|---|---:|---:|---:|---:|---:|
-| `False` | `1` | Complete | `200/200` | `43.20%` | `48.08%` | `42.78%` | `31.67 min` |
-| `False` | `2` | In progress | `101/200` | `52.44%` | `54.98%` | — | `9.10 min` so far |
-| `True` | `1`, `2` | Not started | — | — | — | — | — |
+| Setting | Completed runs | Mean final validation | Seed range | Mean final test |
+|---|---:|---:|---:|---:|
+| `False` **selected** | `2/2` | **`50.52%`** | `43.20–57.84%` | `50.59%` |
+| `True` | `2/2` | `40.64%` | `38.38–42.90%` | `41.45%` |
+
+![Training histories by UCB1 formula](/assets/experiments/010-pass-1-ucb1-use-sqrt-training-histories-grid.svg)
+
+#### MCTS · Rollout value propagation (`MCTS_PROPAGATE_ROLLOUT_VALUE`)
+
+Enabling rollout value propagation is currently best, with `57.39%` mean final validation accuracy across two seeds.
+
+| Setting | Completed runs | Mean final validation | Seed range | Mean final test |
+|---|---:|---:|---:|---:|
+| `False` | `2/2` | `56.26%` | `50.94–61.58%` | `56.51%` |
+| `True` **selected** | `2/2` | **`57.39%`** | `54.20–60.58%` | `57.00%` |
+
+![Training histories by rollout value propagation](/assets/experiments/010-pass-1-propagate-rollout-value-training-histories-grid.svg)
+
+#### MCTS · Rollout depth (`MCTS_ROLLOUT_DEPTH`)
+
+Depth `0` leads this sweep at `51.80%` mean final validation accuracy; the default depth `2` is third.
+
+| Depth | Completed runs | Mean final validation | Seed range | Mean final test |
+|---:|---:|---:|---:|---:|
+| `0` **selected** | `2/2` | **`51.80%`** | `47.40–56.20%` | `51.47%` |
+| `1` | `2/2` | `46.85%` | `43.78–49.92%` | `47.14%` |
+| `2` (default) | `2/2` | `49.32%` | `46.00–52.64%` | `48.73%` |
+| `3` | `2/2` | `46.90%` | `34.92–58.88%` | `47.38%` |
+
+![Training histories by rollout depth](/assets/experiments/010-pass-1-rollout-depth-training-histories-grid.svg)
+
+#### MCTS · Rollout training epochs (`MCTS_ROLLOUT_EPOCHS`)
+
+Two rollout epochs perform best so far, with `51.60%` mean final validation accuracy.
+
+| Epochs | Completed runs | Mean final validation | Seed range | Mean final test |
+|---:|---:|---:|---:|---:|
+| `1` (default) | `2/2` | `47.89%` | `35.28–60.50%` | `48.18%` |
+| `2` **selected** | `2/2` | **`51.60%`** | `48.18–55.02%` | `51.50%` |
+| `4` | `2/2` | `34.96%` | `28.02–41.90%` | `34.80%` |
+
+![Training histories by rollout epochs](/assets/experiments/010-pass-1-rollout-epochs-training-histories-grid.svg)
+
+#### MCTS · Rollout learning rate (`MCTS_ROLLOUT_LR`)
+
+The configured `0.0001` value is subject to the scheduler's `0.001` floor. Among the tested values, `0.01` currently leads with `48.10%` mean final validation accuracy.
+
+| Configured rate | Completed runs | Mean final validation | Seed range | Mean final test |
+|---:|---:|---:|---:|---:|
+| `0.0001` (default) | `2/2` | `37.39%` | `24.68–50.10%` | `37.06%` |
+| `0.003` | `2/2` | `44.09%` | `38.76–49.42%` | `43.77%` |
+| `0.01` **selected** | `2/2` | **`48.10%`** | `41.36–54.84%` | `48.56%` |
+
+![Training histories by rollout learning rate](/assets/experiments/010-pass-1-rollout-lr-training-histories-grid.svg)
+
+#### Simulation · Minimum algorithm iterations (`SIMULATION_MIN_ALGORITHM_ITERATION_RUNS`)
+
+The value `1` leads this sweep with `46.46%` mean final validation accuracy and is selected for the remaining Pass 1 sweeps.
+
+| Minimum iterations | Completed runs | Mean final validation | Seed range | Mean final test |
+|---:|---:|---:|---:|---:|
+| `1` **selected** | `2/2` | **`46.46%`** | `45.68–47.24%` | `47.04%` |
+| `3` (default) | `2/2` | `40.41%` | `38.62–42.20%` | `40.82%` |
+| `5` | `2/2` | `42.28%` | `37.30–47.26%` | `42.14%` |
+
+![Training histories by minimum simulation iterations](/assets/experiments/010-pass-1-simulation-min-algorithm-iteration-runs-training-histories-grid.svg)
+
+#### Simulation · Time budget (`simulation_time`)
+
+`16s` leads this sweep with `43.70%` mean final validation accuracy, slightly above `8s`; `32s` did not improve the result.
+
+| Time budget | Completed runs | Mean final validation | Seed range | Mean final test |
+|---:|---:|---:|---:|---:|
+| `8s` (default) | `2/2` | `41.97%` | `35.66–48.28%` | `42.42%` |
+| `16s` **selected** | `2/2` | **`43.70%`** | `31.50–55.90%` | `44.08%` |
+| `32s` | `2/2` | `40.28%` | `34.74–45.82%` | `39.99%` |
+
+#### Simulation · Training-set percentage (`simulation_set_percent`)
+
+This sweep is near completion. The `0.284%`, `5%`, `10%`, and `30%` settings have both seeds complete. Candidate `40%`, seed `1`, is complete at `64.26%` validation; seed `2` is at `120/200` epochs, so there is no selected value yet.
+
+| Training-set share | Completed runs | Mean final validation | Seed range | Mean final test |
+|---:|---:|---:|---:|---:|
+| Current baseline (`0.284%`) | `2/2` | `39.29%` | `30.88–47.70%` | `40.41%` |
+| `5%` | `2/2` | `49.02%` | `44.62–53.42%` | `49.37%` |
+| `10%` | `2/2` | `57.16%` | `56.34–57.98%` | `56.96%` |
+| `30%` | `2/2` | `61.79%` | `61.66–61.92%` | `61.44%` |
+| `40%` **selected** | `2/2` | **`64.00%`** | `63.74–64.26%` | `64.39%` |
 
 #### Remaining parameters
 
-Pending the UCB1 formula comparison.
+All nine Pass 1 sweeps are complete. Pass 2 has begun; its winners remain provisional until that pass is complete.
 
 ## Pass 2
 
-Pass 2 will repeat all nine parameter sweeps, starting from the pass 1 winners. It has not started.
+Pass 2 retests each parameter from the Pass 1 winner configuration. Six sweeps are complete; minimum algorithm iterations is in progress. Results below report two-seed mean final validation accuracy, except active candidates.
 
 ### Meta-parameters
 
-Pending pass 1.
+Every sweep starts with Pass 1 values `C=1.0`, UCB1 formula `False`, rollout propagation `True`, rollout depth `0`, rollout epochs `2`, rollout learning rate `0.01`, minimum iterations `1`, simulation time `16s`, and simulation training-set share `40%`. Only the parameter under test changes.
+
+#### MCTS · UCB1 C
+
+`C=1.0` leads at `64.11%` mean validation accuracy.
+
+| C | Runs | Mean validation | Seed range | Mean test |
+|---:|---:|---:|---:|---:|
+| `0.5` | `2/2` | `61.93%` | `60.20–63.66%` | `62.03%` |
+| `1.0` **selected** | `2/2` | **`64.11%`** | `63.24–64.98%` | `64.15%` |
+| `2.0` | `2/2` | `60.42%` | `57.64–63.20%` | `60.13%` |
+| `4.0` | `2/2` | `61.60%` | `61.58–61.62%` | `61.50%` |
+| `8.0` | `2/2` | `62.16%` | `60.14–64.18%` | `61.64%` |
+
+![Pass 2 UCB1 C training histories](/assets/experiments/010-pass-2-ucb1-c-training-histories-grid.svg)
+
+#### MCTS · UCB1 formula
+
+`False` remains ahead at `63.43%` mean validation.
+
+| Square-root formula | Runs | Mean validation | Seed range | Mean test |
+|---|---:|---:|---:|---:|
+| `False` **selected** | `2/2` | **`63.43%`** | `63.04–63.82%` | `63.16%` |
+| `True` | `2/2` | `61.92%` | `59.08–64.76%` | `62.16%` |
+
+![Pass 2 UCB1 formula training histories](/assets/experiments/010-pass-2-ucb1-use-sqrt-training-histories-grid.svg)
+
+#### MCTS · Rollout value propagation
+
+The settings are effectively tied; `True` leads by `0.02` points.
+
+| Propagation | Runs | Mean validation | Seed range | Mean test |
+|---|---:|---:|---:|---:|
+| `False` | `2/2` | `62.76%` | `61.30–64.22%` | `63.30%` |
+| `True` **selected** | `2/2` | **`62.78%`** | `62.44–63.12%` | `62.77%` |
+
+![Pass 2 rollout propagation training histories](/assets/experiments/010-pass-2-propagate-rollout-value-training-histories-grid.svg)
+
+#### MCTS · Rollout depth
+
+The sweep is complete: depth `1` is selected with the highest mean validation accuracy (`64.08%`).
+
+| Depth | Runs | Mean validation | Seed range | Mean test |
+|---:|---:|---:|---:|---:|
+| `0` (Pass 1 value) | `2/2` | `60.49%` | `59.00–61.98%` | `60.24%` |
+| `1` **selected** | `2/2` | **`64.08%`** | `63.10–65.06%` | `63.68%` |
+| `2` | `2/2` | `60.26%` | `58.46–62.06%` | `60.18%` |
+| `3` | `2/2` | `61.55%` | `59.88–63.22%` | `61.12%` |
+
+![Pass 2 rollout depth training histories](/assets/experiments/010-pass-2-rollout-depth-training-histories-grid.svg)
+
+#### MCTS · Rollout training epochs
+
+This sweep is complete. Candidate `1` leads at `62.99%` mean validation, while candidate `4` finishes at `60.17%`.
+
+| Rollout epochs | Runs | Mean validation | Seed range | Mean test |
+|---:|---:|---:|---:|---:|
+| `1` | `2/2` | **`62.99%`** | `61.32–64.66%` | `63.13%` |
+| `2` (Pass 1 value) | `2/2` | `56.86%` | `54.88–58.84%` | `56.73%` |
+| `4` | `2/2` | `60.17%` | `58.30–62.04%` | `60.21%` |
+
+#### MCTS · Rollout learning rate
+
+Candidate `0.0001` is selected by a narrow margin (`62.06%` mean validation versus `62.05%` for `0.01`). The Pass 1 choice `0.01` therefore does not win this retest.
+
+| Configured rate | Runs | Mean validation | Seed range | Mean test |
+|---:|---:|---:|---:|---:|
+| `0.0001` **selected** | `2/2` | **`62.06%`** | `61.30–62.82%` | `62.46%` |
+| `0.003` | `2/2` | `59.05%` | `54.86–63.24%` | `60.50%` |
+| `0.01` (Pass 1 value) | `2/2` | `62.05%` | `61.70–62.40%` | `62.02%` |
+
+#### Remaining Pass 2 parameters
+
+#### Simulation · Minimum algorithm iterations
+
+Candidate `3` is selected at `60.85%` mean validation accuracy, ahead of `1` and `5`.
+
+| Minimum iterations | Runs | Mean validation | Seed range | Mean test |
+|---:|---:|---:|---:|---:|
+| `1` (Pass 1 value) | `2/2` | `58.72%` | `54.44–63.00%` | `58.84%` |
+| `3` **selected** | `2/2` | **`60.85%`** | `57.26–64.44%` | `61.00%` |
+| `5` | `2/2` | `55.79%` | `55.50–56.08%` | `55.87%` |
+
+#### Simulation · Time budget
+
+The sweep is complete. `32s` is selected with `60.73%` mean final validation, above `16s` (`58.58%`) and `8s` (`56.24%`).
+
+| Time budget | Runs | Mean validation | Seed range | Mean test |
+|---:|---:|---:|---:|---:|
+| `8s` | `2/2` | `56.24%` | `55.72–56.76%` | `56.62%` |
+| `16s` (Pass 1 value) | `2/2` | **`58.58%`** | `56.50–60.66%` | `58.89%` |
+| `32s` **selected** | `2/2` | **`60.73%`** | `57.06–64.40%` | `60.89%` |
+
+#### Simulation · Training-set percentage
+
+The sweep is complete. `10%` is selected at `59.16%` mean validation, ahead of `40%` (`58.40%`), `30%`, `5%`, and the baseline.
+
+| Simulation training share | Runs | Mean validation | Seed range | Mean test |
+|---:|---:|---:|---:|---:|
+| Current baseline (`0.284%`) | `2/2` | `46.74%` | `39.20–54.28%` | `47.54%` |
+| `5%` | `2/2` | `52.86%` | `52.34–53.38%` | `52.27%` |
+| `10%` **selected** | `2/2` | **`59.16%`** | `58.24–60.08%` | `59.05%` |
+| `30%` | `2/2` | `54.26%` | `51.68–56.84%` | `54.03%` |
+| `40%` | `2/2` | `58.40%` | `56.84–59.96%` | `58.40%` |
 
 ## Conclusion
 
-No MCTS meta-parameter winner has been established for this ten-generation, small-starter setup.
+The final Pass 2 configuration is `C=1.0`, UCB1 formula `False`, rollout propagation `True`, rollout depth `1`, rollout epochs `1`, rollout learning rate `0.0001`, minimum iterations `3`, simulation time `32s`, and simulation training-set share `10%`. Each winner was chosen by the highest mean final validation accuracy within its sweep. These sequential one-parameter sweeps identify a tested configuration, not a joint search over all possible parameter combinations.
+
+## Phase 3: 40-generation confirmation
+
+Phase 3 repeats the full Pass 2 winning configuration three times on CIFAR-10. Each run uses the same tiny starter, `40` generations × `20` epochs (`800` epochs total), and seeds `1`, `2`, and `3`. The selected MCTS settings remain fixed throughout; Phase 3 is a longer-run confirmation, not another parameter sweep.
+
+| Seed | Status | Final validation | Final test |
+|---:|---|---:|---:|
+| `1` | Not started | — | — |
+| `2` | Not started | — | — |
+| `3` | Not started | — | — |
+
+Run the confirmation with `python -u experiments/train_cifar10_exp010_mcts_meta.py --phase3`. Results and histories are stored under `experiments/output/train_cifar10/runs/exp010_mcts_meta_g10_tiny/phase_3/`.
