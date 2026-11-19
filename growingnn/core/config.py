@@ -133,6 +133,8 @@ class RunningConfig:
         self.ACTIONS_ENABLE_ADD_RES_LAYER = True
         self.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER = True
         self.ACTIONS_ENABLE_ADD_RES_CONV_LAYER = True
+        self.ACTIONS_ENABLE_RESIDUAL_BLOCK_GROW = True
+        self.ACTIONS_ENABLE_RESIDUAL_BLOCK_SHRINK = True
         self.ACTIONS_ENABLE_DEL_LAYER = True
         self.ACTIONS_ENABLE_DEL_NEURONS_01 = True
         self.ACTIONS_ENABLE_DEL_NEURONS_05 = True
@@ -153,6 +155,7 @@ class RunningConfig:
         self.ACTIONS_ENABLE_ADD_RES_LAYER = is_enabled
         self.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER = is_enabled
         self.ACTIONS_ENABLE_ADD_RES_CONV_LAYER = is_enabled
+        self.ACTIONS_ENABLE_RESIDUAL_BLOCK_GROW = is_enabled
         self.ACTIONS_ENABLE_ADD_NEURONS_11 = is_enabled
         self.ACTIONS_ENABLE_ADD_NEURONS_15 = is_enabled
         self.ACTIONS_ENABLE_ADD_NEURONS_20 = is_enabled
@@ -162,6 +165,7 @@ class RunningConfig:
 
     def update_shrink_actions(self, is_enabled: bool):
         self.ACTIONS_ENABLE_DEL_LAYER = is_enabled
+        self.ACTIONS_ENABLE_RESIDUAL_BLOCK_SHRINK = is_enabled
         self.ACTIONS_ENABLE_DEL_NEURONS_01 = is_enabled
         self.ACTIONS_ENABLE_DEL_NEURONS_05 = is_enabled
         self.ACTIONS_ENABLE_DEL_NEURONS_09 = is_enabled
