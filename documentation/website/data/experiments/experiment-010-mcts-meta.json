@@ -1,0 +1,1929 @@
+{
+  "experiment": "010_mcts_meta",
+  "passes": {
+    "1": {
+      "MCTS_PROPAGATE_ROLLOUT_VALUE": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_PROPAGATE_ROLLOUT_VALUE",
+          "candidate_value": false,
+          "final_train_accuracy": 0.5125111111111111,
+          "final_validation_accuracy": 0.5094,
+          "best_validation_accuracy": 0.5988,
+          "final_test_accuracy": 0.5058,
+          "best_test_accuracy": 0.5981,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_PROPAGATE_ROLLOUT_VALUE\\value_False\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_PROPAGATE_ROLLOUT_VALUE",
+          "candidate_value": false,
+          "final_train_accuracy": 0.5906666666666667,
+          "final_validation_accuracy": 0.6158,
+          "best_validation_accuracy": 0.6226,
+          "final_test_accuracy": 0.6244,
+          "best_test_accuracy": 0.6244,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_PROPAGATE_ROLLOUT_VALUE\\value_False\\cifar10\\seed_2\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_PROPAGATE_ROLLOUT_VALUE",
+          "candidate_value": true,
+          "final_train_accuracy": 0.4991111111111111,
+          "final_validation_accuracy": 0.542,
+          "best_validation_accuracy": 0.542,
+          "final_test_accuracy": 0.5378,
+          "best_test_accuracy": 0.5378,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_PROPAGATE_ROLLOUT_VALUE\\value_True\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_PROPAGATE_ROLLOUT_VALUE",
+          "candidate_value": true,
+          "final_train_accuracy": 0.5655555555555556,
+          "final_validation_accuracy": 0.6058,
+          "best_validation_accuracy": 0.61,
+          "final_test_accuracy": 0.6022,
+          "best_test_accuracy": 0.6022,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_PROPAGATE_ROLLOUT_VALUE\\value_True\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "MCTS_ROLLOUT_DEPTH": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_DEPTH",
+          "candidate_value": 0,
+          "final_train_accuracy": 0.4518,
+          "final_validation_accuracy": 0.474,
+          "best_validation_accuracy": 0.4826,
+          "final_test_accuracy": 0.4716,
+          "best_test_accuracy": 0.4716,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_0\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_DEPTH",
+          "candidate_value": 0,
+          "final_train_accuracy": 0.5519111111111111,
+          "final_validation_accuracy": 0.562,
+          "best_validation_accuracy": 0.5636,
+          "final_test_accuracy": 0.5578,
+          "best_test_accuracy": 0.5578,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_0\\cifar10\\seed_2\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_DEPTH",
+          "candidate_value": 1,
+          "final_train_accuracy": 0.4143777777777778,
+          "final_validation_accuracy": 0.4378,
+          "best_validation_accuracy": 0.4414,
+          "final_test_accuracy": 0.4409,
+          "best_test_accuracy": 0.4409,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_1\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_DEPTH",
+          "candidate_value": 1,
+          "final_train_accuracy": 0.4591777777777778,
+          "final_validation_accuracy": 0.4992,
+          "best_validation_accuracy": 0.5208,
+          "final_test_accuracy": 0.5018,
+          "best_test_accuracy": 0.506,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_1\\cifar10\\seed_2\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_DEPTH",
+          "candidate_value": 2,
+          "final_train_accuracy": 0.4322888888888889,
+          "final_validation_accuracy": 0.5264,
+          "best_validation_accuracy": 0.5412,
+          "final_test_accuracy": 0.5142,
+          "best_test_accuracy": 0.5164,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_2\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_DEPTH",
+          "candidate_value": 2,
+          "final_train_accuracy": 0.3940888888888889,
+          "final_validation_accuracy": 0.46,
+          "best_validation_accuracy": 0.5352,
+          "final_test_accuracy": 0.4604,
+          "best_test_accuracy": 0.5343,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_2\\cifar10\\seed_2\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_DEPTH",
+          "candidate_value": 3,
+          "final_train_accuracy": 0.5726,
+          "final_validation_accuracy": 0.5888,
+          "best_validation_accuracy": 0.5932,
+          "final_test_accuracy": 0.589,
+          "best_test_accuracy": 0.589,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_3\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_DEPTH",
+          "candidate_value": 3,
+          "final_train_accuracy": 0.3695555555555556,
+          "final_validation_accuracy": 0.3492,
+          "best_validation_accuracy": 0.3756,
+          "final_test_accuracy": 0.3586,
+          "best_test_accuracy": 0.3653,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_3\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "MCTS_ROLLOUT_EPOCHS": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_EPOCHS",
+          "candidate_value": 1,
+          "final_train_accuracy": 0.5830444444444445,
+          "final_validation_accuracy": 0.605,
+          "best_validation_accuracy": 0.6092,
+          "final_test_accuracy": 0.6014,
+          "best_test_accuracy": 0.6039,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_EPOCHS\\value_1\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_EPOCHS",
+          "candidate_value": 1,
+          "final_train_accuracy": 0.3832,
+          "final_validation_accuracy": 0.3528,
+          "best_validation_accuracy": 0.3702,
+          "final_test_accuracy": 0.3621,
+          "best_test_accuracy": 0.3642,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_EPOCHS\\value_1\\cifar10\\seed_2\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_EPOCHS",
+          "candidate_value": 2,
+          "final_train_accuracy": 0.5248,
+          "final_validation_accuracy": 0.5502,
+          "best_validation_accuracy": 0.5548,
+          "final_test_accuracy": 0.5483,
+          "best_test_accuracy": 0.5483,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_EPOCHS\\value_2\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_EPOCHS",
+          "candidate_value": 2,
+          "final_train_accuracy": 0.46428888888888886,
+          "final_validation_accuracy": 0.4818,
+          "best_validation_accuracy": 0.4854,
+          "final_test_accuracy": 0.4817,
+          "best_test_accuracy": 0.4817,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_EPOCHS\\value_2\\cifar10\\seed_2\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_EPOCHS",
+          "candidate_value": 4,
+          "final_train_accuracy": 0.2571555555555556,
+          "final_validation_accuracy": 0.2802,
+          "best_validation_accuracy": 0.3918,
+          "final_test_accuracy": 0.2778,
+          "best_test_accuracy": 0.3957,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_EPOCHS\\value_4\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_EPOCHS",
+          "candidate_value": 4,
+          "final_train_accuracy": 0.37555555555555553,
+          "final_validation_accuracy": 0.419,
+          "best_validation_accuracy": 0.4844,
+          "final_test_accuracy": 0.4181,
+          "best_test_accuracy": 0.4808,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_EPOCHS\\value_4\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "MCTS_ROLLOUT_LR": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_LR",
+          "candidate_value": 0.0001,
+          "final_train_accuracy": 0.5008,
+          "final_validation_accuracy": 0.501,
+          "best_validation_accuracy": 0.5386,
+          "final_test_accuracy": 0.4946,
+          "best_test_accuracy": 0.5389,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_LR\\value_0p0001\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_LR",
+          "candidate_value": 0.0001,
+          "final_train_accuracy": 0.38066666666666665,
+          "final_validation_accuracy": 0.2468,
+          "best_validation_accuracy": 0.5888,
+          "final_test_accuracy": 0.2467,
+          "best_test_accuracy": 0.5907,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_LR\\value_0p0001\\cifar10\\seed_2\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_LR",
+          "candidate_value": 0.003,
+          "final_train_accuracy": 0.4310888888888889,
+          "final_validation_accuracy": 0.3876,
+          "best_validation_accuracy": 0.4148,
+          "final_test_accuracy": 0.3875,
+          "best_test_accuracy": 0.3875,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_LR\\value_0p003\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_LR",
+          "candidate_value": 0.003,
+          "final_train_accuracy": 0.4253777777777778,
+          "final_validation_accuracy": 0.4942,
+          "best_validation_accuracy": 0.4942,
+          "final_test_accuracy": 0.488,
+          "best_test_accuracy": 0.488,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_LR\\value_0p003\\cifar10\\seed_2\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_LR",
+          "candidate_value": 0.01,
+          "final_train_accuracy": 0.4003333333333333,
+          "final_validation_accuracy": 0.4136,
+          "best_validation_accuracy": 0.4256,
+          "final_test_accuracy": 0.4222,
+          "best_test_accuracy": 0.4237,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_LR\\value_0p01\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_LR",
+          "candidate_value": 0.01,
+          "final_train_accuracy": 0.516,
+          "final_validation_accuracy": 0.5484,
+          "best_validation_accuracy": 0.5514,
+          "final_test_accuracy": 0.549,
+          "best_test_accuracy": 0.549,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_LR\\value_0p01\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "MCTS_UCB1_C": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 0.5,
+          "final_train_accuracy": 0.4856888888888889,
+          "final_validation_accuracy": 0.5188,
+          "best_validation_accuracy": 0.5264,
+          "final_test_accuracy": 0.5114,
+          "best_test_accuracy": 0.5117,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_0p5\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 0.5,
+          "final_train_accuracy": 0.38235555555555556,
+          "final_validation_accuracy": 0.4136,
+          "best_validation_accuracy": 0.565,
+          "final_test_accuracy": 0.426,
+          "best_test_accuracy": 0.5622,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_0p5\\cifar10\\seed_2\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 1,
+          "final_train_accuracy": 0.4377111111111111,
+          "final_validation_accuracy": 0.4824,
+          "best_validation_accuracy": 0.5138,
+          "final_test_accuracy": 0.4872,
+          "best_test_accuracy": 0.5177,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_1p0\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 1,
+          "final_train_accuracy": 0.6268666666666667,
+          "final_validation_accuracy": 0.6432,
+          "best_validation_accuracy": 0.6502,
+          "final_test_accuracy": 0.6381,
+          "best_test_accuracy": 0.6381,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_1p0\\cifar10\\seed_2\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 2,
+          "final_train_accuracy": 0.4774888888888889,
+          "final_validation_accuracy": 0.4962,
+          "best_validation_accuracy": 0.509,
+          "final_test_accuracy": 0.4856,
+          "best_test_accuracy": 0.4856,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_2p0\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 2,
+          "final_train_accuracy": 0.3991777777777778,
+          "final_validation_accuracy": 0.5008,
+          "best_validation_accuracy": 0.5108,
+          "final_test_accuracy": 0.5064,
+          "best_test_accuracy": 0.5064,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_2p0\\cifar10\\seed_2\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 4,
+          "final_train_accuracy": 0.5383777777777777,
+          "final_validation_accuracy": 0.5656,
+          "best_validation_accuracy": 0.5736,
+          "final_test_accuracy": 0.5642,
+          "best_test_accuracy": 0.5642,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_4p0\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 4,
+          "final_train_accuracy": 0.35662222222222223,
+          "final_validation_accuracy": 0.4044,
+          "best_validation_accuracy": 0.4296,
+          "final_test_accuracy": 0.4017,
+          "best_test_accuracy": 0.4017,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_4p0\\cifar10\\seed_2\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 8,
+          "final_train_accuracy": 0.44924444444444445,
+          "final_validation_accuracy": 0.4648,
+          "best_validation_accuracy": 0.4708,
+          "final_test_accuracy": 0.4747,
+          "best_test_accuracy": 0.4747,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_8p0\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 8,
+          "final_train_accuracy": 0.5306444444444445,
+          "final_validation_accuracy": 0.5502,
+          "best_validation_accuracy": 0.5594,
+          "final_test_accuracy": 0.5413,
+          "best_test_accuracy": 0.5413,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_8p0\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "MCTS_UCB1_USE_SQRT": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_UCB1_USE_SQRT",
+          "candidate_value": false,
+          "final_train_accuracy": 0.34902222222222223,
+          "final_validation_accuracy": 0.432,
+          "best_validation_accuracy": 0.4808,
+          "final_test_accuracy": 0.4278,
+          "best_test_accuracy": 0.4528,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_USE_SQRT\\value_False\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_UCB1_USE_SQRT",
+          "candidate_value": false,
+          "final_train_accuracy": 0.5019555555555556,
+          "final_validation_accuracy": 0.5784,
+          "best_validation_accuracy": 0.6136,
+          "final_test_accuracy": 0.5839,
+          "best_test_accuracy": 0.6182,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_USE_SQRT\\value_False\\cifar10\\seed_2\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_UCB1_USE_SQRT",
+          "candidate_value": true,
+          "final_train_accuracy": 0.3864666666666667,
+          "final_validation_accuracy": 0.3838,
+          "best_validation_accuracy": 0.3948,
+          "final_test_accuracy": 0.3927,
+          "best_test_accuracy": 0.3927,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_USE_SQRT\\value_True\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_UCB1_USE_SQRT",
+          "candidate_value": true,
+          "final_train_accuracy": 0.36495555555555553,
+          "final_validation_accuracy": 0.429,
+          "best_validation_accuracy": 0.4918,
+          "final_test_accuracy": 0.4363,
+          "best_test_accuracy": 0.5013,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_USE_SQRT\\value_True\\cifar10\\seed_2\\history.pt"
+        }
+      ]
+    }
+  },
+  "state": {
+    "experiment": "010_mcts_meta",
+    "status": "running",
+    "baseline": "Experiment 009 CIFAR-10 recipe; seeds 1 and 2",
+    "pass": 1,
+    "parameter_index": 5,
+    "selected_values": {
+      "MCTS_UCB1_C": 1,
+      "MCTS_UCB1_USE_SQRT": false,
+      "MCTS_PROPAGATE_ROLLOUT_VALUE": true,
+      "MCTS_ROLLOUT_DEPTH": 0,
+      "MCTS_ROLLOUT_EPOCHS": 2,
+      "MCTS_ROLLOUT_LR": 0.01,
+      "SIMULATION_MIN_ALGORITHM_ITERATION_RUNS": 3,
+      "simulation_time": 8,
+      "simulation_set_percent": null
+    },
+    "pass_winners": {
+      "1": {
+        "MCTS_UCB1_C": 1,
+        "MCTS_UCB1_USE_SQRT": false,
+        "MCTS_PROPAGATE_ROLLOUT_VALUE": true,
+        "MCTS_ROLLOUT_DEPTH": 0,
+        "MCTS_ROLLOUT_EPOCHS": 2,
+        "MCTS_ROLLOUT_LR": 0.01
+      },
+      "2": {}
+    },
+    "completed_candidates": {
+      "pass_1/MCTS_UCB1_C/0.5": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 0.5,
+          "final_train_accuracy": 0.4856888888888889,
+          "final_validation_accuracy": 0.5188,
+          "best_validation_accuracy": 0.5264,
+          "final_test_accuracy": 0.5114,
+          "best_test_accuracy": 0.5117,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_0p5\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 0.5,
+          "final_train_accuracy": 0.38235555555555556,
+          "final_validation_accuracy": 0.4136,
+          "best_validation_accuracy": 0.565,
+          "final_test_accuracy": 0.426,
+          "best_test_accuracy": 0.5622,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_0p5\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "pass_1/MCTS_UCB1_C/1.0": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 1,
+          "final_train_accuracy": 0.4377111111111111,
+          "final_validation_accuracy": 0.4824,
+          "best_validation_accuracy": 0.5138,
+          "final_test_accuracy": 0.4872,
+          "best_test_accuracy": 0.5177,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_1p0\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 1,
+          "final_train_accuracy": 0.6268666666666667,
+          "final_validation_accuracy": 0.6432,
+          "best_validation_accuracy": 0.6502,
+          "final_test_accuracy": 0.6381,
+          "best_test_accuracy": 0.6381,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_1p0\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "pass_1/MCTS_UCB1_C/2.0": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 2,
+          "final_train_accuracy": 0.4774888888888889,
+          "final_validation_accuracy": 0.4962,
+          "best_validation_accuracy": 0.509,
+          "final_test_accuracy": 0.4856,
+          "best_test_accuracy": 0.4856,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_2p0\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 2,
+          "final_train_accuracy": 0.3991777777777778,
+          "final_validation_accuracy": 0.5008,
+          "best_validation_accuracy": 0.5108,
+          "final_test_accuracy": 0.5064,
+          "best_test_accuracy": 0.5064,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_2p0\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "pass_1/MCTS_UCB1_C/4.0": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 4,
+          "final_train_accuracy": 0.5383777777777777,
+          "final_validation_accuracy": 0.5656,
+          "best_validation_accuracy": 0.5736,
+          "final_test_accuracy": 0.5642,
+          "best_test_accuracy": 0.5642,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_4p0\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 4,
+          "final_train_accuracy": 0.35662222222222223,
+          "final_validation_accuracy": 0.4044,
+          "best_validation_accuracy": 0.4296,
+          "final_test_accuracy": 0.4017,
+          "best_test_accuracy": 0.4017,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_4p0\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "pass_1/MCTS_UCB1_C/8.0": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 8,
+          "final_train_accuracy": 0.44924444444444445,
+          "final_validation_accuracy": 0.4648,
+          "best_validation_accuracy": 0.4708,
+          "final_test_accuracy": 0.4747,
+          "best_test_accuracy": 0.4747,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_8p0\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_UCB1_C",
+          "candidate_value": 8,
+          "final_train_accuracy": 0.5306444444444445,
+          "final_validation_accuracy": 0.5502,
+          "best_validation_accuracy": 0.5594,
+          "final_test_accuracy": 0.5413,
+          "best_test_accuracy": 0.5413,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_8p0\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "pass_1/MCTS_UCB1_USE_SQRT/false": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_UCB1_USE_SQRT",
+          "candidate_value": false,
+          "final_train_accuracy": 0.34902222222222223,
+          "final_validation_accuracy": 0.432,
+          "best_validation_accuracy": 0.4808,
+          "final_test_accuracy": 0.4278,
+          "best_test_accuracy": 0.4528,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_USE_SQRT\\value_False\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_UCB1_USE_SQRT",
+          "candidate_value": false,
+          "final_train_accuracy": 0.5019555555555556,
+          "final_validation_accuracy": 0.5784,
+          "best_validation_accuracy": 0.6136,
+          "final_test_accuracy": 0.5839,
+          "best_test_accuracy": 0.6182,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_USE_SQRT\\value_False\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "pass_1/MCTS_UCB1_USE_SQRT/true": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_UCB1_USE_SQRT",
+          "candidate_value": true,
+          "final_train_accuracy": 0.3864666666666667,
+          "final_validation_accuracy": 0.3838,
+          "best_validation_accuracy": 0.3948,
+          "final_test_accuracy": 0.3927,
+          "best_test_accuracy": 0.3927,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_USE_SQRT\\value_True\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_UCB1_USE_SQRT",
+          "candidate_value": true,
+          "final_train_accuracy": 0.36495555555555553,
+          "final_validation_accuracy": 0.429,
+          "best_validation_accuracy": 0.4918,
+          "final_test_accuracy": 0.4363,
+          "best_test_accuracy": 0.5013,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_USE_SQRT\\value_True\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "pass_1/MCTS_PROPAGATE_ROLLOUT_VALUE/false": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_PROPAGATE_ROLLOUT_VALUE",
+          "candidate_value": false,
+          "final_train_accuracy": 0.5125111111111111,
+          "final_validation_accuracy": 0.5094,
+          "best_validation_accuracy": 0.5988,
+          "final_test_accuracy": 0.5058,
+          "best_test_accuracy": 0.5981,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_PROPAGATE_ROLLOUT_VALUE\\value_False\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_PROPAGATE_ROLLOUT_VALUE",
+          "candidate_value": false,
+          "final_train_accuracy": 0.5906666666666667,
+          "final_validation_accuracy": 0.6158,
+          "best_validation_accuracy": 0.6226,
+          "final_test_accuracy": 0.6244,
+          "best_test_accuracy": 0.6244,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_PROPAGATE_ROLLOUT_VALUE\\value_False\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "pass_1/MCTS_PROPAGATE_ROLLOUT_VALUE/true": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_PROPAGATE_ROLLOUT_VALUE",
+          "candidate_value": true,
+          "final_train_accuracy": 0.4991111111111111,
+          "final_validation_accuracy": 0.542,
+          "best_validation_accuracy": 0.542,
+          "final_test_accuracy": 0.5378,
+          "best_test_accuracy": 0.5378,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_PROPAGATE_ROLLOUT_VALUE\\value_True\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_PROPAGATE_ROLLOUT_VALUE",
+          "candidate_value": true,
+          "final_train_accuracy": 0.5655555555555556,
+          "final_validation_accuracy": 0.6058,
+          "best_validation_accuracy": 0.61,
+          "final_test_accuracy": 0.6022,
+          "best_test_accuracy": 0.6022,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_PROPAGATE_ROLLOUT_VALUE\\value_True\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "pass_1/MCTS_ROLLOUT_DEPTH/0": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_DEPTH",
+          "candidate_value": 0,
+          "final_train_accuracy": 0.4518,
+          "final_validation_accuracy": 0.474,
+          "best_validation_accuracy": 0.4826,
+          "final_test_accuracy": 0.4716,
+          "best_test_accuracy": 0.4716,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_0\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_DEPTH",
+          "candidate_value": 0,
+          "final_train_accuracy": 0.5519111111111111,
+          "final_validation_accuracy": 0.562,
+          "best_validation_accuracy": 0.5636,
+          "final_test_accuracy": 0.5578,
+          "best_test_accuracy": 0.5578,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_0\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "pass_1/MCTS_ROLLOUT_DEPTH/1": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_DEPTH",
+          "candidate_value": 1,
+          "final_train_accuracy": 0.4143777777777778,
+          "final_validation_accuracy": 0.4378,
+          "best_validation_accuracy": 0.4414,
+          "final_test_accuracy": 0.4409,
+          "best_test_accuracy": 0.4409,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_1\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_DEPTH",
+          "candidate_value": 1,
+          "final_train_accuracy": 0.4591777777777778,
+          "final_validation_accuracy": 0.4992,
+          "best_validation_accuracy": 0.5208,
+          "final_test_accuracy": 0.5018,
+          "best_test_accuracy": 0.506,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_1\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "pass_1/MCTS_ROLLOUT_DEPTH/2": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_DEPTH",
+          "candidate_value": 2,
+          "final_train_accuracy": 0.4322888888888889,
+          "final_validation_accuracy": 0.5264,
+          "best_validation_accuracy": 0.5412,
+          "final_test_accuracy": 0.5142,
+          "best_test_accuracy": 0.5164,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_2\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_DEPTH",
+          "candidate_value": 2,
+          "final_train_accuracy": 0.3940888888888889,
+          "final_validation_accuracy": 0.46,
+          "best_validation_accuracy": 0.5352,
+          "final_test_accuracy": 0.4604,
+          "best_test_accuracy": 0.5343,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_2\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "pass_1/MCTS_ROLLOUT_DEPTH/3": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_DEPTH",
+          "candidate_value": 3,
+          "final_train_accuracy": 0.5726,
+          "final_validation_accuracy": 0.5888,
+          "best_validation_accuracy": 0.5932,
+          "final_test_accuracy": 0.589,
+          "best_test_accuracy": 0.589,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_3\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_DEPTH",
+          "candidate_value": 3,
+          "final_train_accuracy": 0.3695555555555556,
+          "final_validation_accuracy": 0.3492,
+          "best_validation_accuracy": 0.3756,
+          "final_test_accuracy": 0.3586,
+          "best_test_accuracy": 0.3653,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_3\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "pass_1/MCTS_ROLLOUT_EPOCHS/1": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_EPOCHS",
+          "candidate_value": 1,
+          "final_train_accuracy": 0.5830444444444445,
+          "final_validation_accuracy": 0.605,
+          "best_validation_accuracy": 0.6092,
+          "final_test_accuracy": 0.6014,
+          "best_test_accuracy": 0.6039,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_EPOCHS\\value_1\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_EPOCHS",
+          "candidate_value": 1,
+          "final_train_accuracy": 0.3832,
+          "final_validation_accuracy": 0.3528,
+          "best_validation_accuracy": 0.3702,
+          "final_test_accuracy": 0.3621,
+          "best_test_accuracy": 0.3642,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_EPOCHS\\value_1\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "pass_1/MCTS_ROLLOUT_EPOCHS/2": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_EPOCHS",
+          "candidate_value": 2,
+          "final_train_accuracy": 0.5248,
+          "final_validation_accuracy": 0.5502,
+          "best_validation_accuracy": 0.5548,
+          "final_test_accuracy": 0.5483,
+          "best_test_accuracy": 0.5483,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_EPOCHS\\value_2\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_EPOCHS",
+          "candidate_value": 2,
+          "final_train_accuracy": 0.46428888888888886,
+          "final_validation_accuracy": 0.4818,
+          "best_validation_accuracy": 0.4854,
+          "final_test_accuracy": 0.4817,
+          "best_test_accuracy": 0.4817,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_EPOCHS\\value_2\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "pass_1/MCTS_ROLLOUT_EPOCHS/4": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_EPOCHS",
+          "candidate_value": 4,
+          "final_train_accuracy": 0.2571555555555556,
+          "final_validation_accuracy": 0.2802,
+          "best_validation_accuracy": 0.3918,
+          "final_test_accuracy": 0.2778,
+          "best_test_accuracy": 0.3957,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_EPOCHS\\value_4\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_EPOCHS",
+          "candidate_value": 4,
+          "final_train_accuracy": 0.37555555555555553,
+          "final_validation_accuracy": 0.419,
+          "best_validation_accuracy": 0.4844,
+          "final_test_accuracy": 0.4181,
+          "best_test_accuracy": 0.4808,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_EPOCHS\\value_4\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "pass_1/MCTS_ROLLOUT_LR/0.0001": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_LR",
+          "candidate_value": 0.0001,
+          "final_train_accuracy": 0.5008,
+          "final_validation_accuracy": 0.501,
+          "best_validation_accuracy": 0.5386,
+          "final_test_accuracy": 0.4946,
+          "best_test_accuracy": 0.5389,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_LR\\value_0p0001\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_LR",
+          "candidate_value": 0.0001,
+          "final_train_accuracy": 0.38066666666666665,
+          "final_validation_accuracy": 0.2468,
+          "best_validation_accuracy": 0.5888,
+          "final_test_accuracy": 0.2467,
+          "best_test_accuracy": 0.5907,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_LR\\value_0p0001\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "pass_1/MCTS_ROLLOUT_LR/0.003": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_LR",
+          "candidate_value": 0.003,
+          "final_train_accuracy": 0.4310888888888889,
+          "final_validation_accuracy": 0.3876,
+          "best_validation_accuracy": 0.4148,
+          "final_test_accuracy": 0.3875,
+          "best_test_accuracy": 0.3875,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_LR\\value_0p003\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_LR",
+          "candidate_value": 0.003,
+          "final_train_accuracy": 0.4253777777777778,
+          "final_validation_accuracy": 0.4942,
+          "best_validation_accuracy": 0.4942,
+          "final_test_accuracy": 0.488,
+          "best_test_accuracy": 0.488,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_LR\\value_0p003\\cifar10\\seed_2\\history.pt"
+        }
+      ],
+      "pass_1/MCTS_ROLLOUT_LR/0.01": [
+        {
+          "dataset": "cifar10",
+          "seed": 1,
+          "parameter": "MCTS_ROLLOUT_LR",
+          "candidate_value": 0.01,
+          "final_train_accuracy": 0.4003333333333333,
+          "final_validation_accuracy": 0.4136,
+          "best_validation_accuracy": 0.4256,
+          "final_test_accuracy": 0.4222,
+          "best_test_accuracy": 0.4237,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_LR\\value_0p01\\cifar10\\seed_1\\history.pt"
+        },
+        {
+          "dataset": "cifar10",
+          "seed": 2,
+          "parameter": "MCTS_ROLLOUT_LR",
+          "candidate_value": 0.01,
+          "final_train_accuracy": 0.516,
+          "final_validation_accuracy": 0.5484,
+          "best_validation_accuracy": 0.5514,
+          "final_test_accuracy": 0.549,
+          "best_test_accuracy": 0.549,
+          "simulation_set_percent_requested": 0.28444444444444444,
+          "simulation_train_size_actual": 120,
+          "simulation_val_size_actual": 30,
+          "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_LR\\value_0p01\\cifar10\\seed_2\\history.pt"
+        }
+      ]
+    },
+    "selection_metric": "mean final validation accuracy across CIFAR-10 seeds 1 and 2",
+    "parameter_comparisons": {
+      "1": {
+        "MCTS_UCB1_C": [
+          {
+            "value": 0.5,
+            "score": 0.46620000000000006,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_UCB1_C",
+                "candidate_value": 0.5,
+                "final_train_accuracy": 0.4856888888888889,
+                "final_validation_accuracy": 0.5188,
+                "best_validation_accuracy": 0.5264,
+                "final_test_accuracy": 0.5114,
+                "best_test_accuracy": 0.5117,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_0p5\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_UCB1_C",
+                "candidate_value": 0.5,
+                "final_train_accuracy": 0.38235555555555556,
+                "final_validation_accuracy": 0.4136,
+                "best_validation_accuracy": 0.565,
+                "final_test_accuracy": 0.426,
+                "best_test_accuracy": 0.5622,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_0p5\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          },
+          {
+            "value": 1,
+            "score": 0.5628,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_UCB1_C",
+                "candidate_value": 1,
+                "final_train_accuracy": 0.4377111111111111,
+                "final_validation_accuracy": 0.4824,
+                "best_validation_accuracy": 0.5138,
+                "final_test_accuracy": 0.4872,
+                "best_test_accuracy": 0.5177,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_1p0\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_UCB1_C",
+                "candidate_value": 1,
+                "final_train_accuracy": 0.6268666666666667,
+                "final_validation_accuracy": 0.6432,
+                "best_validation_accuracy": 0.6502,
+                "final_test_accuracy": 0.6381,
+                "best_test_accuracy": 0.6381,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_1p0\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          },
+          {
+            "value": 2,
+            "score": 0.4985,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_UCB1_C",
+                "candidate_value": 2,
+                "final_train_accuracy": 0.4774888888888889,
+                "final_validation_accuracy": 0.4962,
+                "best_validation_accuracy": 0.509,
+                "final_test_accuracy": 0.4856,
+                "best_test_accuracy": 0.4856,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_2p0\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_UCB1_C",
+                "candidate_value": 2,
+                "final_train_accuracy": 0.3991777777777778,
+                "final_validation_accuracy": 0.5008,
+                "best_validation_accuracy": 0.5108,
+                "final_test_accuracy": 0.5064,
+                "best_test_accuracy": 0.5064,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_2p0\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          },
+          {
+            "value": 4,
+            "score": 0.485,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_UCB1_C",
+                "candidate_value": 4,
+                "final_train_accuracy": 0.5383777777777777,
+                "final_validation_accuracy": 0.5656,
+                "best_validation_accuracy": 0.5736,
+                "final_test_accuracy": 0.5642,
+                "best_test_accuracy": 0.5642,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_4p0\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_UCB1_C",
+                "candidate_value": 4,
+                "final_train_accuracy": 0.35662222222222223,
+                "final_validation_accuracy": 0.4044,
+                "best_validation_accuracy": 0.4296,
+                "final_test_accuracy": 0.4017,
+                "best_test_accuracy": 0.4017,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_4p0\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          },
+          {
+            "value": 8,
+            "score": 0.5075000000000001,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_UCB1_C",
+                "candidate_value": 8,
+                "final_train_accuracy": 0.44924444444444445,
+                "final_validation_accuracy": 0.4648,
+                "best_validation_accuracy": 0.4708,
+                "final_test_accuracy": 0.4747,
+                "best_test_accuracy": 0.4747,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_8p0\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_UCB1_C",
+                "candidate_value": 8,
+                "final_train_accuracy": 0.5306444444444445,
+                "final_validation_accuracy": 0.5502,
+                "best_validation_accuracy": 0.5594,
+                "final_test_accuracy": 0.5413,
+                "best_test_accuracy": 0.5413,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_C\\value_8p0\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          }
+        ],
+        "MCTS_UCB1_USE_SQRT": [
+          {
+            "value": false,
+            "score": 0.5052,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_UCB1_USE_SQRT",
+                "candidate_value": false,
+                "final_train_accuracy": 0.34902222222222223,
+                "final_validation_accuracy": 0.432,
+                "best_validation_accuracy": 0.4808,
+                "final_test_accuracy": 0.4278,
+                "best_test_accuracy": 0.4528,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_USE_SQRT\\value_False\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_UCB1_USE_SQRT",
+                "candidate_value": false,
+                "final_train_accuracy": 0.5019555555555556,
+                "final_validation_accuracy": 0.5784,
+                "best_validation_accuracy": 0.6136,
+                "final_test_accuracy": 0.5839,
+                "best_test_accuracy": 0.6182,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_USE_SQRT\\value_False\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          },
+          {
+            "value": true,
+            "score": 0.4064,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_UCB1_USE_SQRT",
+                "candidate_value": true,
+                "final_train_accuracy": 0.3864666666666667,
+                "final_validation_accuracy": 0.3838,
+                "best_validation_accuracy": 0.3948,
+                "final_test_accuracy": 0.3927,
+                "best_test_accuracy": 0.3927,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_USE_SQRT\\value_True\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_UCB1_USE_SQRT",
+                "candidate_value": true,
+                "final_train_accuracy": 0.36495555555555553,
+                "final_validation_accuracy": 0.429,
+                "best_validation_accuracy": 0.4918,
+                "final_test_accuracy": 0.4363,
+                "best_test_accuracy": 0.5013,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_UCB1_USE_SQRT\\value_True\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          }
+        ],
+        "MCTS_PROPAGATE_ROLLOUT_VALUE": [
+          {
+            "value": false,
+            "score": 0.5626,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_PROPAGATE_ROLLOUT_VALUE",
+                "candidate_value": false,
+                "final_train_accuracy": 0.5125111111111111,
+                "final_validation_accuracy": 0.5094,
+                "best_validation_accuracy": 0.5988,
+                "final_test_accuracy": 0.5058,
+                "best_test_accuracy": 0.5981,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_PROPAGATE_ROLLOUT_VALUE\\value_False\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_PROPAGATE_ROLLOUT_VALUE",
+                "candidate_value": false,
+                "final_train_accuracy": 0.5906666666666667,
+                "final_validation_accuracy": 0.6158,
+                "best_validation_accuracy": 0.6226,
+                "final_test_accuracy": 0.6244,
+                "best_test_accuracy": 0.6244,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_PROPAGATE_ROLLOUT_VALUE\\value_False\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          },
+          {
+            "value": true,
+            "score": 0.5739000000000001,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_PROPAGATE_ROLLOUT_VALUE",
+                "candidate_value": true,
+                "final_train_accuracy": 0.4991111111111111,
+                "final_validation_accuracy": 0.542,
+                "best_validation_accuracy": 0.542,
+                "final_test_accuracy": 0.5378,
+                "best_test_accuracy": 0.5378,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_PROPAGATE_ROLLOUT_VALUE\\value_True\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_PROPAGATE_ROLLOUT_VALUE",
+                "candidate_value": true,
+                "final_train_accuracy": 0.5655555555555556,
+                "final_validation_accuracy": 0.6058,
+                "best_validation_accuracy": 0.61,
+                "final_test_accuracy": 0.6022,
+                "best_test_accuracy": 0.6022,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_PROPAGATE_ROLLOUT_VALUE\\value_True\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          }
+        ],
+        "MCTS_ROLLOUT_DEPTH": [
+          {
+            "value": 0,
+            "score": 0.518,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_ROLLOUT_DEPTH",
+                "candidate_value": 0,
+                "final_train_accuracy": 0.4518,
+                "final_validation_accuracy": 0.474,
+                "best_validation_accuracy": 0.4826,
+                "final_test_accuracy": 0.4716,
+                "best_test_accuracy": 0.4716,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_0\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_ROLLOUT_DEPTH",
+                "candidate_value": 0,
+                "final_train_accuracy": 0.5519111111111111,
+                "final_validation_accuracy": 0.562,
+                "best_validation_accuracy": 0.5636,
+                "final_test_accuracy": 0.5578,
+                "best_test_accuracy": 0.5578,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_0\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          },
+          {
+            "value": 1,
+            "score": 0.4685,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_ROLLOUT_DEPTH",
+                "candidate_value": 1,
+                "final_train_accuracy": 0.4143777777777778,
+                "final_validation_accuracy": 0.4378,
+                "best_validation_accuracy": 0.4414,
+                "final_test_accuracy": 0.4409,
+                "best_test_accuracy": 0.4409,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_1\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_ROLLOUT_DEPTH",
+                "candidate_value": 1,
+                "final_train_accuracy": 0.4591777777777778,
+                "final_validation_accuracy": 0.4992,
+                "best_validation_accuracy": 0.5208,
+                "final_test_accuracy": 0.5018,
+                "best_test_accuracy": 0.506,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_1\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          },
+          {
+            "value": 2,
+            "score": 0.49319999999999997,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_ROLLOUT_DEPTH",
+                "candidate_value": 2,
+                "final_train_accuracy": 0.4322888888888889,
+                "final_validation_accuracy": 0.5264,
+                "best_validation_accuracy": 0.5412,
+                "final_test_accuracy": 0.5142,
+                "best_test_accuracy": 0.5164,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_2\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_ROLLOUT_DEPTH",
+                "candidate_value": 2,
+                "final_train_accuracy": 0.3940888888888889,
+                "final_validation_accuracy": 0.46,
+                "best_validation_accuracy": 0.5352,
+                "final_test_accuracy": 0.4604,
+                "best_test_accuracy": 0.5343,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_2\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          },
+          {
+            "value": 3,
+            "score": 0.469,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_ROLLOUT_DEPTH",
+                "candidate_value": 3,
+                "final_train_accuracy": 0.5726,
+                "final_validation_accuracy": 0.5888,
+                "best_validation_accuracy": 0.5932,
+                "final_test_accuracy": 0.589,
+                "best_test_accuracy": 0.589,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_3\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_ROLLOUT_DEPTH",
+                "candidate_value": 3,
+                "final_train_accuracy": 0.3695555555555556,
+                "final_validation_accuracy": 0.3492,
+                "best_validation_accuracy": 0.3756,
+                "final_test_accuracy": 0.3586,
+                "best_test_accuracy": 0.3653,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_DEPTH\\value_3\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          }
+        ],
+        "MCTS_ROLLOUT_EPOCHS": [
+          {
+            "value": 1,
+            "score": 0.4789,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_ROLLOUT_EPOCHS",
+                "candidate_value": 1,
+                "final_train_accuracy": 0.5830444444444445,
+                "final_validation_accuracy": 0.605,
+                "best_validation_accuracy": 0.6092,
+                "final_test_accuracy": 0.6014,
+                "best_test_accuracy": 0.6039,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_EPOCHS\\value_1\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_ROLLOUT_EPOCHS",
+                "candidate_value": 1,
+                "final_train_accuracy": 0.3832,
+                "final_validation_accuracy": 0.3528,
+                "best_validation_accuracy": 0.3702,
+                "final_test_accuracy": 0.3621,
+                "best_test_accuracy": 0.3642,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_EPOCHS\\value_1\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          },
+          {
+            "value": 2,
+            "score": 0.516,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_ROLLOUT_EPOCHS",
+                "candidate_value": 2,
+                "final_train_accuracy": 0.5248,
+                "final_validation_accuracy": 0.5502,
+                "best_validation_accuracy": 0.5548,
+                "final_test_accuracy": 0.5483,
+                "best_test_accuracy": 0.5483,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_EPOCHS\\value_2\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_ROLLOUT_EPOCHS",
+                "candidate_value": 2,
+                "final_train_accuracy": 0.46428888888888886,
+                "final_validation_accuracy": 0.4818,
+                "best_validation_accuracy": 0.4854,
+                "final_test_accuracy": 0.4817,
+                "best_test_accuracy": 0.4817,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_EPOCHS\\value_2\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          },
+          {
+            "value": 4,
+            "score": 0.3496,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_ROLLOUT_EPOCHS",
+                "candidate_value": 4,
+                "final_train_accuracy": 0.2571555555555556,
+                "final_validation_accuracy": 0.2802,
+                "best_validation_accuracy": 0.3918,
+                "final_test_accuracy": 0.2778,
+                "best_test_accuracy": 0.3957,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_EPOCHS\\value_4\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_ROLLOUT_EPOCHS",
+                "candidate_value": 4,
+                "final_train_accuracy": 0.37555555555555553,
+                "final_validation_accuracy": 0.419,
+                "best_validation_accuracy": 0.4844,
+                "final_test_accuracy": 0.4181,
+                "best_test_accuracy": 0.4808,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_EPOCHS\\value_4\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          }
+        ],
+        "MCTS_ROLLOUT_LR": [
+          {
+            "value": 0.0001,
+            "score": 0.3739,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_ROLLOUT_LR",
+                "candidate_value": 0.0001,
+                "final_train_accuracy": 0.5008,
+                "final_validation_accuracy": 0.501,
+                "best_validation_accuracy": 0.5386,
+                "final_test_accuracy": 0.4946,
+                "best_test_accuracy": 0.5389,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_LR\\value_0p0001\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_ROLLOUT_LR",
+                "candidate_value": 0.0001,
+                "final_train_accuracy": 0.38066666666666665,
+                "final_validation_accuracy": 0.2468,
+                "best_validation_accuracy": 0.5888,
+                "final_test_accuracy": 0.2467,
+                "best_test_accuracy": 0.5907,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_LR\\value_0p0001\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          },
+          {
+            "value": 0.003,
+            "score": 0.44089999999999996,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_ROLLOUT_LR",
+                "candidate_value": 0.003,
+                "final_train_accuracy": 0.4310888888888889,
+                "final_validation_accuracy": 0.3876,
+                "best_validation_accuracy": 0.4148,
+                "final_test_accuracy": 0.3875,
+                "best_test_accuracy": 0.3875,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_LR\\value_0p003\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_ROLLOUT_LR",
+                "candidate_value": 0.003,
+                "final_train_accuracy": 0.4253777777777778,
+                "final_validation_accuracy": 0.4942,
+                "best_validation_accuracy": 0.4942,
+                "final_test_accuracy": 0.488,
+                "best_test_accuracy": 0.488,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_LR\\value_0p003\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          },
+          {
+            "value": 0.01,
+            "score": 0.481,
+            "runs": [
+              {
+                "dataset": "cifar10",
+                "seed": 1,
+                "parameter": "MCTS_ROLLOUT_LR",
+                "candidate_value": 0.01,
+                "final_train_accuracy": 0.4003333333333333,
+                "final_validation_accuracy": 0.4136,
+                "best_validation_accuracy": 0.4256,
+                "final_test_accuracy": 0.4222,
+                "best_test_accuracy": 0.4237,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_LR\\value_0p01\\cifar10\\seed_1\\history.pt"
+              },
+              {
+                "dataset": "cifar10",
+                "seed": 2,
+                "parameter": "MCTS_ROLLOUT_LR",
+                "candidate_value": 0.01,
+                "final_train_accuracy": 0.516,
+                "final_validation_accuracy": 0.5484,
+                "best_validation_accuracy": 0.5514,
+                "final_test_accuracy": 0.549,
+                "best_test_accuracy": 0.549,
+                "simulation_set_percent_requested": 0.28444444444444444,
+                "simulation_train_size_actual": 120,
+                "simulation_val_size_actual": 30,
+                "history": "D:\\repos\\growingNN_pytorch-3\\experiments\\output\\train_cifar10\\runs\\exp010_mcts_meta_g10_tiny\\pass_1\\MCTS_ROLLOUT_LR\\value_0p01\\cifar10\\seed_2\\history.pt"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
