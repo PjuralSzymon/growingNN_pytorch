@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import copy
+from collections.abc import Mapping
+
+import torch
 import torch.fx as fx
 import torch.nn as nn
 import torch.nn.functional as F
@@ -41,9 +45,83 @@ def _align_new_module_to_graph(gm: fx.GraphModule, new_layer):
     """
     try:
         param = next(gm.parameters())
-        return new_layer.to(device=param.device, dtype=param.dtype)
+        return new_layer.to(device=param.device, dtype=param.dtype).train(gm.training)
     except StopIteration:
-        return new_layer
+        return new_layer.train(gm.training)
+
+
+def _align_new_module_to_node(gm: fx.GraphModule, new_layer: nn.Module, node: fx.Node) -> nn.Module:
+    """Align an FX edit to the actual source tensor, not an unrelated graph parameter."""
+    value = node.meta.get("val")
+    if value is None:
+        value = node.meta.get("tensor_meta")
+    dtype = getattr(value, "dtype", None)
+    device = getattr(value, "device", None)
+    try:
+        parameter = next(gm.parameters())
+    except StopIteration:
+        parameter = None
+    # ShapeProp's TensorMetadata has dtype but no device. In that case the graph
+    # parameter supplies placement only; the edge tensor remains authoritative
+    # for dtype. FakeTensor/export metadata provides both values directly.
+    if device is None and parameter is not None:
+        device = parameter.device
+    if not isinstance(dtype, torch.dtype) and parameter is not None:
+        dtype = parameter.dtype
+    if device is not None or dtype is not None:
+        try:
+            kwargs = {}
+            if device is not None:
+                kwargs["device"] = device
+            if isinstance(dtype, torch.dtype):
+                kwargs["dtype"] = dtype
+            return new_layer.to(**kwargs).train(gm.training)
+        except (TypeError, RuntimeError, ValueError):
+            # Retain the caller's module instead of inferring a cast from a
+            # different endpoint when the framework cannot apply this placement.
+            pass
+    return new_layer.train(gm.training)
+
+
+def _replace_at_path(value, path, old, new):
+    """Replace one FX Node occurrence in nested args/kwargs, preserving containers."""
+    if not path:
+        if value is not old:
+            raise ValueError("The selected FX operand path does not contain the requested source")
+        return new
+    key, *tail = path
+    if isinstance(value, tuple):
+        items = list(value)
+        items[key] = _replace_at_path(items[key], tail, old, new)
+        if hasattr(value, "_fields"):
+            return type(value)(*items)
+        return tuple(items)
+    if isinstance(value, list):
+        items = list(value)
+        items[key] = _replace_at_path(items[key], tail, old, new)
+        return items
+    if isinstance(value, slice):
+        if key not in ("start", "stop", "step"):
+            raise ValueError(f"Invalid slice operand path component {key!r}")
+        fields = {field: getattr(value, field) for field in ("start", "stop", "step")}
+        fields[key] = _replace_at_path(fields[key], tail, old, new)
+        return slice(fields["start"], fields["stop"], fields["step"])
+    if isinstance(value, Mapping):
+        replacement = _replace_at_path(value[key], tail, old, new)
+        try:
+            items = copy.copy(value)
+            items[key] = replacement
+            return items
+        except (TypeError, AttributeError):
+            items = dict(value)
+            items[key] = replacement
+            try:
+                return type(value)(items)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    f"Cannot preserve FX argument mapping type {type(value).__qualname__}"
+                ) from exc
+    raise ValueError(f"Unsupported FX operand path component {key!r}")
 
 
 def bypass_shapes_compatible(
@@ -193,6 +271,92 @@ def prune_unreachable_nodes(gm: fx.GraphModule) -> list[str]:
 
 class ModelStructureEditor:
     """Add and remove layers in an FX graph."""
+
+    @staticmethod
+    def insert_module_on_edge(
+        gm: fx.GraphModule,
+        source: fx.Node,
+        destination: fx.Node,
+        new_layer: nn.Module,
+        name: str,
+        *,
+        use_path: tuple[object, ...] | None = None,
+    ) -> fx.Node:
+        """Insert a module on one dataflow edge, regardless of endpoint node kinds.
+
+        The source or destination may be a ``call_module``, ``call_function``,
+        ``call_method``, ``get_attr``, or graph output node. Interface compatibility
+        remains the caller's responsibility and should be checked from node metadata.
+        """
+        if destination not in source.users:
+            raise ValueError(
+                f"Cannot insert on non-edge {source.name!r} -> {destination.name!r}"
+            )
+        from growingnn.utils.fx.regions import _edge_use_paths
+        paths = _edge_use_paths(source, destination)
+        if use_path is None:
+            if len(paths) != 1:
+                raise ValueError(
+                    f"Edge {source.name!r} -> {destination.name!r} has {len(paths)} operand uses; "
+                    "pass use_path to edit exactly one occurrence"
+                )
+            use_path = paths[0]
+        elif use_path not in paths:
+            raise ValueError("use_path is not an occurrence of the requested FX edge")
+        if hasattr(gm, name):
+            raise ValueError(f"GraphModule already has a child named {name!r}")
+        new_layer = _align_new_module_to_node(gm, new_layer, source)
+        original_args = destination.args
+        original_kwargs = destination.kwargs
+        gm.add_module(name, new_layer)
+        inserted = None
+        try:
+            with gm.graph.inserting_before(destination):
+                inserted = gm.graph.call_module(name, args=(source,))
+            root_name, *path = use_path
+            if root_name == "args":
+                destination.args = _replace_at_path(destination.args, path, source, inserted)
+            elif root_name == "kwargs":
+                destination.kwargs = _replace_at_path(destination.kwargs, path, source, inserted)
+            else:
+                raise ValueError("FX operand path must start with 'args' or 'kwargs'")
+            gm.graph.lint()
+            gm.recompile()
+        except Exception as exc:
+            # Do not leave an orphan module or a half-rewired graph when a
+            # structured argument container cannot be rebuilt or graph linting
+            # rejects the edit.
+            destination.args = original_args
+            destination.kwargs = original_kwargs
+            if inserted is not None and not inserted.users:
+                gm.graph.erase_node(inserted)
+            delattr(gm, name)
+            try:
+                gm.graph.lint()
+                gm.recompile()
+            except Exception as rollback_error:
+                exc.add_note(f"FX edge-insertion rollback also failed: {rollback_error}")
+            raise
+        return inserted
+
+    @staticmethod
+    def add_residual_branch_on_nodes(
+        gm: fx.GraphModule,
+        destination: fx.Node,
+        source: fx.Node,
+        new_layer: nn.Module,
+        name: str,
+    ) -> None:
+        """Add a transformed FX value as a residual term at a graph-node boundary."""
+        if destination.graph is not gm.graph or source.graph is not gm.graph:
+            raise ValueError("Residual source and destination must belong to the GraphModule")
+        if hasattr(gm, name):
+            raise ValueError(f"GraphModule already has a child named {name!r}")
+        new_layer = _align_new_module_to_node(gm, new_layer, source)
+        gm.add_module(name, new_layer)
+        connect_residual_branch(gm, destination, source, name)
+        gm.graph.lint()
+        gm.recompile()
 
     @staticmethod
     def add_new_residual_layer(gm, src_name, dst_name, new_layer, name):

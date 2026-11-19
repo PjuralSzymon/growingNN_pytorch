@@ -13,9 +13,232 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from growingnn.actions.add_neurons import AddNeurons, expand_layer_output
+from growingnn.actions.utils.layer_resize import (
+    can_resize_linear_output,
+    linear_output_resize_rejection_reason,
+)
 from growingnn.core import config
 from tests.model_factory import ModelFactory
 from growingnn.core.traced_model import TracedModel
+
+
+def test_add_neurons_can_grow_linear_through_functional_pointwise_path():
+    class PointwiseProjection(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.expand = nn.Linear(4, 6)
+            self.project = nn.Linear(6, 3)
+
+        def forward(self, x):
+            hidden = self.expand(x)
+            hidden = (hidden * 0.5).pow(3) + torch.tanh(hidden)
+            return self.project(hidden)
+
+    gm = fx.symbolic_trace(PointwiseProjection())
+    example = torch.randn(2, 4)
+    original_shape = gm(example).shape
+
+    assert can_resize_linear_output(gm, "expand", 9)
+    AddNeurons(["expand", 1.5]).execute(TracedModel.create(gm, (2, 4)))
+
+    assert gm.expand.out_features == 9
+    assert gm.project.in_features == 9
+    assert gm(example).shape == original_shape
+
+
+def test_large_projection_growth_uses_model_relative_parameter_budget(monkeypatch):
+    class LargeProjection(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.expand = nn.Linear(768, 3072)
+
+        def forward(self, x):
+            return self.expand(x)
+
+    gm = fx.symbolic_trace(LargeProjection())
+    monkeypatch.setattr(config, "MAX_ADD_SEQ_LAYER_WEIGHT_MATRIX_SIZE", 100)
+    monkeypatch.setattr(config, "MAX_MODEL_RELATIVE_NEURON_GROWTH_FRACTION", 0.2)
+    monkeypatch.setattr(config, "MIN_MODEL_PARAMETER_COUNT_FOR_RELATIVE_NEURON_GROWTH", 1_000)
+
+    assert can_resize_linear_output(gm, "expand", 3379)
+    assert not can_resize_linear_output(gm, "expand", 4608)
+
+
+def test_exported_functional_linear_chain_generates_and_executes_width_growth():
+    class FunctionalMlp(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.up = nn.Linear(4, 6)
+            self.down = nn.Linear(6, 3)
+
+        def forward(self, value):
+            return self.down(torch.nn.functional.gelu(self.up(value)))
+
+    example = torch.randn(2, 4)
+    model = FunctionalMlp().eval()
+    from growingnn.utils.fx import capture_graph, describe_linear_operations
+
+    gm = capture_graph(model, route="export", example_args=(example,))
+    traced = TracedModel.create(gm, (2, 4), example_args=(example,))
+    original = gm(example)
+    actions = AddNeurons.generate_all_actions(traced, ratio=1.5)
+
+    functional_actions = [action for action in actions if len(action.params) > 2]
+    assert len(functional_actions) == 1
+    assert functional_actions[0].params[2] == "fx_functional"
+    functional_actions[0].execute(traced)
+
+    projections = [item for item in describe_linear_operations(gm) if item.form == "function"]
+    assert len(projections) == 2
+    assert [(item.in_features, item.out_features) for item in projections] == [(4, 9), (9, 3)]
+    output = gm(example)
+    assert output.shape == original.shape
+    assert torch.isfinite(output).all()
+    output.square().mean().backward()
+    assert all(parameter.grad is not None for parameter in gm.parameters())
+    assert all(torch.isfinite(parameter.grad).all() for parameter in gm.parameters())
+
+
+def test_exported_gated_functional_mlp_generates_one_grouped_width_growth():
+    class GatedMlp(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.gate = nn.Linear(4, 6)
+            self.up = nn.Linear(4, 6)
+            self.down = nn.Linear(6, 3)
+
+        def forward(self, value):
+            return self.down(torch.nn.functional.silu(self.gate(value)) * self.up(value))
+
+    from growingnn.utils.fx import capture_graph, describe_linear_operations
+
+    example = torch.randn(2, 4)
+    gm = capture_graph(GatedMlp().eval(), route="export", example_args=(example,))
+    traced = TracedModel.create(gm, (2, 4), example_args=(example,))
+    actions = AddNeurons.generate_all_actions(traced, ratio=1.5)
+    functional_actions = [action for action in actions if len(action.params) > 2]
+
+    assert len(functional_actions) == 1
+    functional_actions[0].execute(traced)
+
+    projections = [item for item in describe_linear_operations(gm) if item.form == "function"]
+    widths = {(item.in_features, item.out_features) for item in projections}
+    assert widths == {(4, 9), (9, 3)}
+    output = gm(example)
+    assert output.shape == (2, 3)
+    assert torch.isfinite(output).all()
+    output.square().mean().backward()
+    assert all(parameter.grad is not None for parameter in gm.parameters())
+    assert all(torch.isfinite(parameter.grad).all() for parameter in gm.parameters())
+
+
+def test_gated_functional_resize_rejects_fanout_on_other_projection_branch():
+    class FanoutGatedMlp(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.gate = nn.Linear(4, 6)
+            self.up = nn.Linear(4, 6)
+            self.down = nn.Linear(6, 3)
+
+        def forward(self, value):
+            up = self.up(value)
+            return self.down(torch.nn.functional.silu(self.gate(value)) * up), up
+
+    from growingnn.utils.fx import (
+        capture_graph,
+        describe_linear_operations,
+        functional_linear_resize_plan,
+    )
+
+    example = torch.randn(2, 4)
+    gm = capture_graph(FanoutGatedMlp().eval(), route="export", example_args=(example,))
+    projection = next(
+        item for item in describe_linear_operations(gm)
+        if item.form == "function" and item.out_features == 6
+    )
+    plan, reason = functional_linear_resize_plan(gm, projection.node, 9)
+
+    assert plan is None
+    assert reason is not None and "fanout" in reason.lower()
+
+
+def test_functional_linear_width_growth_rejects_split_boundary_with_reason():
+    class SplitFunctionalProjection(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.projection = nn.Linear(4, 12)
+
+        def forward(self, value):
+            return torch.split(self.projection(value), 4, dim=-1)
+
+    from growingnn.utils.fx import (
+        capture_graph,
+        describe_linear_operations,
+        functional_linear_resize_plan,
+    )
+
+    example = torch.randn(2, 4)
+    gm = capture_graph(
+        SplitFunctionalProjection().eval(), route="export", example_args=(example,)
+    )
+    traced = TracedModel.create(gm, (2, 4), example_args=(example,))
+    traced.shapes()
+    projection = next(
+        item for item in describe_linear_operations(gm) if item.form == "function"
+    )
+
+    plan, reason = functional_linear_resize_plan(gm, projection.node, 18)
+
+    assert plan is None
+    assert reason is not None and "split" in reason and "layout changes" in reason
+
+
+def test_functional_linear_width_growth_rejects_learned_prelu_path():
+    class PreluMlp(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.up = nn.Linear(4, 6)
+            self.activation = nn.PReLU(6)
+            self.down = nn.Linear(6, 3)
+
+        def forward(self, value):
+            return self.down(self.activation(self.up(value)))
+
+    from growingnn.utils.fx import (
+        capture_graph,
+        describe_linear_operations,
+        functional_linear_resize_plan,
+    )
+
+    example = torch.randn(2, 4)
+    gm = capture_graph(PreluMlp().eval(), route="export", example_args=(example,))
+    traced = TracedModel.create(gm, (2, 4), example_args=(example,))
+    traced.shapes()
+    projection = next(
+        item for item in describe_linear_operations(gm) if item.form == "function"
+    )
+
+    plan, reason = functional_linear_resize_plan(gm, projection.node, 9)
+
+    assert plan is None
+    assert reason is not None and "prelu" in reason.lower()
+
+
+def test_projection_resize_rejects_uncoordinated_split_boundary():
+    class SplitProjection(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.qkv = nn.Linear(4, 12)
+
+        def forward(self, x):
+            query, key, value = torch.split(self.qkv(x), 4, dim=-1)
+            return query + key + value
+
+    gm = fx.symbolic_trace(SplitProjection())
+
+    assert not can_resize_linear_output(gm, "qkv", 18)
+    reason = linear_output_resize_rejection_reason(gm, "qkv", 18)
+    assert reason is not None and "feature layout" in reason and "split" in reason
 
 
 def test_expand_linear_chain_updates_downstream_input():

@@ -115,16 +115,25 @@ class GraphStructureQuery:
 
     @staticmethod
     def _sum_graph_module_parameters(gm: fx.GraphModule) -> int:
-        """Sum unique parameters reachable from call_module nodes in the FX graph."""
+        """Count unique parameters used by module calls or direct ``get_attr`` reads."""
         seen: set[int] = set()
         total = 0
         for node in gm.graph.nodes:
-            if node.op != "call_module":
-                continue
-            module = ModuleResolver.get_layer_module(node, gm)
-            if module is None:
-                continue
-            for param in module.parameters(recurse=True):
+            params = []
+            if node.op == "call_module":
+                module = ModuleResolver.get_layer_module(node, gm)
+                if module is not None:
+                    params.extend(module.parameters(recurse=True))
+            elif node.op == "get_attr":
+                value = gm
+                try:
+                    for part in str(node.target).split("."):
+                        value = getattr(value, part)
+                except AttributeError:
+                    continue
+                if isinstance(value, nn.Parameter):
+                    params.append(value)
+            for param in params:
                 param_id = id(param)
                 if param_id in seen:
                     continue
@@ -134,7 +143,7 @@ class GraphStructureQuery:
 
     @staticmethod
     def get_amount_of_parameters(model: nn.Module | fx.GraphModule) -> int:
-        """Total number of parameters in FX graph call_module nodes (conv, linear, etc.)."""
+        """Count unique parameters referenced by FX module calls and ``get_attr`` nodes."""
         gm = model if isinstance(model, fx.GraphModule) else fx.symbolic_trace(model)
         return GraphStructureQuery._sum_graph_module_parameters(gm)
 
@@ -385,20 +394,25 @@ class LayerShapeAnalyser:
         example: torch.Tensor | None = None,
         *,
         input_shape: tuple[int, ...] | None = None,
+        example_inputs: tuple[object, ...] | None = None,
     ) -> tuple[dict[str, tuple[int, ...]], dict[str, tuple[int, ...]]]:
         """Run ShapeProp and return (output_shapes, input_shapes) dicts keyed by module target."""
         outputs: dict[str, tuple[int, ...]] = {}
         inputs: dict[str, tuple[int, ...]] = {}
-        if example is not None:
-            probe = example
+        if example_inputs is not None:
+            propagate_args = example_inputs
+        elif example is not None:
+            propagate_args = (example,)
         elif input_shape is not None:
-            probe = LayerShapeAnalyser.make_probe(gm, input_shape)
+            propagate_args = (LayerShapeAnalyser.make_probe(gm, input_shape),)
         else:
-            raise ValueError("collect_layer_shapes requires example or input_shape")
+            raise ValueError(
+                "collect_layer_shapes requires example or input_shape (or example_inputs)"
+            )
         was_training = gm.training
         gm.eval()
         try:
-            ShapeProp(gm).propagate(probe)
+            ShapeProp(gm).propagate(*propagate_args)
         finally:
             gm.train(was_training)
         for node in gm.graph.nodes:
