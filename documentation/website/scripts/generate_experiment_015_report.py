@@ -304,6 +304,78 @@ def _a08_leads(runs):
     return ', '.join(leads) + ' pp'
 
 
+GRID_CELLS = [(0.05, 'moderate'), (0.05, 'ccs'), (1.0, 'moderate'), (1.0, 'ccs')]
+GRID_SET_NAMES = {'moderate': 'Moderate', 'ccs': 'CCS'}
+
+
+def _grid_runs():
+    """{(C, selector): {seed: run.json plus total search minutes and final parameters}}."""
+    runs = {}
+    for ucb_c, selector in GRID_CELLS:
+        cell = RUN / 'full_grid' / f"c{str(ucb_c).replace('.', 'p')}_{selector}"
+        for seed in (1, 2):
+            path = cell / f'seed_{seed}' / 'run.json'
+            if not path.exists():
+                continue
+            row = json.loads(path.read_text(encoding='utf-8'))
+            board = cell / f'seed_{seed}' / 'board'
+            searches = [json.loads(p.read_text(encoding='utf-8'))
+                        for p in (board / 'simulations').glob('simulation_gen_*.json')]
+            metrics = json.loads((board / 'metrics/training.json').read_text(encoding='utf-8'))['epochs']
+            row['search_minutes'] = sum(search['durationSec'] for search in searches) / 60
+            row['final_parameters'] = metrics[-1]['paramCount']
+            runs.setdefault((ucb_c, selector), {})[seed] = row
+    return runs
+
+
+def full_grid_section():
+    lines = ['', '## Phase 10: UCB C and simulation-set grid (full growth)', '',
+             'Full growth from the Experiment 010 starter, as in Phase 7, with the Phase 9 search: fixed '
+             'Monte Carlo 2, type-balanced expansion, one training seed per search, the mean of the last two '
+             'of 5 scoring epochs, rollout depth 0, and convolution widening including fan-out widening. '
+             'The search budget grows with the number of candidates: 24 seconds per candidate (about two '
+             'rollouts), at least 5 minutes.', '',
+             'Two factors are crossed:', '',
+             '- **UCB C = 0.05 or 1.0.** Score gaps between good actions are 0.01–0.05. With C = 1.0 the '
+             'exploration bonus is about ten times larger, so visits spread evenly (Phase 9). With C = 0.05, '
+             'extra visits concentrate on the leading candidates.',
+             '- **Simulation set = Moderate or CCS** (Experiment 011). Moderate was best and most stable on '
+             'CIFAR-10 (58.4%, seeds 57.9–58.8%); CCS was best over CIFAR-10 and MNIST together (75.2%), '
+             'mostly from MNIST, and varied strongly between CIFAR-10 seeds (46.1–61.4%).', '',
+             'Seed 1 is run for all four cells first. Each factor is judged on two runs against two; seed 2 '
+             'repeats the grid if time allows.', '',
+             '| UCB C | Simulation set | Seed 1 validation | Seed 2 validation | Mean validation | Mean test | Final parameters | Search time per run |',
+             '| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |']
+    runs = _grid_runs()
+    for ucb_c, selector in GRID_CELLS:
+        seeds = runs.get((ucb_c, selector), {})
+        cells = [f"{100 * seeds[seed]['final_validation_accuracy']:.2f}%" if seed in seeds else 'Pending'
+                 for seed in (1, 2)]
+        if seeds:
+            done = list(seeds.values())
+            mean = lambda key: sum(row[key] for row in done) / len(done)
+            summary = (f"{100 * mean('final_validation_accuracy'):.2f}% | {100 * mean('final_test_accuracy'):.2f}% | "
+                       f"{mean('final_parameters'):,.0f} | {mean('search_minutes'):.0f} min")
+        else:
+            summary = '— | — | — | —'
+        lines.append(f'| {ucb_c} | {GRID_SET_NAMES[selector]} | ' + ' | '.join(cells) + f' | {summary} |')
+    complete = [seed for seed in (1, 2) if all(seed in runs.get(cell, {}) for cell in GRID_CELLS)]
+    if complete:
+        def factor_mean(predicate):
+            values = [runs[cell][seed]['final_validation_accuracy'] for cell in GRID_CELLS if predicate(cell)
+                      for seed in complete]
+            return 100 * sum(values) / len(values)
+        lines += ['', f"Average final validation over the complete seeds ({', '.join(map(str, complete))}):", '',
+                  '| Factor | Level | Mean validation |', '| --- | --- | ---: |',
+                  f'| UCB C | 0.05 | {factor_mean(lambda cell: cell[0] == 0.05):.2f}% |',
+                  f'| UCB C | 1.0 | {factor_mean(lambda cell: cell[0] == 1.0):.2f}% |',
+                  f'| Simulation set | Moderate | {factor_mean(lambda cell: cell[1] == "moderate"):.2f}% |',
+                  f'| Simulation set | CCS | {factor_mean(lambda cell: cell[1] == "ccs"):.2f}% |']
+    else:
+        lines += ['', 'Run with `--phase full-grid --seeds 1` (all four cells), then regenerate this report.']
+    return lines + ['']
+
+
 def noise_fix_section():
     path = RUN / 'noise_fix_check/summary.json'
     lines = ['', '## Phase 9: replaying the A08 decision with noise fixes and a 5-minute budget', '',
@@ -337,7 +409,48 @@ def noise_fix_section():
     if phase6.exists():
         runs6 = json.loads(phase6.read_text(encoding='utf-8'))['runs']
         lines += ['', f'For comparison, Phase 6 (one rollout per action) had A08 leads of {_a08_leads(runs6)}.']
+        lines += _noise_fix_findings(runs, runs6)
     return lines + ['']
+
+
+def _a08_lead_values(runs):
+    values = []
+    for run in runs:
+        scores = {row['arm']: row['score'] for row in run['results']}
+        a08 = scores.pop('candidate_5')
+        values.append(100 * (a08 - max(scores.values())))
+    return values
+
+
+def _noise_fix_findings(runs, runs6):
+    leads, leads6 = _a08_lead_values(runs), _a08_lead_values(runs6)
+    a08_wins = sum(lead > 0 for lead in leads)
+    visits = [row['visits'] for run in runs for row in run['results']]
+    rollouts = [run['rollouts'] for run in runs]
+    per_rollout = [run['duration_sec'] / run['rollouts'] for run in runs]
+    return ['', '### What Phase 9 shows', '',
+            f'- **A08 was selected in {a08_wins} of {len(runs)} seeds**, with a strict lead in each. '
+            'This is the first multi-seed replay in which the search picked A08 every time.',
+            f'- **The weakest seed improved, the average lead did not change much.** The smallest A08 lead '
+            f'rose from {min(leads6):+.1f} pp (Phase 6) to {min(leads):+.1f} pp; the mean lead was '
+            f'{sum(leads6) / len(leads6):+.1f} pp in Phase 6 and {sum(leads) / len(leads):+.1f} pp here. '
+            'The gain is reliability, not a bigger gap.',
+            f'- **Every action got about the same number of visits** ({min(visits)}–{max(visits)} each, '
+            f'{min(rollouts)}–{max(rollouts)} rollouts per search). With UCB C=1.0 the exploration bonus '
+            'is roughly ten times larger than the score gaps of 0.02–0.06, so UCB spread the visits evenly. '
+            'In effect each action was measured about six times, itself plus "action + next action" models, '
+            'and the averages were compared.',
+            '- **Scores are lower than in Phase 6 by design.** Each average now includes follow-up models '
+            'and the mean of the last two scoring epochs, so only the ranking is comparable with earlier '
+            'phases, not the absolute values.',
+            '- **The four changes were tested together**, so this phase does not show which one mattered. '
+            'The longer budget is the most likely main factor, because it is what gives each action several '
+            'measurements.',
+            f'- **Caveat for full growth.** One rollout took {min(per_rollout):.0f}–{max(per_rollout):.0f} '
+            'seconds here, so a 5-minute search manages about 30 rollouts. This replay has only five root '
+            'actions; full-growth generations had 18–58, so most would still get a single visit within '
+            'five minutes. Getting the same benefit there needs a budget that grows with the number of '
+            'candidates, or a smaller UCB C so that visits concentrate on the leaders.']
 
 
 def score_fix_20_epochs_section():
@@ -602,6 +715,7 @@ def main():
     lines += full_growth_score_fix_section()
     lines += score_fix_20_epochs_section()
     lines += noise_fix_section()
+    lines += full_grid_section()
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     REPORT.write_text('\n'.join(lines), encoding='utf-8')
     print(f'Wrote {REPORT} and {CHART}')

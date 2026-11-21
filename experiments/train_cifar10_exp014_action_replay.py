@@ -10,6 +10,7 @@ Run: python -u experiments/train_cifar10_exp014_action_replay.py --phase <name>
   check-score-fix     Phase 6: Phase 3 with the fixed search, depth 0, 5 scoring epochs
   full-score-fix      Phase 7: Phase 5 with the Phase 6 settings and convolution widening
   check-score-fix-20  Phase 8: Phase 6 with 20 scoring epochs
+  full-grid           Phase 10: Phase 7 growth with the Phase 9 search, UCB C x simulation set grid
   check-noise-fix     Phase 9: Phase 6 with a 5-minute budget, type-balanced expansion and
                       follow-ups, one training seed per search and a 2-epoch score average
 
@@ -49,6 +50,7 @@ from growingnn.simulation.score_functions.simulation_score import SimulationScor
 from growingnn.simulation.simulation_schedulers import AlwaysSimulationScheduler
 from growingnn.simulation.simulation_algorithms.montecarlo_alg import TreeNode
 from growingnn.simulation.simulation_algorithms import montecarlo_alg_2
+from growingnn.simulation.simulation_sets import CcsSimulationSet, ModerateSimulationSet
 import growingnn.core.config as project_config
 
 RUN = ROOT / 'experiments/output/train_cifar10/runs/exp012_family_search/v1/gen_10/family/cifar10/seed_1'
@@ -124,9 +126,48 @@ FULL_GROWTH_PHASES = {
 }
 
 
-def run_full_growth(output, seeds, phase='full'):
-    """Phases 5 and 7: repeat Experiment 010's 10-generation recipe using Monte Carlo 2."""
-    spec = FULL_GROWTH_PHASES[phase]
+class GridMonteCarlo2:
+    """Phase 10 search: Phase 9 settings plus a time budget that grows with the number of candidates."""
+
+    def __init__(self, seconds_per_candidate, minimum_seconds, score_last_epochs):
+        self.seconds_per_candidate = seconds_per_candidate
+        self.minimum_seconds = minimum_seconds
+        self.score_last_epochs = score_last_epochs
+
+    def get_action(self, traced, config):
+        config.ACTIONS_ENABLE_WIDEN_CONV = True
+        config.simulation_score.average_last_epochs = self.score_last_epochs
+        candidates = len(generate_all_actions(traced, config))
+        config.simulation_scheduler.simulation_time = max(self.minimum_seconds,
+                                                          self.seconds_per_candidate * candidates)
+        return montecarlo_alg_2.get_action(traced, config)
+
+
+GRID_UCB_C = (0.05, 1.0)
+GRID_SIMULATION_SETS = {'moderate': ModerateSimulationSet, 'ccs': CcsSimulationSet}
+GRID_SECONDS_PER_CANDIDATE = 24.0  # about two 5-epoch rollouts per candidate (Phase 9: 10-12 s each)
+GRID_MINIMUM_SECONDS = 300.0
+GRID_NOTE = ('Phase 10: Phase 7 growth with the Phase 9 search (type-balanced expansion, one training seed '
+             'per search, 2-epoch score average), convolution widening with fan-out, a budget of 24 s per '
+             'candidate (at least 5 minutes), and a grid over UCB C and the simulation-set selector.')
+
+
+def grid_spec(ucb_c, simulation_set):
+    """One Phase 10 cell: a UCB C value and a simulation-set selector."""
+    cell = f"c{str(ucb_c).replace('.', 'p')}_{simulation_set}"
+    return {'folder': f'full_grid/{cell}', 'phase_name': 'phase10', 'label': '014_full_grid',
+            'name': f'Experiment 015 Phase 10 ({cell})', 'id_prefix': f'exp014_grid_{cell}',
+            'scoring_epochs': SCORE_FIX_SCORING_EPOCHS,
+            'overrides': {**SCORE_FIX_MCTS_VALUES, 'MCTS_UCB1_C': ucb_c},
+            'widen_conv': True, 'note': GRID_NOTE, 'simulation_set': simulation_set,
+            'search': GridMonteCarlo2(GRID_SECONDS_PER_CANDIDATE, GRID_MINIMUM_SECONDS, score_last_epochs=2),
+            'search_budget': {'seconds_per_candidate': GRID_SECONDS_PER_CANDIDATE,
+                              'minimum_seconds': GRID_MINIMUM_SECONDS, 'score_last_epochs': 2}}
+
+
+def run_full_growth(output, seeds, phase='full', spec=None):
+    """Phases 5, 7 and 10: repeat Experiment 010's 10-generation recipe using Monte Carlo 2."""
+    spec = spec or FULL_GROWTH_PHASES[phase]
     target = output / spec['folder']
     digest = source_fingerprint()
     settings = dict(exp010.BASELINE, MCTS_UCB1_C=1.0, MCTS_UCB1_USE_SQRT=False,
@@ -143,6 +184,9 @@ def run_full_growth(output, seeds, phase='full'):
         metadata['widen_conv'] = True
     if spec['note'] is not None:
         metadata['note'] = spec['note']
+    for key in ('simulation_set', 'search_budget'):
+        if key in spec:
+            metadata[key] = spec[key]
     manifest = target / 'manifest.json'
     if manifest.exists():
         if json.loads(manifest.read_text(encoding='utf-8')) != metadata:
@@ -151,8 +195,10 @@ def run_full_growth(output, seeds, phase='full'):
         target.mkdir(parents=True, exist_ok=True)
         write_source_snapshot(target / 'source_snapshot.zip', digest)
         write_json(manifest, metadata)
-    previous = exp010.montecarlo_alg
-    exp010.montecarlo_alg = WideningMonteCarlo2 if spec['widen_conv'] else montecarlo_alg_2
+    previous, previous_sampler = exp010.montecarlo_alg, exp010.sample_loaders
+    exp010.montecarlo_alg = spec.get('search') or (WideningMonteCarlo2 if spec['widen_conv'] else montecarlo_alg_2)
+    if 'simulation_set' in spec:
+        exp010.sample_loaders = GRID_SIMULATION_SETS[spec['simulation_set']]().sample_loaders
     try:
         data = get_datasets('cifar10')
         for seed in seeds:
@@ -165,7 +211,7 @@ def run_full_growth(output, seeds, phase='full'):
                 from documentation.website.scripts.generate_experiment_015_report import main as generate_report
                 generate_report()
     finally:
-        exp010.montecarlo_alg = previous
+        exp010.montecarlo_alg, exp010.sample_loaders = previous, previous_sampler
 
 
 class Phase3Board:
@@ -392,12 +438,21 @@ def main():
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--epochs', type=int, default=20)
     parser.add_argument('--phase', choices=('replay', 'scoring', 'montecarlo2', 'time',
-                                            *FULL_GROWTH_PHASES, *CHECK_PHASES), default='replay')
+                                            *FULL_GROWTH_PHASES, 'full-grid', *CHECK_PHASES), default='replay')
     parser.add_argument('--seeds', type=int, nargs='+', default=[1, 2])
     parser.add_argument('--simulation-time', type=float, default=32.0)
+    parser.add_argument('--ucb-c', type=float, nargs='+', choices=GRID_UCB_C, default=list(GRID_UCB_C),
+                        help='full-grid only: UCB C values to run')
+    parser.add_argument('--simulation-set', nargs='+', choices=tuple(GRID_SIMULATION_SETS),
+                        default=list(GRID_SIMULATION_SETS), help='full-grid only: selectors to run')
     args = parser.parse_args()
     if args.epochs < 1 or args.simulation_time < 0:
         parser.error('--epochs must be positive and --simulation-time nonnegative')
+    if args.phase == 'full-grid':
+        for ucb_c in args.ucb_c:
+            for simulation_set in args.simulation_set:
+                run_full_growth(args.output, args.seeds, spec=grid_spec(ucb_c, simulation_set))
+        return
     if args.phase in FULL_GROWTH_PHASES:
         run_full_growth(args.output, args.seeds, args.phase)
         return

@@ -261,6 +261,46 @@ Cells show the mean search value and visit count; **bold** marks the selected ac
 
 | Seed | Search time | Widen 256 | Widen 128 | Add linear | Conv without BN/ReLU | A08: conv + BN/ReLU | Selected |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| — | Pending | Pending | Pending | Pending | Pending | Pending | Pending |
+| 1 | 5.1 min | 0.3592 (n=6) | 0.4023 (n=6) | 0.3772 (n=6) | 0.3079 (n=5) | **0.4184 (n=6)** | A08: conv + BN + ReLU |
+| 2 | 5.2 min | 0.3837 (n=5) | 0.3724 (n=5) | 0.3694 (n=5) | 0.2957 (n=5) | **0.4470 (n=6)** | A08: conv + BN + ReLU |
+| 3 | 5.1 min | 0.3720 (n=6) | 0.3834 (n=6) | 0.3240 (n=6) | 0.2983 (n=6) | **0.4142 (n=6)** | A08: conv + BN + ReLU |
 
-Run the experiment script with `--phase check-noise-fix --seeds 1 2 3`, then regenerate this report.
+**Result:** A08 had the highest score, alone or tied, in 3 of 3 seeds.
+
+| Seed | Rollouts | Tree depth | A08 lead over the next-best action |
+| ---: | ---: | ---: | ---: |
+| 1 | 29 | 2 | +1.6 pp |
+| 2 | 26 | 2 | +6.3 pp |
+| 3 | 30 | 2 | +3.1 pp |
+
+For comparison, Phase 6 (one rollout per action) had A08 leads of +6.2, +0.0, +4.2 pp.
+
+### What Phase 9 shows
+
+- **A08 was selected in 3 of 3 seeds**, with a strict lead in each. This is the first multi-seed replay in which the search picked A08 every time.
+- **The weakest seed improved, the average lead did not change much.** The smallest A08 lead rose from +0.0 pp (Phase 6) to +1.6 pp; the mean lead was +3.5 pp in Phase 6 and +3.7 pp here. The gain is reliability, not a bigger gap.
+- **Every action got about the same number of visits** (5–6 each, 26–30 rollouts per search). With UCB C=1.0 the exploration bonus is roughly ten times larger than the score gaps of 0.02–0.06, so UCB spread the visits evenly. In effect each action was measured about six times, itself plus "action + next action" models, and the averages were compared.
+- **Scores are lower than in Phase 6 by design.** Each average now includes follow-up models and the mean of the last two scoring epochs, so only the ranking is comparable with earlier phases, not the absolute values.
+- **The four changes were tested together**, so this phase does not show which one mattered. The longer budget is the most likely main factor, because it is what gives each action several measurements.
+- **Caveat for full growth.** One rollout took 10–12 seconds here, so a 5-minute search manages about 30 rollouts. This replay has only five root actions; full-growth generations had 18–58, so most would still get a single visit within five minutes. Getting the same benefit there needs a budget that grows with the number of candidates, or a smaller UCB C so that visits concentrate on the leaders.
+
+
+## Phase 10: UCB C and simulation-set grid (full growth)
+
+Full growth from the Experiment 010 starter, as in Phase 7, with the Phase 9 search: fixed Monte Carlo 2, type-balanced expansion, one training seed per search, the mean of the last two of 5 scoring epochs, rollout depth 0, and convolution widening including fan-out widening. The search budget grows with the number of candidates: 24 seconds per candidate (about two rollouts), at least 5 minutes.
+
+Two factors are crossed:
+
+- **UCB C = 0.05 or 1.0.** Score gaps between good actions are 0.01–0.05. With C = 1.0 the exploration bonus is about ten times larger, so visits spread evenly (Phase 9). With C = 0.05, extra visits concentrate on the leading candidates.
+- **Simulation set = Moderate or CCS** (Experiment 011). Moderate was best and most stable on CIFAR-10 (58.4%, seeds 57.9–58.8%); CCS was best over CIFAR-10 and MNIST together (75.2%), mostly from MNIST, and varied strongly between CIFAR-10 seeds (46.1–61.4%).
+
+Seed 1 is run for all four cells first. Each factor is judged on two runs against two; seed 2 repeats the grid if time allows.
+
+| UCB C | Simulation set | Seed 1 validation | Seed 2 validation | Mean validation | Mean test | Final parameters | Search time per run |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0.05 | Moderate | Pending | Pending | — | — | — | — |
+| 0.05 | CCS | Pending | Pending | — | — | — | — |
+| 1.0 | Moderate | Pending | Pending | — | — | — | — |
+| 1.0 | CCS | Pending | Pending | — | — | — | — |
+
+Run with `--phase full-grid --seeds 1` (all four cells), then regenerate this report.
