@@ -152,16 +152,17 @@ def get_action(
     max_depth = 0
     rollouts = 0
     simulate_calls = 0
+    root.expand()
     while (
         time.time() < deadline
-        or rollouts <= len(actions)
+        or rollouts < len(actions)
         or simulate_calls < min_runs
     ):
         prev_rollouts = rollouts
         _, max_depth, rollouts = _simulate(root, 0, rollouts)
         simulate_calls += 1
         if time.time() >= deadline:
-            if rollouts > len(actions) and simulate_calls >= min_runs:
+            if rollouts >= len(actions) and simulate_calls >= min_runs:
                 break
             elif rollouts <= prev_rollouts:
                 logger.error("MCTS no new rollouts after deadline (rollouts=%s, actions=%s)",rollouts,len(actions),)

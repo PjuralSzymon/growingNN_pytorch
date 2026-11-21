@@ -158,3 +158,26 @@ def test_chosen_row_marked_by_node_identity_not_label(monkeypatch):
 
     assert selected is actions[1]
     assert [row['chosen'] for row in board.result['candidates']] == [False, True]
+
+
+def test_search_skips_root_rollout_and_covers_each_root_action_once(monkeypatch):
+    from experiments.train_cifar10_exp014_action_replay import Phase3Board
+    from growingnn.core.config import RunningConfig
+
+    scored = []
+    board = Phase3Board()
+    config = RunningConfig(generations=1, epochs=1, enable_experiment_board=True, experiment_board=board)
+    config.simulation_scheduler = SimpleNamespace(simulation_time=0)
+    config.simulation_score = SimpleNamespace(score=lambda gm, cfg: scored.append(list(gm)) or 0.5)
+    monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: [Action(x) for x in 'abc'])
+    monkeypatch.setattr(search, 'clear_reshepers_cache', lambda: None)
+    monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 0)
+    monkeypatch.setattr(search.project_config, 'SIMULATION_MIN_ALGORITHM_ITERATION_RUNS', 1)
+    model = Model()
+    model.param_count = lambda: 1
+
+    _, _, rollouts = search.get_action(model, config)
+
+    assert [] not in scored  # the starting model itself is never rolled out
+    assert scored == [['a'], ['b'], ['c']]
+    assert rollouts == 3
