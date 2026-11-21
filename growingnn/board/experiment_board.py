@@ -203,7 +203,7 @@ class ExperimentBoard:
             "paramCountAfter": param_count_after,
             "valAccBefore": val_acc_before,
             "actionChosen": chosen,
-            "scoreChosen": chosen_entry.get("ucbScore") if chosen_entry else None,
+            "scoreChosen": chosen_entry.get("selectionScore", chosen_entry.get("ucbScore")) if chosen_entry else None,
             "scoreWeights": self._config_snapshot.get("scoreWeights"),
             "startingStructure": {
                 "totalParams": param_count_before,

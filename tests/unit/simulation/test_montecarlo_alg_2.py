@@ -75,14 +75,14 @@ def test_final_choice_uses_mean_not_exploration_bonus(monkeypatch):
     assert root.get_final_child() is None
 
 
-def test_rollout_does_not_store_random_step_scores(monkeypatch):
+def test_rollout_remembers_only_its_own_score(monkeypatch):
     scoring = Mock(side_effect=[0.4, 0.8])
     config = SimpleNamespace(experiment_board=None, simulation_score=SimpleNamespace(score=scoring))
     monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: [Action('next')])
     monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 1)
     node = search.TreeNode(None, None, Model(), config)
     node.rollout()
-    assert list(node.rollout_score_memory) == ['initial']
+    assert node._own_score == 0.4
 
 
 def test_rollout_metrics_record_weighted_composite(monkeypatch):
@@ -134,20 +134,25 @@ def test_backprop_keeps_true_mean_values(monkeypatch):
             assert 0.0 <= child.value / child.visit_counter <= 1.0
 
 
-def test_chosen_row_marked_by_node_identity_not_label(monkeypatch):
+def test_chosen_row_matches_selected_action_when_board_sorts_rows(monkeypatch):
     from experiments.train_cifar10_exp014_action_replay import Phase3Board
     from growingnn.core.config import RunningConfig
 
-    class Labeled(Action):
-        def __str__(self):
-            return 'same-label'
+    class SortingBoard(Phase3Board):
+        # ExperimentBoard sorts rows by UCB score, so row order differs from child order.
+        def mcts_candidates_from_root(self, root, config):
+            return list(reversed(super().mcts_candidates_from_root(root, config)))
 
-    board = Phase3Board()
+    class Named(Action):
+        def __str__(self):
+            return self.name
+
+    board = SortingBoard()
     config = RunningConfig(generations=1, epochs=1, enable_experiment_board=True, experiment_board=board)
     config.simulation_scheduler = SimpleNamespace(simulation_time=0)
     config.simulation_score = SimpleNamespace(score=lambda model, cfg: 0.9 if model == ['y'] else 0.1)
-    actions = [Labeled('x'), Labeled('y')]
-    monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: actions)
+    actions = [Named('x'), Named('y')]
+    monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: actions if model.gm == [] else [])
     monkeypatch.setattr(search, 'clear_reshepers_cache', lambda: None)
     monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 0)
     monkeypatch.setattr(search.project_config, 'SIMULATION_MIN_ALGORITHM_ITERATION_RUNS', 1)
@@ -157,7 +162,8 @@ def test_chosen_row_marked_by_node_identity_not_label(monkeypatch):
     selected, _, _ = search.get_action(model, config)
 
     assert selected is actions[1]
-    assert [row['chosen'] for row in board.result['candidates']] == [False, True]
+    assert {row['action']: row['chosen'] for row in board.result['candidates']} == {
+        'x': False, 'y': True}
 
 
 def test_search_skips_root_rollout_and_covers_each_root_action_once(monkeypatch):

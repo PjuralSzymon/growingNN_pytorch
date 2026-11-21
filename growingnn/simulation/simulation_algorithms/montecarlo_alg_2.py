@@ -38,14 +38,7 @@ class TreeNode:
         self.visit_counter = 0
         self._cleaned = False
         self.rollout_metrics: dict[str, Any] | None = None
-        self.rollout_score_memory: dict[object, float] = {}
-
-    def score_with_weight(self, key: object, traced: TracedModel) -> float:
-        """Reuse a score only when the caller can identify the same model."""
-        if key not in self.rollout_score_memory:
-            self.rollout_score_memory[key] = self.running_config.simulation_score.score(
-                copy.deepcopy(traced.gm), self.running_config)
-        return self.rollout_score_memory[key]
+        self._own_score: float | None = None  # this node's model never changes, so score it once
 
     def expand(self) -> None:
         cfg = self.running_config
@@ -57,11 +50,17 @@ class TreeNode:
             )
 
     def rollout(self) -> float:
+        """Score this node's model, then up to MCTS_ROLLOUT_DEPTH random follow-up actions.
+
+        Returns the average of the scores weighted 1, decay, decay**2, ...
+        """
         cfg = self.running_config
         traced_copy = copy.deepcopy(self.traced)
         depth = project_config.MCTS_ROLLOUT_DEPTH
+        if self._own_score is None:
+            self._own_score = cfg.simulation_score.score(copy.deepcopy(traced_copy.gm), cfg)
         weight = 1.0
-        weighted_score = self.score_with_weight('initial', traced_copy)
+        weighted_score = self._own_score
         total_weight = weight
         while depth > 0:
             actions = generate_all_actions(traced_copy, cfg)
@@ -176,8 +175,8 @@ def get_action(
     generation = getattr(board, "_current_generation", 0) if board is not None else 0
     if board is not None:
         candidates = board.mcts_candidates_from_root(root, running_config)
-        for row, child in zip(candidates, root.child_nodes):
-            row["chosen"] = child is best_child
+        for row in candidates:
+            row["chosen"] = best_action is not None and row.get("action") == str(best_action)
             row["selectionScore"] = row.get("score")
         search_tree = board.mcts_search_tree_from_root(
             root, running_config, chosen_node=best_child, max_depth=max_depth
