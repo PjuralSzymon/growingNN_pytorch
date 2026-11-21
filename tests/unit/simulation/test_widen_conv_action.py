@@ -6,7 +6,7 @@ from growingnn.actions.widen_conv import WidenConv
 from growingnn.core.traced_model import TracedModel
 from growingnn.core.config import RunningConfig
 from growingnn.simulation.score_functions.simulation_score import SimulationScore
-from growingnn.simulation.simulation_algorithms import budgeted_mcts_alg
+from growingnn.simulation.simulation_algorithms import montecarlo_alg_2
 from growingnn.simulation.simulation_schedulers import AlwaysSimulationScheduler
 from growingnn.actions.add_seq_conv_layer import AddSeqConvLayer
 
@@ -71,9 +71,10 @@ def test_search_can_score_and_execute_widening(monkeypatch):
                            device='cpu')
     config.set_simulation_loaders(loader, loader)
     action = next(a for a in WidenConv.generate_all_actions(traced) if a.params[:2] == ['conv1', 16])
-    monkeypatch.setattr(budgeted_mcts_alg, 'generate_all_actions', lambda *_: [action])
+    monkeypatch.setattr(montecarlo_alg_2, 'generate_all_actions',
+                        lambda model, cfg: [action] if model is traced else [])
     monkeypatch.setattr('growingnn.core.config.MCTS_ROLLOUT_DEPTH', 0)
-    chosen, depth, rollouts = budgeted_mcts_alg.get_action(traced, config)
+    chosen, depth, rollouts = montecarlo_alg_2.get_action(traced, config)
     assert chosen is action
     assert (depth, rollouts) == (1, 1)
     chosen.execute(traced)
@@ -126,3 +127,68 @@ def test_widen_preserves_batchnorm_graph_on_cuda():
     before = traced.gm(inputs).detach()
     action.execute(traced)
     torch.testing.assert_close(traced.gm(inputs), before, rtol=1e-4, atol=1e-5)
+
+
+def _starter_with_residual_after_conv1():
+    from growingnn.actions.add_res_conv_layer import AddResConvLayer
+
+    traced = TracedModel.create(TinyCifar10Starter(), (1, 3, 32, 32))
+    AddSeqConvLayer.generate_all_actions(
+        traced, add_batchnorm_and_relu=True, before_global_pool=True)[0].execute(traced)
+    next(a for a in AddResConvLayer.generate_all_actions(traced)
+         if a.params[:2] == ['conv1', 'seq_conv_0']).execute(traced)
+    return traced
+
+
+def test_widening_is_offered_after_a_residual_branch_and_preserves_outputs():
+    import copy
+
+    traced = _starter_with_residual_after_conv1()
+    traced.gm.train()
+    with torch.no_grad():
+        for _ in range(3):
+            traced.gm(torch.randn(8, 3, 32, 32) + 1)
+    traced.gm.eval()
+    action = next(a for a in WidenConv.generate_all_actions(traced) if a.params[:2] == ['conv1', 16])
+    twin = copy.deepcopy(traced)
+    inputs = torch.randn(8, 3, 32, 32)
+    before = traced.gm(inputs).detach()
+    action.execute(traced)
+    torch.rand(50)
+    action.execute(twin)
+    after = traced.gm(inputs)
+    torch.testing.assert_close(after, before, rtol=1e-4, atol=1e-5)
+    torch.testing.assert_close(after, twin.gm(inputs), rtol=0, atol=0)
+    assert traced.gm.conv1.out_channels == 16
+    assert traced.gm.seq_conv_0.in_channels == 16
+    assert traced.gm.res_conv__0.in_channels == 16
+    after.square().mean().backward()
+    assert not torch.equal(traced.gm.conv1.weight.grad[:8], traced.gm.conv1.weight.grad[8:])
+
+
+def test_widening_through_dropout_branch_preserves_eval_outputs():
+    from growingnn.actions.add_seq_dropout_layer import AddSeqDropoutLayer
+
+    traced = _starter_with_residual_after_conv1()
+    next(a for a in AddSeqDropoutLayer.generate_all_actions(traced)
+         if a.params[:2] == ['conv1', 'res_conv__0']).execute(traced)
+    traced.gm.eval()
+    action = next(a for a in WidenConv.generate_all_actions(traced) if a.params[:2] == ['conv1', 16])
+    inputs = torch.randn(4, 3, 32, 32)
+    before = traced.gm(inputs).detach()
+    action.execute(traced)
+    torch.testing.assert_close(traced.gm(inputs), before, rtol=1e-4, atol=1e-5)
+
+
+def test_unsupported_consumer_is_not_offered():
+    class Unsupported(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.conv = torch.nn.Conv2d(3, 8, 3)
+
+        def forward(self, x):
+            return self.conv(x).flatten(1)
+
+    traced = TracedModel.create(Unsupported(), (1, 3, 32, 32))
+    assert WidenConv.generate_all_actions(traced) == []
+    assert traced.gm.conv.out_channels == 8
