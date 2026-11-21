@@ -140,3 +140,109 @@ Individual action charts: [generation 0](/assets/experiments/014-full-seed1-scor
 | 8 | 12 | 12 | 19 | 2 | 30 | 8 | 83 |
 
 Counts are scored candidates, not proof of how many were generated or available. Blank or zero means none of that type is recorded as scored.
+
+
+## Phase 6: replaying the A08 decision with the fixed Monte Carlo 2
+
+Phase 5 did not reproduce an A08-like jump. Two causes were found: convolution widening was not enabled in Phase 5, so every added convolution stayed at 8 → 8 channels and no action comparable to A08 (a 64 → 64 convolution, +37k parameters) existed; and every candidate received exactly one visit, so the search reduced to "score each action once" with near-tied scores from generation 3 onwards.
+
+The following issues were fixed in the Monte Carlo 2 simulation algorithm (`montecarlo_alg_2.py`):
+
+- **True mean values.** Each tree node now passes the latest rollout value to its parent, so `value / visits` is a real mean. Previously, with `MCTS_PROPAGATE_ROLLOUT_VALUE=False`, nodes returned their accumulated sum and ancestors added sums of sums. Monte Carlo 2 now ignores that flag.
+- **Mean-based UCB.** The legacy (non-square-root) UCB formula now exploits the mean value instead of the raw sum, matching the final choice, which uses the mean.
+- **No root rollout.** The starting model is no longer rolled out before the search; its score was never used to choose an action. Covering N root actions now takes N rollouts instead of N + 1.
+- **Score memory.** Only the node's initial score is remembered for reuse; scores of random rollout steps were stored under keys that could never be reused.
+- **Board records.** Each candidate's recorded composite score is the weighted rollout value used by the search (not the last step's score), and the chosen row is marked by tree node rather than by its action text.
+
+This phase repeats the Phase 3 search on the same Experiment 012 generation-3 checkpoint and five recorded root actions, with the fixed algorithm and the settings planned for Phase 7: **rollout depth 0**, **5 scoring epochs**, convolution widening enabled, UCB C=1.0, minimum iterations 3 and a 32-second soft budget. Three search seeds are run to show how stable the ranking is. Cells show the mean search value and visit count; **bold** marks the selected action.
+
+| Seed | Search time | Widen 256 | Widen 128 | Add linear | Conv without BN/ReLU | A08: conv + BN/ReLU | Selected |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 0.7 min | 0.3920 (n=1) | 0.3777 (n=1) | 0.3643 (n=1) | 0.2982 (n=1) | **0.4545 (n=1)** | A08: conv + BN + ReLU |
+| 2 | 0.6 min | 0.3973 (n=1) | **0.4134 (n=1)** | 0.3196 (n=1) | 0.3625 (n=1) | 0.4134 (n=1) | Widen to 128 |
+| 3 | 0.7 min | 0.3911 (n=1) | 0.4277 (n=1) | 0.3464 (n=1) | 0.3357 (n=1) | **0.4696 (n=1)** | A08: conv + BN + ReLU |
+
+**Result:** A08 had the highest score, alone or tied, in 3 of 3 seeds. Exact ties occurred in seed 2 (Widen to 128, A08: conv + BN + ReLU); the search keeps the first tied candidate in action order, so a tie can select another action.
+
+Each search scores every root action once (one rollout per action, no random follow-up actions), so one search costs one 5-epoch scoring run per candidate instead of two or three 20-epoch runs in Phase 5. Scores are single measurements on the 1,120-example simulation-validation subset and remain noisy below the top candidate.
+
+
+## Phase 7: full growth with the fixed Monte Carlo 2
+
+The Phase 5 recipe repeated with the fixed algorithm and the Phase 6 settings: convolution widening enabled, rollout depth 0 and 5 scoring epochs. All other settings match Phase 5, including the 5-minute soft search budget.
+
+| Seed | Status | Final validation | Final test | Best validation |
+| ---: | --- | ---: | ---: | ---: |
+| 1 | Complete | 59.84% | 60.11% | 60.48% |
+| 2 | Pending | — | — | — |
+
+### Seed 1 compared with Phase 5
+
+| Run | Final validation | Final test | Best validation | Final parameters | Total search time | Longest search |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Phase 5 | 64.02% | 63.92% | 64.86% | 5,600 | 788 min | 199.6 min |
+| Phase 7 | 59.84% | 60.11% | 60.48% | 3,392 | 50 min | 7.6 min |
+
+![Phase 7 and Phase 5 seed 1 validation accuracy and parameters](/assets/experiments/014-phase7-seed1-vs-phase5.png)
+
+### Seed 1 decisions
+
+Mean score is the selected action's mean search value. Widening shows how many widening candidates passed the output-preservation check and the best rank one reached (by mean score). The change after 20 epochs includes continued training; it is not an isolated effect of the action.
+
+| Generation ending | Validation before | Parameters | Selected action | Mean score | Candidates | Widening (best rank) | Rollouts | Tree depth | Search time | Change after training |
+| ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 (epoch 20) | 33.32% | 296 | Sequential convolution + BN — conv1 → linear2 / 8→8, 3×3 | 0.3502 | 5 | 2 (#2) | 40 | 2 | 5.1 min | +12.14 pp |
+| 1 (epoch 40) | 45.46% | 896 | Sequential convolution + BN — seq_conv_0 → linear2 / 8→8, 3×3 | 0.4415 | 10 | 1 (#5) | 39 | 2 | 5.1 min | +1.26 pp |
+| 2 (epoch 60) | 46.72% | 1,496 | Residual convolution — conv1 → seq_conv_1 / 8→8, 3×3 | 0.5101 | 18 | 1 (#9) | 41 | 2 | 5.1 min | +6.48 pp |
+| 3 (epoch 80) | 53.20% | 2,080 | Dropout — Dropout 0.2 / conv1 → res_conv__0 | 0.5406 | 28 | 0 | 41 | 2 | 5.2 min | -1.18 pp |
+| 4 (epoch 100) | 52.02% | 2,080 | Residual convolution — conv1 → seq_conv_0 / 8→8, 3×3 | 0.5375 | 25 | 0 | 40 | 2 | 5.1 min | +2.84 pp |
+| 5 (epoch 120) | 54.86% | 2,664 | Dropout — Dropout 0.1 / conv1 → res_conv__1 | 0.5634 | 38 | 0 | 40 | 2 | 5.4 min | +1.60 pp |
+| 6 (epoch 140) | 56.46% | 2,664 | Sequential linear — res_conv__0 → linear2 / 8→8 | 0.5661 | 35 | 0 | 40 | 2 | 5.2 min | +1.36 pp |
+| 7 (epoch 160) | 57.82% | 2,736 | Residual convolution — conv1 → seq_conv_1 / 8→8, 3×3 | 0.5857 | 47 | 0 | 47 | 1 | 6.2 min | +1.92 pp |
+| 8 (epoch 180) | 59.74% | 3,320 | Sequential linear — seq_linear_0 → linear2 / 8→8 | 0.6009 | 58 | 0 | 58 | 1 | 7.6 min | +0.10 pp |
+
+The board files of this run mark the wrong candidate as `chosen` (a reporting bug in the fixed search, corrected afterwards: the board sorts candidate rows, and rows were matched to tree nodes by position). The executed action was always the highest mean score; this table uses the recorded executed action, not the flag.
+
+### What seed 1 shows
+
+- **Search is about 16 times cheaper in total.** Each search took 5.1–7.6 minutes, against up to 200 minutes in Phase 5, because each candidate costs one 5-epoch scoring run.
+- **Spare budget was used to search deeper.** In generations 0, 1, 2, 3, 4, 5 and 6 the search covered the root actions and then expanded the best ones (tree depth 2). In generations 7 and 8 the 47–58 candidates used the whole budget at one visit each.
+- **Widening was offered in generations 0, 1 and 2 (best rank 2–9) and never selected.** From generation 3 onward no widening passed the output-preservation check: the widening code used by this run only handled a single path, and a residual convolution after `conv1` gives it two consumers. Fan-out widening, which handles that case, was added to `WidenConv` after this run.
+- **Close scores still decide.** The top two mean scores differed by less than 1 pp in 8 of 9 generations, within the noise of the 1,120-example simulation-validation subset. Weaker actions were selected: dropout in generations 3 and 5; sequential linear in generations 6 and 8. The model ended with 3,392 parameters against 5,600 in Phase 5, and its final validation accuracy was 4.18 pp lower.
+
+
+Run with `--phase full-score-fix`, then regenerate this report.
+
+
+## Phase 8: replaying the A08 decision with 20 scoring epochs
+
+Phase 6 repeated with **20 scoring epochs** instead of 5; everything else is unchanged (fixed Monte Carlo 2, rollout depth 0, convolution widening, UCB C=1.0, minimum iterations 3, 32-second soft budget, seeds 1–3). Phase 6 showed that one 5-epoch score per action varies by several points between seeds, so A08 tied with Widen 128 in seed 2. This phase measures whether longer scoring makes the scores more stable and A08's lead clearer.
+
+| Seed | Search time | Widen 256 | Widen 128 | Add linear | Conv without BN/ReLU | A08: conv + BN/ReLU | Selected |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 1 | 3.5 min | 0.3741 (n=1) | 0.4179 (n=1) | 0.3768 (n=1) | 0.3714 (n=1) | **0.4679 (n=1)** | A08: conv + BN + ReLU |
+| 2 | 4.3 min | 0.4232 (n=1) | **0.4295 (n=1)** | 0.4161 (n=1) | 0.3429 (n=1) | 0.4286 (n=1) | Widen to 128 |
+| 3 | 4.5 min | 0.3705 (n=1) | 0.4054 (n=1) | 0.3777 (n=1) | 0.3464 (n=1) | **0.4500 (n=1)** | A08: conv + BN + ReLU |
+
+**Result:** A08 had the highest score, alone or tied, in 2 of 3 seeds.
+
+### 5 vs 20 scoring epochs
+
+Mean score across seeds, with the lowest and highest seed in brackets. A narrower range means a single scoring run is more reliable.
+
+| Action | 5 epochs (Phase 6) | 20 epochs (Phase 8) |
+| --- | ---: | ---: |
+| Widen to 256 | 39.35% (39.11–39.73) | 38.93% (37.05–42.32) |
+| Widen to 128 | 40.62% (37.77–42.77) | 41.76% (40.54–42.95) |
+| Add linear | 34.35% (31.96–36.43) | 39.02% (37.68–41.61) |
+| Conv without BN/ReLU | 33.21% (29.82–36.25) | 35.36% (34.29–37.14) |
+| A08: conv + BN + ReLU | 44.58% (41.34–46.96) | 44.88% (42.86–46.79) |
+| **A08 lead over the next-best action, per seed** | +6.2, +0.0, +4.2 pp | +5.0, -0.1, +4.5 pp |
+| Search time per seed | 0.7 min | 4.1 min |
+
+### What Phase 8 shows
+
+- **20 scoring epochs did not make a single score reliable.** A08 again lost seed 2, now by about one validation image, and the spread of each action across seeds is about as wide as with 5 epochs. Seed 2 was unfavourable for A08 in both settings, so the noise comes mostly from the random training draw of one scoring run, not from too few epochs.
+- **Averaging seeds does separate A08.** Averaged over the three seeds, A08 leads the next-best action by +4.0 pp with 5 epochs and +3.1 pp with 20 epochs.
+- **Averaging is also cheaper.** Three 5-epoch runs per action take about 2.0 minutes for these five actions, less than one 20-epoch run (4.1 minutes).
+- **Implication for the search:** re-scoring the top few candidates with different seeds and averaging is a better use of compute than longer scoring. This was not yet tested in a full-growth run.

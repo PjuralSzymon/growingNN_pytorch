@@ -210,6 +210,315 @@ def full_growth_section():
                     'algorithm and the two simulation-budget settings limit causal attribution.', '']
 
 
+SCORE_FIX_LIST = [
+    '- **True mean values.** Each tree node now passes the latest rollout value to its parent, so '
+    '`value / visits` is a real mean. Previously, with `MCTS_PROPAGATE_ROLLOUT_VALUE=False`, nodes '
+    'returned their accumulated sum and ancestors added sums of sums. Monte Carlo 2 now ignores that flag.',
+    '- **Mean-based UCB.** The legacy (non-square-root) UCB formula now exploits the mean value '
+    'instead of the raw sum, matching the final choice, which uses the mean.',
+    '- **No root rollout.** The starting model is no longer rolled out before the search; its score '
+    'was never used to choose an action. Covering N root actions now takes N rollouts instead of N + 1.',
+    '- **Score memory.** Only the node\'s initial score is remembered for reuse; scores of random '
+    'rollout steps were stored under keys that could never be reused.',
+    '- **Board records.** Each candidate\'s recorded composite score is the weighted rollout value '
+    'used by the search (not the last step\'s score), and the chosen row is marked by tree node rather '
+    'than by its action text.',
+]
+
+
+CHECK_TABLE_HEADER = [
+    '| Seed | Search time | Widen 256 | Widen 128 | Add linear | Conv without BN/ReLU | A08: conv + BN/ReLU | Selected |',
+    '| ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |']
+
+
+def _check_table(runs):
+    """Table rows for a score-fix check plus a one-line result about A08."""
+    lines, a08_top, ties = [], 0, []
+    for run in runs:
+        rows = {row['arm']: row for row in run['results']}
+        best = max(row['score'] for row in rows.values())
+        cells, selected = [], '—'
+        for i in range(1, 6):
+            row = rows[f'candidate_{i}']
+            cell = f"{row['score']:.4f} (n={row['visits']})"
+            cells.append(f'**{cell}**' if row['chosen'] else cell)
+            if row['chosen']:
+                selected = LABELS[f'candidate_{i}']
+        tied = [LABELS[arm] for arm, row in rows.items() if abs(row['score'] - best) < 1e-9]
+        if LABELS['candidate_5'] in tied:
+            a08_top += 1
+        if len(tied) > 1:
+            ties.append(f"seed {run['seed']} ({', '.join(tied)})")
+        lines.append(f"| {run['seed']} | {run['duration_sec'] / 60:.1f} min | " + ' | '.join(cells)
+                     + f' | {selected} |')
+    result = f'**Result:** A08 had the highest score, alone or tied, in {a08_top} of {len(runs)} seeds.'
+    if ties:
+        result += (' Exact ties occurred in ' + '; '.join(ties) + '; the search keeps the first tied '
+                   'candidate in action order, so a tie can select another action.')
+    return lines, result
+
+
+def score_fix_section():
+    path = RUN / 'score_fix_check/summary.json'
+    lines = ['', '## Phase 6: replaying the A08 decision with the fixed Monte Carlo 2', '',
+             'Phase 5 did not reproduce an A08-like jump. Two causes were found: convolution widening '
+             'was not enabled in Phase 5, so every added convolution stayed at 8 → 8 channels and no '
+             'action comparable to A08 (a 64 → 64 convolution, +37k parameters) existed; and every '
+             'candidate received exactly one visit, so the search reduced to "score each action once" '
+             'with near-tied scores from generation 3 onwards.', '',
+             'The following issues were fixed in the Monte Carlo 2 simulation algorithm '
+             '(`montecarlo_alg_2.py`):', '',
+             *SCORE_FIX_LIST, '',
+             'This phase repeats the Phase 3 search on the same Experiment 012 generation-3 checkpoint '
+             'and five recorded root actions, with the fixed algorithm and the settings planned for '
+             'Phase 7: **rollout depth 0**, **5 scoring epochs**, convolution widening enabled, UCB C=1.0, '
+             'minimum iterations 3 and a 32-second soft budget. Three search seeds are run to show '
+             'how stable the ranking is. Cells show the mean search value and visit count; **bold** '
+             'marks the selected action.', '',
+             *CHECK_TABLE_HEADER]
+    if not path.exists():
+        lines.append('| — | Pending | Pending | Pending | Pending | Pending | Pending | Pending |')
+        return lines + ['', 'Run the experiment script with `--phase check-score-fix`, then regenerate '
+                        'this report.', '']
+    runs = json.loads(path.read_text(encoding='utf-8'))['runs']
+    rows, result = _check_table(runs)
+    lines += rows
+    return lines + ['', result, '',
+                    'Each search scores every root action once (one rollout per action, no random follow-up '
+                    'actions), so one search costs one 5-epoch scoring run per candidate instead of two or '
+                    'three 20-epoch runs in Phase 5. Scores are single measurements on the 1,120-example '
+                    'simulation-validation subset and remain noisy below the top candidate.', '']
+
+
+def _spread(runs, arm):
+    scores = [100 * next(row['score'] for row in run['results'] if row['arm'] == arm) for run in runs]
+    return f'{sum(scores) / len(scores):.2f}% ({min(scores):.2f}–{max(scores):.2f})'
+
+
+def _a08_leads(runs):
+    leads = []
+    for run in runs:
+        scores = {row['arm']: row['score'] for row in run['results']}
+        a08 = scores.pop('candidate_5')
+        leads.append(f"{100 * (a08 - max(scores.values())):+.1f}")
+    return ', '.join(leads) + ' pp'
+
+
+def score_fix_20_epochs_section():
+    path = RUN / 'score_fix_check_20ep/summary.json'
+    lines = ['', '## Phase 8: replaying the A08 decision with 20 scoring epochs', '',
+             'Phase 6 repeated with **20 scoring epochs** instead of 5; everything else is unchanged '
+             '(fixed Monte Carlo 2, rollout depth 0, convolution widening, UCB C=1.0, minimum iterations 3, '
+             '32-second soft budget, seeds 1–3). Phase 6 showed that one 5-epoch score per action varies by '
+             'several points between seeds, so A08 tied with Widen 128 in seed 2. This phase measures whether '
+             'longer scoring makes the scores more stable and A08\'s lead clearer.', '',
+             *CHECK_TABLE_HEADER]
+    if not path.exists():
+        lines.append('| — | Pending | Pending | Pending | Pending | Pending | Pending | Pending |')
+        return lines + ['', 'Run the experiment script with `--phase check-score-fix-20 '
+                        '--seeds 1 2 3`, then regenerate this report.', '']
+    runs = json.loads(path.read_text(encoding='utf-8'))['runs']
+    rows, result = _check_table(runs)
+    lines += rows + ['', result]
+    phase6 = RUN / 'score_fix_check/summary.json'
+    if phase6.exists():
+        runs5 = json.loads(phase6.read_text(encoding='utf-8'))['runs']
+        lines += ['', '### 5 vs 20 scoring epochs', '',
+                  'Mean score across seeds, with the lowest and highest seed in brackets. A narrower range '
+                  'means a single scoring run is more reliable.', '',
+                  '| Action | 5 epochs (Phase 6) | 20 epochs (Phase 8) |', '| --- | ---: | ---: |']
+        for i in range(1, 6):
+            arm = f'candidate_{i}'
+            lines.append(f'| {LABELS[arm]} | {_spread(runs5, arm)} | {_spread(runs, arm)} |')
+        lines.append(f'| **A08 lead over the next-best action, per seed** | {_a08_leads(runs5)} | {_a08_leads(runs)} |')
+        mean_time = lambda items: sum(run['duration_sec'] for run in items) / len(items) / 60
+        lines.append(f'| Search time per seed | {mean_time(runs5):.1f} min | {mean_time(runs):.1f} min |')
+        lead5, lead20 = _averaged_a08_lead(runs5), _averaged_a08_lead(runs)
+        lines += ['', '### What Phase 8 shows', '',
+                  '- **20 scoring epochs did not make a single score reliable.** A08 again lost seed 2, now '
+                  'by about one validation image, and the spread of each action across seeds is about as '
+                  'wide as with 5 epochs. Seed 2 was unfavourable for A08 in both settings, so the noise '
+                  'comes mostly from the random training draw of one scoring run, not from too few epochs.',
+                  f'- **Averaging seeds does separate A08.** Averaged over the three seeds, A08 leads the '
+                  f'next-best action by {lead5:+.1f} pp with 5 epochs and {lead20:+.1f} pp with 20 epochs.',
+                  f'- **Averaging is also cheaper.** Three 5-epoch runs per action take about '
+                  f'{3 * mean_time(runs5):.1f} minutes for these five actions, less than one 20-epoch run '
+                  f'({mean_time(runs):.1f} minutes).',
+                  '- **Implication for the search:** re-scoring the top few candidates with different seeds '
+                  'and averaging is a better use of compute than longer scoring. This was not yet tested in '
+                  'a full-growth run.']
+    return lines + ['']
+
+
+def _averaged_a08_lead(runs):
+    means = {f'candidate_{i}': sum(next(row['score'] for row in run['results'] if row['arm'] == f'candidate_{i}')
+                                   for run in runs) / len(runs) for i in range(1, 6)}
+    a08 = means.pop('candidate_5')
+    return 100 * (a08 - max(means.values()))
+
+
+PHASE7_CHART = ROOT / 'documentation/website/app/public/assets/experiments/014-phase7-seed1-vs-phase5.png'
+
+
+def _load_growth_run(directory):
+    """Per-epoch metrics and per-generation searches of one full-growth seed."""
+    board = directory / 'board'
+    metrics = json.loads((board / 'metrics/training.json').read_text(encoding='utf-8'))['epochs']
+    searches = [json.loads(path.read_text(encoding='utf-8')) for path in sorted(
+        (board / 'simulations').glob('simulation_gen_*.json'), key=lambda path: int(path.stem.rsplit('_', 1)[1]))]
+    run = json.loads((directory / 'run.json').read_text(encoding='utf-8'))
+    return metrics, searches, run
+
+
+def _action_label(action):
+    from documentation.website.scripts.generate_experiment_012_action_scores import candidate_detail, group_key
+    row = {'action': action}
+    detail = ' / '.join(part for part in candidate_detail(row).splitlines() if part)
+    return f'{group_key(row)} — {detail}' if detail else group_key(row)
+
+
+def _phase7_seed1_analysis(target):
+    phase5 = _load_growth_run(RUN / 'full_growth_5min' / 'seed_1')
+    phase7 = _load_growth_run(target / 'seed_1')
+    fig, (acc, size) = plt.subplots(2, 1, figsize=(11, 7), sharex=True,
+                                    gridspec_kw={'height_ratios': [2, 1]}, layout='constrained')
+    for (metrics, _, _), name, color in ((phase5, 'Phase 5', '#888888'), (phase7, 'Phase 7', '#e56b28')):
+        epochs = [row['globalEpoch'] + 1 for row in metrics]
+        acc.plot(epochs, [100 * row['valAcc'] for row in metrics], label=f'{name} validation', color=color)
+        size.step(epochs, [row['paramCount'] for row in metrics], where='post', label=name, color=color)
+    acc.set(ylabel='Validation accuracy (%)', ylim=(0, 100), title='Experiment 14 seed 1: Phase 7 vs Phase 5')
+    size.set(xlabel='Training epoch', ylabel='Parameters')
+    for axis in (acc, size):
+        axis.grid(alpha=.25)
+        axis.legend()
+        for boundary in range(20, 200, 20):
+            axis.axvline(boundary + .5, color='#999999', ls=':', lw=.8)
+    PHASE7_CHART.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(PHASE7_CHART, dpi=150, bbox_inches='tight')
+    plt.close(fig)
+
+    lines = ['', '### Seed 1 compared with Phase 5', '',
+             '| Run | Final validation | Final test | Best validation | Final parameters | Total search time | Longest search |',
+             '| --- | ---: | ---: | ---: | ---: | ---: | ---: |']
+    for name, (metrics, searches, run) in (('Phase 5', phase5), ('Phase 7', phase7)):
+        durations = [search['durationSec'] / 60 for search in searches]
+        lines.append(f"| {name} | {100 * run['final_validation_accuracy']:.2f}% | "
+                     f"{100 * run['final_test_accuracy']:.2f}% | {100 * run['best_validation_accuracy']:.2f}% | "
+                     f"{metrics[-1]['paramCount']:,} | {sum(durations):.0f} min | {max(durations):.1f} min |")
+    lines += ['', '![Phase 7 and Phase 5 seed 1 validation accuracy and parameters]'
+              '(/assets/experiments/014-phase7-seed1-vs-phase5.png)', '',
+              '### Seed 1 decisions', '',
+              "Mean score is the selected action's mean search value. Widening shows how many widening "
+              'candidates passed the output-preservation check and the best rank one reached (by mean score). '
+              'The change after 20 epochs includes continued training; it is not an isolated effect of the action.', '',
+              '| Generation ending | Validation before | Parameters | Selected action | Mean score | Candidates | Widening (best rank) | Rollouts | Tree depth | Search time | Change after training |',
+              '| ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |']
+    metrics, searches, _ = phase7
+    accuracy = {row['globalEpoch'] // 20: row['valAcc'] for row in metrics}
+    params = {row['globalEpoch'] // 20: row['paramCount'] for row in metrics}
+    for search in searches:
+        generation = search['generation']
+        ranked = sorted(search['candidates'], key=lambda row: row['score'], reverse=True)
+        chosen = next(row for row in ranked if row['action'] == search['actionChosen'])
+        widen_ranks = [rank for rank, row in enumerate(ranked, 1) if 'Widen Conv' in row['action']]
+        widening = f'{len(widen_ranks)} (#{widen_ranks[0]})' if widen_ranks else '0'
+        change = 100 * (accuracy[generation + 1] - accuracy[generation])
+        lines.append(f"| {generation} (epoch {20 * (generation + 1)}) | {100 * accuracy[generation]:.2f}% | "
+                     f"{params[generation]:,} | {_action_label(search['actionChosen'])} | {chosen['score']:.4f} | "
+                     f"{len(ranked)} | {widening} | {search['rollouts']} | {search['maxDepth']} | "
+                     f"{search['durationSec'] / 60:.1f} min | {change:+.2f} pp |")
+    lines += ['', 'The board files of this run mark the wrong candidate as `chosen` (a reporting bug in the '
+              'fixed search, corrected afterwards: the board sorts candidate rows, and rows were matched to '
+              'tree nodes by position). The executed action was always the highest mean score; this table '
+              'uses the recorded executed action, not the flag.', '']
+    lines += _phase7_seed1_findings(phase5, phase7)
+    return lines
+
+
+def _generations(numbers):
+    numbers = list(numbers)
+    if not numbers:
+        return 'none'
+    return ', '.join(str(n) for n in numbers[:-1]) + (' and ' if len(numbers) > 1 else '') + str(numbers[-1])
+
+
+def _phase7_seed1_findings(phase5, phase7):
+    """Findings computed from the saved seed-1 records, so they stay in step with the tables."""
+    from documentation.website.scripts.generate_experiment_012_action_scores import group_key
+    (metrics5, searches5, run5), (metrics7, searches7, run7) = phase5, phase7
+    minutes5 = [search['durationSec'] / 60 for search in searches5]
+    minutes7 = [search['durationSec'] / 60 for search in searches7]
+    deep = [s['generation'] for s in searches7 if s['maxDepth'] >= 2]
+    single_visit = [s for s in searches7 if all(row['visits'] == 1 for row in s['candidates'])]
+    widen = {s['generation']: [rank for rank, row in enumerate(
+        sorted(s['candidates'], key=lambda row: row['score'], reverse=True), 1) if 'Widen Conv' in row['action']]
+        for s in searches7}
+    offered = [g for g, ranks in widen.items() if ranks]
+    chosen_widen = [s['generation'] for s in searches7 if 'Widen Conv' in s['actionChosen']]
+    gaps = []
+    for s in searches7:
+        top = sorted((row['score'] for row in s['candidates']), reverse=True)
+        gaps.append(top[0] - top[1] if len(top) > 1 else 1.0)
+    picked = {}
+    for s in searches7:
+        picked.setdefault(group_key({'action': s['actionChosen']}), []).append(s['generation'])
+    weak = [f"{name.lower()} in generation{'s' if len(gens) > 1 else ''} {_generations(gens)}"
+            for name, gens in picked.items() if name in ('Dropout', 'Sequential linear', 'Delete layer')]
+    difference = 100 * (run7['final_validation_accuracy'] - run5['final_validation_accuracy'])
+    lines = ['### What seed 1 shows', '',
+             f'- **Search is about {sum(minutes5) / sum(minutes7):.0f} times cheaper in total.** Each search '
+             f'took {min(minutes7):.1f}–{max(minutes7):.1f} minutes, against up to {max(minutes5):.0f} '
+             'minutes in Phase 5, because each candidate costs one 5-epoch scoring run.']
+    if deep:
+        line = (f'- **Spare budget was used to search deeper.** In generations {_generations(deep)} the '
+                'search covered the root actions and then expanded the best ones (tree depth 2).')
+        if single_visit:
+            counts = [len(s['candidates']) for s in single_visit]
+            line += (f' In generations {_generations(s["generation"] for s in single_visit)} the '
+                     f'{min(counts)}–{max(counts)} candidates used the whole budget at one visit each.')
+        lines.append(line)
+    if offered:
+        ranks = [min(widen[g]) for g in offered]
+        lines.append(
+            f'- **Widening was offered in generations {_generations(offered)} '
+            f'(best rank {min(ranks)}–{max(ranks)}) and '
+            + ('never selected.**' if not chosen_widen else f'selected in generations {_generations(chosen_widen)}.**')
+            + (f' From generation {offered[-1] + 1} onward no widening passed the output-preservation check: '
+               'the widening code used by this run only handled a single path, and a residual convolution '
+               'after `conv1` gives it two consumers. Fan-out widening, which handles that case, was added '
+               'to `WidenConv` after this run.' if offered[-1] + 1 < len(searches7) else ''))
+    lines.append(
+        f'- **Close scores still decide.** The top two mean scores differed by less than 1 pp in '
+        f'{sum(gap < 0.01 for gap in gaps)} of {len(gaps)} generations, within the noise of the '
+        '1,120-example simulation-validation subset.'
+        + (f' Weaker actions were selected: {"; ".join(weak)}.' if weak else '')
+        + f' The model ended with {metrics7[-1]["paramCount"]:,} parameters against '
+        f'{metrics5[-1]["paramCount"]:,} in Phase 5, and its final validation accuracy was '
+        f'{abs(difference):.2f} pp {"lower" if difference < 0 else "higher"}.')
+    return lines + ['']
+
+
+def full_growth_score_fix_section():
+    target = RUN / 'full_growth_5min_score_fix'
+    lines = ['', '## Phase 7: full growth with the fixed Monte Carlo 2', '',
+             'The Phase 5 recipe repeated with the fixed algorithm and the Phase 6 settings: convolution '
+             'widening enabled, rollout depth 0 and 5 scoring epochs. All other settings match Phase 5, '
+             'including the 5-minute soft search budget.', '',
+             '| Seed | Status | Final validation | Final test | Best validation |',
+             '| ---: | --- | ---: | ---: | ---: |']
+    for seed in (1, 2):
+        path = target / f'seed_{seed}' / 'run.json'
+        if not path.exists():
+            lines.append(f'| {seed} | Pending | — | — | — |')
+            continue
+        row = json.loads(path.read_text(encoding='utf-8'))
+        lines.append(f"| {seed} | Complete | {100 * row['final_validation_accuracy']:.2f}% | "
+                     f"{100 * row['final_test_accuracy']:.2f}% | {100 * row['best_validation_accuracy']:.2f}% |")
+    if (target / 'seed_1' / 'run.json').exists():
+        lines += _phase7_seed1_analysis(target)
+    return lines + ['', 'Run with `--phase full-score-fix`, then regenerate this report.', '']
+
+
 def main():
     summary = json.loads((RUN / 'summary.json').read_text(encoding='utf-8'))
     rows = summary['results']
@@ -253,6 +562,9 @@ def main():
     lines += full_growth_section()
     from documentation.website.scripts.generate_experiment_014_seed1_analysis import generate as generate_seed1
     lines += generate_seed1()
+    lines += score_fix_section()
+    lines += full_growth_score_fix_section()
+    lines += score_fix_20_epochs_section()
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     REPORT.write_text('\n'.join(lines), encoding='utf-8')
     print(f'Wrote {REPORT} and {CHART}')
