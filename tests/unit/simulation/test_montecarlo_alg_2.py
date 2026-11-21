@@ -26,7 +26,7 @@ def test_expand_creates_children_without_scoring(monkeypatch):
 
     node.expand()
 
-    assert [child.traced.gm for child in node.child_nodes] == [['a'], ['b']]
+    assert sorted(child.traced.gm for child in node.child_nodes) == [['a'], ['b']]
     assert node.traced.gm == []
     scoring.assert_not_called()
 
@@ -185,5 +185,60 @@ def test_search_skips_root_rollout_and_covers_each_root_action_once(monkeypatch)
     _, _, rollouts = search.get_action(model, config)
 
     assert [] not in scored  # the starting model itself is never rolled out
-    assert scored == [['a'], ['b'], ['c']]
+    assert sorted(scored) == [['a'], ['b'], ['c']]
     assert rollouts == 3
+
+
+class Conv(Action):
+    pass
+
+
+class Dropout(Action):
+    pass
+
+
+def test_expansion_order_cycles_through_action_types():
+    actions = [Dropout(f'd{i}') for i in range(6)] + [Conv('c0'), Conv('c1')]
+    for _ in range(20):
+        order = search._type_interleaved(actions)
+        assert sorted(a.name for a in order) == sorted(a.name for a in actions)
+        # Both types appear in the first two and the first four positions.
+        assert {type(a) for a in order[:2]} == {Conv, Dropout}
+        assert sum(isinstance(a, Conv) for a in order[:4]) == 2
+
+
+def test_random_follow_up_picks_action_type_uniformly(monkeypatch):
+    import random
+    random.seed(0)
+    actions = [Dropout(f'd{i}') for i in range(9)] + [Conv('c0')]
+    picks = [type(search._random_follow_up(actions)) for _ in range(2000)]
+    assert 0.4 < picks.count(Conv) / len(picks) < 0.6
+
+
+def test_every_scoring_run_in_a_search_uses_the_same_training_seed(monkeypatch):
+    import torch
+    from growingnn.core.config import RunningConfig
+
+    draws = []
+
+    def score(gm, cfg):
+        draws.append(torch.rand(1).item())
+        return 0.5
+
+    config = RunningConfig(generations=1, epochs=1)
+    config.simulation_scheduler = SimpleNamespace(simulation_time=0)
+    config.simulation_score = SimpleNamespace(score=score)
+    monkeypatch.setattr(search, 'generate_all_actions',
+                        lambda model, cfg: [Action('a'), Action('b'), Action('c')] if model.gm == [] else [])
+    monkeypatch.setattr(search, 'clear_reshepers_cache', lambda: None)
+    monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 0)
+    monkeypatch.setattr(search.project_config, 'SIMULATION_MIN_ALGORITHM_ITERATION_RUNS', 1)
+    before = torch.rand(1)
+
+    search.get_action(Model(), config)
+    search.get_action(Model(), config)
+
+    assert len(draws) == 6
+    assert len(set(draws[:3])) == 1 and len(set(draws[3:])) == 1
+    assert draws[0] != draws[3]  # a new search draws a new seed
+    assert torch.rand(1).item() != before.item()  # caller's RNG keeps advancing normally

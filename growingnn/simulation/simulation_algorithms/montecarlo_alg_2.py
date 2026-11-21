@@ -8,6 +8,8 @@ import random
 import time
 from typing import Any
 
+import torch
+
 from growingnn.actions.registry import generate_all_actions
 import growingnn.core.config as project_config
 from growingnn.core.config import RunningConfig
@@ -20,6 +22,29 @@ def _protected_divide(a: float, b: float) -> float:
     if b == 0:
         return float("inf")
     return a / b
+
+
+def _group_by_type(actions: list) -> list[list]:
+    groups: dict[type, list] = {}
+    for action in actions:
+        groups.setdefault(type(action), []).append(action)
+    return list(groups.values())
+
+
+def _type_interleaved(actions: list) -> list:
+    """Random order that cycles through action types, so no single type fills the front."""
+    groups = _group_by_type(actions)
+    for group in groups:
+        random.shuffle(group)
+    random.shuffle(groups)
+    longest = max((len(group) for group in groups), default=0)
+    return [group[i] for i in range(longest) for group in groups if i < len(group)]
+
+
+def _random_follow_up(actions: list):
+    """Pick an action type uniformly, then an action of that type."""
+    return random.choice(random.choice(_group_by_type(actions)))
+
 
 class TreeNode:
     def __init__(
@@ -39,10 +64,21 @@ class TreeNode:
         self._cleaned = False
         self.rollout_metrics: dict[str, Any] | None = None
         self._own_score: float | None = None  # this node's model never changes, so score it once
+        # Every scoring run in one search uses the same training seed, so score differences
+        # come from the architectures rather than from the random training draw.
+        self.search_seed: int | None = parent.search_seed if parent is not None else None
+
+    def _score(self, traced: TracedModel) -> float:
+        cfg = self.running_config
+        if self.search_seed is None:
+            return cfg.simulation_score.score(copy.deepcopy(traced.gm), cfg)
+        with torch.random.fork_rng(devices=range(torch.cuda.device_count())):
+            torch.manual_seed(self.search_seed)
+            return cfg.simulation_score.score(copy.deepcopy(traced.gm), cfg)
 
     def expand(self) -> None:
         cfg = self.running_config
-        for action in generate_all_actions(self.traced, cfg):
+        for action in _type_interleaved(generate_all_actions(self.traced, cfg)):
             traced_copy = copy.deepcopy(self.traced)
             action.execute(traced_copy)
             self.child_nodes.append(
@@ -58,7 +94,7 @@ class TreeNode:
         traced_copy = copy.deepcopy(self.traced)
         depth = project_config.MCTS_ROLLOUT_DEPTH
         if self._own_score is None:
-            self._own_score = cfg.simulation_score.score(copy.deepcopy(traced_copy.gm), cfg)
+            self._own_score = self._score(traced_copy)
         weight = 1.0
         weighted_score = self._own_score
         total_weight = weight
@@ -66,10 +102,10 @@ class TreeNode:
             actions = generate_all_actions(traced_copy, cfg)
             if not actions:
                 break
-            chosen = random.choice(actions)
+            chosen = _random_follow_up(actions)
             chosen.execute(traced_copy)
             weight *= project_config.MCTS_ROLLOUT_WEIGHT_DECAY
-            weighted_score += weight * cfg.simulation_score.score(copy.deepcopy(traced_copy.gm), cfg)
+            weighted_score += weight * self._score(traced_copy)
             total_weight += weight
             depth -= 1
         composite = weighted_score / total_weight
@@ -145,6 +181,7 @@ def get_action(
     params_before = traced.param_count() if board is not None else None
 
     root = TreeNode(None, None, traced, running_config)
+    root.search_seed = random.randrange(2**32)
     min_runs = project_config.SIMULATION_MIN_ALGORITHM_ITERATION_RUNS
     deadline = time.time() + running_config.simulation_scheduler.simulation_time
     t0 = time.time()

@@ -34,6 +34,7 @@ class SimulationScore:
         weight_time: float = 0.0,
         weight_countW: float = 0.5,
         accuracy_metric: AccuracyMetric | str = AccuracyMetric.VAL_ACC,
+        average_last_epochs: int = 1,
     ):
         self.weights = {
             "weight_acc": weight_acc,
@@ -42,6 +43,8 @@ class SimulationScore:
             "weight_countW": weight_countW,
         }
         self.accuracy_metric = parse_accuracy_metric(accuracy_metric)
+        # Averaging the last few scoring epochs smooths epoch-to-epoch validation noise.
+        self.average_last_epochs = int(average_last_epochs)
 
     def weight_sum(self) -> float:
         return sum(self.weights.values())

@@ -154,3 +154,16 @@ def test_score_loss_reward_stays_in_open_interval_zero_one():
     assert 0.0 < very_low <= 1.0
     assert 0.0 < moderate <= 1.0
     assert very_low != moderate
+
+
+def test_accuracy_score_averages_last_epochs(monkeypatch):
+    from types import SimpleNamespace
+    from growingnn.simulation.score_functions import score_by_learning as module
+    from growingnn.simulation.score_functions.simulation_score import SimulationScore
+
+    history = {'val_acc': [0.1, 0.2, 0.4, 0.6], 'val_loss': [1.0, 1.0, 1.0, 1.0]}
+    monkeypatch.setattr(module, 'run_simulation_scoring_gradient_descent', lambda model, cfg: (model, history))
+    last_only = SimpleNamespace(simulation_score=SimulationScore())
+    last_two = SimpleNamespace(simulation_score=SimulationScore(average_last_epochs=2))
+    assert module.score_acc(None, last_only) == 0.6
+    assert abs(module.score_acc(None, last_two) - 0.5) < 1e-9

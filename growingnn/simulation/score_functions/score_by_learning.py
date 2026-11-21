@@ -51,6 +51,13 @@ def _accuracy_metric(running_config: RunningConfig) -> AccuracyMetric:
     return parse_accuracy_metric(raw)
 
 
+def _final_value(values: list[float], running_config: RunningConfig) -> float:
+    """Mean of the last ``average_last_epochs`` epochs (default 1: the last epoch only)."""
+    count = max(1, int(getattr(running_config.simulation_score, "average_last_epochs", 1)))
+    last = values[-count:]
+    return float(sum(last) / len(last))
+
+
 def _history_keys(metric: AccuracyMetric) -> tuple[str, str]:
     if metric is AccuracyMetric.TRAIN_ACC:
         return "train_acc", "train_loss"
@@ -64,7 +71,7 @@ def score_acc(
     metric = _accuracy_metric(running_config)
     acc_key, _ = _history_keys(metric)
     _, history = run_simulation_scoring_gradient_descent(model, running_config)
-    return float(history[acc_key][-1])
+    return _final_value(history[acc_key], running_config)
 
 
 def score_loss(
@@ -74,5 +81,5 @@ def score_loss(
     metric = _accuracy_metric(running_config)
     _, loss_key = _history_keys(metric)
     _, history = run_simulation_scoring_gradient_descent(model, running_config)
-    loss = float(history[loss_key][-1])
+    loss = _final_value(history[loss_key], running_config)
     return min(1.0 / (max(loss, 1e-8) + 1), 1.0)
