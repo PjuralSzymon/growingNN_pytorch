@@ -54,7 +54,7 @@ def test_load_runs_uses_the_snapshot_when_raw_histories_are_absent(tmp_path: Pat
 
 def test_generate_charts_writes_both_figures_from_the_snapshot(tmp_path: Path):
     """
-    generate_charts should write the final-accuracy and training-history figures from snapshot rows.
+    generate_charts should write the accuracy, history, and mean-curve figures from snapshot rows.
     """
 
     # Arrange
@@ -67,4 +67,7 @@ def test_generate_charts_writes_both_figures_from_the_snapshot(tmp_path: Path):
 
     # Assert
     assert (out_dir / "011-final-accuracy.svg").is_file()
+    assert (out_dir / "011-final-accuracy-cifar10.svg").is_file()
     assert (out_dir / "011-training-histories.svg").is_file()
+    assert (out_dir / "011-mean-training-accuracy.svg").is_file()
+    assert (out_dir / "011-mean-validation-accuracy.svg").is_file()
