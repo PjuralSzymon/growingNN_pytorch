@@ -70,7 +70,7 @@ def test_score_fix_check_uses_settings_and_restores_config(tmp_path, monkeypatch
     calls = []
     original = {name: getattr(exp014.project_config, name) for name in exp014.SCORE_FIX_MCTS_VALUES}
 
-    def fake_comparison(traced, actions, payload, device, seed, output, seconds, epochs_values):
+    def fake_comparison(traced, actions, payload, device, seed, output, seconds, epochs_values, **kwargs):
         calls.append({name: getattr(exp014.project_config, name) for name in exp014.SCORE_FIX_MCTS_VALUES})
         assert epochs_values == (5,)
         exp014.write_json(output / 'montecarlo2_epochs' / 'epochs_5.json', {
@@ -88,7 +88,7 @@ def test_score_fix_check_uses_settings_and_restores_config(tmp_path, monkeypatch
 def test_score_fix_check_with_20_epochs_writes_phase8_folder(tmp_path, monkeypatch):
     seen = []
 
-    def fake_comparison(traced, actions, payload, device, seed, output, seconds, epochs_values):
+    def fake_comparison(traced, actions, payload, device, seed, output, seconds, epochs_values, **kwargs):
         seen.append((output, epochs_values))
         exp014.write_json(output / 'montecarlo2_epochs' / 'epochs_20.json', {
             'selected_action': 'A08', 'results': [{'arm': 'candidate_5', 'score': 0.5}]})
@@ -99,3 +99,18 @@ def test_score_fix_check_with_20_epochs_writes_phase8_folder(tmp_path, monkeypat
     assert seen == [(tmp_path / 'score_fix_check_20ep' / 'seed_1', (20,))]
     assert (tmp_path / 'score_fix_check_20ep' / 'summary.json').exists()
     assert not (tmp_path / 'score_fix_check').exists()
+
+
+def test_noise_fix_check_uses_five_minutes_and_two_epoch_score(tmp_path, monkeypatch):
+    seen = []
+
+    def fake_comparison(traced, actions, payload, device, seed, output, seconds, epochs_values,
+                        score_last_epochs=1):
+        seen.append((output, seconds, epochs_values, score_last_epochs))
+        exp014.write_json(output / 'montecarlo2_epochs' / 'epochs_5.json', {
+            'selected_action': 'A08', 'results': [{'arm': 'candidate_5', 'score': 0.5}]})
+
+    monkeypatch.setattr(exp014, 'run_montecarlo2_comparison', fake_comparison)
+    exp014.run_score_fix_check(None, [], {}, 'cpu', [1], tmp_path, 32.0, 'check-noise-fix')
+
+    assert seen == [(tmp_path / 'noise_fix_check' / 'seed_1', 300.0, (5,), 2)]

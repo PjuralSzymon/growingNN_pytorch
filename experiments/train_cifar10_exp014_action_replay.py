@@ -1,4 +1,4 @@
-"""Experiment 014: replay the Experiment 012 generation-3 decision and test Monte Carlo 2.
+"""Experiment 015 (code IDs keep "014"): replay the Experiment 013 generation-3 decision and test Monte Carlo 2.
 
 Run: python -u experiments/train_cifar10_exp014_action_replay.py --phase <name>
 
@@ -10,6 +10,8 @@ Run: python -u experiments/train_cifar10_exp014_action_replay.py --phase <name>
   check-score-fix     Phase 6: Phase 3 with the fixed search, depth 0, 5 scoring epochs
   full-score-fix      Phase 7: Phase 5 with the Phase 6 settings and convolution widening
   check-score-fix-20  Phase 8: Phase 6 with 20 scoring epochs
+  check-noise-fix     Phase 9: Phase 6 with a 5-minute budget, type-balanced expansion and
+                      follow-ups, one training seed per search and a 2-epoch score average
 
 Results are saved as each piece finishes, so an interrupted run can be resumed.
 """
@@ -160,7 +162,7 @@ def run_full_growth(output, seeds, phase='full'):
                 experiment_label=spec['label'], experiment_name=spec['name'],
                 experiment_id_prefix=spec['id_prefix'], scoring_epochs=spec['scoring_epochs'])
             if output == OUTPUT:
-                from documentation.website.scripts.generate_experiment_014_report import main as generate_report
+                from documentation.website.scripts.generate_experiment_015_report import main as generate_report
                 generate_report()
     finally:
         exp010.montecarlo_alg = previous
@@ -186,7 +188,7 @@ class Phase3Board:
 
 
 def run_montecarlo2_comparison(traced, actions, payload, device, seed, output, seconds,
-                               epochs_values=SCORING_EPOCHS):
+                               epochs_values=SCORING_EPOCHS, score_last_epochs=1):
     """Run the complete Monte Carlo 2 search with the recorded root actions."""
     target = output / 'montecarlo2_epochs'
     metadata = {'checkpoint_sha256': hashlib.sha256(CHECKPOINT.read_bytes()).hexdigest(),
@@ -198,6 +200,8 @@ def run_montecarlo2_comparison(traced, actions, payload, device, seed, output, s
         'propagate_rollout_value': project_config.MCTS_PROPAGATE_ROLLOUT_VALUE,
         'minimum_iterations': project_config.SIMULATION_MIN_ALGORITHM_ITERATION_RUNS,
         'device': str(device)}
+    if score_last_epochs != 1:
+        metadata['score_last_epochs'] = score_last_epochs
     manifest = target / 'manifest.json'
     if manifest.exists() and json.loads(manifest.read_text(encoding='utf-8')) != metadata:
         raise ValueError('Phase 3 settings or algorithm changed; use a new output directory')
@@ -222,7 +226,8 @@ def run_montecarlo2_comparison(traced, actions, payload, device, seed, output, s
             config = RunningConfig(generations=10, epochs=20,
                 lr_scheduler=copy.deepcopy(payload['lr_scheduler']),
                 simulation_scheduler=AlwaysSimulationScheduler(seconds, epochs),
-                simulation_score=SimulationScore(weight_acc=1, weight_countW=0),
+                simulation_score=SimulationScore(weight_acc=1, weight_countW=0,
+                                                 average_last_epochs=score_last_epochs),
                 criterion=nn.CrossEntropyLoss(label_smoothing=0.1), device=device,
                 momentum=0.9, weight_decay=0.0001, max_grad_norm=1.0,
                 seq_conv_insert_before_global_pool=True, enable_experiment_board=True,
@@ -255,6 +260,10 @@ def run_montecarlo2_comparison(traced, actions, payload, device, seed, output, s
 CHECK_PHASES = {
     'check-score-fix': {'label': 'Phase 6', 'folder': 'score_fix_check', 'scoring_epochs': SCORE_FIX_SCORING_EPOCHS},
     'check-score-fix-20': {'label': 'Phase 8', 'folder': 'score_fix_check_20ep', 'scoring_epochs': 20},
+    # Monte Carlo 2 now also shuffles expansion by action type, picks random follow-ups by type
+    # and uses one training seed per search; this phase adds the time to use them.
+    'check-noise-fix': {'label': 'Phase 9', 'folder': 'noise_fix_check', 'scoring_epochs': SCORE_FIX_SCORING_EPOCHS,
+                        'simulation_time': 300.0, 'score_last_epochs': 2},
 }
 
 
@@ -262,6 +271,8 @@ def run_score_fix_check(traced, actions, payload, device, seeds, output, seconds
     """Phases 6 and 8: rerun the Phase 3 search on the A08 decision with the score-fix settings."""
     spec = CHECK_PHASES[phase]
     label, scoring_epochs, target = spec['label'], spec['scoring_epochs'], output / spec['folder']
+    seconds = spec.get('simulation_time', seconds)
+    score_last_epochs = spec.get('score_last_epochs', 1)
     previous = {name: getattr(project_config, name) for name in SCORE_FIX_MCTS_VALUES}
     for name, value in SCORE_FIX_MCTS_VALUES.items():
         setattr(project_config, name, value)
@@ -269,7 +280,8 @@ def run_score_fix_check(traced, actions, payload, device, seeds, output, seconds
         for seed in seeds:
             print(f'START {label} check seed={seed}', flush=True)
             run_montecarlo2_comparison(traced, actions, payload, device, seed, target / f'seed_{seed}',
-                                       seconds, epochs_values=(scoring_epochs,))
+                                       seconds, epochs_values=(scoring_epochs,),
+                                       score_last_epochs=score_last_epochs)
     finally:
         for name, value in previous.items():
             setattr(project_config, name, value)
@@ -281,7 +293,7 @@ def run_score_fix_check(traced, actions, payload, device, seeds, output, seconds
         scores = ', '.join(f"{row['arm']}={row['score']:.4f}" for row in run['results'])
         print(f"{label} seed={seed}: selected {run['selected_action']} | {scores}", flush=True)
     write_json(target / 'summary.json', {'settings': SCORE_FIX_MCTS_VALUES,
-                                         'scoring_epochs': scoring_epochs,
+                                         'scoring_epochs': scoring_epochs, 'score_last_epochs': score_last_epochs,
                                          'simulation_time_sec': seconds, 'runs': runs})
     print(f'{label.upper()} CHECK COMPLETE', flush=True)
 
@@ -422,7 +434,7 @@ def main():
                 args.output / 'montecarlo2_time' / f'{minutes}min', minutes * 60,
                 epochs_values=(20,))
         if args.output == OUTPUT:
-            from documentation.website.scripts.generate_experiment_014_report import main as generate_report
+            from documentation.website.scripts.generate_experiment_015_report import main as generate_report
             generate_report()
         return
     if args.phase in CHECK_PHASES:

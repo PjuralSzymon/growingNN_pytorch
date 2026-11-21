@@ -1,8 +1,8 @@
 ---
-title: "Experiment 14: replaying the epoch-80 decision"
+title: "Experiment 15: replaying the epoch-80 decision"
 ---
 
-All arms start from the Experiment 12 generation-3 pre-decision checkpoint, after epoch 80. Each recorded action and an unchanged control is trained for 20 epochs with the same nominal seed, training recipe and saved learning-rate schedule. The primary comparison uses 3,880 validation examples outside the original 1,120-example simulation validation subset.
+All arms start from the Experiment 13 generation-3 pre-decision checkpoint, after epoch 80. Each recorded action and an unchanged control is trained for 20 epochs with the same nominal seed, training recipe and saved learning-rate schedule. The primary comparison uses 3,880 validation examples outside the original 1,120-example simulation validation subset.
 
 The five actions and the original simulation scores are from the recorded decision. Resetting the seed does not guarantee identical random draws across different architectures. This is one checkpoint and one training seed; it is not a multi-seed estimate.
 
@@ -15,7 +15,7 @@ The five actions and the original simulation scores are from the recorded decisi
 | Conv without BN/ReLU | 25.98% | 39,296 | 33.58% | 28.48% | 39.90% | +1.65 pp | 39.70% |
 | A08: conv + BN + ReLU | 39.15% | 39,424 | 33.58% | 45.00% | 56.80% | +18.56 pp | 56.80% |
 
-![Held-out validation accuracy for all replay arms](/assets/experiments/014-action-replay-validation.png)
+![Held-out validation accuracy for all replay arms](/assets/experiments/015-action-replay-validation.png)
 
 Full validation includes the original simulation-validation subset; held-out validation is the primary comparison. No test-set scores were used. The original run followed a different random trajectory, so its subsequent accuracy need not be reproduced exactly.
 
@@ -31,7 +31,7 @@ Each cell is validation accuracy after scoring a fresh copy of the same action, 
 | 10 | 37.14% | 38.21% | 41.96% | 36.70% | 41.43% |
 | 20 | 37.23% | 40.00% | 40.00% | 36.79% | 48.57% |
 
-![Simulation accuracy by scoring epochs and action](/assets/experiments/014-scoring-epochs.png)
+![Simulation accuracy by scoring epochs and action](/assets/experiments/015-scoring-epochs.png)
 
 These simulation scores use different data and training budgets than the full-training results above.
 
@@ -47,7 +47,7 @@ Each row runs the complete Monte Carlo 2 search from the same checkpoint with th
 | 10 | 0.3791 (n=1) | 0.3952 (n=1) | 0.3888 (n=1) | 0.3386 (n=1) | **0.4237 (n=1)** |
 | 20 | 0.3996 (n=1) | 0.3986 (n=1) | 0.3713 (n=1) | 0.2504 (n=1) | **0.4835 (n=1)** |
 
-![Monte Carlo 2 search values by scoring epochs](/assets/experiments/014-montecarlo2-epochs.png)
+![Monte Carlo 2 search values by scoring epochs](/assets/experiments/015-montecarlo2-epochs.png)
 
 A run uses one nominal seed; differences may reflect search order, randomness and unequal visit counts as well as scoring epochs.
 
@@ -80,7 +80,7 @@ Cells show the root search value and visit count; **bold** marks the selected ac
 | 25 minutes | 26.7 min | 2 | 11 | 0.4009 (n=2) | 0.4010 (n=2) | 0.3679 (n=2) | 0.3181 (n=2) | **0.4777 (n=2)** |
 | 30 minutes | 33.1 min | 2 | 13 | 0.3813 (n=3) | 0.3979 (n=2) | 0.3564 (n=2) | 0.3355 (n=2) | **0.4823 (n=3)** |
 
-![Monte Carlo 2 search values by time budget](/assets/experiments/014-montecarlo2-time.png)
+![Monte Carlo 2 search values by time budget](/assets/experiments/015-montecarlo2-time.png)
 
 Each setting uses one nominal seed. Greater budgets may allow deeper exploration, but do not guarantee equal visits or identical random trajectories.
 
@@ -101,7 +101,7 @@ Experiment 010 selected settings in sequential sweeps; its report does not provi
 
 ### Seed 1: training history and action decisions
 
-![Seed 1 training accuracy and model parameters](/assets/experiments/014-full-seed1-training.png)
+![Seed 1 training accuracy and model parameters](/assets/experiments/015-full-seed1-training.png)
 
 The dotted lines mark generation boundaries. The change after 20 epochs includes the selected action **and continued training**; it is not an isolated causal effect.
 
@@ -121,11 +121,11 @@ The dotted lines mark generation boundaries. The change after 20 epochs includes
 
 Each dot is one recorded candidate; the black-edged star is the chosen action. Family positions stay fixed in every generation. These are search scores, not the individual accuracy measurements inside each rollout. One visit can combine multiple model scores; the CSV includes the board’s separate latest rollout accuracy.
 
-![Seed 1 candidate score distributions](/assets/experiments/014-full-seed1-scores-overview.png)
+![Seed 1 candidate score distributions](/assets/experiments/015-full-seed1-scores-overview.png)
 
-Individual action charts: [generation 0](/assets/experiments/014-full-seed1-scores-gen-0.png), [generation 1](/assets/experiments/014-full-seed1-scores-gen-1.png), [generation 2](/assets/experiments/014-full-seed1-scores-gen-2.png), [generation 3](/assets/experiments/014-full-seed1-scores-gen-3.png), [generation 4](/assets/experiments/014-full-seed1-scores-gen-4.png), [generation 5](/assets/experiments/014-full-seed1-scores-gen-5.png), [generation 6](/assets/experiments/014-full-seed1-scores-gen-6.png), [generation 7](/assets/experiments/014-full-seed1-scores-gen-7.png), [generation 8](/assets/experiments/014-full-seed1-scores-gen-8.png).
+Individual action charts: [generation 0](/assets/experiments/015-full-seed1-scores-gen-0.png), [generation 1](/assets/experiments/015-full-seed1-scores-gen-1.png), [generation 2](/assets/experiments/015-full-seed1-scores-gen-2.png), [generation 3](/assets/experiments/015-full-seed1-scores-gen-3.png), [generation 4](/assets/experiments/015-full-seed1-scores-gen-4.png), [generation 5](/assets/experiments/015-full-seed1-scores-gen-5.png), [generation 6](/assets/experiments/015-full-seed1-scores-gen-6.png), [generation 7](/assets/experiments/015-full-seed1-scores-gen-7.png), [generation 8](/assets/experiments/015-full-seed1-scores-gen-8.png).
 
-[Download all recorded candidate scores and full action descriptions](/assets/experiments/014-full-seed1-candidates.csv).
+[Download all recorded candidate scores and full action descriptions](/assets/experiments/015-full-seed1-candidates.csv).
 
 | Generation | Sequential conv with BN + ReLU | Sequential conv without BN/ReLU | Residual convolution | Sequential linear | Dropout | Delete layer | Total scored |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -154,7 +154,7 @@ The following issues were fixed in the Monte Carlo 2 simulation algorithm (`mont
 - **Score memory.** Only the node's initial score is remembered for reuse; scores of random rollout steps were stored under keys that could never be reused.
 - **Board records.** Each candidate's recorded composite score is the weighted rollout value used by the search (not the last step's score), and the chosen row is marked by tree node rather than by its action text.
 
-This phase repeats the Phase 3 search on the same Experiment 012 generation-3 checkpoint and five recorded root actions, with the fixed algorithm and the settings planned for Phase 7: **rollout depth 0**, **5 scoring epochs**, convolution widening enabled, UCB C=1.0, minimum iterations 3 and a 32-second soft budget. Three search seeds are run to show how stable the ranking is. Cells show the mean search value and visit count; **bold** marks the selected action.
+This phase repeats the Phase 3 search on the same Experiment 013 generation-3 checkpoint and five recorded root actions, with the fixed algorithm and the settings planned for Phase 7: **rollout depth 0**, **5 scoring epochs**, convolution widening enabled, UCB C=1.0, minimum iterations 3 and a 32-second soft budget. Three search seeds are run to show how stable the ranking is. Cells show the mean search value and visit count; **bold** marks the selected action.
 
 | Seed | Search time | Widen 256 | Widen 128 | Add linear | Conv without BN/ReLU | A08: conv + BN/ReLU | Selected |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
@@ -183,7 +183,7 @@ The Phase 5 recipe repeated with the fixed algorithm and the Phase 6 settings: c
 | Phase 5 | 64.02% | 63.92% | 64.86% | 5,600 | 788 min | 199.6 min |
 | Phase 7 | 59.84% | 60.11% | 60.48% | 3,392 | 50 min | 7.6 min |
 
-![Phase 7 and Phase 5 seed 1 validation accuracy and parameters](/assets/experiments/014-phase7-seed1-vs-phase5.png)
+![Phase 7 and Phase 5 seed 1 validation accuracy and parameters](/assets/experiments/015-phase7-seed1-vs-phase5.png)
 
 ### Seed 1 decisions
 
@@ -246,3 +246,21 @@ Mean score across seeds, with the lowest and highest seed in brackets. A narrowe
 - **Averaging seeds does separate A08.** Averaged over the three seeds, A08 leads the next-best action by +4.0 pp with 5 epochs and +3.1 pp with 20 epochs.
 - **Averaging is also cheaper.** Three 5-epoch runs per action take about 2.0 minutes for these five actions, less than one 20-epoch run (4.1 minutes).
 - **Implication for the search:** re-scoring the top few candidates with different seeds and averaging is a better use of compute than longer scoring. This was not yet tested in a full-growth run.
+
+
+## Phase 9: replaying the A08 decision with noise fixes and a 5-minute budget
+
+Phases 6 and 8 stopped as soon as each root action had one rollout, so they measured a single noisy score per action and no future actions. Phase 9 uses the same five root actions, 5 scoring epochs, rollout depth 0 and seeds 1–3, with four changes:
+
+- **5-minute budget** (instead of 32 seconds), so the search keeps going after the first pass: it expands root actions and scores "action + next action" models, which both measures the future and adds more measurements per root action.
+- **Type-balanced expansion order.** New children are tried in a random order that cycles through action types, instead of the fixed action-list order.
+- **Type-balanced random follow-ups** (inactive here, since rollout depth is 0). Rollout follow-ups pick an action type first, so dropout variants no longer dominate.
+- **One training seed per search, and a 2-epoch score.** Every scoring run in a search uses the same training seed, so differences come from the architectures; the score averages the last two scoring epochs.
+
+Cells show the mean search value and visit count; **bold** marks the selected action.
+
+| Seed | Search time | Widen 256 | Widen 128 | Add linear | Conv without BN/ReLU | A08: conv + BN/ReLU | Selected |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| — | Pending | Pending | Pending | Pending | Pending | Pending | Pending |
+
+Run the experiment script with `--phase check-noise-fix --seeds 1 2 3`, then regenerate this report.

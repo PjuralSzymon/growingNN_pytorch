@@ -1,4 +1,4 @@
-"""Create Experiment 014's report and learning-curve figure from saved results."""
+"""Create Experiment 015's report and learning-curve figure from saved results."""
 import json
 import sys
 from pathlib import Path
@@ -10,11 +10,11 @@ import matplotlib.pyplot as plt
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 RUN = ROOT / 'experiments/output/train_cifar10/runs/exp014_action_replay/v1'
-REPORT = ROOT / 'documentation/website/content/experiments/experiment-014-action-replay.md'
-CHART = ROOT / 'documentation/website/app/public/assets/experiments/014-action-replay-validation.png'
-SCORING_CHART = ROOT / 'documentation/website/app/public/assets/experiments/014-scoring-epochs.png'
-MCTS_CHART = ROOT / 'documentation/website/app/public/assets/experiments/014-montecarlo2-epochs.png'
-TIME_CHART = ROOT / 'documentation/website/app/public/assets/experiments/014-montecarlo2-time.png'
+REPORT = ROOT / 'documentation/website/content/experiments/experiment-015-action-replay.md'
+CHART = ROOT / 'documentation/website/app/public/assets/experiments/015-action-replay-validation.png'
+SCORING_CHART = ROOT / 'documentation/website/app/public/assets/experiments/015-scoring-epochs.png'
+MCTS_CHART = ROOT / 'documentation/website/app/public/assets/experiments/015-montecarlo2-epochs.png'
+TIME_CHART = ROOT / 'documentation/website/app/public/assets/experiments/015-montecarlo2-time.png'
 LABELS = {'control': 'Unchanged', 'candidate_1': 'Widen to 256', 'candidate_2': 'Widen to 128',
           'candidate_3': 'Add linear', 'candidate_4': 'Conv without BN/ReLU',
           'candidate_5': 'A08: conv + BN + ReLU'}
@@ -33,7 +33,7 @@ def scoring_section():
             ax.plot(epochs_list, [100 * values[(epoch, arm)] for epoch in epochs_list],
                     marker='o', linewidth=2.8 if i == 5 else 1.5, label=LABELS[arm])
         ax.set(xlabel='Scoring epochs', ylabel='Simulation validation accuracy (%)',
-               title='Experiment 14: effect of scoring epochs', xticks=epochs_list)
+               title='Experiment 15: effect of scoring epochs', xticks=epochs_list)
         ax.set_ylim(0, 100)
         ax.grid(alpha=.25)
         ax.legend()
@@ -55,7 +55,7 @@ def scoring_section():
     note = ('These simulation scores use different data and training budgets than the full-training results above.'
             if values else 'Run the experiment script with `--phase scoring`, then regenerate this report.')
     if values:
-        lines += ['', '![Simulation accuracy by scoring epochs and action](/assets/experiments/014-scoring-epochs.png)']
+        lines += ['', '![Simulation accuracy by scoring epochs and action](/assets/experiments/015-scoring-epochs.png)']
     return lines + ['', note, '']
 
 
@@ -92,14 +92,14 @@ def montecarlo2_section():
             ax.plot(epochs, [plotted[e][arm]['score'] for e in epochs], marker='o',
                     linewidth=2.8 if i == 5 else 1.5, label=LABELS[arm])
         ax.set(xlabel='Scoring epochs', ylabel='Mean search value',
-               title='Experiment 14: Monte Carlo 2 search values', xticks=sorted(plotted))
+               title='Experiment 15: Monte Carlo 2 search values', xticks=sorted(plotted))
         ax.grid(alpha=.25)
         ax.legend()
         fig.tight_layout()
         MCTS_CHART.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(MCTS_CHART, dpi=150)
         plt.close(fig)
-        lines += ['', '![Monte Carlo 2 search values by scoring epochs](/assets/experiments/014-montecarlo2-epochs.png)']
+        lines += ['', '![Monte Carlo 2 search values by scoring epochs](/assets/experiments/015-montecarlo2-epochs.png)']
     lines += ['', 'A run uses one nominal seed; differences may reflect search order, randomness and '
               'unequal visit counts as well as scoring epochs.', '',
               '### What `MCTS_PROPAGATE_ROLLOUT_VALUE` means', '',
@@ -168,7 +168,7 @@ def time_budget_section():
                                 else float('nan') for _, rows in plotted], marker='o',
                     linewidth=2.8 if i == 5 else 1.5, label=LABELS[arm])
         ax.set(xlabel='Nominal time budget', ylabel='Mean search value',
-               title='Experiment 14: Monte Carlo 2 time budgets',
+               title='Experiment 15: Monte Carlo 2 time budgets',
                xticks=list(positions), xticklabels=[label for label, _ in plotted])
         ax.grid(alpha=.25)
         ax.legend()
@@ -176,7 +176,7 @@ def time_budget_section():
         TIME_CHART.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(TIME_CHART, dpi=150)
         plt.close(fig)
-        lines += ['', '![Monte Carlo 2 search values by time budget](/assets/experiments/014-montecarlo2-time.png)']
+        lines += ['', '![Monte Carlo 2 search values by time budget](/assets/experiments/015-montecarlo2-time.png)']
     return lines + ['', 'Each setting uses one nominal seed. Greater budgets may allow deeper exploration, '
                     'but do not guarantee equal visits or identical random trajectories.', '']
 
@@ -269,7 +269,7 @@ def score_fix_section():
              'The following issues were fixed in the Monte Carlo 2 simulation algorithm '
              '(`montecarlo_alg_2.py`):', '',
              *SCORE_FIX_LIST, '',
-             'This phase repeats the Phase 3 search on the same Experiment 012 generation-3 checkpoint '
+             'This phase repeats the Phase 3 search on the same Experiment 013 generation-3 checkpoint '
              'and five recorded root actions, with the fixed algorithm and the settings planned for '
              'Phase 7: **rollout depth 0**, **5 scoring epochs**, convolution widening enabled, UCB C=1.0, '
              'minimum iterations 3 and a 32-second soft budget. Three search seeds are run to show '
@@ -302,6 +302,42 @@ def _a08_leads(runs):
         a08 = scores.pop('candidate_5')
         leads.append(f"{100 * (a08 - max(scores.values())):+.1f}")
     return ', '.join(leads) + ' pp'
+
+
+def noise_fix_section():
+    path = RUN / 'noise_fix_check/summary.json'
+    lines = ['', '## Phase 9: replaying the A08 decision with noise fixes and a 5-minute budget', '',
+             'Phases 6 and 8 stopped as soon as each root action had one rollout, so they measured a single '
+             'noisy score per action and no future actions. Phase 9 uses the same five root actions, 5 scoring '
+             'epochs, rollout depth 0 and seeds 1–3, with four changes:', '',
+             '- **5-minute budget** (instead of 32 seconds), so the search keeps going after the first pass: '
+             'it expands root actions and scores "action + next action" models, which both measures the '
+             'future and adds more measurements per root action.',
+             '- **Type-balanced expansion order.** New children are tried in a random order that cycles '
+             'through action types, instead of the fixed action-list order.',
+             '- **Type-balanced random follow-ups** (inactive here, since rollout depth is 0). Rollout follow-ups pick an action type first, so dropout '
+             'variants no longer dominate.',
+             '- **One training seed per search, and a 2-epoch score.** Every scoring run in a search uses the '
+             'same training seed, so differences come from the architectures; the score averages the last '
+             'two scoring epochs.', '',
+             'Cells show the mean search value and visit count; **bold** marks the selected action.', '',
+             *CHECK_TABLE_HEADER]
+    if not path.exists():
+        lines.append('| — | Pending | Pending | Pending | Pending | Pending | Pending | Pending |')
+        return lines + ['', 'Run the experiment script with `--phase check-noise-fix --seeds 1 2 3`, then '
+                        'regenerate this report.', '']
+    runs = json.loads(path.read_text(encoding='utf-8'))['runs']
+    rows, result = _check_table(runs)
+    lines += rows + ['', result, '',
+                     '| Seed | Rollouts | Tree depth | A08 lead over the next-best action |',
+                     '| ---: | ---: | ---: | ---: |']
+    for run, lead in zip(runs, _a08_leads(runs).removesuffix(' pp').split(', ')):
+        lines.append(f"| {run['seed']} | {run['rollouts']} | {run['max_depth']} | {lead} pp |")
+    phase6 = RUN / 'score_fix_check/summary.json'
+    if phase6.exists():
+        runs6 = json.loads(phase6.read_text(encoding='utf-8'))['runs']
+        lines += ['', f'For comparison, Phase 6 (one rollout per action) had A08 leads of {_a08_leads(runs6)}.']
+    return lines + ['']
 
 
 def score_fix_20_epochs_section():
@@ -357,7 +393,7 @@ def _averaged_a08_lead(runs):
     return 100 * (a08 - max(means.values()))
 
 
-PHASE7_CHART = ROOT / 'documentation/website/app/public/assets/experiments/014-phase7-seed1-vs-phase5.png'
+PHASE7_CHART = ROOT / 'documentation/website/app/public/assets/experiments/015-phase7-seed1-vs-phase5.png'
 
 
 def _load_growth_run(directory):
@@ -371,7 +407,7 @@ def _load_growth_run(directory):
 
 
 def _action_label(action):
-    from documentation.website.scripts.generate_experiment_012_action_scores import candidate_detail, group_key
+    from documentation.website.scripts.generate_experiment_013_action_scores import candidate_detail, group_key
     row = {'action': action}
     detail = ' / '.join(part for part in candidate_detail(row).splitlines() if part)
     return f'{group_key(row)} — {detail}' if detail else group_key(row)
@@ -386,7 +422,7 @@ def _phase7_seed1_analysis(target):
         epochs = [row['globalEpoch'] + 1 for row in metrics]
         acc.plot(epochs, [100 * row['valAcc'] for row in metrics], label=f'{name} validation', color=color)
         size.step(epochs, [row['paramCount'] for row in metrics], where='post', label=name, color=color)
-    acc.set(ylabel='Validation accuracy (%)', ylim=(0, 100), title='Experiment 14 seed 1: Phase 7 vs Phase 5')
+    acc.set(ylabel='Validation accuracy (%)', ylim=(0, 100), title='Experiment 15 seed 1: Phase 7 vs Phase 5')
     size.set(xlabel='Training epoch', ylabel='Parameters')
     for axis in (acc, size):
         axis.grid(alpha=.25)
@@ -406,7 +442,7 @@ def _phase7_seed1_analysis(target):
                      f"{100 * run['final_test_accuracy']:.2f}% | {100 * run['best_validation_accuracy']:.2f}% | "
                      f"{metrics[-1]['paramCount']:,} | {sum(durations):.0f} min | {max(durations):.1f} min |")
     lines += ['', '![Phase 7 and Phase 5 seed 1 validation accuracy and parameters]'
-              '(/assets/experiments/014-phase7-seed1-vs-phase5.png)', '',
+              '(/assets/experiments/015-phase7-seed1-vs-phase5.png)', '',
               '### Seed 1 decisions', '',
               "Mean score is the selected action's mean search value. Widening shows how many widening "
               'candidates passed the output-preservation check and the best rank one reached (by mean score). '
@@ -444,7 +480,7 @@ def _generations(numbers):
 
 def _phase7_seed1_findings(phase5, phase7):
     """Findings computed from the saved seed-1 records, so they stay in step with the tables."""
-    from documentation.website.scripts.generate_experiment_012_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
     (metrics5, searches5, run5), (metrics7, searches7, run7) = phase5, phase7
     minutes5 = [search['durationSec'] / 60 for search in searches5]
     minutes7 = [search['durationSec'] / 60 for search in searches7]
@@ -528,15 +564,15 @@ def main():
         ax.plot(range(81, 81 + len(vals)), [100 * v for v in vals], label=LABELS[row['arm']],
                 linewidth=2.5 if row['original_chosen'] else 1.5)
     ax.set(xlabel='Total training epoch', ylabel='Held-out validation accuracy (%)',
-           title='Experiment 14: training after each generation-3 action')
+           title='Experiment 15: training after each generation-3 action')
     ax.grid(alpha=.25)
     ax.legend()
     fig.tight_layout()
     CHART.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(CHART, dpi=150)
     plt.close(fig)
-    lines = ['---', 'title: "Experiment 14: replaying the epoch-80 decision"', '---', '',
-             'All arms start from the Experiment 12 generation-3 pre-decision checkpoint, after epoch 80. '
+    lines = ['---', 'title: "Experiment 15: replaying the epoch-80 decision"', '---', '',
+             'All arms start from the Experiment 13 generation-3 pre-decision checkpoint, after epoch 80. '
              'Each recorded action and an unchanged control is trained for 20 epochs with the same '
              'nominal seed, training recipe and saved learning-rate schedule. The primary comparison uses '
              '3,880 validation examples outside the original 1,120-example simulation validation subset.', '',
@@ -552,7 +588,7 @@ def main():
                      f"{pct(row['initial_heldout_accuracy'])} | {pct(row['history']['val_acc'][0])} | "
                      f"{pct(row['final_heldout_accuracy'])} | {row['gain_vs_control_pp']:+.2f} pp | "
                      f"{pct(row['final_full_validation_accuracy'])} |")
-    lines += ['', '![Held-out validation accuracy for all replay arms](/assets/experiments/014-action-replay-validation.png)', '',
+    lines += ['', '![Held-out validation accuracy for all replay arms](/assets/experiments/015-action-replay-validation.png)', '',
               'Full validation includes the original simulation-validation subset; held-out validation is the primary '
               'comparison. No test-set scores were used. The original run followed a different random trajectory, '
               'so its subsequent accuracy need not be reproduced exactly.', '']
@@ -560,11 +596,12 @@ def main():
     lines += montecarlo2_section()
     lines += time_budget_section()
     lines += full_growth_section()
-    from documentation.website.scripts.generate_experiment_014_seed1_analysis import generate as generate_seed1
+    from documentation.website.scripts.generate_experiment_015_seed1_analysis import generate as generate_seed1
     lines += generate_seed1()
     lines += score_fix_section()
     lines += full_growth_score_fix_section()
     lines += score_fix_20_epochs_section()
+    lines += noise_fix_section()
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     REPORT.write_text('\n'.join(lines), encoding='utf-8')
     print(f'Wrote {REPORT} and {CHART}')

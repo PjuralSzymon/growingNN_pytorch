@@ -13,8 +13,8 @@ ROOT = Path(__file__).resolve().parents[3]
 RUNS = ROOT / 'experiments/output/train_cifar10/runs'
 OUTPUT = ROOT / 'documentation/website/app/public/assets/experiments'
 CASES = {
-    '011': ('Budgeted search', RUNS / 'exp011_budgeted_mcts/v3/gen_10/budgeted_wide_direct/cifar10/seed_1'),
-    '012': ('Family-balanced search', RUNS / 'exp012_family_search/v1/gen_10/family/cifar10/seed_1'),
+    '012': ('Budgeted search', RUNS / 'exp011_budgeted_mcts/v3/gen_10/budgeted_wide_direct/cifar10/seed_1'),
+    '013': ('Family-balanced search', RUNS / 'exp012_family_search/v1/gen_10/family/cifar10/seed_1'),
 }
 
 
@@ -69,7 +69,7 @@ def comparison(runs):
     fig, (acc, size) = plt.subplots(2, 1, figsize=(10.5, 7), sharex=True,
                                    gridspec_kw={'height_ratios': [2, 1]}, layout='constrained')
     fig.suptitle('CIFAR-10: validation accuracy and model growth', fontsize=14, weight='bold')
-    for identifier, color in [('011', '#2563eb'), ('012', '#e56b28')]:
+    for identifier, color in [('012', '#2563eb'), ('013', '#e56b28')]:
         name, metrics, _ = runs[identifier]
         x = [row['globalEpoch'] + 1 for row in metrics]
         label = f'{identifier}: {name}'
@@ -85,11 +85,11 @@ def comparison(runs):
     size.yaxis.set_major_formatter(FuncFormatter(lambda value, _: f'{value:,.0f}'))
     for axis in (acc, size):
         setup_axis(axis)
-        axis.set_xlim(1, max(row['globalEpoch'] + 1 for row in runs['012'][1]))
-    generation_lines((acc, size), len(runs['012'][1]))
+        axis.set_xlim(1, max(row['globalEpoch'] + 1 for row in runs['013'][1]))
+    generation_lines((acc, size), len(runs['013'][1]))
     fig.text(0.01, -0.01, 'One seed per method; implementations differ. Dotted lines mark generation boundaries.',
              fontsize=8, color='#536176')
-    fig.savefig(OUTPUT / '011-012-validation-and-growth.png', dpi=170, bbox_inches='tight')
+    fig.savefig(OUTPUT / '012-013-validation-and-growth.png', dpi=170, bbox_inches='tight')
     plt.close(fig)
 
 

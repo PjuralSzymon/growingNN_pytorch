@@ -1,4 +1,4 @@
-"""Plot the recorded root-candidate mean scores for Experiment 012 seed 1.
+"""Plot the recorded root-candidate mean scores for Experiment 013 seed 1.
 
 Each bar is an evaluated candidate, not an individual rollout. Candidates
 absent from the board were not necessarily illegal; they may not have been
@@ -233,7 +233,7 @@ def main():
         raise SystemExit(f'No scored candidates found in {args.board}')
     args.output.mkdir(parents=True, exist_ok=True)
     layout = group_layout(searches)
-    with (args.output / '012-action-score-details.csv').open('w', encoding='utf-8-sig', newline='') as file:
+    with (args.output / '013-action-score-details.csv').open('w', encoding='utf-8-sig', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['generation', 'action_id', 'action_type', 'full_recorded_action', 'mean_score', 'visits', 'chosen'])
         codes = {(key, identity): code for key, group in layout.items()
@@ -245,19 +245,19 @@ def main():
     for record, rows in searches:
         fig, ax = plt.subplots(figsize=(36, 7), layout='constrained')
         draw(ax, record, rows, layout)
-        fig.suptitle('Experiment 012: evaluated root candidates · CIFAR-10 seed 1', fontsize=12)
+        fig.suptitle('Experiment 013: evaluated root candidates · CIFAR-10 seed 1', fontsize=12)
         fig.text(.01, -.01, '★ / black outline: chosen action. n: visits. Only evaluated candidates are shown.',
                  fontsize=9, color='#4b5563')
-        fig.savefig(args.output / f'012-action-scores-gen-{record["generation"]}.png', dpi=170, bbox_inches='tight')
+        fig.savefig(args.output / f'013-action-scores-gen-{record["generation"]}.png', dpi=170, bbox_inches='tight')
         plt.close(fig)
     fig, axes = plt.subplots(len(searches), 1, figsize=(36, 5.2 * len(searches)), squeeze=False)
     for ax, (record, rows) in zip(axes.flat, searches):
         draw(ax, record, rows, layout)
     fig.subplots_adjust(left=.035, right=.995, top=.95, bottom=.015, hspace=1.35)
-    fig.suptitle('Experiment 012: evaluated candidate scores by generation · seed 1\n'
+    fig.suptitle('Experiment 013: evaluated candidate scores by generation · seed 1\n'
                  '★ / black outline = chosen action; n = visits; only evaluated candidates shown',
                  fontsize=15, weight='bold', y=.997)
-    fig.savefig(args.output / '012-action-scores-overview.png', dpi=120, bbox_inches='tight')
+    fig.savefig(args.output / '013-action-scores-overview.png', dpi=120, bbox_inches='tight')
     plt.close(fig)
     print(f'Wrote overview and {len(searches)} generation charts to {args.output}')
 
