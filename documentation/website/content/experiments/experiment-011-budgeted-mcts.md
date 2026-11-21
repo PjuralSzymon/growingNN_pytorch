@@ -74,6 +74,36 @@ unbranched convolution paths, and regression tests were added. A later structura
 replay indicated widening was unavailable after a residual branch was added;
 the separate Experiment 012 prototype explored support for that case.
 
+## How the budgeted search worked
+
+The budgeted search's code has since been removed from the repository; this
+section records what it did. It was an alternative to the project's Monte Carlo
+tree search with three changes:
+
+- **One new candidate per iteration.** Each node kept a shuffled list of its
+  untried actions. An iteration walked down the tree and, at the first node with
+  untried actions, applied one of them, scored that single new child and
+  stopped. Nodes with no untried actions were descended by UCB1 with the
+  square-root formula (mean score plus `C * sqrt(ln N / n)`).
+- **The deadline was a hard stop.** After the first evaluation, the search
+  stopped as soon as the time budget expired, even if root actions were still
+  untried. This kept every search close to its budget (34–41 seconds here), but
+  is also why it could not guarantee that all root actions were scored.
+- **Each score was added once along the path.** The new child's score was added
+  to every node from the root to that child, so every node's value divided by
+  its visits was a true mean. The final action was the root child with the
+  highest mean, not the highest UCB1.
+
+The run wrapped the search so it drew from its own random-number streams and did
+not change the training run's random sequence, and it limited the tree to root
+actions with rollout depth zero.
+
+**What was kept.** Selecting by mean score, adding each score only once and
+skipping random follow-up actions (rollout depth 0) are now part of Monte Carlo
+2 (see [Experiment 014](experiment-014-action-replay.md)). The convolution
+widening action used here is kept in the library. The hard-stop deadline was
+not kept: Monte Carlo 2 still scores every root action at least once.
+
 ## Limits and follow-up
 
 - Only seed 1 completed. There is no matched multi-seed comparison with original
@@ -82,8 +112,9 @@ the separate Experiment 012 prototype explored support for that case.
   separately and was not used to select actions.
 - The board labels its simulation algorithm `none` because the experimental
   wrapper did not supply a name. The run path and history identify the method.
-- The current working source differs from the `v3` run. A source snapshot and
-  fingerprint were saved with that run; use those when reproducing it.
+- The experiment's code is no longer in the repository. A source snapshot and
+  fingerprint were saved with the `v3` run (`source_snapshot.zip` in the run's
+  output folder, which is not tracked by git); use those to reproduce it.
 
 [Experiment 012](experiment-012-family-search.md) reports the subsequent
 family-balanced run separately. Its one-seed result is higher, but the runs
@@ -94,7 +125,6 @@ changed several things and neither enforces full root coverage.
 - [Run summary](../../../../experiments/output/train_cifar10/runs/exp011_budgeted_mcts/v3/gen_10/budgeted_wide_direct/cifar10/seed_1/run.json)
 - [Experiment board](../../../../experiments/output/train_cifar10/runs/exp011_budgeted_mcts/v3/gen_10/budgeted_wide_direct/cifar10/seed_1/board/main.json)
 - [Training history](../../../../experiments/output/train_cifar10/runs/exp011_budgeted_mcts/v3/gen_10/budgeted_wide_direct/cifar10/seed_1/history.pt)
-- [Experiment runner](../../../../experiments/train_cifar10_exp011_budgeted_mcts.py)
 
 The board's `generations`, `simulations`, and `graphs` directories contain
 per-generation metrics, evaluated candidates, and architecture drawings.

@@ -253,6 +253,38 @@ evaluations, so they cannot establish whether a better convolution was missed
 or whether the short score reliably predicts long-term benefit. The saved
 decision checkpoints can support a future controlled test.
 
+## How the family-balanced search worked
+
+The family-balanced search's code has since been removed from the repository;
+this section records what it did and which ideas were kept. It scored root
+actions only (rollout depth 0), like Experiment 011, with three additions:
+
+- **Family round-robin order.** Candidates were grouped by action type
+  (widening, sequential convolution, residual convolution, linear layer,
+  dropout, neuron changes, and so on). The order was randomized within each
+  type and across types, then candidates were taken one per type in turn. When
+  the budget could not cover every action, this spread the scored candidates
+  across action types instead of spending the budget on many variants of one
+  type. After every candidate had a score, the remaining time went to UCB1
+  re-evaluations, and the final action was the highest mean score.
+- **Fan-out widening.** Besides normal widening, it offered widening of a
+  convolution whose output feeds several convolutions (for example after a
+  residual branch), through ReLU, dropout or identity operations. Each
+  downstream convolution's input weights were split between the duplicated
+  channels so the network's output did not change.
+- **Decision checkpoints.** Before each search it saved the model, input shape
+  and learning-rate schedule, so a decision could be replayed later. Experiment
+  14 replays the generation-3 checkpoint saved by this run.
+
+**What was kept.** Both widening variants are kept in the library as one
+action, `WidenConv`: it widens along a single path or, when the output feeds
+several convolutions, along every branch. Experiment 14 Phase 7 ran before fan-out
+widening was added to the library and found that no widening was available once a
+residual branch was added after `conv1`. Monte Carlo 2 keeps selecting by mean
+score with rollout depth 0. Family round-robin ordering only matters when the
+budget cannot cover every root action; Monte Carlo 2 scores every root action at
+least once, so it was not kept.
+
 ## Status and limitations
 
 - Only seed 1 completed. A seed-2 run was interrupted before its first search;
@@ -270,7 +302,7 @@ decision checkpoints can support a future controlled test.
 - [Family-balanced run summary](../../../../experiments/output/train_cifar10/runs/exp012_family_search/v1/gen_10/family/cifar10/seed_1/run.json)
 - [Family-balanced board](../../../../experiments/output/train_cifar10/runs/exp012_family_search/v1/gen_10/family/cifar10/seed_1/board/main.json)
 - [Budgeted baseline summary](../../../../experiments/output/train_cifar10/runs/exp011_budgeted_mcts/v3/gen_10/budgeted_wide_direct/cifar10/seed_1/run.json)
-- [Experiment runner](../../../../experiments/train_cifar10_exp012_family_search.py)
+- Source code: `source_snapshot.zip` in `experiments/output/train_cifar10/runs/exp012_family_search/v1/` (not tracked by git)
 
 The board's `generations`, `simulations`, and `graphs` directories contain
 per-generation metrics, evaluated candidates, and architecture drawings.
