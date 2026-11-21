@@ -73,3 +73,88 @@ def test_final_choice_uses_mean_not_exploration_bonus(monkeypatch):
     assert root.get_final_child() is strong
     root.child_nodes = [unvisited]
     assert root.get_final_child() is None
+
+
+def test_rollout_does_not_store_random_step_scores(monkeypatch):
+    scoring = Mock(side_effect=[0.4, 0.8])
+    config = SimpleNamespace(experiment_board=None, simulation_score=SimpleNamespace(score=scoring))
+    monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: [Action('next')])
+    monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 1)
+    node = search.TreeNode(None, None, Model(), config)
+    node.rollout()
+    assert list(node.rollout_score_memory) == ['initial']
+
+
+def test_rollout_metrics_record_weighted_composite(monkeypatch):
+    board = SimpleNamespace(simulation_metrics={'composite_score': 0.8, 'weight_acc_score': 0.8})
+    config = SimpleNamespace(experiment_board=board,
+                             simulation_score=SimpleNamespace(score=Mock(side_effect=[0.4, 0.8])))
+    monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: [Action('next')])
+    monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 1)
+    monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_WEIGHT_DECAY', 0.5)
+    node = search.TreeNode(None, None, Model(), config)
+    value = node.rollout()
+    assert abs(value - (0.4 + 0.5 * 0.8) / 1.5) < 1e-9
+    assert node.rollout_metrics['composite_score'] == value
+    assert board.simulation_metrics['composite_score'] == 0.8
+
+
+def test_legacy_ucb_exploits_mean_not_sum(monkeypatch):
+    monkeypatch.setattr(search.project_config, 'MCTS_UCB1_USE_SQRT', False)
+    monkeypatch.setattr(search.project_config, 'MCTS_UCB1_C', 0.0)
+    root = search.TreeNode(None, None, Model(), None)
+    many_weak = search.TreeNode(root, Action('weak'), Model(), None)
+    few_strong = search.TreeNode(root, Action('strong'), Model(), None)
+    many_weak.visit_counter, many_weak.value = 10, 3.0   # mean 0.3, sum 3.0
+    few_strong.visit_counter, few_strong.value = 1, 0.9  # mean 0.9
+    root.visit_counter = 11
+    root.child_nodes = [many_weak, few_strong]
+    assert root.get_best_child() is few_strong
+
+
+def test_backprop_keeps_true_mean_values(monkeypatch):
+    # Root value must be the plain sum of the rollout values each iteration returned,
+    # for both settings of the (now ignored) propagation flag.
+    scores = {(): 0.5, ('a',): 0.2, ('b',): 0.8, ('a', 'a'): 0.3, ('a', 'b'): 0.1,
+              ('b', 'a'): 0.6, ('b', 'b'): 1.0}
+    for flag in (False, True):
+        monkeypatch.setattr(search.project_config, 'MCTS_PROPAGATE_ROLLOUT_VALUE', flag)
+        monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 0)
+        monkeypatch.setattr(search.project_config, 'MCTS_UCB1_USE_SQRT', True)
+        config = SimpleNamespace(experiment_board=None,
+                                 simulation_score=SimpleNamespace(score=lambda gm, cfg: scores[tuple(gm)]))
+        monkeypatch.setattr(search, 'generate_all_actions',
+                            lambda model, cfg: [Action('a'), Action('b')] if len(model.gm) < 2 else [])
+        root = search.TreeNode(None, None, Model(), config)
+        returned = [search._simulate(root)[0] for _ in range(8)]
+        assert root.visit_counter == 8
+        assert abs(root.value - sum(returned)) < 1e-9
+        assert all(0.0 <= value <= 1.0 for value in returned)
+        for child in root.child_nodes:
+            assert 0.0 <= child.value / child.visit_counter <= 1.0
+
+
+def test_chosen_row_marked_by_node_identity_not_label(monkeypatch):
+    from experiments.train_cifar10_exp014_action_replay import Phase3Board
+    from growingnn.core.config import RunningConfig
+
+    class Labeled(Action):
+        def __str__(self):
+            return 'same-label'
+
+    board = Phase3Board()
+    config = RunningConfig(generations=1, epochs=1, enable_experiment_board=True, experiment_board=board)
+    config.simulation_scheduler = SimpleNamespace(simulation_time=0)
+    config.simulation_score = SimpleNamespace(score=lambda model, cfg: 0.9 if model == ['y'] else 0.1)
+    actions = [Labeled('x'), Labeled('y')]
+    monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: actions)
+    monkeypatch.setattr(search, 'clear_reshepers_cache', lambda: None)
+    monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 0)
+    monkeypatch.setattr(search.project_config, 'SIMULATION_MIN_ALGORITHM_ITERATION_RUNS', 1)
+    model = Model()
+    model.param_count = lambda: 1
+
+    selected, _, _ = search.get_action(model, config)
+
+    assert selected is actions[1]
+    assert [row['chosen'] for row in board.result['candidates']] == [False, True]

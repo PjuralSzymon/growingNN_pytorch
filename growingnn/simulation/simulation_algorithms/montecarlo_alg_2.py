@@ -70,12 +70,13 @@ class TreeNode:
             chosen = random.choice(actions)
             chosen.execute(traced_copy)
             weight *= project_config.MCTS_ROLLOUT_WEIGHT_DECAY
-            weighted_score += weight * self.score_with_weight(object(), traced_copy)
+            weighted_score += weight * cfg.simulation_score.score(copy.deepcopy(traced_copy.gm), cfg)
             total_weight += weight
             depth -= 1
         composite = weighted_score / total_weight
         if cfg.experiment_board is not None:
             self.rollout_metrics = dict(cfg.experiment_board.simulation_metrics)
+            self.rollout_metrics["composite_score"] = composite
         return composite
 
     def get_best_child(self) -> TreeNode | None:
@@ -89,7 +90,7 @@ class TreeNode:
                 n = node.visit_counter
                 explore = math.sqrt(math.log(max(self.visit_counter, 1)) / n)
                 return node.value / n + project_config.MCTS_UCB1_C * explore
-            return node.value + project_config.MCTS_UCB1_C * _protected_divide(
+            return node.value / node.visit_counter + project_config.MCTS_UCB1_C * _protected_divide(
                 math.log(max(self.visit_counter, 1)),
                 node.visit_counter,
             )
@@ -125,14 +126,11 @@ def _simulate(node: TreeNode, depth: int = 0, rollouts: int = 0) -> tuple[float,
         node.expand()
     child = node.get_best_child()
     if child is None:
-        backprop = 0.0 if project_config.MCTS_PROPAGATE_ROLLOUT_VALUE else node.value
-        return backprop, depth, rollouts
+        return node.value / node.visit_counter, depth, rollouts
     value, depth, rollouts = _simulate(child, depth + 1, rollouts)
     node.value += value
     node.visit_counter += 1
-    if project_config.MCTS_PROPAGATE_ROLLOUT_VALUE:
-        return value, depth, rollouts
-    return node.value, depth, rollouts
+    return value, depth, rollouts
 
 
 def get_action(
@@ -177,8 +175,8 @@ def get_action(
     generation = getattr(board, "_current_generation", 0) if board is not None else 0
     if board is not None:
         candidates = board.mcts_candidates_from_root(root, running_config)
-        for row in candidates:
-            row["chosen"] = best_action is not None and row.get("action") == str(best_action)
+        for row, child in zip(candidates, root.child_nodes):
+            row["chosen"] = child is best_child
             row["selectionScore"] = row.get("score")
         search_tree = board.mcts_search_tree_from_root(
             root, running_config, chosen_node=best_child, max_depth=max_depth
