@@ -11,6 +11,7 @@ from growingnn.actions.add_seq_linear_layer import AddSeqLinearLayer
 from growingnn.actions.delete_layer import DelLayer
 from growingnn.actions.add_neurons import AddNeurons
 from growingnn.actions.delete_neurons import DelNeurons
+from growingnn.actions.residual_block import ResidualBlockAction
 from growingnn.core.config import RunningConfig
 from growingnn.core.traced_model import TracedModel
 
@@ -21,6 +22,12 @@ def generate_all_actions(traced: TracedModel, config: RunningConfig) -> list[Act
         actions.extend(AddResLinearLayer.generate_all_actions(traced, layer_types=(Layer_Type.EYE, Layer_Type.ZERO)))
     if config.ACTIONS_ENABLE_ADD_RES_CONV_LAYER:
         actions.extend(AddResConvLayer.generate_all_actions(traced))
+    if config.ACTIONS_ENABLE_RESIDUAL_BLOCK_GROW or config.ACTIONS_ENABLE_RESIDUAL_BLOCK_SHRINK:
+        actions.extend(ResidualBlockAction.generate_all_actions(
+            traced,
+            grow=config.ACTIONS_ENABLE_RESIDUAL_BLOCK_GROW,
+            shrink=config.ACTIONS_ENABLE_RESIDUAL_BLOCK_SHRINK,
+        ))
     if config.ACTIONS_ENABLE_ADD_SEQ_LAYER:
         actions.extend(AddSeqLinearLayer.generate_all_actions(traced))
     if config.ACTIONS_ENABLE_ADD_SEQ_CONV_LAYER:
