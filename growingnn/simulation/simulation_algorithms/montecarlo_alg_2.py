@@ -64,29 +64,40 @@ class TreeNode:
         self._cleaned = False
         self.rollout_metrics: dict[str, Any] | None = None
         self._own_score: float | None = None  # this node's model never changes, so score it once
+        # This node's model after its scoring training; children and rollout follow-ups continue
+        # from it, as the real run trains after each action before the next one.
+        self.trained: TracedModel | None = None
         # Every scoring run in one search uses the same training seed, so score differences
         # come from the architectures rather than from the random training draw.
         self.search_seed: int | None = parent.search_seed if parent is not None else None
         # Actions whose child has not been built yet; None until the node is expanded.
         self._unbuilt_actions: list | None = None
 
-    def _score(self, traced: TracedModel) -> float:
+    def _score(self, traced: TracedModel) -> tuple[float, TracedModel]:
+        """Score a copy of *traced*; return the score and that copy after its scoring training."""
         cfg = self.running_config
         if self.search_seed is None:
-            return cfg.simulation_score.score(copy.deepcopy(traced.gm), cfg)
-        with torch.random.fork_rng(devices=range(torch.cuda.device_count())):
-            torch.manual_seed(self.search_seed)
-            return cfg.simulation_score.score(copy.deepcopy(traced.gm), cfg)
+            score, trained = cfg.simulation_score.score_and_train(traced.gm, cfg)
+        else:
+            with torch.random.fork_rng(devices=range(torch.cuda.device_count())):
+                torch.manual_seed(self.search_seed)
+                score, trained = cfg.simulation_score.score_and_train(traced.gm, cfg)
+        return score, TracedModel(trained, traced.input_shape)
+
+    def _model_for_next_actions(self) -> TracedModel:
+        """The trained model when this node has been scored; the root uses the main run's model."""
+        return self.trained if self.trained is not None else self.traced
 
     def expand(self) -> None:
         """List this node's possible actions; their child models are built only when first visited."""
-        self._unbuilt_actions = _type_interleaved(generate_all_actions(self.traced, self.running_config))
+        self._unbuilt_actions = _type_interleaved(
+            generate_all_actions(self._model_for_next_actions(), self.running_config))
 
     def select_child(self) -> TreeNode | None:
         """Build and return the next unvisited child; once every child is built, choose by UCB."""
         if self._unbuilt_actions:
             action = self._unbuilt_actions.pop(0)
-            traced_copy = copy.deepcopy(self.traced)
+            traced_copy = copy.deepcopy(self._model_for_next_actions())
             action.execute(traced_copy)
             child = TreeNode(self, action, traced_copy, self.running_config)
             self.child_nodes.append(child)
@@ -96,24 +107,26 @@ class TreeNode:
     def rollout(self) -> float:
         """Score this node's model, then up to MCTS_ROLLOUT_DEPTH random follow-up actions.
 
-        Returns the average of the scores weighted 1, decay, decay**2, ...
+        Each follow-up is applied to the model trained in the previous step. Returns the average of
+        the scores weighted 1, decay, decay**2, ...
         """
         cfg = self.running_config
-        traced_copy = copy.deepcopy(self.traced)
-        depth = project_config.MCTS_ROLLOUT_DEPTH
         if self._own_score is None:
-            self._own_score = self._score(traced_copy)
+            self._own_score, self.trained = self._score(self.traced)
+        current = self.trained
+        depth = project_config.MCTS_ROLLOUT_DEPTH
         weight = 1.0
         weighted_score = self._own_score
         total_weight = weight
         while depth > 0:
-            actions = generate_all_actions(traced_copy, cfg)
+            actions = generate_all_actions(current, cfg)
             if not actions:
                 break
-            chosen = _random_follow_up(actions)
-            chosen.execute(traced_copy)
+            follow_up = copy.deepcopy(current)
+            _random_follow_up(actions).execute(follow_up)
+            step_score, current = self._score(follow_up)
             weight *= project_config.MCTS_ROLLOUT_WEIGHT_DECAY
-            weighted_score += weight * self._score(traced_copy)
+            weighted_score += weight * step_score
             total_weight += weight
             depth -= 1
         composite = weighted_score / total_weight
@@ -155,6 +168,7 @@ class TreeNode:
             child.kill()
         self.child_nodes.clear()
         self._unbuilt_actions = None
+        self.trained = None
         self.traced = None
         self.parent = None
         self._cleaned = True

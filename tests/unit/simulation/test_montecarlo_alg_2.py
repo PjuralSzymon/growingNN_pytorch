@@ -1,12 +1,24 @@
+import copy
 from types import SimpleNamespace
 from unittest.mock import Mock
 
 from growingnn.simulation.simulation_algorithms import montecarlo_alg_2 as search
 
 
+class FakeScore:
+    """Stands in for SimulationScore; the 'trained' model is an unchanged copy."""
+
+    def __init__(self, score):
+        self.score = score
+
+    def score_and_train(self, gm, cfg):
+        return self.score(gm, cfg), copy.deepcopy(gm)
+
+
 class Model:
     def __init__(self):
         self.gm = []
+        self.input_shape = (1,)
 
 
 class Action:
@@ -19,7 +31,7 @@ class Action:
 
 def test_expand_builds_children_only_when_selected(monkeypatch):
     scoring = Mock()
-    config = SimpleNamespace(simulation_score=SimpleNamespace(score=scoring))
+    config = SimpleNamespace(simulation_score=FakeScore(scoring))
     actions = [Action('a'), Action('b')]
     monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: actions)
     node = search.TreeNode(None, None, Model(), config)
@@ -60,7 +72,7 @@ def test_search_builds_only_the_children_it_visits(monkeypatch):
 
     config = RunningConfig(generations=1, epochs=1)
     config.simulation_scheduler = SimpleNamespace(simulation_time=0)
-    config.simulation_score = SimpleNamespace(score=lambda gm, cfg: 0.5)
+    config.simulation_score = FakeScore(lambda gm, cfg: 0.5)
     # Three root actions, each with twenty possible follow-ups.
     monkeypatch.setattr(search, 'generate_all_actions',
                         lambda model, cfg: [Counted(f'r{i}') for i in range(3)] if model.gm == []
@@ -78,7 +90,7 @@ def test_search_builds_only_the_children_it_visits(monkeypatch):
 
 def test_rollout_scores_each_step_and_weights_nearer_states(monkeypatch):
     scoring = Mock(side_effect=[0.4, 0.8, 0.2])
-    config = SimpleNamespace(experiment_board=None, simulation_score=SimpleNamespace(score=scoring))
+    config = SimpleNamespace(experiment_board=None, simulation_score=FakeScore(scoring))
     monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: [Action('next')])
     monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 2)
     monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_WEIGHT_DECAY', 0.5)
@@ -92,7 +104,7 @@ def test_rollout_scores_each_step_and_weights_nearer_states(monkeypatch):
 
 def test_rollout_reuses_initial_score_and_uses_configured_decay(monkeypatch):
     scoring = Mock(side_effect=[0.4, 0.8, 0.6])
-    config = SimpleNamespace(experiment_board=None, simulation_score=SimpleNamespace(score=scoring))
+    config = SimpleNamespace(experiment_board=None, simulation_score=FakeScore(scoring))
     monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: [Action('next')])
     monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 1)
     monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_WEIGHT_DECAY', 0.25)
@@ -122,7 +134,7 @@ def test_final_choice_uses_mean_not_exploration_bonus(monkeypatch):
 
 def test_rollout_remembers_only_its_own_score(monkeypatch):
     scoring = Mock(side_effect=[0.4, 0.8])
-    config = SimpleNamespace(experiment_board=None, simulation_score=SimpleNamespace(score=scoring))
+    config = SimpleNamespace(experiment_board=None, simulation_score=FakeScore(scoring))
     monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: [Action('next')])
     monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 1)
     node = search.TreeNode(None, None, Model(), config)
@@ -133,7 +145,7 @@ def test_rollout_remembers_only_its_own_score(monkeypatch):
 def test_rollout_metrics_record_weighted_composite(monkeypatch):
     board = SimpleNamespace(simulation_metrics={'composite_score': 0.8, 'weight_acc_score': 0.8})
     config = SimpleNamespace(experiment_board=board,
-                             simulation_score=SimpleNamespace(score=Mock(side_effect=[0.4, 0.8])))
+                             simulation_score=FakeScore(Mock(side_effect=[0.4, 0.8])))
     monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: [Action('next')])
     monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 1)
     monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_WEIGHT_DECAY', 0.5)
@@ -167,7 +179,7 @@ def test_backprop_keeps_true_mean_values(monkeypatch):
         monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 0)
         monkeypatch.setattr(search.project_config, 'MCTS_UCB1_USE_SQRT', True)
         config = SimpleNamespace(experiment_board=None,
-                                 simulation_score=SimpleNamespace(score=lambda gm, cfg: scores[tuple(gm)]))
+                                 simulation_score=FakeScore(lambda gm, cfg: scores[tuple(gm)]))
         monkeypatch.setattr(search, 'generate_all_actions',
                             lambda model, cfg: [Action('a'), Action('b')] if len(model.gm) < 2 else [])
         root = search.TreeNode(None, None, Model(), config)
@@ -195,7 +207,7 @@ def test_chosen_row_matches_selected_action_when_board_sorts_rows(monkeypatch):
     board = SortingBoard()
     config = RunningConfig(generations=1, epochs=1, enable_experiment_board=True, experiment_board=board)
     config.simulation_scheduler = SimpleNamespace(simulation_time=0)
-    config.simulation_score = SimpleNamespace(score=lambda model, cfg: 0.9 if model == ['y'] else 0.1)
+    config.simulation_score = FakeScore(lambda model, cfg: 0.9 if model == ['y'] else 0.1)
     actions = [Named('x'), Named('y')]
     monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: actions if model.gm == [] else [])
     monkeypatch.setattr(search, 'clear_reshepers_cache', lambda: None)
@@ -219,7 +231,7 @@ def test_search_skips_root_rollout_and_covers_each_root_action_once(monkeypatch)
     board = Phase3Board()
     config = RunningConfig(generations=1, epochs=1, enable_experiment_board=True, experiment_board=board)
     config.simulation_scheduler = SimpleNamespace(simulation_time=0)
-    config.simulation_score = SimpleNamespace(score=lambda gm, cfg: scored.append(list(gm)) or 0.5)
+    config.simulation_score = FakeScore(lambda gm, cfg: scored.append(list(gm)) or 0.5)
     monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: [Action(x) for x in 'abc'])
     monkeypatch.setattr(search, 'clear_reshepers_cache', lambda: None)
     monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 0)
@@ -272,7 +284,7 @@ def test_every_scoring_run_in_a_search_uses_the_same_training_seed(monkeypatch):
 
     config = RunningConfig(generations=1, epochs=1)
     config.simulation_scheduler = SimpleNamespace(simulation_time=0)
-    config.simulation_score = SimpleNamespace(score=score)
+    config.simulation_score = FakeScore(score)
     monkeypatch.setattr(search, 'generate_all_actions',
                         lambda model, cfg: [Action('a'), Action('b'), Action('c')] if model.gm == [] else [])
     monkeypatch.setattr(search, 'clear_reshepers_cache', lambda: None)
@@ -287,3 +299,43 @@ def test_every_scoring_run_in_a_search_uses_the_same_training_seed(monkeypatch):
     assert len(set(draws[:3])) == 1 and len(set(draws[3:])) == 1
     assert draws[0] != draws[3]  # a new search draws a new seed
     assert torch.rand(1).item() != before.item()  # caller's RNG keeps advancing normally
+
+
+class MarkingScore:
+    """Fake scorer whose 'training' appends 'trained' to the model, so tests can see what was trained."""
+
+    def __init__(self):
+        self.scored = []
+
+    def score_and_train(self, gm, cfg):
+        self.scored.append(list(gm))
+        return 0.5, gm + ['trained']
+
+
+def test_children_continue_from_the_parents_trained_model(monkeypatch):
+    scorer = MarkingScore()
+    config = SimpleNamespace(experiment_board=None, simulation_score=scorer)
+    monkeypatch.setattr(search, 'generate_all_actions',
+                        lambda model, cfg: [Action('x')] if model.gm == [] else [Action('y')])
+    monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 0)
+    root = search.TreeNode(None, None, Model(), config)
+    root.expand()
+
+    search._simulate(root)  # scores x
+    search._simulate(root)  # expands x and scores x -> y
+
+    assert scorer.scored == [['x'], ['x', 'trained', 'y']]
+    assert root.traced.gm == []
+
+
+def test_rollout_follow_ups_continue_from_the_trained_model(monkeypatch):
+    scorer = MarkingScore()
+    config = SimpleNamespace(experiment_board=None, simulation_score=scorer)
+    monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: [Action('next')])
+    monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 2)
+    node = search.TreeNode(None, None, Model(), config)
+
+    node.rollout()
+
+    assert scorer.scored == [[], ['trained', 'next'], ['trained', 'next', 'trained', 'next']]
+    assert node.traced.gm == []

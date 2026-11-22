@@ -1,3 +1,4 @@
+import copy
 from types import SimpleNamespace
 
 from experiments.train_cifar10_exp014_action_replay import Phase3Board
@@ -5,9 +6,20 @@ from growingnn.core.config import RunningConfig
 from growingnn.simulation.simulation_algorithms import montecarlo_alg_2 as search
 
 
+class FakeScore:
+    """Stands in for SimulationScore; the 'trained' model is an unchanged copy."""
+
+    def __init__(self, score):
+        self.score = score
+
+    def score_and_train(self, gm, cfg):
+        return self.score(gm, cfg), copy.deepcopy(gm)
+
+
 class Model:
     def __init__(self):
         self.gm = []
+        self.input_shape = (1,)
 
     def param_count(self):
         return 1
@@ -29,7 +41,7 @@ def test_search_reports_candidates_to_enabled_collector(monkeypatch):
     config = RunningConfig(generations=1, epochs=1, enable_experiment_board=True,
                            experiment_board=board)
     config.simulation_scheduler = SimpleNamespace(simulation_time=0)
-    config.simulation_score = SimpleNamespace(score=lambda model, cfg: 0.8 if model == ['b'] else 0.2)
+    config.simulation_score = FakeScore(lambda model, cfg: 0.8 if model == ['b'] else 0.2)
     actions = [Action('a'), Action('b')]
     monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: actions)
     monkeypatch.setattr(search, 'clear_reshepers_cache', lambda: None)
