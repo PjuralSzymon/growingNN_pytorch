@@ -17,6 +17,16 @@ from tests.model_factory import ModelFactory
 from growingnn.core.traced_model import TracedModel
 
 
+def _traced(gm):
+    """TracedModel with the input shape the network's first layer reads."""
+    first = next(node for node in gm.graph.nodes if node.op == "call_module"
+                 and any(arg.op == "placeholder" for arg in node.all_input_nodes))
+    layer = gm.get_submodule(first.target)
+    shape = (1, layer.in_features) if isinstance(layer, nn.Linear) else (1, layer.in_channels, 32, 32)
+    return TracedModel.create(gm, shape)
+
+
+
 def test_resize_layer_output_raises_for_non_linear_module():
     """
     resize_layer_output should raise TypeError when the target is not nn.Linear.
@@ -58,7 +68,7 @@ def test_shrink_residual_branch_updates_fork_linear_input():
     x = torch.randn(2, 4)
 
     # Act
-    DelNeurons(["r4_b", 0.5]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
+    DelNeurons(["r4_b", 0.5]).execute(_traced(gm))
     y = gm(x)
 
     # Assert
@@ -78,7 +88,7 @@ def test_shrink_residual_skip_keeps_add_inputs_aligned():
     x = torch.randn(2, 4)
 
     # Act
-    DelNeurons(["l2", 0.5]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
+    DelNeurons(["l2", 0.5]).execute(_traced(gm))
     y = gm(x)
 
     # Assert
@@ -115,7 +125,7 @@ def test_repeated_shrink_sequence_does_not_corrupt_stem_input():
 
     # Act
     for layer_id in sequence:
-        DelNeurons([layer_id, 0.5]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
+        DelNeurons([layer_id, 0.5]).execute(_traced(gm))
         gm(x)
 
     # Assert
@@ -145,7 +155,7 @@ def test_shrink_parallel_branch_does_not_shrink_fork_linear_input():
     x = torch.randn(2, 512)
 
     # Act
-    DelNeurons(["skip", 0.5]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
+    DelNeurons(["skip", 0.5]).execute(_traced(gm))
     y = gm(x)
 
     # Assert
@@ -178,7 +188,7 @@ def test_shrink_at_add_does_not_narrow_shared_fork_hub():
     x = torch.randn(2, 512)
 
     # Act
-    DelNeurons(["a", 0.5]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
+    DelNeurons(["a", 0.5]).execute(_traced(gm))
     y = gm(x)
 
     # Assert
@@ -212,7 +222,7 @@ def test_branch_shrink_propagates_to_downstream_linear():
     x = torch.randn(2, 512)
 
     # Act
-    DelNeurons(["s1", 0.5]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
+    DelNeurons(["s1", 0.5]).execute(_traced(gm))
     y = gm(x)
 
     # Assert
@@ -245,7 +255,7 @@ def test_shrink_syncs_nested_add_branches():
     x = torch.randn(2, 512)
 
     # Act
-    DelNeurons(["main", 0.5]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
+    DelNeurons(["main", 0.5]).execute(_traced(gm))
     y = gm(x)
 
     # Assert
@@ -263,10 +273,10 @@ def test_shrink_upstream_fork_updates_parallel_residual_branch():
     # Arrange
     gm = fx.symbolic_trace(ModelFactory.complex_residual_many_widths())
     x = torch.randn(2, 4)
-    DelNeurons(["r2_b", 0.5]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
+    DelNeurons(["r2_b", 0.5]).execute(_traced(gm))
 
     # Act
-    DelNeurons(["expand", 0.5]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
+    DelNeurons(["expand", 0.5]).execute(_traced(gm))
     y = gm(x)
 
     # Assert
@@ -321,7 +331,7 @@ def test_shrink_nested_add_tree_syncs_fork_linear_at_distant_add():
     x = torch.randn(2, 512)
 
     # Act
-    DelNeurons(["eye_7", 0.5]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
+    DelNeurons(["eye_7", 0.5]).execute(_traced(gm))
     y = gm(x)
 
     # Assert
@@ -438,7 +448,7 @@ def test_generate_actions_allows_linear_with_conv_sibling_at_add():
     gm = fx.symbolic_trace(LinearConvAdd())
 
     # Act
-    actions = DelNeurons.generate_all_actions(TracedModel.create(gm, (1, 4, 32, 32)))
+    actions = DelNeurons.generate_all_actions(_traced(gm))
 
     # Assert
     layer_ids = [a.params[0] for a in actions]
@@ -467,7 +477,7 @@ def test_shrink_linear_with_conv_sibling_resizes_conv_output():
     x = torch.randn(2, 3, 8, 8)
 
     # Act
-    DelNeurons(["linear_hidden", 0.5]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
+    DelNeurons(["linear_hidden", 0.5]).execute(_traced(gm))
     y = gm(x)
 
     # Assert
@@ -499,7 +509,7 @@ def test_generate_actions_keeps_linear_without_conv_sibling():
     gm = fx.symbolic_trace(PureLinearAdd())
 
     # Act
-    actions = DelNeurons.generate_all_actions(TracedModel.create(gm, (1, 4, 32, 32)))
+    actions = DelNeurons.generate_all_actions(_traced(gm))
 
     # Assert
     layer_ids = [a.params[0] for a in actions]
@@ -533,7 +543,7 @@ def test_generate_actions_allows_linear_after_conv_when_add_sibling_is_linear():
     gm = fx.symbolic_trace(ConvThenLinearAdd())
 
     # Act
-    actions = DelNeurons.generate_all_actions(TracedModel.create(gm, (1, 4, 32, 32)))
+    actions = DelNeurons.generate_all_actions(_traced(gm))
 
     # Assert
     layer_ids = [a.params[0] for a in actions]
@@ -576,7 +586,7 @@ def test_generate_actions_allows_nested_linear_chain_after_conv():
     x = torch.randn(2, 3, 8, 8)
 
     # Act
-    actions = DelNeurons.generate_all_actions(TracedModel.create(gm, (1, 4, 32, 32)))
+    actions = DelNeurons.generate_all_actions(_traced(gm))
     layer_ids = [a.params[0] for a in actions]
 
     # Assert — all hidden linears are safe (conv is upstream, not a sibling)
@@ -603,7 +613,7 @@ def test_del_neurons_on_seq_linear_resizes_conv_residual_branch():
     ratio = 0.9
 
     # Act
-    DelNeurons(["seq_linear_0", ratio]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
+    DelNeurons(["seq_linear_0", ratio]).execute(_traced(gm))
     y = gm(x)
 
     # Assert
@@ -622,7 +632,7 @@ def test_generate_actions_allows_seq_linear_when_hidden_forks_to_conv_residual()
     gm = fx.symbolic_trace(ModelFactory.cifar_minimal_res_conv_fork_hidden())
 
     # Act
-    actions = DelNeurons.generate_all_actions(TracedModel.create(gm, (1, 4, 32, 32)), ratio=0.9)
+    actions = DelNeurons.generate_all_actions(_traced(gm), ratio=0.9)
     layer_ids = [action.params[0] for action in actions]
 
     # Assert
@@ -640,7 +650,7 @@ def test_del_neurons_on_hidden_resizes_conv_residual_sibling():
     x = torch.randn(2, 3, 32, 32)
 
     # Act
-    DelNeurons(["hidden", 0.9]).execute(TracedModel.create(gm, (1, 3, 32, 32)))
+    DelNeurons(["hidden", 0.9]).execute(_traced(gm))
     y = gm(x)
 
     # Assert

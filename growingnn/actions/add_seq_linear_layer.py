@@ -1,16 +1,32 @@
 from typing import List
 
+import torch
 from torch import fx, nn
 
 from growingnn.actions.utils.layer_Factory import LinearFactory
 from growingnn.core import config
 from growingnn.core.traced_model import TracedModel
 from growingnn.utils.fx import (
-    LayerBridgeFinder,
+    LayerBridgeFinder, LayerShapeAnalyser,
     ModuleResolver, ModelStructureEditor,
 )
 from growingnn.core.logger import logger
 from .action import Action, Layer_Type
+
+
+def _insertion_shape(gm: fx.GraphModule, layer_from_id: str, layer_to_id: str, s_out):
+    """Shape where the new layer goes: in front of *layer_to_id*.
+
+    It equals *layer_from_id*'s output unless the path concatenates other tensors on the way, as in
+    torch.cat([from, other]) -> to; then the new layer reads the concatenation.
+    """
+    nodes = list(gm.graph.nodes)
+    path = LayerBridgeFinder.path_dst_to_src(ModuleResolver.find_call_module(nodes, layer_to_id),
+                                             ModuleResolver.find_call_module(nodes, layer_from_id))
+    if path is None or not any(node.op == "call_function" and node.target in (torch.cat, torch.concat)
+                               for node in path[1:-1]):
+        return s_out
+    return LayerShapeAnalyser.node_shape(path[1])
 
 
 class AddSeqLinearLayer(Action):
@@ -27,7 +43,7 @@ class AddSeqLinearLayer(Action):
         out_shapes, in_shapes = traced.shapes()
         actions: List[Action] = []
         for layer_from_id, layer_to_id in traced.sequential_pairs():
-            s_out = out_shapes.get(layer_from_id)
+            s_out = _insertion_shape(gm, layer_from_id, layer_to_id, out_shapes.get(layer_from_id))
             s_in = in_shapes.get(layer_to_id)
             sizes = LayerBridgeFinder.find_bridge_linear_sizes(s_out, s_in)
             if sizes is not None:

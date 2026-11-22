@@ -43,6 +43,29 @@ def _rescale_sequential_output(gm, name: str, mod: nn.Sequential, width: int) ->
         NodeEditor.replace_submodule(gm, path, ConvFactory.create_conv_with_rescaled_output_channels(conv, width))
 
 
+def _rescale_sequential_input(gm, name: str, mod: nn.Sequential, width: int) -> None:
+    """Resize the input of the first convolution or linear layer inside a residual branch."""
+    for child_name, child in mod.named_children():
+        path = f"{name}.{child_name}"
+        if isinstance(child, nn.Conv2d):
+            if child.in_channels != width:
+                NodeEditor.replace_submodule(gm, path, ConvFactory.create_conv_with_rescaled_input_channels(child, width))
+            return
+        if isinstance(child, nn.Linear):
+            if child.in_features != width:
+                NodeEditor.replace_submodule(gm, path, LinearFactory.create_linear_with_rescaled_connections(child, width))
+            return
+
+
+def _sequential_input_width(mod: nn.Sequential) -> int | None:
+    for child in mod.children():
+        if isinstance(child, nn.Conv2d):
+            return child.in_channels
+        if isinstance(child, nn.Linear):
+            return child.in_features
+    return None
+
+
 def _norm_feature_width(mod: nn.Module) -> int | None:
     if isinstance(mod, PASSTHROUGH_MODULES_TO_UPDATE):
         return int(mod.num_features)
@@ -131,6 +154,7 @@ _INPUT_RESIZE_CHAIN = (
     (nn.Conv2d, _rescale_conv_input),
     (PASSTHROUGH_MODULES_TO_UPDATE, _rescale_batch_norm),
     (nn.LayerNorm, _rescale_layer_norm),
+    (nn.Sequential, _rescale_sequential_input),
 )
 
 
@@ -207,6 +231,8 @@ def _module_input_width(mod: nn.Module) -> int | None:
         return mod.in_features
     if isinstance(mod, nn.Conv2d):
         return mod.in_channels
+    if isinstance(mod, nn.Sequential):
+        return _sequential_input_width(mod)
     return _norm_feature_width(mod)
 
 
@@ -285,7 +311,7 @@ def _fix_module_input_mismatch(gm: fx.GraphModule, node: fx.Node) -> bool:
     current = _module_input_width(mod)
     if current is None or current == target_w:
         return False
-    if isinstance(mod, (PROPAGATION_RESIZABLE_MODULES, PASSTHROUGH_MODULES_TO_UPDATE, nn.LayerNorm)):
+    if isinstance(mod, (PROPAGATION_RESIZABLE_MODULES, PASSTHROUGH_MODULES_TO_UPDATE, nn.LayerNorm, nn.Sequential)):
         _rescale_input_connections(gm, name, mod, target_w)
         updated = ModuleResolver.get_layer_module(name, gm)
         return updated is not None and _module_input_width(updated) == target_w and current != target_w

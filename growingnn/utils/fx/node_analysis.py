@@ -163,6 +163,15 @@ class NodeWidthAnalyser:
                     elif isinstance(child, nn.Linear):
                         width = child.out_features
                 return width
+        # Flatten keeps the width only when nothing spatial is left: after global pooling, or on
+        # (batch, features) input. After other pooling its width is channels x height x width.
+        if NodeTypeChecker.is_flatten_node(n, gm) and n.all_input_nodes:
+            source = n.all_input_nodes[0]
+            if NodeTypeChecker.is_global_pool(source, gm):
+                return NodeWidthAnalyser.node_output_width(gm, source)
+            if source.op == "call_module" and isinstance(ModuleResolver.get_layer_module(source.target, gm), nn.Linear):
+                return NodeWidthAnalyser.node_output_width(gm, source)
+            return None
         # 2-D pooling keeps the channel count.
         if (NodeTypeChecker.is_passthrough(gm, n) or NodeTypeChecker.is_add(n)
                 or NodeTypeChecker.is_pool_node(n, gm)) and n.all_input_nodes:

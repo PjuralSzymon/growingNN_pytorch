@@ -4,6 +4,7 @@ from torch import fx, nn
 
 from growingnn.core.traced_model import TracedModel
 from growingnn.utils.fx import ModuleResolver
+from growingnn.actions.utils.dry_run import edit_keeps_network_working, output_shapes
 from growingnn.actions.utils.layer_resize import can_resize_linear_output, resize_layer_output
 from growingnn.core import config
 from .action import Action
@@ -25,7 +26,11 @@ class DelNeurons(Action):
     def _execute(self, traced: TracedModel):
         layer_id = self.params[0]
         ratio = self.params[1] if len(self.params) > 1 else config.DEFAULT_NEURONS_SHRINK_RATIO
+        probe = traced.probe()
+        expected = output_shapes(traced.gm, probe)
         shrink_layer_output(traced.gm, layer_id, ratio)
+        if output_shapes(traced.gm, probe) != expected:
+            raise RuntimeError(f"{self} changed the network's output shape")
 
     def can_be_infulenced(self, by_action):
         return False
@@ -36,6 +41,7 @@ class DelNeurons(Action):
         ratio: float = config.DEFAULT_NEURONS_SHRINK_RATIO,
     ) -> List[Action]:
         gm = traced.gm
+        probe = traced.probe()
         actions: List[Action] = []
         for layer_id in traced.hidden_modules():
             mod = ModuleResolver.get_layer_module(layer_id, gm)
@@ -43,6 +49,8 @@ class DelNeurons(Action):
                 continue
             new_out = max(1, int(mod.out_features * ratio))
             if not can_resize_linear_output(gm, layer_id, new_out):
+                continue
+            if not edit_keeps_network_working(gm, probe, lambda copy, name=layer_id: shrink_layer_output(copy, name, ratio)):
                 continue
             actions.append(DelNeurons([layer_id, ratio]))
         return actions

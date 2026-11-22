@@ -274,3 +274,29 @@ def test_width_of_a_functional_pool_is_its_input_channel_count():
     pool = next(n for n in traced.gm.graph.nodes if n.name == 'adaptive_avg_pool2d')
 
     assert NodeWidthAnalyser.node_output_width(traced.gm, pool) == 8
+
+
+class SpatialFlattenNet(torch.nn.Module):
+    """Flatten after pooling to 8x8, so the classifier reads channels x 64 features."""
+
+    def __init__(self):
+        super().__init__()
+        self.conv = torch.nn.Conv2d(1, 4, 3, padding=1)
+        self.fc = torch.nn.Linear(4 * 8 * 8, 2)
+
+    def forward(self, x):
+        x = torch.relu(self.conv(x))
+        return self.fc(torch.nn.functional.adaptive_avg_pool2d(x, (8, 8)).flatten(1))
+
+
+def test_widening_before_a_spatial_flatten_leaves_the_classifier_alone():
+    traced = TracedModel.create(SpatialFlattenNet(), (1, 1, 8, 8))
+    AddSeqConvLayer.generate_all_actions(traced, add_batchnorm_and_relu=False, before_global_pool=True)[0].execute(traced)
+    inputs = torch.randn(2, 1, 8, 8)
+    before = traced.gm(inputs).detach()
+    WidenConv(['conv', 8]).execute(traced)
+    assert traced.gm.conv.out_channels == 8
+    assert traced.gm.seq_conv_0.in_channels == 8
+    assert traced.gm.fc.in_features == 4 * 8 * 8
+    torch.testing.assert_close(traced.gm(inputs), before, rtol=1e-5, atol=1e-6)
+    assert all(action.params[0] != 'seq_conv_0' for action in WidenConv.generate_all_actions(traced))
