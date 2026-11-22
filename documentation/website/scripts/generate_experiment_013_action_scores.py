@@ -24,6 +24,7 @@ COLORS = {
     'Sequential convolution': '#db6b27',
     'Residual convolution': '#a850a2',
     'Sequential linear': '#168a69',
+    'Add normalization': '#c2357a',
     'Add neurons': '#628f28',
     'Delete neurons': '#b48735',
     'Dropout': '#718096',
@@ -37,6 +38,8 @@ def classify(row):
     name = row.get('name') or ''
     if 'Widen Conv' in text:
         return 'Widen convolution'
+    if 'Add Normalization' in text:
+        return 'Add normalization'
     if 'Add Seq Conv' in text:
         return 'Sequential convolution'
     if 'Add Res Conv' in text:
@@ -101,6 +104,7 @@ GROUPS = [
     ('Sequential convolution without BN', 'Sequential conv\nwithout BN/ReLU'),
     ('Residual convolution', 'Residual\nconvolution'),
     ('Sequential linear', 'Sequential\nlinear'),
+    ('Add normalization', 'Add\nnormalization'),
     ('Add neurons', 'Add\nneurons'),
     ('Delete neurons', 'Delete\nneurons'),
     ('Dropout', 'Dropout'),

@@ -1,5 +1,6 @@
 """Create Experiment 015's report and learning-curve figure from saved results."""
 import json
+import random
 import sys
 from pathlib import Path
 
@@ -328,6 +329,666 @@ def _grid_runs():
     return runs
 
 
+def _near_ties(search):
+    best = max(row['score'] for row in search['candidates'])
+    return sum(best - row['score'] < 0.01 for row in search['candidates'])
+
+
+def sim_fixes_growth_section():
+    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
+    target = RUN / 'full_growth_sim_fixes'
+    lines = ['', '## Phase 12: full growth with the simulation fixes', '',
+             'The best Phase 10 cell (UCB C = 1.0, CCS simulation set) repeated with all four simulation fixes made '
+             'after Phase 10: lazy expansion, the restarted scoring learning rate, futures that continue from '
+             'trained models, and measuring each node twice before expanding it. Everything else matches Phase 10: '
+             'the Experiment 010 starter, 10 generations of 20 epochs, 5 scoring epochs with the mean of the last '
+             'two, rollout depth 0, convolution widening including fan-out, and 24 seconds of search per candidate '
+             '(at least 5 minutes). Seeds 1 and 2.', '',
+             '| Run | Seed | Final validation | Final test | Final parameters | Search time |',
+             '| --- | ---: | ---: | ---: | ---: | ---: |']
+    runs = {seed: _load_growth_run(target / f'seed_{seed}') for seed in (1, 2)
+            if (target / f'seed_{seed}' / 'run.json').exists()}
+    for seed in (1, 2):
+        if seed not in runs:
+            lines.append(f'| Phase 12 | {seed} | Pending | — | — | — |')
+            continue
+        metrics, searches, run = runs[seed]
+        lines.append(f"| **Phase 12** | {seed} | **{100 * run['final_validation_accuracy']:.2f}%** | "
+                     f"{100 * run['final_test_accuracy']:.2f}% | {metrics[-1]['paramCount']:,} | "
+                     f"{sum(search['durationSec'] for search in searches) / 60:.0f} min |")
+    ref_metrics, ref_searches, _ = _load_growth_run(RUN / 'full_grid' / 'c1p0_ccs' / 'seed_1')
+    for label, directory in (('Phase 10, C = 1.0, CCS', RUN / 'full_grid' / 'c1p0_ccs' / 'seed_1'),
+                             ('Phase 5 (no widening, 20 scoring epochs)', RUN / 'full_growth_5min' / 'seed_1'),
+                             ('Experiment 13 (family search)', EXP13_RUN)):
+        metrics, searches, run = _load_growth_run(directory)
+        search_time = '—' if directory == EXP13_RUN else f"{sum(s['durationSec'] for s in searches) / 60:.0f} min"
+        lines.append(f"| {label} | 1 | {100 * run['final_validation_accuracy']:.2f}% | "
+                     f"{100 * run['final_test_accuracy']:.2f}% | {metrics[-1]['paramCount']:,} | {search_time} |")
+    lines += ['', "Experiment 13's search time is not shown: its simulation files record only part of the family "
+              'search.']
+    if not runs:
+        return lines + ['', 'Run with `--phase full-sim-fixes`, then regenerate this report.', '']
+
+    fig, (acc, size) = plt.subplots(2, 1, figsize=(11, 7), sharex=True,
+                                    gridspec_kw={'height_ratios': [2, 1]}, layout='constrained')
+    curves = [(f'Phase 10, C = 1.0, CCS, seed 1', ref_metrics, '#888888')]
+    curves += [(f'Phase 12, seed {seed}', runs[seed][0], color) for seed, color in zip(runs, ('#2a78d6', '#eb6834'))]
+    for label, metrics, color in curves:
+        epochs = [row['globalEpoch'] + 1 for row in metrics]
+        acc.plot(epochs, [100 * row['valAcc'] for row in metrics], color=color, lw=1.6,
+                 label=f"{label} validation (final {100 * metrics[-1]['valAcc']:.1f}%)")
+        acc.plot(epochs, [100 * row['trainAcc'] for row in metrics], color=color, lw=1.1, ls='--',
+                 label=f'{label} training')
+        size.step(epochs, [row['paramCount'] for row in metrics], where='post', color=color, lw=1.6, label=label)
+    acc.set(ylabel='Accuracy (%)', ylim=(0, 80), title='Phase 12 against the best Phase 10 cell')
+    size.set(xlabel='Training epoch', ylabel='Parameters')
+    for axis in (acc, size):
+        axis.grid(alpha=.25)
+        for boundary in range(20, 200, 20):
+            axis.axvline(boundary + .5, color='#bbbbbb', ls=':', lw=.8)
+    acc.legend(loc='lower right', fontsize=8)
+    size.legend(loc='upper left', fontsize=8)
+    fig.savefig(ASSET_DIR / '015-sim-fixes-training.png', dpi=150, bbox_inches='tight')
+    plt.close(fig)
+
+    lines += ['', '![Phase 12 against the best Phase 10 cell](/assets/experiments/015-sim-fixes-training.png)', '',
+              'Solid lines are validation accuracy, dashed lines training accuracy.', '']
+
+    columns = {'Phase 10, C = 1.0, CCS': (ref_metrics, ref_searches),
+               **{f'Phase 12 seed {seed}': runs[seed][:2] for seed in runs}}
+    generations = range(max(len(searches) for _, searches in columns.values()))
+    header = ['| Generation | ' + ' | '.join(columns) + ' |', '| ---: |' + ' ---: |' * len(columns)]
+
+    def table(cell):
+        rows = []
+        for generation in generations:
+            cells = []
+            for metrics, searches in columns.values():
+                end = {row['globalEpoch'] // 20: row['valAcc'] for row in metrics}
+                cells.append(cell(searches[generation], end, generation) if generation < len(searches) else '—')
+            rows.append(f'| {generation} | ' + ' | '.join(cells) + ' |')
+        return rows
+
+    lines += ['### Did the candidates separate?', '',
+              'Number of candidates within 1 pp of the best candidate in each search (fewer means the search could '
+              'tell the leader apart).', '', *header]
+    lines += table(lambda search, end, generation: f"{_near_ties(search)} of {len(search['candidates'])}")
+    lines += ['', '### Best candidate score against the model being grown', '',
+              'Score of the selected candidate, and the validation accuracy of the model when the search ran '
+              '(in brackets).', '', *header]
+    lines += table(lambda search, end, generation:
+                   f"{100 * search['scoreChosen']:.1f}% ({100 * end[generation]:.1f}%)")
+    lines += ['', '### Decisions', '',
+              'Selected action type per generation, with the change in validation accuracy over the next '
+              'generation.', '', '| Generation | ' + ' | '.join(columns) + ' |', '| ---: |' + ' --- |' * len(columns)]
+    lines += table(lambda search, end, generation: f"{group_key({'action': search['actionChosen']})} "
+                                                   f"({100 * (end[generation + 1] - end[generation]):+.1f} pp)")
+    return lines + _sim_fixes_growth_findings(columns)
+
+
+def _sim_fixes_growth_findings(columns):
+    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
+    mean = lambda values: sum(values) / len(values)
+    late = range(5, 9)
+    phase12 = {name: value for name, value in columns.items() if name.startswith('Phase 12')}
+    if len(phase12) < 2:
+        return ['']
+    finals = [100 * metrics[-1]['valAcc'] for metrics, _ in phase12.values()]
+    ref_metrics, ref_searches = columns['Phase 10, C = 1.0, CCS']
+    late_ties = {name: mean([_near_ties(searches[g]) for g in late]) for name, (_, searches) in columns.items()}
+
+    def deficit(metrics, searches, generations):
+        end = {row['globalEpoch'] // 20: row['valAcc'] for row in metrics}
+        return mean([100 * (end[g] - searches[g]['scoreChosen']) for g in generations])
+
+    widen = sum(group_key({'action': search['actionChosen']}) == 'Widen convolution'
+                for _, searches in phase12.values() for search in searches)
+    seed1_metrics, seed1_searches = phase12['Phase 12 seed 1']
+    seed1_end = {row['globalEpoch'] // 20: row['valAcc'] for row in seed1_metrics}
+    seed1_dropout = [g for g, search in enumerate(seed1_searches)
+                     if group_key({'action': search['actionChosen']}) == 'Dropout']
+    after_gen3 = {name: 100 * (metrics[-1]['valAcc'] - {row['globalEpoch'] // 20: row['valAcc']
+                                                        for row in metrics}[3])
+                  for name, (metrics, _) in columns.items()}
+    largest_step = max(row['paramCount'] - search['paramCountBefore']
+                       for _, searches in columns.values() for search in searches[5:]
+                       for row in search['candidates'] if group_key(row) != 'Widen convolution')
+    seed2_metrics = phase12['Phase 12 seed 2'][0]
+    return ['', '### What Phase 12 shows', '',
+            '- **Growth slows after generation 3 in every run.** From the end of generation 3 to the end, '
+            'validation accuracy rose by '
+            + ', '.join(f'{gain:.1f} pp ({name})' for name, gain in after_gen3.items()) + ' over six '
+            f'generations. In generations 5–8 no candidate except widening added more than {largest_step} '
+            'parameters: every new convolution is 8→8 channels, because new layers take the channel count of the '
+            'layers they connect, and widening doubles a single layer from 8 to 16 channels. Training accuracy '
+            f'stays at validation accuracy (seed 2 ended at {100 * seed2_metrics[-1]["trainAcc"]:.1f}% training, '
+            f'{100 * seed2_metrics[-1]["valAcc"]:.1f}% validation), so the network is too small rather than '
+            'over-fitting. The Phase 1 action that gave +18.6 pp was a 64-channel convolution; no action of that '
+            'size is on offer here, so even a perfect search could only pick between small steps.',
+            f'- **Final accuracy did not improve.** The two seeds ended at {finals[0]:.2f}% and {finals[1]:.2f}% '
+            f'validation (mean {mean(finals):.2f}%), against {100 * ref_metrics[-1]["valAcc"]:.2f}% for the same '
+            'cell in Phase 10. The two seeds differ by more than Phase 12 differs from Phase 10, and the four '
+            'Phase 10 cells (one seed each) ranged from 59.38% to 63.06%, so the runs show no change in either '
+            'direction.',
+            f'- **Late-generation candidates now separate.** In generations 5–8, Phase 10 had on average '
+            f'{late_ties["Phase 10, C = 1.0, CCS"]:.1f} candidates within 1 pp of the best (up to 34 of 77 in '
+            'generation 7); Phase 12 had '
+            + ' and '.join(f'{late_ties[name]:.1f}' for name in phase12) + '. This is what the fixes were meant to '
+            'do, but the better separation did not show up in the final accuracy.',
+            f'- **Scores now sit below the model being grown.** With the restarted learning rate, scoring trains '
+            f'each candidate for 5 epochs at about 0.1 while the main training in generations 5–8 runs at about 0.035 '
+            f'down to 0.001. In generations 6–8 the selected candidate scored on average '
+            + ' and '.join(f'{deficit(*phase12[name], range(6, 9)):.1f}' for name in phase12)
+            + f' pp below the model\'s validation accuracy, against {deficit(ref_metrics, ref_searches, range(6, 9)):.1f} '
+            'pp in Phase 10. The score now measures how a candidate does after a short high-learning-rate restart, '
+            'and the main training then continues the low-learning-rate schedule instead. Whether the two rank '
+            'candidates differently was not measured.',
+            f'- **Seed 1 spent its late generations on Dropout.** It selected Dropout in generations '
+            + ' and '.join(map(str, seed1_dropout)) + ', which added no parameters and left validation accuracy '
+            'flat (' + ' and '.join(f'{100 * seed1_end[g + 1]:.1f}%' for g in seed1_dropout) + ' after them). '
+            'Dropout leading under high-learning-rate scoring fits the point above, but the cause was not measured.',
+            f'- **Widening was never selected** ({widen} of {sum(len(s) for _, s in phase12.values())} decisions), '
+            'although it was runner-up in several searches; the runs ended at 4,400–5,600 parameters, '
+            'far below Experiment 13\'s 80,887.',
+            '- **Searches went shallower.** Measuring each node twice uses rollouts that used to expand the tree: '
+            'Phase 12 searches reached depth 1 from generation 1 on, Phase 10 reached depth 2. Search time was '
+            'unchanged (137 and 156 min against 157 min).', '',
+            '### What to change', '',
+            '- **Offer larger growth steps.** Let new convolutions choose a wider output (for example 16, 32 or 64 '
+            'channels, as in the Phase 1 action A08), or widen a whole chain of layers at once instead of one '
+            'layer. This is a change to the actions, not to the simulation.',
+            '- **Keep the main learning-rate schedule.** Experiment 008 showed that one global schedule beats '
+            'restarting at 0.1 every generation. The scoring restart stays a simulation-only choice; whether it '
+            'ranks candidates the same way as the main schedule would is still open.',
+            f'- **Run more seeds before comparing cells.** The two Phase 12 seeds differ by '
+            f'{abs(finals[1] - finals[0]):.1f} pp; the four Phase 10 cells, one seed each, spread over 3.7 pp.', '']
+
+
+def _ranks(values):
+    order = sorted(range(len(values)), key=lambda index: -values[index])
+    ranks = [0] * len(values)
+    for rank, index in enumerate(order, 1):
+        ranks[index] = rank
+    return ranks
+
+
+def decision_replay_section():
+    path = RUN / 'decision_replay/gen_3/summary.json'
+    lines = ['', '## Phase 13: every growing candidate of one late decision, trained for real', '',
+             'Why do generations after the third bring so little? Phase 13 takes the Phase 12 seed-2 search after '
+             'generation 3 and trains every candidate that grows the network (all except Dropout, Delete layer and '
+             'Delete neurons: 16 of 27) for a full 20-epoch generation on the full training set with the main '
+             'learning-rate schedule, plus the unchanged model as a control. This shows how far the selected '
+             'action was from the best one available, and whether any available action could have given a large '
+             'gain.', '',
+             'Phase 12 saved no checkpoints, so the generation-3 model is grown again from the starter with the '
+             "run's recorded choices and training recipe. It has the same architecture but not the same weights, "
+             'because the original searches consumed random numbers between generations.', '']
+    if not path.exists():
+        return lines + ['Pending. Run with `--phase decision-replay`.', '']
+    summary = json.loads(path.read_text(encoding='utf-8'))
+    control, *arms = summary['results']
+    base = control['final_validation_accuracy']
+    real = [arm['final_validation_accuracy'] for arm in arms]
+    simulated = [arm['simulation_score'] for arm in arms]
+    real_ranks, sim_ranks = _ranks(real), _ranks(simulated)
+    lines += [f"The rebuilt model reached {100 * summary['rebuilt_validation_accuracy']:.2f}% validation at the "
+              'end of generation 3 (Phase 12 seed 2: 53.20%). The control trained one more generation without an '
+              f'action and reached {100 * base:.2f}%.', '',
+              '| Real rank | Action | Real validation | Gain over control | Simulation score | Simulation rank |',
+              '| ---: | --- | ---: | ---: | ---: | ---: |']
+    for index in sorted(range(len(arms)), key=lambda index: real_ranks[index]):
+        arm = arms[index]
+        label = _action_label(arm['action']) + (' **(selected)**' if arm['chosen'] else '')
+        lines.append(f"| {real_ranks[index]} | {label} | {100 * real[index]:.2f}% | "
+                     f"{100 * (real[index] - base):+.2f} pp | {simulated[index]:.4f} | {sim_ranks[index]} |")
+    chosen = next(index for index, arm in enumerate(arms) if arm['chosen'])
+    best = real_ranks.index(1)
+    count = len(arms)
+    spearman = 1 - 6 * sum((a - b) ** 2 for a, b in zip(real_ranks, sim_ranks)) / (count * (count ** 2 - 1))
+    gains = sorted(100 * (value - base) for value in real)
+    lines += _decision_replay_histories(control, arms, real_ranks, sim_ranks)
+    return lines + ['', '### What Phase 13 shows', '',
+                    f'- **The selected action ranked {real_ranks[chosen]} of {count} in real training**, '
+                    f'{100 * (real[best] - real[chosen]):.2f} pp below the best candidate '
+                    f'({_action_label(arms[best]["action"])}).',
+                    f'- **The best available gain over the control was {gains[-1]:+.2f} pp**; the middle candidate '
+                    f'gained {gains[count // 2]:+.2f} pp and the worst {gains[0]:+.2f} pp.',
+                    f'- **Simulation and real ranking agree with a rank correlation of {spearman:.2f}** '
+                    '(1 is the same order, 0 no relation).', '']
+
+
+def _decision_replay_histories(control, arms, real_ranks, sim_ranks):
+    """Training curves of every Phase 13 arm, all started from the same generation-3 model."""
+    chosen = next(index for index, arm in enumerate(arms) if arm['chosen'])
+    highlighted = {}
+    for index, color, name in ((sim_ranks.index(1), '#1baa7a', 'Simulation best'),
+                               (chosen, '#eb6834', 'Selected by the search'),
+                               (real_ranks.index(1), '#2a78d6', 'Real best')):
+        previous = highlighted.get(index, (None, ''))[1]
+        highlighted[index] = (color, f'{name} + {previous}' if previous else name)
+    base_val = control['history']['val_acc']
+    epochs = range(1, len(base_val) + 1)
+    fig, (val, gap, train) = plt.subplots(3, 1, figsize=(11, 11), sharex=True, layout='constrained',
+                                          gridspec_kw={'height_ratios': [2, 2, 1.5]})
+    order = [index for index in range(len(arms)) if index not in highlighted] + list(highlighted)
+    for index in order:
+        history = arms[index]['history']
+        color, role = highlighted.get(index, ('#b8b8b8', None))
+        width, layer = (2.0, 3) if role else (0.9, 1)
+        label = (f"{role}: {_short_label(arms[index]['action'])} "
+                 f"({100 * history['val_acc'][-1]:.1f}%)") if role else None
+        val.plot(epochs, [100 * value for value in history['val_acc']], color=color, lw=width, zorder=layer,
+                 label=label)
+        gap.plot(epochs, [100 * (value - base) for value, base in zip(history['val_acc'], base_val)],
+                 color=color, lw=width, zorder=layer)
+        train.plot(epochs, history['train_loss'], color=color, lw=width, zorder=layer)
+    for axis, values in ((val, [100 * value for value in base_val]), (train, control['history']['train_loss'])):
+        axis.plot(epochs, values, color='#222222', lw=2.0, ls='--', zorder=4,
+                  label=f"No action ({100 * base_val[-1]:.1f}%)" if axis is val else None)
+    gap.axhline(0, color='#222222', lw=2.0, ls='--', zorder=4)
+    val.plot([], [], color='#b8b8b8', lw=0.9, label='Other candidates')
+    val.set(ylabel='Validation accuracy (%)',
+            title='Phase 13: every candidate trained for 20 epochs from the same generation-3 model')
+    gap.set(ylabel='Validation minus no action (pp)')
+    train.set(xlabel='Epoch after the action', ylabel='Training loss')
+    for axis in (val, gap, train):
+        axis.grid(alpha=.25)
+    val.legend(loc='lower right', fontsize=8)
+    fig.savefig(ASSET_DIR / '015-decision-replay-training.png', dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    note = ' One candidate holds more than one role.' if len(highlighted) < 3 else ''
+    return ['', '![Phase 13 training histories](/assets/experiments/015-decision-replay-training.png)', '',
+            'Every line starts from the same model and training seed and differs only in the action applied '
+            'before epoch 1. The dashed black line is the control without an action. The middle panel '
+            'subtracts the control, so a line above zero is ahead of it at that epoch.' + note, '']
+
+
+def _short_label(action):
+    return _action_label(action).replace(' — ', ': ').split(' / ')[0]
+
+
+def _partial_growth_run(directory):
+    """Per-epoch metrics and searches of a seed that stopped before writing run.json."""
+    board = directory / 'board'
+    metrics = json.loads((board / 'metrics/training.json').read_text(encoding='utf-8'))['epochs']
+    searches = [json.loads(path.read_text(encoding='utf-8')) for path in sorted(
+        (board / 'simulations').glob('simulation_gen_*.json'), key=lambda path: int(path.stem.rsplit('_', 1)[1]))]
+    return metrics, searches, None
+
+
+def _widening_training_chart(runs):
+    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
+    short = {'Widen convolution': 'W', 'Sequential convolution + BN': 'SC', 'Sequential convolution without BN':
+             'SC-', 'Residual convolution': 'RC', 'Sequential linear': 'SL', 'Add neurons': 'N',
+             'Delete neurons': 'DN', 'Dropout': 'D', 'Delete layer': 'DL', 'Other': 'O'}
+    references = [(f'Phase 12 seed {seed}', _load_growth_run(RUN / 'full_growth_sim_fixes' / f'seed_{seed}')[0],
+                   color) for seed, color in ((1, '#9a9a9a'), (2, '#c9c9c9'))]
+    colors = {1: '#2a78d6', 2: '#eb6834', 3: '#1baa7a'}
+    fig, (acc, size) = plt.subplots(2, 1, figsize=(11, 8), sharex=True, layout='constrained',
+                                    gridspec_kw={'height_ratios': [2, 1.3]})
+    curves = references + [(f'Phase 14 seed {seed}' + ('' if info else ' (stopped)'), metrics, colors[seed])
+                           for seed, (metrics, _, info) in runs.items()]
+    for label, metrics, color in curves:
+        epochs = [row['globalEpoch'] + 1 for row in metrics]
+        width = 1.8 if label.startswith('Phase 14') else 1.2
+        acc.plot(epochs, [100 * row['valAcc'] for row in metrics], color=color, lw=width,
+                 label=f"{label} validation (last {100 * metrics[-1]['valAcc']:.1f}%)")
+        acc.plot(epochs, [100 * row['trainAcc'] for row in metrics], color=color, lw=width * .7, ls='--')
+        size.step(epochs, [row['paramCount'] for row in metrics], where='post', color=color, lw=width, label=label)
+    for offset, (seed, (metrics, searches, _)) in enumerate(runs.items()):
+        for generation, search in enumerate(searches):
+            kind = group_key({'action': search['actionChosen']})
+            size.annotate(short.get(kind, kind[:3]), (20 * (generation + 1) + .5, 0), xycoords=('data', 'axes fraction'),
+                          xytext=(3, 4 + 11 * offset), textcoords='offset points', fontsize=7, color=colors[seed])
+    acc.plot([], [], color='#666666', lw=1, ls='--', label='Dashed: training accuracy')
+    acc.set(ylabel='Accuracy (%)', ylim=(0, 80), title='Phase 14 (widening for every convolution) against Phase 12')
+    size.set(xlabel='Training epoch', ylabel='Parameters', yscale='log')
+    for axis in (acc, size):
+        axis.grid(alpha=.25)
+        for boundary in range(20, 200, 20):
+            axis.axvline(boundary + .5, color='#bbbbbb', ls=':', lw=.8)
+    acc.legend(loc='lower right', fontsize=8)
+    size.legend(loc='upper left', fontsize=8)
+    fig.savefig(ASSET_DIR / '015-widening-training.png', dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    return ['', '![Phase 14 training history](/assets/experiments/015-widening-training.png)', '',
+            'Solid lines are validation accuracy, dashed lines training accuracy; dotted vertical lines mark '
+            'generation boundaries, where the selected action is applied. The letters at the bottom name the '
+            'action applied at each boundary (W widen convolution, SC sequential convolution with BN + ReLU, '
+            'SC- without them, RC residual convolution, SL sequential linear, N add neurons, O other, e.g. a '
+            'residual linear layer). Parameters use a log scale.', '']
+
+
+WIDENING_SEEDS = (1, 2, 3)
+
+
+def widening_growth_section():
+    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
+    target = RUN / 'full_growth_widening'
+    lines = ['', '## Phase 14: full growth with widening for every convolution', '',
+             'Phase 12 repeated after the widening refactor (`91085d0`). Before it, widening was offered only '
+             'where copied channels kept the output identical: in practice only the first convolution, so 1–2 '
+             'of the 27–90 candidates per search. Now every convolution can be widened ×2 or ×4. The new '
+             'width is carried through BatchNorm, residual sums and the classifier after global pooling. New '
+             'channels start with random weights, and every layer that reads them starts with zero weights for '
+             'them, so the output is unchanged after the action. Everything else matches Phase 12. Seeds 1–3.', '',
+             '| Run | Seed | Final validation | Final test | Final parameters | Search time |',
+             '| --- | ---: | ---: | ---: | ---: | ---: |']
+    runs = {}
+    for seed in WIDENING_SEEDS:
+        directory = target / f'seed_{seed}'
+        if (directory / 'run.json').exists():
+            runs[seed] = _load_growth_run(directory)
+        elif (directory / 'board/metrics/training.json').exists():
+            runs[seed] = _partial_growth_run(directory)
+    rows = [('**Phase 14**', seed, runs.get(seed)) for seed in WIDENING_SEEDS]
+    rows += [('Phase 12', seed, _load_growth_run(RUN / 'full_growth_sim_fixes' / f'seed_{seed}')) for seed in (1, 2)]
+    for label, seed, run in rows:
+        if run is None:
+            lines.append(f'| {label} | {seed} | Not run | — | — | — |')
+            continue
+        metrics, searches, info = run
+        if info is None:
+            lines.append(f"| {label} | {seed} | Stopped after generation {metrics[-1]['generation']}: "
+                         f"{100 * metrics[-1]['valAcc']:.2f}% | — | {metrics[-1]['paramCount']:,} | "
+                         f"{sum(search['durationSec'] for search in searches) / 60:.0f} min |")
+            continue
+        lines.append(f"| {label} | {seed} | {100 * info['final_validation_accuracy']:.2f}% | "
+                     f"{100 * info['final_test_accuracy']:.2f}% | {metrics[-1]['paramCount']:,} | "
+                     f"{sum(search['durationSec'] for search in searches) / 60:.0f} min |")
+    if not runs:
+        return lines + ['', 'Run with `--phase full-widening --seeds 1 2 3`, then regenerate this report.', '']
+    lines += _widening_training_chart(runs)
+
+    def widening(search):
+        return [row for row in search['candidates'] if group_key(row) == 'Widen convolution']
+
+    lines += ['', '### How often widening was offered and selected', '',
+              '| Run | Seed | Widening candidates per search | Widening share of candidates | Times selected |',
+              '| --- | ---: | ---: | ---: | ---: |']
+    for label, seed, run in rows:
+        if run is None:
+            continue
+        searches = run[1]
+        offered = sum(len(widening(search)) for search in searches)
+        total = sum(len(search['candidates']) for search in searches)
+        chosen = sum(group_key({'action': search['actionChosen']}) == 'Widen convolution' for search in searches)
+        lines.append(f'| {label} | {seed} | {offered / len(searches):.1f} | {100 * offered / total:.0f}% | '
+                     f'{chosen} of {len(searches)} |')
+
+    lines += ['', '### Decisions', '',
+              'Selected action type per generation, with parameters after the action and the change in '
+              'validation accuracy over the next generation.', '',
+              '| Generation | ' + ' | '.join(f'Phase 14 seed {seed}' for seed in runs) + ' |',
+              '| ---: |' + ' --- |' * len(runs)]
+    for generation in range(max(len(run[1]) for run in runs.values())):
+        cells = []
+        for metrics, searches, _ in runs.values():
+            end = {row['globalEpoch'] // 20: row for row in metrics}
+            if generation + 1 not in end:
+                cells.append('—')
+                continue
+            before, after = end[generation], end[generation + 1]
+            cells.append(f"{group_key({'action': searches[generation]['actionChosen']})} "
+                         f"({after['paramCount']:,}, {100 * (after['valAcc'] - before['valAcc']):+.1f} pp)")
+        lines.append(f'| {generation} | ' + ' | '.join(cells) + ' |')
+    return lines + ['']
+
+
+NORMALIZATION_GENERATIONS = 5
+NORMALIZATION_PARTS = (('16a', 'full_growth_normalization', 'Exp 010 starter, normalization action', '#c2357a'),
+                       ('16b', 'full_growth_normalized_stem', 'Starter with BatchNorm after conv1', '#2a78d6'),
+                       ('16c', 'full_growth_residual_stem', 'Starter with BatchNorm and a residual block', '#1baa7a'))
+
+
+def _normalization_searches(searches):
+    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
+    rows = []
+    for search in searches:
+        measured = [row for row in search['candidates'] if row.get('visits', 0) > 0]
+        ordered = sorted(measured, key=lambda row: -row['score'])
+        norms = [row for row in ordered if group_key(row) == 'Add normalization']
+        best = norms[0] if norms else None
+        rows.append({'generation': search['generation'], 'candidates': len(measured), 'norms': len(norms),
+                     'best_norm': best, 'best_norm_rank': ordered.index(best) + 1 if best else None,
+                     'best': ordered[0] if ordered else None,
+                     'chosen': group_key({'action': search['actionChosen']}),
+                     'norm_visits': sum(row['visits'] for row in norms) / len(norms) if norms else None,
+                     'scores': [(row['score'], group_key(row) == 'Add normalization', bool(row.get('chosen')))
+                                for row in measured]})
+    return rows
+
+
+def normalization_section():
+    """Phase 16: the add-normalization action (a), and the starter with BatchNorm in its stem (b)."""
+    lines = ['', '## Phase 16: is BatchNorm or the residual block the missing piece?', '',
+             'The residual starter of the other branch (conv 16 → BatchNorm → ReLU, then relu(x + BatchNorm(conv(x)))) '
+             'trained much better than our Experiment 010 starter, and our actions could not build two of its parts: '
+             'a BatchNorm after an existing layer, and a residual block with BatchNorm. Phase 16 checks both. '
+             'All parts are short Phase 14 runs (seed 1, CIFAR-10, the same search and scoring, '
+             f'{NORMALIZATION_GENERATIONS} generations):', '',
+             '- **16a**: our starter with the new add-normalization action (`541cab3`) among the candidates: a '
+             'BatchNorm after any convolution or linear layer that has none, with default initialization. Does the '
+             'simulation score it high?',
+             '- **16b**: the same run from our starter with a BatchNorm already between conv1 and its ReLU, as in the '
+             'residual starter\'s stem, with the same 8 channels and no residual block. If this run is much better '
+             'than Phase 14, BatchNorm was what was missing; if not, the residual connection is needed as well.',
+             '- **16c**: the 16b starter plus the residual block of the other branch\'s starter after the stem, '
+             'relu(x + BatchNorm(conv(x))), still 8 channels. Compared with 16b, it shows what the residual block '
+             'adds.', '']
+    runs = {}
+    for part, folder, label, color in NORMALIZATION_PARTS:
+        directory = RUN / folder / 'seed_1'
+        if not (directory / 'board/metrics/training.json').exists():
+            phase = 'full-residual-stem' if part == '16c' else 'full-normalization'
+            lines += [f'**{part}**: pending. Run with `--phase {phase} --seeds 1`.', '']
+            continue
+        complete = (directory / 'run.json').exists()
+        metrics, searches, run = _load_growth_run(directory) if complete else _partial_growth_run(directory)
+        runs[part] = (metrics, searches, run, label, color)
+        finished = len({row['generation'] for row in metrics if row['epochInGeneration'] == 19})
+        lines += [f'### {part}: {label}', '']
+        if not complete:
+            lines += [f'Partial: {finished} of {NORMALIZATION_GENERATIONS} generations trained and {len(searches)} '
+                      'searches finished; read from the run files.', '']
+        rows = _normalization_searches(searches)
+        lines += ['| Search after generation | Candidates | Normalization candidates | Best normalization score '
+                  '(rank) | Best score | Mean visits, normalization | Selected |',
+                  '| ---: | ---: | ---: | ---: | ---: | ---: | --- |']
+        for row in rows:
+            best_norm = (f"{100 * row['best_norm']['score']:.1f}% ({row['best_norm_rank']} of {row['candidates']})"
+                         if row['best_norm'] else '—')
+            best = f"{100 * row['best']['score']:.1f}%" if row['best'] else '—'
+            visits = f"{row['norm_visits']:.1f}" if row['norm_visits'] is not None else '—'
+            chosen = f"**{row['chosen']}**" if row['chosen'] == 'Add normalization' else row['chosen']
+            lines.append(f"| {row['generation']} | {row['candidates']} | {row['norms']} | {best_norm} | {best} | "
+                         f'{visits} | {chosen} |')
+        if rows:
+            jitter = random.Random(0)
+            fig, axis = plt.subplots(figsize=(10, 4.5), layout='constrained')
+            for row in rows:
+                for score, is_norm, chosen in row['scores']:
+                    axis.scatter(row['generation'] + jitter.uniform(-.25, .25), 100 * score,
+                                 s=60 if is_norm else 22, color='#c2357a' if is_norm else '#b8b8b8',
+                                 zorder=3 if is_norm else 2, edgecolors='#222222' if chosen else 'none',
+                                 linewidths=1.6)
+            axis.scatter([], [], s=60, color='#c2357a', label='Add normalization')
+            axis.scatter([], [], s=22, color='#b8b8b8', label='Other candidates')
+            axis.scatter([], [], s=40, color='white', edgecolors='#222222', linewidths=1.6, label='Selected')
+            axis.set(xlabel='Search after generation', ylabel='Simulation score (%)',
+                     title=f'Phase {part}: simulation scores of every candidate',
+                     xticks=[row['generation'] for row in rows])
+            axis.grid(alpha=.25)
+            axis.legend(loc='lower right', fontsize=8)
+            fig.savefig(ASSET_DIR / f'015-normalization-{part}-scores.png', dpi=150, bbox_inches='tight')
+            plt.close(fig)
+            lines += ['', f'![Phase {part} candidate scores](/assets/experiments/015-normalization-{part}-scores.png)',
+                      '', 'Each dot is one measured candidate of one search; normalization candidates are magenta and '
+                      'the selected candidate has a black ring.', '']
+    if not runs:
+        return lines
+    reference = _load_growth_run(RUN / 'full_growth_widening' / 'seed_1')[0]
+    longest = max(len(metrics) for metrics, *_ in runs.values())
+    curves = [('Phase 14 seed 1', reference[:longest], '#9a9a9a')]
+    curves += [(f'Phase {part}: {label}', metrics, color) for part, (metrics, _, _, label, color) in runs.items()]
+    fig, axis = plt.subplots(figsize=(10, 4.5), layout='constrained')
+    for label, curve, color in curves:
+        epochs = [row['globalEpoch'] + 1 for row in curve]
+        axis.plot(epochs, [100 * row['valAcc'] for row in curve], color=color, lw=1.8,
+                  label=f"{label} (last {100 * curve[-1]['valAcc']:.1f}%)")
+        axis.plot(epochs, [100 * row['trainAcc'] for row in curve], color=color, lw=1.1, ls='--')
+    for boundary in range(20, 20 * NORMALIZATION_GENERATIONS, 20):
+        axis.axvline(boundary + .5, color='#bbbbbb', ls=':', lw=.8)
+    axis.set(xlabel='Training epoch', ylabel='Accuracy (%)', title='Phase 16 against the same epochs of Phase 14')
+    axis.grid(alpha=.25)
+    axis.legend(loc='lower right', fontsize=8)
+    fig.savefig(ASSET_DIR / '015-normalization-training.png', dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    lines += ['### Training', '', '![Phase 16 training history](/assets/experiments/015-normalization-training.png)', '',
+              'Solid lines are validation accuracy, dashed lines training accuracy.', '',
+              '| Run | Epochs | Validation at the last epoch | Test | Parameters |', '| --- | ---: | ---: | ---: | ---: |']
+    for label, curve, _ in curves:
+        complete = next((run for part, (metrics, _, run, *_) in runs.items() if metrics is curve), None)
+        test = f"{100 * complete['final_test_accuracy']:.2f}%" if complete else '—'
+        lines.append(f"| {label} | {len(curve)} | {100 * curve[-1]['valAcc']:.2f}% | {test} | "
+                     f"{curve[-1]['paramCount']:,} |")
+    return lines + ['']
+
+
+def scoring_calibration_section():
+    path = RUN / 'scoring_calibration/gen_3/summary.json'
+    lines = ['', '## Phase 15a: which scoring setting predicts real training', '',
+             'Phase 13 found no relation between the simulation ranking and real training. Phase 15a reuses '
+             "Phase 13's generation-3 model and its 16 candidates, whose real 20-epoch validation accuracy is "
+             'known, and scores each of them in five settings: 5, 10 or 15 scoring epochs on a CCS simulation '
+             'set of 10% or 25% of the training data. Every arm is measured 3 times with the same three training '
+             'seeds, and the score is the mean of the last 2 scoring epochs, as in the search. The learning rate '
+             'follows the restarted main schedule (`de231f4`). The best setting becomes the scoring of the next '
+             'full-growth run.', '']
+    if not path.exists():
+        return lines + ['Pending. Run with `--phase scoring-calibration`.', '']
+    summary = json.loads(path.read_text(encoding='utf-8'))
+    control = summary['control_validation_accuracy']
+    lines += ['| Scoring epochs | Simulation set | Rank correlation, 1 measurement | Rank correlation, mean of 3 '
+              '| Choice: real rank | Choice: gain over control | Real best: score rank | Real top 5 in score top 5 '
+              '| Measurement range | Seconds per measurement |',
+              '| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |']
+    for row in summary['settings']:
+        metrics = row['metrics']
+        lines.append(f"| {row['scoring_epochs']} | {row['simulation_set_percent']:g}% | "
+                     f"{metrics['spearman_one_measurement']:.2f} | {metrics['spearman_mean']:.2f} | "
+                     f"{metrics['chosen_real_rank']} | {100 * metrics['chosen_gain_over_control']:+.2f} pp | "
+                     f"{metrics['real_best_rank_by_score']} | {metrics['real_top_in_score_top']} of 5 | "
+                     f"{100 * metrics['mean_measurement_range']:.1f} pp | {metrics['seconds_per_measurement']:.0f} |")
+    best = max(summary['settings'], key=lambda row: row['metrics']['spearman_mean'])
+    return lines + ['', f"The control reached {100 * control:.2f}%. A rank correlation of 1 is the real order, 0 no "
+                    'relation. The measurement range is the mean difference between the highest and lowest of the '
+                    'three scores of one arm.', '',
+                    f"The best agreement is {best['scoring_epochs']} scoring epochs on {best['simulation_set_percent']:g}% "
+                    f"of the training data (rank correlation {best['metrics']['spearman_mean']:.2f} with 3 "
+                    'measurements).', '']
+
+
+def sim_fixes_check_section():
+    path = RUN / 'sim_fixes_check/results.json'
+    lines = ['', '## Phase 11: the A08 decision with the first three simulation fixes', '',
+             'The Phase 9 replay repeated with the code at `5d3c3f0`: lazy expansion, the restarted scoring '
+             'learning rate and futures that continue from trained models. Everything else matches Phase 9: '
+             'the Experiment 13 generation-3 checkpoint, the five recorded root actions, 5 scoring epochs with the '
+             'mean of the last two, rollout depth 0, UCB C = 1.0, a 5-minute budget and seeds 1–3. This was a quick '
+             'check run with a temporary script (saved with the results as `check_script.py`), not an experiment '
+             'phase; measuring again before expanding (`abe0a33`) was not yet in the code.', '']
+    if not path.exists():
+        return lines + ['Pending.', '']
+    runs = json.loads(path.read_text(encoding='utf-8'))
+    phase6 = json.loads((RUN / 'score_fix_check/summary.json').read_text(encoding='utf-8'))['runs']
+    phase9 = json.loads((RUN / 'noise_fix_check/summary.json').read_text(encoding='utf-8'))['runs']
+    leads6, leads9 = _a08_lead_values(phase6), _a08_lead_values(phase9)
+    a08 = LABELS['candidate_5']
+    leads11 = []
+    lines += ['| Seed | Selected | A08 score | Next best | A08 lead | Phase 9 lead | Phase 6 lead | Rollouts | Tree depth |',
+              '| ---: | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |']
+    for run, lead6, lead9 in zip(runs, leads6, leads9):
+        rows = {row['name']: row for row in run['rows']}
+        best_a08 = rows[a08]['score']
+        runner_up = max((row for name, row in rows.items() if name != a08), key=lambda row: row['score'])
+        lead = 100 * (best_a08 - runner_up['score'])
+        leads11.append(lead)
+        lines.append(f"| {run['seed']} | {run['selected']} | {best_a08:.4f} | {runner_up['name']} "
+                     f"({runner_up['score']:.4f}) | **{lead:+.1f} pp** | {lead9:+.1f} pp | {lead6:+.1f} pp | "
+                     f"{run['rollouts']} | {run['depth']} |")
+    mean = lambda values: sum(values) / len(values)
+    names = [row['name'] for row in runs[0]['rows']]
+    lines += ['', 'Each action\'s mean search value, own score and best explored future, averaged over the three '
+              'seeds:', '', '| Action | Mean search value | Own score | Best explored future |',
+              '| --- | ---: | ---: | ---: |']
+    for name in sorted(names, key=lambda n: -mean([next(r['score'] for r in run['rows'] if r['name'] == n)
+                                                    for run in runs])):
+        rows = [next(r for r in run['rows'] if r['name'] == name) for run in runs]
+        futures = [row['futures'][0][1] for row in rows if row['futures']]
+        lines.append(f"| {name} | {mean([row['score'] for row in rows]):.4f} | "
+                     f"{mean([row['own_score'] for row in rows]):.4f} | "
+                     f"{mean(futures):.4f} |" if futures else f"| {name} | — | — | — |")
+    widen_own = mean([row['own_score'] for run in runs for row in run['rows'] if row['name'].startswith('Widen')])
+    widen_future = mean([row['futures'][0][1] for run in runs for row in run['rows']
+                         if row['name'].startswith('Widen') and row['futures']])
+    return lines + ['', '### What Phase 11 shows', '',
+                    f'- **The gap between the good action and the rest is now bigger.** A08 was selected in all '
+                    f'three seeds, and its lead over the next-best action grew from {mean(leads9):+.1f} pp on '
+                    f'average in Phase 9 (smallest {min(leads9):+.1f} pp) to **{mean(leads11):+.1f} pp** '
+                    f'(smallest {min(leads11):+.1f} pp). Phase 6 had {mean(leads6):+.1f} pp with a tie in one seed.',
+                    f'- **Futures now show what widening makes possible.** The two widening actions scored '
+                    f'{widen_own:.3f} on their own, but their best follow-up (mostly a convolution with BatchNorm '
+                    f'and ReLU on the widened layer) reached {widen_future:.3f}. Before the fix this follow-up was '
+                    'built from untrained weights and could not show it.',
+                    '- **Searches made fewer rollouts** in the same 5 minutes (19–24 against 26–30 in Phase 9; the '
+                    'cause was not measured) and reached tree depth 2–3.',
+                    '- **What this does not show:** this decision is at generation 3, where the old scoring learning '
+                    'rate was still 0.066, so the learning-rate fix matters little here. Its effect, and the effect of '
+                    'measuring again, appear in late generations of a full-growth run. Deeper futures also have more '
+                    'scoring training in total (10 epochs at depth 2 against 5 at the root), so part of the higher '
+                    'future scores is extra training.', '']
+
+
+def simulation_fixes_after_phase10_section():
+    return ['', '## Simulation fixes after Phase 10', '',
+            'The Phase 10 analysis traced the near-flat candidate scores to three problems in how Monte Carlo 2 '
+            'built and trained candidates. All three are fixed in the code; Phase 11 checks them on the A08 '
+            'decision. A fourth fix, measuring again before expanding, was added after Phase 11; Phase 12 runs '
+            'full growth with all four.', '',
+            '| Fix | Problem found in Phase 10 | Change | Commit |',
+            '| --- | --- | --- | --- |',
+            '| **Lazy expansion** | Expanding a node built every child (about 70 model copies with every action '
+            'applied) although the search scores one per step. Rollouts took about 20 s instead of 10–12 s, so the '
+            'budget bought about 1.2 measurements per candidate. | A child model is built only when the search first '
+            'visits it. The search rules and the order of children are unchanged. | `f8bed63` |',
+            '| **Scoring learning rate** | Scoring trained each candidate with the main run\'s learning rate at its '
+            'current point: 0.098 in generation 0 but 0.010 and 0.0032 in generations 7–8. Late candidates barely '
+            'changed during scoring, so up to 34 of 77 scored within 1 pp of the best. | Every scoring run trains '
+            'with a restarted copy of the main schedule (`lr_scheduler.restarted()`), so candidates in every '
+            'generation are trained the way the main run starts. The main run\'s schedule is never modified. | '
+            '`de231f4` |',
+            '| **Futures continue from trained models** | Scoring trained a throwaway copy, so a child "X then Y" '
+            'was built from the untrained parent and evaluated as X and Y applied at once, never as X → train → Y '
+            '→ train. An action that pays off one step later, such as widening, could not show its value. | '
+            '`SimulationScore.score_and_train` also returns the copy its first training term trained; each node '
+            'keeps it, and its children and rollout follow-ups are built from it. | `5d3c3f0` |',
+            '| **Measure again before expanding** *(added after Phase 11)* | Each node\'s own score was measured '
+            'once, and the best of 40–77 single noisy scores tends to be a lucky one rather than the best action. | '
+            'A node is measured `MCTS_MEASUREMENTS_BEFORE_EXPAND` times (default 2), measurement *i* with training '
+            'seed *search seed + i*, before it is expanded; its value is the average. A re-measurement replaces an '
+            'expansion visit, so a search makes the same number of scoring runs. | `abe0a33` |',
+            '', 'Not adopted from the Phase 10 suggestions: rules that prefer adding capacity when scores are close '
+            '(suggestions 1–2 above). The search must pick by its score alone, so that the same algorithm still '
+            'works when the score rewards fewer parameters. The learning-rate schedule of the main run (suggestion '
+            '3) is a training-recipe question and is left for a separate experiment.', '',
+            'Expected effect, to be checked in the next run: late-generation candidates should separate instead of '
+            'tying within 1 pp, and each search should measure more candidates more than once. One side effect to '
+            'watch: a depth-2 candidate has had 10 scoring epochs in total against 5 for a root action, so deeper '
+            'measurements may score higher.', '']
+
+
 def full_grid_section():
     lines = ['', '## Phase 10: UCB C and simulation-set grid (full growth)', '',
              'Full growth from the Experiment 010 starter, as in Phase 7, with the Phase 9 search: fixed '
@@ -390,29 +1051,52 @@ def _cell_label(ucb_c, selector):
     return f'C={ucb_c}, {GRID_SET_NAMES[selector]}'
 
 
-def _grid_figures(runs, complete):
-    seed = complete[0]
-    lines = []
-    # Training histories: validation accuracy and model size, one line per cell.
-    fig, (acc, size) = plt.subplots(2, 1, figsize=(11, 7.5), sharex=True,
+def _grid_metrics(ucb_c, selector, seed):
+    board = RUN / 'full_grid' / _cell_name(ucb_c, selector) / f'seed_{seed}' / 'board'
+    return json.loads((board / 'metrics/training.json').read_text(encoding='utf-8'))['epochs']
+
+
+CAPACITY_NEUTRAL = {'Dropout', 'Add neurons', 'Delete neurons', 'Delete layer'}
+EXP13_RUN = ROOT / 'experiments/output/train_cifar10/runs/exp012_family_search/v1/gen_10/family/cifar10/seed_1'
+
+
+def _training_comparison(cells, title, filename, seed):
+    """Training (dashed) and validation (solid) accuracy plus parameters for two cells."""
+    fig, (acc, size) = plt.subplots(2, 1, figsize=(11, 7), sharex=True,
                                     gridspec_kw={'height_ratios': [2, 1]}, layout='constrained')
-    for (ucb_c, selector), color in zip(GRID_CELLS, GRID_COLORS):
-        board = RUN / 'full_grid' / _cell_name(ucb_c, selector) / f'seed_{seed}' / 'board'
-        metrics = json.loads((board / 'metrics/training.json').read_text(encoding='utf-8'))['epochs']
+    for (ucb_c, selector), color in cells:
+        metrics = _grid_metrics(ucb_c, selector, seed)
         epochs = [row['globalEpoch'] + 1 for row in metrics]
         label = _cell_label(ucb_c, selector)
         acc.plot(epochs, [100 * row['valAcc'] for row in metrics], color=color, lw=1.6,
-                 label=f"{label} (final {100 * metrics[-1]['valAcc']:.1f}%)")
+                 label=f"{label} validation (final {100 * metrics[-1]['valAcc']:.1f}%)")
+        acc.plot(epochs, [100 * row['trainAcc'] for row in metrics], color=color, lw=1.2, ls='--',
+                 label=f"{label} training (final {100 * metrics[-1]['trainAcc']:.1f}%)")
         size.step(epochs, [row['paramCount'] for row in metrics], where='post', color=color, lw=1.6, label=label)
-    acc.set(ylabel='Validation accuracy (%)', ylim=(0, 80), title=f'Phase 10 seed {seed}: training histories')
+    acc.set(ylabel='Accuracy (%)', ylim=(0, 80), title=title)
     size.set(xlabel='Training epoch', ylabel='Parameters')
     for axis in (acc, size):
         axis.grid(alpha=.25)
         for boundary in range(20, 200, 20):
             axis.axvline(boundary + .5, color='#bbbbbb', ls=':', lw=.8)
-    acc.legend(loc='lower right')
-    fig.savefig(ASSET_DIR / '015-grid-training.png', dpi=150, bbox_inches='tight')
+    acc.legend(loc='lower right', fontsize=8)
+    size.legend(loc='upper left', fontsize=8)
+    fig.savefig(ASSET_DIR / filename, dpi=150, bbox_inches='tight')
     plt.close(fig)
+
+
+def _grid_figures(runs, complete):
+    seed = complete[0]
+    best = max(GRID_CELLS, key=lambda cell: runs[cell][seed]['final_validation_accuracy'])
+    other_c = next(cell for cell in GRID_CELLS if cell[1] == best[1] and cell[0] != best[0])
+    other_set = next(cell for cell in GRID_CELLS if cell[0] == best[0] and cell[1] != best[1])
+    color = dict(zip(GRID_CELLS, GRID_COLORS))
+    _training_comparison([(other_c, color[other_c]), (best, color[best])],
+                         f'UCB C compared ({GRID_SET_NAMES[best[1]]} simulation set), seed {seed}',
+                         '015-grid-training-ucb.png', seed)
+    _training_comparison([(other_set, color[other_set]), (best, color[best])],
+                         f'Simulation set compared (C = {best[0]}), seed {seed}',
+                         '015-grid-training-simset.png', seed)
 
     # Factor means: one panel per factor, bars from zero, individual runs as dots.
     fig, axes = plt.subplots(1, 2, figsize=(10, 4.5), sharey=True, layout='constrained')
@@ -434,68 +1118,216 @@ def _grid_figures(runs, complete):
     fig.savefig(ASSET_DIR / '015-grid-factor-means.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
 
-    lines += ['', '### Training histories', '',
-              '![Phase 10 training histories](/assets/experiments/015-grid-training.png)', '',
-              'Validation accuracy (top) and parameters (bottom) for each cell; dotted lines are generation boundaries.', '',
-              '### Factor means', '',
-              '![Phase 10 mean final validation per factor level](/assets/experiments/015-grid-factor-means.png)', '',
-              'Each bar averages the two runs at that level (one per level of the other factor); dots are the '
-              'individual runs. The values are in the factor table above.']
+    # How well each search separated its candidates: every candidate's score minus the best.
+    fig, axes = plt.subplots(1, len(GRID_CELLS), figsize=(16, 4.6), sharey=True, layout='constrained')
+    for ax, cell in zip(axes, GRID_CELLS):
+        for search in _grid_searches(*cell, seed):
+            scores = [row['score'] for row in search['candidates']]
+            top = max(scores)
+            gaps = [100 * (score - top) for score in scores]
+            jitter = [search['generation'] + .5 * ((i * 0.618) % 1 - .5) for i in range(len(gaps))]
+            ax.scatter(jitter, gaps, s=9, color=color[cell], alpha=.55, linewidths=0)
+            ties = sum(gap > -1 for gap in gaps)
+            ax.text(search['generation'], 1.2, f'{ties}/{len(gaps)}', ha='center', fontsize=7, color='#3d3d3a')
+        ax.axhspan(-1, 0, color='#cccccc', alpha=.45, lw=0)
+        ax.set(title=_cell_label(*cell), xlabel='Generation', xticks=range(9), ylim=(-20, 3))
+        ax.grid(axis='y', alpha=.25)
+    axes[0].set_ylabel('Score minus best candidate (pp)')
+    fig.suptitle(f'How clearly each search separated its candidates, seed {seed} '
+                 '(grey band: within 1 pp of the best; numbers: candidates inside it)')
+    fig.savefig(ASSET_DIR / '015-grid-separation.png', dpi=150, bbox_inches='tight')
+    plt.close(fig)
 
-    # Candidate-score distributions, one overview per cell, in the style of Phase 5.
-    from documentation.website.scripts.generate_experiment_013_action_scores import COLORS, GROUPS, group_key
-    lines += ['', '### Distribution of candidate scores', '',
-              'One chart per cell, in the same style as Phase 5: each row is one generation, each dot one candidate '
-              "(its mean search score), grouped by action type; the black-edged star is the selected action. Tight "
-              'clusters with the star barely above the rest mean the search could not separate the candidates.', '']
-    gaps = {}
-    for ucb_c, selector in GRID_CELLS:
-        searches = _grid_searches(ucb_c, selector, seed)
-        groups = [(key, name.replace('\n', ' ')) for key, name in GROUPS
-                  if any(group_key(row) == key for search in searches for row in search['candidates'])]
-        fig, axes = plt.subplots(len(searches), 1, figsize=(15, 2.6 * len(searches)), squeeze=False,
-                                 sharex=True, sharey=True)
-        fig.suptitle(f'Phase 10 {_cell_label(ucb_c, selector)}, seed {seed}: candidate search scores by action type',
-                     fontsize=14, weight='bold')
-        for ax, search in zip(axes.flat, searches):
-            for position, (key, _) in enumerate(groups):
-                rows = [row for row in search['candidates'] if group_key(row) == key and row.get('score') is not None]
-                for j, row in enumerate(rows):
-                    offset = .56 * (j - (len(rows) - 1) / 2) / max(len(rows) - 1, 1)
-                    chosen = row['action'] == search['actionChosen']
-                    color = (COLORS['Sequential convolution'] if key.startswith('Sequential convolution')
-                             else COLORS.get(key, COLORS['Other']))
-                    ax.scatter(position + offset, row['score'], s=120 if chosen else 22,
-                               marker='*' if chosen else 'o', color=color,
-                               edgecolors='black' if chosen else 'none', zorder=3)
-            ax.set_ylim(0, 1)
-            ax.set_ylabel(f"Gen {search['generation']}\nscore")
-            ax.grid(axis='y', alpha=.25)
-        axes[-1, 0].set_xticks(range(len(groups)), [label for _, label in groups], rotation=25, ha='right')
-        fig.subplots_adjust(top=.965, bottom=.04, hspace=.22)
-        name = f'015-grid-{_cell_name(ucb_c, selector)}-scores.png'
-        fig.savefig(ASSET_DIR / name, dpi=120, bbox_inches='tight')
-        plt.close(fig)
-        lines += [f'**{_cell_label(ucb_c, selector)}**', '', f'![Candidate scores, {_cell_label(ucb_c, selector)}](/assets/experiments/{name})', '']
-        gaps[(ucb_c, selector)] = [
-            100 * (scores[0] - scores[1]) for scores in
-            (sorted((row['score'] for row in search['candidates']), reverse=True) for search in searches)
-            if len(scores) > 1]
-    lines += ['How far the selected action stood out: the gap between the best and second-best mean score in each '
-              'generation, and the spread (best minus median).', '',
-              '| Cell | Median gap best − 2nd | Generations with gap < 1 pp | Median spread best − median |',
-              '| --- | ---: | ---: | ---: |']
-    for ucb_c, selector in GRID_CELLS:
-        searches = _grid_searches(ucb_c, selector, seed)
-        spreads = []
-        for search in searches:
-            scores = sorted((row['score'] for row in search['candidates']), reverse=True)
-            spreads.append(100 * (scores[0] - scores[len(scores) // 2]))
-        cell_gaps = sorted(gaps[(ucb_c, selector)])
-        median = lambda values: sorted(values)[len(values) // 2]
-        lines.append(f'| {_cell_label(ucb_c, selector)} | {median(cell_gaps):.2f} pp | '
-                     f'{sum(gap < 1 for gap in cell_gaps)} of {len(cell_gaps)} | {median(spreads):.2f} pp |')
-    return lines
+    # What each selected action delivered, against Experiment 13.
+    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
+    fig, ax = plt.subplots(figsize=(11, 5), layout='constrained')
+    styles = {'adds layer': ('o', '#2a78d6'), 'widens': ('D', '#1baf7a'), 'no capacity': ('x', '#eb6834')}
+    plotted = set()
+    for index, cell in enumerate(GRID_CELLS):
+        metrics = _grid_metrics(*cell, seed)
+        end = {row['globalEpoch'] // 20: row['valAcc'] for row in metrics}
+        for search in _grid_searches(*cell, seed):
+            generation = search['generation']
+            kind = group_key({'action': search['actionChosen']})
+            category = ('widens' if kind == 'Widen convolution' else
+                        'no capacity' if kind in CAPACITY_NEUTRAL else 'adds layer')
+            marker, mark_color = styles[category]
+            ax.scatter(generation + (index - 1.5) * .12, 100 * (end[generation + 1] - end[generation]),
+                       marker=marker, color=mark_color, s=40,
+                       label={'adds layer': 'Phase 10: adds a layer', 'widens': 'Phase 10: widens a convolution',
+                              'no capacity': 'Phase 10: adds no capacity'}[category] if category not in plotted else None)
+            plotted.add(category)
+    exp13 = json.loads((EXP13_RUN / 'board/metrics/training.json').read_text(encoding='utf-8'))['epochs']
+    end13 = {row['globalEpoch'] // 20: row['valAcc'] for row in exp13}
+    ax.plot(range(9), [100 * (end13[g + 1] - end13[g]) for g in range(9)], color='#6b6b66', lw=1.4,
+            marker='.', label='Experiment 13 (widened to 64 channels, then A08 at generation 3)')
+    ax.axhline(0, color='#999999', lw=.8)
+    ax.set(xlabel='Generation in which the action was chosen', xticks=range(9),
+           ylabel='Validation change over the next generation (pp)',
+           title=f'What each selected action delivered (all four Phase 10 cells, seed {seed})')
+    ax.grid(axis='y', alpha=.25)
+    ax.legend(fontsize=8)
+    fig.savefig(ASSET_DIR / '015-grid-action-gains.png', dpi=150, bbox_inches='tight')
+    plt.close(fig)
+
+    # Detailed candidate chart for the best cell only.
+    from documentation.website.scripts.generate_experiment_013_action_scores import COLORS, GROUPS
+    searches = _grid_searches(*best, seed)
+    groups = [(key, name.replace('\n', ' ')) for key, name in GROUPS
+              if any(group_key(row) == key for search in searches for row in search['candidates'])]
+    fig, axes = plt.subplots(len(searches), 1, figsize=(15, 2.6 * len(searches)), squeeze=False,
+                             sharex=True, sharey=True)
+    fig.suptitle(f'Phase 10 {_cell_label(*best)}, seed {seed}: candidate search scores by action type',
+                 fontsize=14, weight='bold')
+    for ax, search in zip(axes.flat, searches):
+        for position, (key, _) in enumerate(groups):
+            rows = [row for row in search['candidates'] if group_key(row) == key and row.get('score') is not None]
+            for j, row in enumerate(rows):
+                offset = .56 * (j - (len(rows) - 1) / 2) / max(len(rows) - 1, 1)
+                chosen = row['action'] == search['actionChosen']
+                mark = (COLORS['Sequential convolution'] if key.startswith('Sequential convolution')
+                        else COLORS.get(key, COLORS['Other']))
+                ax.scatter(position + offset, row['score'], s=120 if chosen else 22,
+                           marker='*' if chosen else 'o', color=mark,
+                           edgecolors='black' if chosen else 'none', zorder=3)
+        ax.set_ylim(0, 1)
+        ax.set_ylabel(f"Gen {search['generation']}\nscore")
+        ax.grid(axis='y', alpha=.25)
+    axes[-1, 0].set_xticks(range(len(groups)), [label for _, label in groups], rotation=25, ha='right')
+    fig.subplots_adjust(top=.965, bottom=.04, hspace=.22)
+    best_name = f'015-grid-{_cell_name(*best)}-scores.png'
+    fig.savefig(ASSET_DIR / best_name, dpi=120, bbox_inches='tight')
+    plt.close(fig)
+
+    return ['', '### Training histories', '',
+            f'Solid lines are validation accuracy, dashed lines training accuracy. The best cell '
+            f'({_cell_label(*best)}) is compared with the other UCB C at the same simulation set, and with the '
+            'other simulation set at the same C.', '',
+            '![UCB C compared](/assets/experiments/015-grid-training-ucb.png)', '',
+            '![Simulation set compared](/assets/experiments/015-grid-training-simset.png)', '',
+            '### Factor means', '',
+            '![Phase 10 mean final validation per factor level](/assets/experiments/015-grid-factor-means.png)', '',
+            'Each bar averages the two runs at that level (one per level of the other factor); dots are the '
+            'individual runs.', '',
+            '### Could the search tell its candidates apart?', '',
+            '![How clearly each search separated its candidates](/assets/experiments/015-grid-separation.png)', '',
+            'Each dot is one candidate, placed by how far its score was below the best candidate of that search. '
+            'The grey band is the 1 pp noise level of one scoring run; the number above each generation counts the '
+            'candidates inside it. A search that knows what is best has one dot at 0 and the rest well below; many '
+            'dots inside the band mean the choice was effectively a coin toss among near-ties.', '',
+            '### What the selected actions delivered', '',
+            '![What each selected action delivered](/assets/experiments/015-grid-action-gains.png)', '',
+            'Validation change over the generation after each decision, for every decision in the four cells, '
+            'by kind of action. The grey line is Experiment 13 for contrast: its generation-3 action (A08, '
+            '64 → 64 convolution after widening to 64 channels) gave the +20.8 pp jump.', '',
+            '### Candidate scores in the best cell', '',
+            f'![Candidate scores, {_cell_label(*best)}](/assets/experiments/{best_name})', '',
+            'Each row is one generation and each dot one candidate, grouped by action type; the black-edged '
+            'star is the selected action.']
+
+
+def _grid_findings(runs, complete):
+    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
+    seed = complete[0]
+    searches = [search for cell in GRID_CELLS for search in _grid_searches(*cell, seed)]
+    late = [search for search in searches if search['generation'] >= 3]
+    candidates = sum(len(search['candidates']) for search in late)
+    rollouts = sum(search['rollouts'] for search in late)
+    seconds = sum(search['durationSec'] for search in late) / rollouts
+    widen_offered = sum(any('Widen Conv' in row['action'] for row in search['candidates']) for search in searches)
+    widen_chosen = sum('Widen Conv' in search['actionChosen'] for search in searches)
+    values = [runs[cell][s]['final_validation_accuracy'] * 100 for cell in GRID_CELLS for s in complete]
+
+    gains = {'neutral': [], 'adds': [], 'early': []}
+    train_end, val_end = [], []
+    for cell in GRID_CELLS:
+        metrics = _grid_metrics(*cell, seed)
+        end = {row['globalEpoch'] // 20: row for row in metrics}
+        train_end.append(100 * metrics[-1]['trainAcc'])
+        val_end.append(100 * metrics[-1]['valAcc'])
+        for search in _grid_searches(*cell, seed):
+            g = search['generation']
+            gain = 100 * (end[g + 1]['valAcc'] - end[g]['valAcc'])
+            if g <= 2:
+                gains['early'].append(gain)
+            elif group_key({'action': search['actionChosen']}) in CAPACITY_NEUTRAL:
+                gains['neutral'].append(gain)
+            else:
+                gains['adds'].append(gain)
+    lr = {row['globalEpoch'] // 20: row['lr'] for row in _grid_metrics(*GRID_CELLS[0], seed)}
+
+    widen_vs_quiet, layer_vs_quiet = [], []
+    for search in searches:
+        def best(match):
+            scores = [row['score'] for row in search['candidates'] if match(row)]
+            return max(scores) if scores else None
+        quiet = best(lambda row: 'Dropout' in row['action'] and 'p=0.1' in row['action'])
+        widen = best(lambda row: 'Widen Conv' in row['action'])
+        layer = best(lambda row: group_key(row) in ('Sequential convolution + BN', 'Sequential convolution without BN',
+                                                     'Residual convolution'))
+        if quiet is not None and widen is not None:
+            widen_vs_quiet.append(100 * (widen - quiet))
+        if quiet is not None and layer is not None:
+            layer_vs_quiet.append(100 * (layer - quiet))
+    ties = [sum(max(row['score'] for row in s['candidates']) - row['score'] < 0.01 for row in s['candidates'])
+            for s in searches if s['generation'] >= 7]
+    late_sizes = [len(s['candidates']) for s in searches if s['generation'] >= 7]
+    mean = lambda items: sum(items) / len(items)
+    exp13 = json.loads((EXP13_RUN / 'board/metrics/training.json').read_text(encoding='utf-8'))['epochs']
+    exp13_params = {row['globalEpoch'] // 20: row['paramCount'] for row in exp13}
+    final_params = [runs[cell][s]['final_parameters'] for cell in GRID_CELLS for s in complete]
+
+    return ['', '### What Phase 10 shows', '',
+            f'- **Final validation ranged from {min(values):.2f}% to {max(values):.2f}%.** No cell beat Phase 5 '
+            '(64.02%) and all stayed far below Experiment 13 (69.48%). C = 1.0 ended higher than C = 0.05 with both '
+            'simulation sets; with one seed per cell this is within the seed-to-seed spread. Moderate and CCS were '
+            'practically equal.',
+            f'- **Nothing useful was added after generation 2.** Generations 0–2 gained {mean(gains["early"]):+.1f} pp '
+            f'on average. From generation 3, generations where the selected action added a layer gained '
+            f'{mean(gains["adds"]):+.1f} pp, and generations where it added no capacity (dropout, neuron or layer '
+            f'removal) gained {mean(gains["neutral"]):+.1f} pp. The added layers brought nothing beyond continued '
+            'training.',
+            f'- **The models are capacity-limited, not overfitting.** Final training accuracy was '
+            f'{min(train_end):.1f}–{max(train_end):.1f}% against {min(val_end):.1f}–{max(val_end):.1f}% validation '
+            '(training is measured with cutout augmentation). The networks cannot fit even the training data, so only '
+            'a real capacity increase can help.',
+            f'- **The network stayed 8 channels wide.** The only widening chosen took conv1 to 16 channels in '
+            f'generation 7 of C = 1.0, Moderate, too late to matter. Every added convolution is 8 → 8 '
+            f'(about +600 parameters) and everything reaches the classifier through an 8-channel global pool. Final '
+            f'models had {min(final_params):,}–{max(final_params):,} parameters. Experiment 13 widened conv1 to 64 '
+            f'channels in generations 0–2 and had {exp13_params[4]:,} parameters after its generation-3 action.',
+            f'- **The score cannot see the value of widening.** Widening was offered in {widen_offered} of '
+            f'{len(searches)} searches and chosen {widen_chosen} {"time" if widen_chosen == 1 else "times"}. Its best '
+            f'score was on average {mean(widen_vs_quiet):+.1f} pp from a nearly-no-change action (dropout 0.1), while '
+            f'the best added layer scored {mean(layer_vs_quiet):+.1f} pp above it. Widening copies channels so the '
+            'function is unchanged, and the copies only drift apart slowly, so within 5 scoring epochs a widened '
+            'model behaves like the unwidened one. An added layer gets a small short-term edge that does not last.',
+            f'- **The scores flatten as the model trains.** Every candidate starts from the same trained weights and '
+            f'changes it only slightly, so in generations 7–8 between {min(ties)} and {max(ties)} of '
+            f'{min(late_sizes)}–{max(late_sizes)} candidates scored within 1 pp of the best (the separation chart).',
+            f'- **Late changes have little learning rate left.** The cosine schedule falls from 0.1 to '
+            f'{lr[5]:.3f} at the end of generation 5 and {lr[8]:.4f} at the end of generation 8, so a new layer added '
+            'late cannot learn much in the remaining epochs. Experiment 13 made its decisive change at generation 3, '
+            f'with the learning rate still at {lr[3]:.3f}.',
+            f'- **The budget bought fewer rollouts than planned:** {rollouts / candidates:.1f} per candidate from '
+            f'generation 3, at about {seconds:.0f} s per rollout instead of 10–12 s in Phase 9. Expanding a node builds '
+            'every child up front, which is the most likely cause (not profiled). As a result UCB C changed little '
+            'after the first generations.', '',
+            '### What to change', '',
+            'The search is not failing to find a good action among those it compares; it compares the wrong things '
+            'with a score that cannot see width. In order of expected impact:', '',
+            '1. **Make width growth reachable.** Offer widening by larger factors (up to 64 channels) and favour '
+            'capacity when scores are within the 1 pp noise level, for example by picking the near-tied candidate '
+            'that adds the most parameters. This targets both the 8-channel bottleneck and the near-ties.',
+            '2. **Score the gain over the unchanged model.** Score the current model once per search and rank '
+            'candidates by improvement over it; if no candidate beats it by more than the noise, prefer the one that '
+            'adds most capacity instead of a random near-tie.',
+            '3. **Decide big changes early or keep the learning rate up.** Either limit growth to the first half of '
+            'the run, or restart the learning rate after each structural change, so late additions can still learn.',
+            '4. **Build children lazily** so the budget buys the intended two or more rollouts per candidate.',
+            '', 'A cheap way to confirm the diagnosis before changing the search: one run that widens conv1 by 2× in '
+            'each of generations 0–2 (as Experiment 13 did) and then lets the Phase 10 search decide. If it reaches '
+            'Experiment 13 territory, width is the missing ingredient and items 1–2 are the right fix.']
 
 
 def _grid_searches(ucb_c, selector, seed):
@@ -525,54 +1357,6 @@ def _grid_decisions(seed):
             cells.append(f"{group_key({'action': search['actionChosen']})} (#{widen[0] if widen else '–'})")
         lines.append(f'| {generation} | ' + ' | '.join(cells) + ' |')
     return lines
-
-
-def _grid_findings(runs, complete):
-    searches = [search for c, s in GRID_CELLS for seed in complete for search in _grid_searches(c, s, seed)]
-    late = [search for search in searches if search['generation'] >= 3]
-    candidates = sum(len(search['candidates']) for search in late)
-    rollouts = sum(search['rollouts'] for search in late)
-    seconds = sum(search['durationSec'] for search in late) / rollouts
-    widen_offered = sum(any('Widen Conv' in row['action'] for row in search['candidates']) for search in searches)
-    widen_chosen = sum('Widen Conv' in search['actionChosen'] for search in searches)
-    dropout_chosen = sum('Dropout' in search['actionChosen'] for search in searches)
-    values = [runs[cell][seed]['final_validation_accuracy'] * 100 for cell in GRID_CELLS for seed in complete]
-    early = [search for search in searches if search['generation'] <= 1]
-    def early_visits(ucb_c):
-        rows = [max(row['visits'] for row in search['candidates']) for (c, s) in GRID_CELLS if c == ucb_c
-                for seed in complete for search in _grid_searches(c, s, seed) if search['generation'] <= 1]
-        return f'{min(rows)}–{max(rows)}'
-    ties = [sum(max(row['score'] for row in search['candidates']) - row['score'] < 0.01 for row in search['candidates'])
-            for search in searches if search['generation'] >= 7]
-    late_sizes = [len(search['candidates']) for search in searches if search['generation'] >= 7]
-    tie_line = (f'- **In late generations the scores are nearly flat.** In generations 7–8, between {min(ties)} and '
-                f'{max(ties)} of the {min(late_sizes)}–{max(late_sizes)} candidates scored within 1 pp of the best, '
-                'across every action type (see the distribution charts). The selected action is then effectively '
-                'a random pick among near-ties, which explains why dropout and other capacity-neutral actions keep '
-                'being chosen.')
-    return ['', '### What Phase 10 shows', '',
-            f'- **Final validation ranged from {min(values):.2f}% to {max(values):.2f}%.** None of the four cells '
-            'beat Phase 5 (64.02%), and all stayed far below Experiment 13 (69.48%). C = 1.0 ended higher than '
-            'C = 0.05 with both simulation sets, but with one seed per cell this difference is within the '
-            'seed-to-seed spread seen before; Moderate and CCS were practically equal.',
-            f'- **The budget bought fewer rollouts than planned.** From generation 3 on, searches made {rollouts} '
-            f'rollouts for {candidates} candidates ({rollouts / candidates:.1f} per candidate), at about '
-            f'{seconds:.0f} seconds per rollout instead of the 10–12 seconds measured in Phase 9. Expanding a node '
-            'builds every possible child up front (including the widening output checks), which is the most '
-            'likely cause; this was not profiled.',
-            f'- **So UCB C hardly mattered after the first generations.** With about one rollout per candidate, '
-            'most candidates got one visit and the leaders at most two in either setting. Only in generations 0–1, '
-            f'where the 5-minute minimum left spare time, did the settings differ: the most-visited candidate got '
-            f'{early_visits(0.05)} visits with C = 0.05 and {early_visits(1.0)} with C = 1.0.',
-            f'- **Widening was available but rarely chosen.** Fan-out widening made it available in '
-            f'{widen_offered} of {len(searches)} searches, yet it was selected {widen_chosen} {"time" if widen_chosen == 1 else "times"}. With 5-epoch '
-            'scoring, adding a layer beats widening in the short term, so the search never takes the wide path that '
-            'Experiment 13 took with 1-epoch scoring. Dropout was selected in '
-            f'{dropout_chosen} of {len(searches)} searches, which adds no capacity.',
-            tie_line,
-            '- **Next steps suggested by this phase:** build children only when they are first visited, so the '
-            'budget buys the planned number of rollouts; and test whether shorter (1-epoch) scoring, or a score '
-            'that credits added capacity, lets the search take the widening path in full growth.']
 
 
 def noise_fix_section():
@@ -915,6 +1699,13 @@ def main():
     lines += score_fix_20_epochs_section()
     lines += noise_fix_section()
     lines += full_grid_section()
+    lines += simulation_fixes_after_phase10_section()
+    lines += sim_fixes_check_section()
+    lines += sim_fixes_growth_section()
+    lines += decision_replay_section()
+    lines += widening_growth_section()
+    lines += scoring_calibration_section()
+    lines += normalization_section()
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     REPORT.write_text('\n'.join(lines), encoding='utf-8')
     print(f'Wrote {REPORT} and {CHART}')
