@@ -100,6 +100,17 @@ class NodeTypeChecker:
         return NodeTypeChecker.two_d_pool_kind(node, gm) is not None
 
     @staticmethod
+    def is_global_pool(node: fx.Node, gm: fx.GraphModule) -> bool:
+        """True for adaptive 2-D pooling to a 1x1 output."""
+        if NodeTypeChecker.two_d_pool_kind(node, gm) not in ("adaptive_max", "adaptive_avg"):
+            return False
+        if node.op == "call_module":
+            size = ModuleResolver.get_layer_module(node, gm).output_size
+        else:
+            size = node.args[1] if len(node.args) > 1 else node.kwargs.get("output_size")
+        return size in (1, (1, 1))
+
+    @staticmethod
     def two_d_pool_kind(node: fx.Node, gm: fx.GraphModule) -> str | None:
         """Return windowed_max/windowed_avg/adaptive_max/adaptive_avg, else None."""
         if node.op == "call_function":
@@ -152,7 +163,9 @@ class NodeWidthAnalyser:
                     elif isinstance(child, nn.Linear):
                         width = child.out_features
                 return width
-        if (NodeTypeChecker.is_passthrough(gm, n) or NodeTypeChecker.is_add(n)) and n.all_input_nodes:
+        # 2-D pooling keeps the channel count.
+        if (NodeTypeChecker.is_passthrough(gm, n) or NodeTypeChecker.is_add(n)
+                or NodeTypeChecker.is_pool_node(n, gm)) and n.all_input_nodes:
             return NodeWidthAnalyser.node_output_width(gm, n.all_input_nodes[0])
         return None
 

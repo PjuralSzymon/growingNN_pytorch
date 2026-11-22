@@ -1,7 +1,8 @@
+import copy
+
 import torch
 import torch.fx as fx
 import torch.nn as nn
-import torch.nn.functional as F
 
 from growingnn.core import config
 from growingnn.core.config import PASSTHROUGH_MODULES_TO_UPDATE, PROPAGATION_RESIZABLE_MODULES, PASSTHROUGH_MODULES
@@ -460,126 +461,102 @@ def resize_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, new_width
     return gm
 
 
-def _single_path_consumer(gm: fx.GraphModule, node: fx.Node) -> fx.Node | None:
-    """First module reached from *node* through a single-user chain of passthrough or pool ops."""
-    cur = node
-    while len(cur.users) == 1:
-        cur = next(iter(cur.users))
-        if cur.op == 'call_module':
-            return cur
-        if not (NodeTypeChecker.is_passthrough(gm, cur) or NodeTypeChecker.is_pool_node(cur, gm)):
-            return None
-    return None
+def _width_is_absorbed(gm: fx.GraphModule, node: fx.Node) -> bool:
+    """True when every path from *node* reaches a convolution or linear layer through channel-wise operations.
 
-
-_FANOUT_PASSTHROUGH_MODULES = (nn.ReLU, nn.Identity, nn.Dropout, nn.Dropout2d)
-_FANOUT_PASSTHROUGH_FUNCTIONS = (torch.relu, F.relu)
-
-
-def _fanout_conv_consumers(gm: fx.GraphModule, node: fx.Node, width: int) -> dict[str, nn.Conv2d] | None:
-    """Convolutions reached by every branch out of *node*, or None if any branch is unsupported.
-
-    Each branch may pass only through ReLU, identity or dropout before reaching an ungrouped
-    convolution that reads *width* channels and is called once.
+    Those layers read the new channels with zero weights, so a wider *node* leaves the network's
+    output shape and values unchanged. Flatten counts only after global pooling, where it keeps the
+    channel count.
     """
-    pending, seen, consumers = list(node.users), set(), {}
+    pending, seen = list(node.users), set()
     while pending:
         cur = pending.pop()
         if cur in seen:
             continue
         seen.add(cur)
-        if cur.op == 'call_module':
+        if cur.op == "call_module":
             module = ModuleResolver.get_layer_module(cur.target, gm)
-            if isinstance(module, nn.Conv2d):
-                if module.groups != 1 or module.in_channels != width:
-                    return None
-                consumers[str(cur.target)] = module
+            if isinstance(module, nn.Linear) or (isinstance(module, nn.Conv2d) and module.groups == 1):
                 continue
-            if not isinstance(module, _FANOUT_PASSTHROUGH_MODULES):
-                return None
-        elif cur.op != 'call_function' or cur.target not in _FANOUT_PASSTHROUGH_FUNCTIONS:
-            return None
-        if not cur.users:
-            return None
+            if isinstance(module, nn.Sequential) and _sequential_branch_resizable(module):
+                continue
+        if NodeTypeChecker.is_flatten_node(cur, gm):
+            if not NodeTypeChecker.is_global_pool(cur.all_input_nodes[0], gm):
+                return False
+        elif not (NodeTypeChecker.is_passthrough(gm, cur) or NodeTypeChecker.is_add(cur)
+                  or NodeTypeChecker.is_pool_node(cur, gm)
+                  or (cur.op == "call_module" and isinstance(
+                      ModuleResolver.get_layer_module(cur.target, gm), PASSTHROUGH_MODULES_TO_UPDATE))):
+            return False
         pending.extend(cur.users)
-    for target in consumers:
-        if sum(n.op == 'call_module' and n.target == target for n in gm.graph.nodes) != 1:
-            return None
-    return consumers or None
+    return True
 
 
-def _widen_by_duplication(gm: fx.GraphModule, layer_id: str, conv: nn.Conv2d, consumers, new_width: int) -> None:
-    """Repeat the conv's channels and split each consumer's input weights between the copies.
+def can_resize_conv_output(gm: fx.GraphModule, layer_id: str) -> bool:
+    """Return True when an ungrouped convolution can be widened and the new width propagated."""
+    mod = ModuleResolver.get_layer_module(layer_id, gm)
+    if not isinstance(mod, nn.Conv2d) or mod.groups != 1:
+        return False
+    node = next((n for n in gm.graph.nodes if n.op == "call_module" and n.target == layer_id), None)
+    return (node is not None and not NodeWidthAnalyser.propagation_hits_unsizable(gm, node)
+            and _width_is_absorbed(gm, node))
 
-    *consumers* is a list of (module name, module, function building its wider copy, minimum noise).
-    Each consumer sees the same sum, so outputs are unchanged. A noise term added to the first
-    copy and subtracted from the second breaks symmetry so the copies can learn differently.
+
+def _keep_old_weights_and_zero_new_inputs(gm: fx.GraphModule, before: dict[str, nn.Module]) -> None:
+    """Initialize every grown layer so the network computes what it did before growing.
+
+    Old weights keep their values and positions. New output channels get the layer's default random
+    initialization; inputs from new channels get zero weights. New channels only add terms to the sums
+    that later layers compute, so those zeros make every sum, and the output, unchanged.
     """
-    old_width = conv.out_channels
-    repeats = new_width // old_width
-    new_conv = ConvFactory.create_conv_with_rescaled_output_channels(conv, new_width)
-    replacements = {}
+    def size(module):
+        return module.weight.shape if isinstance(module, (nn.Conv2d, nn.Linear)) else (module.num_features,)
+
     with torch.no_grad():
-        new_conv.weight.copy_(conv.weight.repeat(repeats, 1, 1, 1))
-        if conv.bias is not None:
-            new_conv.bias.copy_(conv.bias.repeat(repeats))
-    for consumer_id, consumer, widen_consumer, min_noise in consumers:
-        new_consumer = widen_consumer(consumer, new_width)
-        with torch.no_grad():
-            weight = consumer.weight
-            split = weight.repeat(1, repeats, *[1] * (weight.dim() - 2)) / repeats
-            noise_scale = max(float(weight.detach().std(unbiased=False)) * 0.1, min_noise)
-            noise = torch.randn_like(weight) * noise_scale
-            split[:, :old_width] += noise
-            split[:, old_width:2 * old_width] -= noise
-            new_consumer.weight.copy_(split)
-            if consumer.bias is not None:
-                new_consumer.bias.copy_(consumer.bias)
-        replacements[consumer_id] = new_consumer
-    NodeEditor.replace_submodule(gm, layer_id, new_conv)
-    for consumer_id, new_consumer in replacements.items():
-        NodeEditor.replace_submodule(gm, consumer_id, new_consumer)
+        for name, mod in gm.named_modules():
+            old = before.get(name)
+            if old is None or type(old) is not type(mod) or size(old) == size(mod):
+                continue
+            if any(new < previous for new, previous in zip(size(mod), size(old))):
+                raise RuntimeError(f"{name} shrank while widening")
+            mod.reset_parameters()
+            if isinstance(mod, (nn.Conv2d, nn.Linear)):
+                outputs, inputs = old.weight.shape[:2]
+                mod.weight[:, inputs:] = 0
+                mod.weight[:outputs, :inputs] = old.weight
+                if mod.bias is not None:
+                    mod.bias[:outputs] = old.bias
+                continue
+            for attr in ("weight", "bias", "running_mean", "running_var", "num_batches_tracked"):
+                value = getattr(old, attr)
+                if value is None:
+                    continue
+                target = getattr(mod, attr)
+                if value.dim() == 0:
+                    target.copy_(value)
+                else:
+                    target[:old.num_features] = value
 
 
 def resize_conv_output(gm: fx.GraphModule, layer_id: str, new_width: int) -> fx.GraphModule:
-    """Widen an ungrouped convolution and propagate the new width through the graph.
+    """Widen an ungrouped convolution, propagate the new width, and keep the network's function.
 
-    The widening keeps the network's function when the output reaches a conv or linear layer on a
-    single path, or reaches only convolutions on several branches (e.g. after a residual
-    convolution). Otherwise the generic width propagation is used.
+    Every layer the new width reaches grows with it: BatchNorm, the partners of residual sums, and the
+    layers that read the channels, up to the classifier after global pooling.
     """
     mod = ModuleResolver.get_layer_module(layer_id, gm)
     if not isinstance(mod, nn.Conv2d) or mod.groups != 1:
         raise ValueError(f"{layer_id} must be an ungrouped Conv2d")
     if new_width <= mod.out_channels:
         raise ValueError("convolution widening must increase the channel count")
-    node = ModuleResolver.find_call_module(gm.graph.nodes, layer_id)
-    if node is None or NodeWidthAnalyser.propagation_hits_unsizable(gm, node):
+    if not can_resize_conv_output(gm, layer_id):
         raise ValueError(f"Cannot safely propagate width from {layer_id}")
-    consumers = None
-    if new_width % mod.out_channels == 0:
-        consumer_node = _single_path_consumer(gm, node)
-        consumer = (ModuleResolver.get_layer_module(consumer_node.target, gm)
-                    if consumer_node is not None else None)
-        if (isinstance(consumer, nn.Conv2d) and consumer.groups == 1
-                and consumer.in_channels == mod.out_channels):
-            consumers = [(str(consumer_node.target), consumer,
-                          ConvFactory.create_conv_with_rescaled_input_channels, 0.001)]
-        elif isinstance(consumer, nn.Linear) and consumer.in_features == mod.out_channels:
-            consumers = [(str(consumer_node.target), consumer,
-                          LinearFactory.create_linear_with_rescaled_connections, 0.01)]
-        else:
-            fanout = _fanout_conv_consumers(gm, node, mod.out_channels)
-            if fanout is not None:
-                consumers = [(name, conv, ConvFactory.create_conv_with_rescaled_input_channels, 0.001)
-                             for name, conv in fanout.items()]
-    if consumers is not None:
-        _widen_by_duplication(gm, layer_id, mod, consumers, new_width)
-        gm.recompile()
-        return gm
+    before = {name: copy.deepcopy(module) for name, module in gm.named_modules()
+              if isinstance(module, (nn.Conv2d, nn.Linear, *PASSTHROUGH_MODULES_TO_UPDATE))}
     head_name, head_width = _snapshot_pinned_head_out(gm)
     _rescale_conv_output(gm, layer_id, mod, new_width)
     fix_graph_widths(gm, align_add_to=new_width, pinned_head_out=head_width,
                      pinned_head_name=head_name)
+    _keep_old_weights_and_zero_new_inputs(gm, before)
     gm.recompile()
     return gm

@@ -193,3 +193,84 @@ def test_unsupported_consumer_is_not_offered():
     traced = TracedModel.create(Unsupported(), (1, 3, 32, 32))
     assert WidenConv.generate_all_actions(traced) == []
     assert traced.gm.conv.out_channels == 8
+
+
+def _with_trained_batchnorm_statistics(traced):
+    torch.manual_seed(0)
+    with torch.no_grad():
+        for module in traced.gm.modules():
+            if isinstance(module, torch.nn.BatchNorm2d):
+                module.running_mean.normal_()
+                module.running_var.uniform_(0.5, 2.0)
+                module.weight.normal_(1.0, 0.3)
+                module.bias.normal_(0.0, 0.3)
+    return traced
+
+
+def test_every_convolution_is_offered_including_those_feeding_batchnorm_and_residual_sums():
+    traced = _starter_with_residual_after_conv1()
+
+    offered = {tuple(action.params[:2]) for action in WidenConv.generate_all_actions(traced)}
+
+    assert offered == {(name, width) for name in ('conv1', 'seq_conv_0', 'res_conv__0') for width in (16, 32)}
+
+
+@pytest.mark.parametrize('mode', ['eval', 'train'])
+@pytest.mark.parametrize('name', ['conv1', 'seq_conv_0', 'res_conv__0'])
+def test_widening_keeps_outputs_exactly_through_batchnorm_residual_sum_and_classifier(name, mode):
+    import copy
+
+    traced = _with_trained_batchnorm_statistics(_starter_with_residual_after_conv1())
+    action = next(a for a in WidenConv.generate_all_actions(traced) if a.params[:2] == [name, 16])
+    reference = copy.deepcopy(traced.gm)
+    getattr(reference, mode)()
+    inputs = torch.randn(8, 3, 32, 32)
+    with torch.no_grad():
+        before = reference(inputs)
+    parameters = sum(p.numel() for p in traced.gm.parameters())
+
+    action.execute(traced)
+    getattr(traced.gm, mode)()
+    with torch.no_grad():
+        after = traced.gm(inputs)
+
+    torch.testing.assert_close(after, before, rtol=0, atol=1e-6)
+    assert sum(p.numel() for p in traced.gm.parameters()) > parameters
+
+
+def test_widening_the_last_residual_group_widens_the_classifier_input_and_the_new_weights_learn():
+    traced = _starter_with_residual_after_conv1()
+    action = next(a for a in WidenConv.generate_all_actions(traced) if a.params[:2] == ['seq_conv_0', 16])
+
+    action.execute(traced)
+
+    assert traced.gm.seq_conv_0.out_channels == traced.gm.res_conv__0.out_channels == 16
+    assert traced.gm.seq_conv_0_bn.num_features == 16
+    assert traced.gm.linear2.in_features == 16
+    assert torch.count_nonzero(traced.gm.linear2.weight[:, 8:]) == 0
+    traced.gm(torch.randn(4, 3, 32, 32)).square().mean().backward()
+    assert torch.count_nonzero(traced.gm.linear2.weight.grad[:, 8:]) > 0
+
+
+def test_convolution_before_a_windowed_pool_and_flatten_is_not_offered():
+    class PooledFlatten(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.conv = torch.nn.Conv2d(3, 8, 3, padding=1)
+            self.head = torch.nn.Linear(8 * 16 * 16, 10)
+
+        def forward(self, x):
+            return self.head(torch.nn.functional.max_pool2d(self.conv(x), 2).flatten(1))
+
+    traced = TracedModel.create(PooledFlatten(), (1, 3, 32, 32))
+
+    assert WidenConv.generate_all_actions(traced) == []
+
+
+def test_width_of_a_functional_pool_is_its_input_channel_count():
+    from growingnn.utils.fx import NodeWidthAnalyser
+
+    traced = TracedModel.create(TinyCifar10Starter(), (1, 3, 32, 32))
+    pool = next(n for n in traced.gm.graph.nodes if n.name == 'adaptive_avg_pool2d')
+
+    assert NodeWidthAnalyser.node_output_width(traced.gm, pool) == 8

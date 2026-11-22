@@ -147,7 +147,7 @@ class RunningConfig:
         self.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_01 = True
         self.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_02 = True
         self.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_05 = True
-        self.ACTIONS_ENABLE_WIDEN_CONV = False  # off by default (each candidate needs a forward check); update_grow_actions sets it
+        self.ACTIONS_ENABLE_WIDEN_CONV = False  # off by default; update_grow_actions sets it
 
     def set_simulation_loaders(self, sim_train_loader: DataLoader, sim_val_loader: DataLoader):
         self.sim_train_loader = sim_train_loader
