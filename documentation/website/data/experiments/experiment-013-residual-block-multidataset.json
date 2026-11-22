@@ -1,6 +1,6 @@
 {
-  "experiment": "012_residual_block_multidataset",
-  "generatedAtUtc": "2026-11-19T20:52:55+00:00",
+  "experiment": "013_residual_block_multidataset",
+  "generatedAtUtc": "2026-11-19T21:27:22+00:00",
   "generatedFrom": "saved history.pt and Experiment Board JSON artifacts",
   "status": {
     "completedRuns": 19,
@@ -299,15 +299,15 @@
       "arm": "block_actions_on",
       "seed": 2,
       "status": "running",
-      "completed_epochs": 200,
-      "final_train_accuracy": 0.18142222222222223,
-      "final_validation_accuracy": 0.1716,
+      "completed_epochs": 203,
+      "final_train_accuracy": 0.18393333333333334,
+      "final_validation_accuracy": 0.1849,
       "final_test_accuracy": null,
-      "final_parameters": 30024,
+      "final_parameters": 30296,
       "stopped_by_validation_target": null,
       "started": "2026-11-19T14:31:00Z",
-      "updated": "2026-11-19T20:48:02Z",
-      "elapsed_seconds": 22622
+      "updated": "2026-11-19T21:00:15Z",
+      "elapsed_seconds": 23354
     },
     {
       "dataset": "tiny_imagenet",

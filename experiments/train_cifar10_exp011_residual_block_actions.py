@@ -1,4 +1,4 @@
-"""Experiment 010: test residual-block grow/shrink actions on three datasets.
+"""Experiment 011: test residual-block grow/shrink actions on three datasets.
 
 Every run starts from the same topology: one small convolution, global average
 pool, and a dataset-sized linear classifier. The only arm difference is
@@ -7,8 +7,8 @@ types and training/search settings are held fixed. Two seeds are run per arm
 and dataset; history.pt records train/validation/test histories and each
 chosen action with generation and validation change.
 
-    pipenv run python -u experiments/train_cifar10_exp010_residual_block_actions.py
-    pipenv run python -u experiments/train_cifar10_exp010_residual_block_actions.py cifar10
+    pipenv run python -u experiments/train_cifar10_exp011_residual_block_actions.py
+    pipenv run python -u experiments/train_cifar10_exp011_residual_block_actions.py cifar10
 """
 
 from __future__ import annotations
@@ -35,6 +35,7 @@ from growingnn.training.stoppers import AccuracyStopper
 from growingnn.training.trainer import train_generations
 from growingnn.utils.seed import seed_all
 
+# Folder name stays exp010 so completed histories remain attached after the renumber.
 RUNS_DIR = ROOT / "experiments" / "output" / "train_cifar10" / "runs" / "exp010_residual_block_actions"
 DATASETS = ("mnist", "cifar10", "cifar100")
 SEEDS = (1, 2)
@@ -109,7 +110,7 @@ def _train_one(data, dataset: str, arm: str, seed: int) -> None:
     config.ACTIONS_ENABLE_RESIDUAL_BLOCK_GROW = enabled
     config.ACTIONS_ENABLE_RESIDUAL_BLOCK_SHRINK = enabled
     print(
-        f"EXP010 dataset={dataset} arm={arm} seed={seed} device={device} "
+        f"EXP011 dataset={dataset} arm={arm} seed={seed} device={device} "
         f"starter=SmallStarter generations={GENERATIONS} epochs={EPOCHS} "
         f"residual_block_actions={enabled} all_other_actions=on",
         flush=True,
@@ -124,7 +125,7 @@ def _train_one(data, dataset: str, arm: str, seed: int) -> None:
         test_loader=test_loader,
     )
     payload = {
-        "experiment": "010_residual_block_actions",
+        "experiment": "011_residual_block_actions",
         "dataset": dataset,
         "arm": arm,
         "seed": seed,

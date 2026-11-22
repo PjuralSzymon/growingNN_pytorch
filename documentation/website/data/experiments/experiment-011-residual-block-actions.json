@@ -1,6 +1,6 @@
 {
-  "experiment": "010-residual-block-actions",
-  "generated": "2026-11-12T08:18:39+01:00",
+  "experiment": "011-residual-block-actions",
+  "generated": "2026-11-19T22:27:06+01:00",
   "run_root": "experiments\\output\\train_cifar10\\runs\\exp010_residual_block_actions",
   "datasets": [
     "mnist",

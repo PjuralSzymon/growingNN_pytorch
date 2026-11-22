@@ -1,4 +1,4 @@
-"""Build interim Experiment 012 charts and a data snapshot from saved run files."""
+"""Build interim Experiment 013 charts and a data snapshot from saved run files."""
 
 from __future__ import annotations
 
@@ -15,9 +15,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 ROOT = Path(__file__).resolve().parents[3]
+# Completed and partial runs stayed in the exp012 folder when this study was renumbered to 013.
 RUNS = ROOT / "experiments/output/train_cifar10/runs/exp012_residual_block_multidataset"
 ASSETS = ROOT / "documentation/website/app/public/assets/experiments"
-SNAPSHOT = ROOT / "documentation/website/data/experiments/experiment-012-residual-block-multidataset.json"
+SNAPSHOT = ROOT / "documentation/website/data/experiments/experiment-013-residual-block-multidataset.json"
 DATASETS = ("mnist", "cifar10", "cifar100", "tiny_imagenet")
 ARMS = ("block_actions_on", "block_actions_off")
 SEEDS = (1, 2, 3)
@@ -129,10 +130,10 @@ def _plot_training(records: list[dict]) -> None:
             ax.grid(alpha=0.22)
             if row == 0 and col == 0:
                 ax.legend(fontsize=7, ncol=2, frameon=False)
-    fig.suptitle("Experiment 012: training and validation accuracy", fontsize=15)
+    fig.suptitle("Experiment 013: training and validation accuracy", fontsize=15)
     fig.text(0.5, 0.006, "Solid=train, dashed=validation. Colors identify seeds; × marks the latest point of an incomplete run. A run stops at 90% validation or 300 epochs.", ha="center", fontsize=9)
     fig.tight_layout(rect=(0, 0.025, 1, 0.97))
-    fig.savefig(ASSETS / "012-training-histories.png", dpi=170, bbox_inches="tight")
+    fig.savefig(ASSETS / "013-training-histories.png", dpi=170, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -153,9 +154,9 @@ def _plot_parameters(records: list[dict]) -> None:
         ax.set_ylabel("Parameters")
         ax.grid(alpha=0.22)
         ax.legend(fontsize=7, frameon=False)
-    fig.suptitle("Experiment 012: parameter count during training", fontsize=15)
+    fig.suptitle("Experiment 013: parameter count during training", fontsize=15)
     fig.tight_layout(rect=(0, 0, 1, 0.95))
-    fig.savefig(ASSETS / "012-parameter-histories.png", dpi=170, bbox_inches="tight")
+    fig.savefig(ASSETS / "013-parameter-histories.png", dpi=170, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -177,10 +178,10 @@ def _plot_test_accuracy(records: list[dict]) -> None:
         ax.set_ylabel("Final test accuracy (%)")
         ax.set_ylim(0, 100)
         ax.grid(axis="y", alpha=0.22)
-    fig.suptitle("Experiment 012: final official test accuracy for completed runs")
+    fig.suptitle("Experiment 013: final official test accuracy for completed runs")
     fig.text(0.5, 0.01, "Dots are individual seeds; horizontal marks are means. Tiny ImageNet currently has one completed enabled seed and no completed disabled control.", ha="center", fontsize=9)
     fig.tight_layout(rect=(0, 0.08, 1, 0.92))
-    fig.savefig(ASSETS / "012-final-test-accuracy.png", dpi=170, bbox_inches="tight")
+    fig.savefig(ASSETS / "013-final-test-accuracy.png", dpi=170, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -204,10 +205,10 @@ def _plot_candidate_scores(candidates: list[dict]) -> None:
         ax.set_ylim(0, 1)
         ax.set_ylabel("MCTS candidate score (validation accuracy)")
         ax.grid(axis="y", alpha=0.22)
-    fig.suptitle("Experiment 012: residual-block candidate scores in enabled arms")
+    fig.suptitle("Experiment 013: residual-block candidate scores in enabled arms")
     fig.text(0.5, 0.01, "Points are recorded candidate scores from simulation JSON. Tiny ImageNet includes the partial enabled seed 2 run.", ha="center", fontsize=9)
     fig.tight_layout(rect=(0, 0.06, 1, 0.92))
-    fig.savefig(ASSETS / "012-block-candidate-scores.png", dpi=170, bbox_inches="tight")
+    fig.savefig(ASSETS / "013-block-candidate-scores.png", dpi=170, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -243,7 +244,7 @@ def build_snapshot(records: list[dict], candidates: list[dict]) -> dict:
                 "selected": sum(bool(c["selected"]) for c in rows),
             })
     return {
-        "experiment": "012_residual_block_multidataset",
+        "experiment": "013_residual_block_multidataset",
         "generatedAtUtc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "generatedFrom": "saved history.pt and Experiment Board JSON artifacts",
         "status": {
@@ -285,7 +286,7 @@ def main() -> None:
     _plot_test_accuracy(records)
     _plot_candidate_scores(candidates)
     SNAPSHOT.write_text(json.dumps(build_snapshot(records, candidates), indent=2), encoding="utf-8")
-    print(f"Updated Experiment 012 charts and snapshot from {sum(r['status'] == 'completed' for r in records)} completed runs, "
+    print(f"Updated Experiment 013 charts and snapshot from {sum(r['status'] == 'completed' for r in records)} completed runs, "
           f"{sum(r['status'] == 'running' for r in records)} running, {sum(r['status'] == 'not_started' for r in records)} not started.")
 
 

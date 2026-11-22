@@ -1,4 +1,4 @@
-# Experiment 010: residual block actions on small image models
+# Experiment 011: residual block actions on small image models
 
 ## Goal
 
@@ -19,10 +19,12 @@ Check whether enabling the new residual-block grow/shrink actions changes archit
 | Other actions | Enabled in both arms |
 | Treatment | Residual block grow/shrink enabled vs disabled |
 
-Experiment script: `experiments/train_cifar10_exp010_residual_block_actions.py`  
+Experiment script: `experiments/train_cifar10_exp011_residual_block_actions.py`  
 Run histories: `experiments/output/train_cifar10/runs/exp010_residual_block_actions/`  
-Regenerated data snapshot: `documentation/website/data/experiments/experiment-010-residual-block-actions.json`  
-Chart generator: `documentation/website/scripts/generate_experiment_010_report_data.py`
+Regenerated data snapshot: `documentation/website/data/experiments/experiment-011-residual-block-actions.json`  
+Chart generator: `documentation/website/scripts/generate_experiment_011_block_actions_report_data.py`
+
+The run folder keeps the name `exp010_residual_block_actions` so the completed histories stay attached to this page. The published number is 011 because Experiment 010 is the MCTS meta-parameter study.
 
 ## Results
 
@@ -37,15 +39,15 @@ All twelve planned runs have histories: two seeds in each arm for each dataset.
 | CIFAR-100 | Enabled | 2 | 20.68%, 21.07% | 20.88% | 22.57% | 20.16% | 11,560; 8,320 |
 | CIFAR-100 | Disabled | 2 | 13.85%, 20.21% | 17.03% | 17.56% | 14.84% | 6,678; 9,912 |
 
-![Training and validation accuracy histories](/assets/experiments/010-training-histories.png)
+![Training and validation accuracy histories](/assets/experiments/011-training-histories.png)
 
 > [!CAPTION] Figure 1. Per-seed training (solid) and validation (dashed) accuracy over 200 epochs. Blue is the enabled arm; orange is the disabled arm.
 
-![Final official test accuracy by seed](/assets/experiments/010-final-test-accuracy.png)
+![Final official test accuracy by seed](/assets/experiments/011-final-test-accuracy.png)
 
 > [!CAPTION] Figure 2. Final test accuracy for each completed seed. Horizontal marks show the mean of the available seeds in each arm.
 
-![Executed action counts](/assets/experiments/010-action-counts.png)
+![Executed action counts](/assets/experiments/011-action-counts.png)
 
 > [!CAPTION] Figure 3. Chosen action counts summed across completed seeds for each dataset and arm. No residual-block action was chosen.
 
@@ -83,13 +85,15 @@ The run histories do **not** save the Monte Carlo simulation score assigned to e
 | DelNeurons | 6 | -7.18 pp | 0 | 6 | 0 |
 | ResidualBlockAction | 0 | — | 0 | 0 | 0 |
 
-Candidate-generation counts are also absent from these histories. We cannot calculate how many actions of each type were generated per simulation on average, nor the mean simulation score for selected or unselected residual-block candidates. No per-run experiment-board candidate records were saved for Experiment 010. The regenerated JSON snapshot includes the observed post-action validation changes and explicitly records this missing score/count data.
+Candidate-generation counts are also absent from these histories. We cannot calculate how many actions of each type were generated per simulation on average, nor the mean simulation score for selected or unselected residual-block candidates. No per-run experiment-board candidate records were saved for Experiment 011. The regenerated JSON snapshot includes the observed post-action validation changes and explicitly records this missing score/count data.
 
 The direct block-action result is **zero uses across all completed runs**. The enabled arm changed candidate generation/search and produced different choices among existing actions, but it did not execute a block duplication or removal. The report therefore cannot answer whether the new action helps. The very different MNIST seed-1 architecture and score also deserve inspection before interpreting the on/off gap.
 
 ## Next step
 
-First add per-generation diagnostics for each action type: generated candidate count, candidate simulation score (including the chosen candidate), and whether it was selected. Then verify whether `ResidualBlockAction` is generated after the starter evolves and whether simulation can execute and grade it. Rerun a short pilot that produces a known valid block candidate and confirm those diagnostics before another full comparison. Increase seed count if a direct action-effect comparison remains the goal.
+Experiment 012 continues the enabled-versus-disabled question. It starts from a network that already contains one residual block, trains MNIST and CIFAR-10 for 30 generations, and uses the MCTS settings selected in Experiment 010.
+
+The diagnostics still missing from this study are the per-generation candidate count, the candidate simulation score, and whether that candidate was selected.
 
 ## Limitations
 

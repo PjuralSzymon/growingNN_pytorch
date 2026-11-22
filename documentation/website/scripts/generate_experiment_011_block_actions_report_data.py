@@ -1,4 +1,4 @@
-"""Regenerate Experiment 010's JSON snapshot and figures from history.pt files."""
+"""Regenerate Experiment 011's JSON snapshot and figures from history.pt files."""
 
 from __future__ import annotations
 
@@ -14,8 +14,9 @@ import matplotlib.pyplot as plt
 import torch
 
 ROOT = Path(__file__).resolve().parents[3]
+# Completed runs stayed in the exp010 folder when this study was renumbered to 011.
 RUNS = ROOT / "experiments/output/train_cifar10/runs/exp010_residual_block_actions"
-SNAPSHOT = ROOT / "documentation/website/data/experiments/experiment-010-residual-block-actions.json"
+SNAPSHOT = ROOT / "documentation/website/data/experiments/experiment-011-residual-block-actions.json"
 ASSETS = ROOT / "documentation/website/app/public/assets/experiments"
 DATASETS = ("mnist", "cifar10", "cifar100")
 ARMS = ("block_actions_on", "block_actions_off")
@@ -76,9 +77,9 @@ def plot_histories(rows: list[dict]) -> None:
         ax.grid(alpha=0.25)
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="lower center", ncol=4, frameon=False)
-    fig.suptitle("Experiment 010: training and validation histories (each line is one seed)")
+    fig.suptitle("Experiment 011: training and validation histories (each line is one seed)")
     fig.tight_layout(rect=(0, 0.12, 1, 0.92))
-    fig.savefig(ASSETS / "010-training-histories.png", dpi=170)
+    fig.savefig(ASSETS / "011-training-histories.png", dpi=170)
     plt.close(fig)
 
 
@@ -98,7 +99,7 @@ def plot_test(rows: list[dict]) -> None:
         ax.grid(axis="y", alpha=0.25)
     fig.suptitle("Final official-test accuracy by seed; horizontal bars show arm means")
     fig.tight_layout()
-    fig.savefig(ASSETS / "010-final-test-accuracy.png", dpi=170)
+    fig.savefig(ASSETS / "011-final-test-accuracy.png", dpi=170)
     plt.close(fig)
 
 
@@ -128,7 +129,7 @@ def plot_actions(rows: list[dict]) -> None:
     fig.legend(handles, labels, loc="lower center", ncol=4, frameon=False)
     fig.suptitle("Chosen actions by dataset and arm (all completed seeds)")
     fig.tight_layout(rect=(0, 0.19, 1, 0.92))
-    fig.savefig(ASSETS / "010-action-counts.png", dpi=170)
+    fig.savefig(ASSETS / "011-action-counts.png", dpi=170)
     plt.close(fig)
 
 
@@ -153,7 +154,7 @@ def main() -> None:
         for name, deltas in sorted(outcome_groups.items())
     }
     result = {
-        "experiment": "010-residual-block-actions",
+        "experiment": "011-residual-block-actions",
         "generated": datetime.now().astimezone().isoformat(timespec="seconds"),
         "run_root": str(RUNS.relative_to(ROOT)),
         "datasets": list(DATASETS),

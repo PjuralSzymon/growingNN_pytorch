@@ -1,4 +1,7 @@
-"""Experiment 012: evaluate residual-block actions across four image datasets.
+"""Experiment 013: archived residual-block comparison across four image datasets.
+
+The active comparison is Experiment 012. This script remains so the interim
+MNIST, CIFAR-10, CIFAR-100, and Tiny ImageNet runs can be resumed.
 
 Matched enabled/disabled arms use the same explicit shape-preserving residual
 starter, training recipe, and seeds. Training ends when validation accuracy
@@ -7,8 +10,8 @@ reaches 90%, or after the configured generation limit.
 Default: MNIST, CIFAR-10, CIFAR-100, Tiny ImageNet; seeds 1, 2, 3;
 30 generations x 10 epochs maximum. Tiny ImageNet is not full ImageNet.
 
-    pipenv run python -u experiments/train_exp012_residual_block_multidataset.py
-    pipenv run python -u experiments/train_exp012_residual_block_multidataset.py mnist cifar10
+    pipenv run python -u experiments/train_cifar10_exp013_residual_block_multidataset.py
+    pipenv run python -u experiments/train_cifar10_exp013_residual_block_multidataset.py mnist cifar10
 """
 
 from __future__ import annotations
@@ -39,6 +42,7 @@ from growingnn.training.stoppers import AccuracyStopper
 from growingnn.training.trainer import train_generations
 from growingnn.utils.seed import seed_all
 
+# Folder name stays exp012 so histories saved before the renumber are reused.
 EXPERIMENT_ID = "exp012_residual_block_multidataset"
 RUNS_DIR = ROOT / "experiments" / "output" / "train_cifar10" / "runs" / EXPERIMENT_ID
 DATASETS = ("mnist", "cifar10", "cifar100", "tiny_imagenet")
@@ -126,7 +130,7 @@ def _train_one(data, dataset: str, arm: str, seed: int, generations: int, epochs
         board = ExperimentBoard(
             run_dir / "board",
             experiment_id=f"{EXPERIMENT_ID}_{dataset}_{arm}_seed{seed}",
-            experiment_name="Experiment 012 residual-block action multi-dataset study",
+            experiment_name="Experiment 013 residual-block action multi-dataset study",
             dataset=dataset.upper(),
             device=str(device),
         )
@@ -156,7 +160,7 @@ def _train_one(data, dataset: str, arm: str, seed: int, generations: int, epochs
         config.ACTIONS_ENABLE_RESIDUAL_BLOCK_GROW = enabled
         config.ACTIONS_ENABLE_RESIDUAL_BLOCK_SHRINK = enabled
         print(
-            f"EXP012 dataset={dataset} arm={arm} seed={seed} device={device} "
+            f"EXP013 dataset={dataset} arm={arm} seed={seed} device={device} "
             f"generations_max={generations} epochs_per_generation={epochs} "
             f"validation_stop={TARGET_VALIDATION_ACCURACY:.0%} residual_block_actions={enabled}",
             flush=True,
