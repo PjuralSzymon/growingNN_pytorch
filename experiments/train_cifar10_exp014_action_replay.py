@@ -338,7 +338,7 @@ def run_full_growth(output, seeds, phase='full', spec=None):
                 experiment_label=spec['label'], experiment_name=spec['name'],
                 experiment_id_prefix=spec['id_prefix'], scoring_epochs=spec['scoring_epochs'])
             if output == OUTPUT:
-                from documentation.website.scripts.generate_experiment_015_report import main as generate_report
+                from documentation.website.scripts.generate_experiment_015_action_replay_report import main as generate_report
                 generate_report()
     finally:
         exp010.montecarlo_alg, exp010.sample_loaders, exp010.initial_graph = previous, previous_sampler, previous_starter
@@ -472,7 +472,7 @@ def run_decision_replay(output, epochs):
     write_json(target / 'summary.json', {'manifest': metadata, 'rebuilt_validation_accuracy':
                                          payload['validation_accuracy'], 'results': results})
     if output == OUTPUT:
-        from documentation.website.scripts.generate_experiment_015_report import main as generate_report
+        from documentation.website.scripts.generate_experiment_015_action_replay_report import main as generate_report
         generate_report()
     print('COMPLETE', flush=True)
 
@@ -588,7 +588,7 @@ def run_scoring_calibration(output, measurements=CALIBRATION_MEASUREMENTS, setti
     write_json(target / 'summary.json', {'manifest': metadata, 'control_validation_accuracy': control,
                                          'settings': rows})
     if output == OUTPUT:
-        from documentation.website.scripts.generate_experiment_015_report import main as generate_report
+        from documentation.website.scripts.generate_experiment_015_action_replay_report import main as generate_report
         generate_report()
     print('COMPLETE', flush=True)
 
@@ -893,7 +893,7 @@ def main():
                 args.output / 'montecarlo2_time' / f'{minutes}min', minutes * 60,
                 epochs_values=(20,))
         if args.output == OUTPUT:
-            from documentation.website.scripts.generate_experiment_015_report import main as generate_report
+            from documentation.website.scripts.generate_experiment_015_action_replay_report import main as generate_report
             generate_report()
         return
     if args.phase in CHECK_PHASES:

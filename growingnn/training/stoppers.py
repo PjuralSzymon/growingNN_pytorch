@@ -45,9 +45,15 @@ class EmptyStopper(BaseStopper):
 
 
 class AccuracyStopper(BaseStopper):
-    def __init__(self, target_accuracy: float = 0.9, metric_name: str = "accuracy"):
+    def __init__(
+        self,
+        target_accuracy: float = 0.9,
+        metric_name: str = "accuracy",
+        metric_key: str = "accuracy",
+    ):
         self.target_accuracy = target_accuracy
         self.metric_name = metric_name
+        self.metric_key = metric_key
 
     def check(
         self,
@@ -55,9 +61,9 @@ class AccuracyStopper(BaseStopper):
         epoch: int,
         metrics: dict[str, float] | None = None,
     ) -> bool:
-        if metrics is None or "accuracy" not in metrics:
+        if metrics is None or self.metric_key not in metrics:
             return False
-        current_accuracy = metrics["accuracy"]
+        current_accuracy = metrics[self.metric_key]
         if current_accuracy >= self.target_accuracy:
             msg = (
                 f"Stopping: {self.metric_name} reached {current_accuracy:.4f} "

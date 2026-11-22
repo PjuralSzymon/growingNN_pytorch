@@ -1,0 +1,6399 @@
+{
+ "experiment": "014",
+ "source": "experiments/output/train_cifar10/runs/exp014_duplicate_action_design",
+ "paired": {
+  "scale": 0.3,
+  "seeds": [
+   1,
+   2
+  ],
+  "tables": {
+   "Grow ladder, plain checkpoint": [
+    {
+     "setting": "no change",
+     "available": true,
+     "params_added": 0,
+     "checkpoint_val": 0.4912,
+     "val_change_now": 0.0,
+     "val_after_1_epoch": 0.511,
+     "val_after_generation": 0.5094,
+     "val_after_generation_by_seed": [
+      0.5134,
+      0.5054
+     ]
+    },
+    {
+     "setting": "current",
+     "available": true,
+     "params_added": 2336,
+     "checkpoint_val": 0.4912,
+     "val_change_now": -0.043800000000000006,
+     "val_after_1_epoch": 0.5199,
+     "val_after_generation": 0.5282,
+     "val_after_generation_by_seed": [
+      0.5376,
+      0.5188
+     ]
+    },
+    {
+     "setting": "+side",
+     "available": true,
+     "params_added": 2336,
+     "checkpoint_val": 0.4912,
+     "val_change_now": -0.043800000000000006,
+     "val_after_1_epoch": 0.5177,
+     "val_after_generation": 0.5278,
+     "val_after_generation_by_seed": [
+      0.5374,
+      0.5182
+     ]
+    },
+    {
+     "setting": "+after_relu",
+     "available": true,
+     "params_added": 2336,
+     "checkpoint_val": 0.4912,
+     "val_change_now": -0.043800000000000006,
+     "val_after_1_epoch": 0.5295000000000001,
+     "val_after_generation": 0.5510999999999999,
+     "val_after_generation_by_seed": [
+      0.5628,
+      0.5394
+     ]
+    },
+    {
+     "setting": "+scale",
+     "available": true,
+     "params_added": 2336,
+     "checkpoint_val": 0.4912,
+     "val_change_now": -0.016600000000000004,
+     "val_after_1_epoch": 0.5178,
+     "val_after_generation": 0.5449999999999999,
+     "val_after_generation_by_seed": [
+      0.5564,
+      0.5336
+     ]
+    }
+   ],
+   "Grow ladder, checkpoint with AddResConv side input": [
+    {
+     "setting": "no change",
+     "available": true,
+     "params_added": 0,
+     "checkpoint_val": 0.5024,
+     "val_change_now": 0.0,
+     "val_after_1_epoch": 0.5312,
+     "val_after_generation": 0.546,
+     "val_after_generation_by_seed": [
+      0.549,
+      0.543
+     ]
+    },
+    {
+     "setting": "current",
+     "available": false
+    },
+    {
+     "setting": "+side",
+     "available": true,
+     "params_added": 2336,
+     "checkpoint_val": 0.5024,
+     "val_change_now": -0.08979999999999994,
+     "val_after_1_epoch": 0.5359,
+     "val_after_generation": 0.5545,
+     "val_after_generation_by_seed": [
+      0.561,
+      0.548
+     ]
+    },
+    {
+     "setting": "+after_relu",
+     "available": true,
+     "params_added": 2336,
+     "checkpoint_val": 0.5024,
+     "val_change_now": -0.14159999999999995,
+     "val_after_1_epoch": 0.5334000000000001,
+     "val_after_generation": 0.5539000000000001,
+     "val_after_generation_by_seed": [
+      0.547,
+      0.5608
+     ]
+    },
+    {
+     "setting": "+scale",
+     "available": true,
+     "params_added": 2336,
+     "checkpoint_val": 0.5024,
+     "val_change_now": -0.05899999999999994,
+     "val_after_1_epoch": 0.5338,
+     "val_after_generation": 0.5536000000000001,
+     "val_after_generation_by_seed": [
+      0.5562,
+      0.551
+     ]
+    }
+   ],
+   "Scale sweep (side + after_relu), plain checkpoint": [
+    {
+     "setting": "no change",
+     "available": true,
+     "params_added": 0,
+     "checkpoint_val": 0.4912,
+     "val_change_now": 0.0,
+     "val_after_1_epoch": 0.5115000000000001,
+     "val_after_generation": 0.5105,
+     "val_after_generation_by_seed": [
+      0.5138,
+      0.5072
+     ]
+    },
+    {
+     "setting": "scale 1",
+     "available": true,
+     "params_added": 2336,
+     "checkpoint_val": 0.4912,
+     "val_change_now": -0.043800000000000006,
+     "val_after_1_epoch": 0.5282,
+     "val_after_generation": 0.5509,
+     "val_after_generation_by_seed": [
+      0.5626,
+      0.5392
+     ]
+    },
+    {
+     "setting": "scale 0.5",
+     "available": true,
+     "params_added": 2336,
+     "checkpoint_val": 0.4912,
+     "val_change_now": -0.027400000000000035,
+     "val_after_1_epoch": 0.5262,
+     "val_after_generation": 0.5467,
+     "val_after_generation_by_seed": [
+      0.5594,
+      0.534
+     ]
+    },
+    {
+     "setting": "scale 0.3",
+     "available": true,
+     "params_added": 2336,
+     "checkpoint_val": 0.4912,
+     "val_change_now": -0.016600000000000004,
+     "val_after_1_epoch": 0.5184,
+     "val_after_generation": 0.5450999999999999,
+     "val_after_generation_by_seed": [
+      0.5558,
+      0.5344
+     ]
+    },
+    {
+     "setting": "scale 0.1",
+     "available": true,
+     "params_added": 2336,
+     "checkpoint_val": 0.4912,
+     "val_change_now": -0.005200000000000038,
+     "val_after_1_epoch": 0.5121,
+     "val_after_generation": 0.5423,
+     "val_after_generation_by_seed": [
+      0.548,
+      0.5366
+     ]
+    },
+    {
+     "setting": "scale 0",
+     "available": true,
+     "params_added": 2336,
+     "checkpoint_val": 0.4912,
+     "val_change_now": 0.0,
+     "val_after_1_epoch": 0.5096,
+     "val_after_generation": 0.5387,
+     "val_after_generation_by_seed": [
+      0.5456,
+      0.5318
+     ]
+    }
+   ],
+   "Shrink, two-block checkpoint": [
+    {
+     "setting": "no change",
+     "available": true,
+     "params_added": 0,
+     "checkpoint_val": 0.5476,
+     "val_change_now": 0.0,
+     "val_after_1_epoch": 0.5912999999999999,
+     "val_after_generation": 0.5972,
+     "val_after_generation_by_seed": [
+      0.5834,
+      0.611
+     ]
+    },
+    {
+     "setting": "remove",
+     "available": true,
+     "params_added": -2336,
+     "checkpoint_val": 0.5476,
+     "val_change_now": -0.4376,
+     "val_after_1_epoch": 0.38770000000000004,
+     "val_after_generation": 0.4682,
+     "val_after_generation_by_seed": [
+      0.485,
+      0.4514
+     ]
+    },
+    {
+     "setting": "merge",
+     "available": true,
+     "params_added": -2336,
+     "checkpoint_val": 0.5476,
+     "val_change_now": -0.2718,
+     "val_after_1_epoch": 0.5126999999999999,
+     "val_after_generation": 0.5023,
+     "val_after_generation_by_seed": [
+      0.4818,
+      0.5228
+     ]
+    }
+   ]
+  },
+  "duration_sec": 3116.599369764328
+ },
+ "noise_sd_pp": 11.716167360147248,
+ "context_final_val_pct": {
+  "Exp010: 296-param starter 128 sim examples, 200 epochs": 46.74,
+  "Exp010: 296-param starter tuned search, 200 epochs": 59.16,
+  "Exp015 off: 2,970-param residual starter, at epoch 200": 68.51,
+  "Exp014 block actions off same starter, 300 epochs": 72.98,
+  "Exp015 off 300 epochs": 72.36,
+  "Exp015 +after_relu 300 epochs": 76.49999999999999
+ },
+ "block_action_events": [
+  {
+   "step": "current",
+   "seed": 1,
+   "generation": 1,
+   "name": "ResidualBlockAction",
+   "op": "duplicate",
+   "val_before": 0.4266,
+   "val_after": 0.4212
+  },
+  {
+   "step": "current",
+   "seed": 1,
+   "generation": 5,
+   "name": "ResidualBlockAction",
+   "op": "duplicate",
+   "val_before": 0.5586,
+   "val_after": 0.4112
+  },
+  {
+   "step": "+side",
+   "seed": 1,
+   "generation": 1,
+   "name": "ResidualBlockAction",
+   "op": "remove",
+   "val_before": 0.3954,
+   "val_after": 0.269
+  },
+  {
+   "step": "+side",
+   "seed": 2,
+   "generation": 4,
+   "name": "ResidualBlockAction",
+   "op": "duplicate",
+   "val_before": 0.526,
+   "val_after": 0.521
+  },
+  {
+   "step": "+scale (1.0)",
+   "seed": 2,
+   "generation": 0,
+   "name": "ResidualBlockAction",
+   "op": "duplicate",
+   "val_before": 0.4352,
+   "val_after": 0.3494
+  },
+  {
+   "step": "+merge",
+   "seed": 2,
+   "generation": 0,
+   "name": "ResidualBlockAction",
+   "op": "duplicate",
+   "val_before": 0.4822,
+   "val_after": 0.431
+  }
+ ],
+ "runs": {
+  "off": [
+   {
+    "seed": 1,
+    "final_train": 0.7819111111111111,
+    "final_val": 0.7822,
+    "final_test": 0.7872,
+    "final_params": 59114,
+    "epochs": 300,
+    "actions": [
+     {
+      "generation": 0,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.4664,
+      "val_after": 0.4664
+     },
+     {
+      "generation": 1,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5272,
+      "val_after": 0.5274
+     },
+     {
+      "generation": 2,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.594,
+      "val_after": 0.5944
+     },
+     {
+      "generation": 3,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.6104,
+      "val_after": 0.6104
+     },
+     {
+      "generation": 4,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.4586,
+      "val_after": 0.4586
+     },
+     {
+      "generation": 5,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5074,
+      "val_after": 0.5076
+     },
+     {
+      "generation": 6,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5346,
+      "val_after": 0.5346
+     },
+     {
+      "generation": 7,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5678,
+      "val_after": 0.5678
+     },
+     {
+      "generation": 8,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5864,
+      "val_after": 0.5864
+     },
+     {
+      "generation": 9,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6092,
+      "val_after": 0.6092
+     },
+     {
+      "generation": 10,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.6432,
+      "val_after": 0.6432
+     },
+     {
+      "generation": 11,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6492,
+      "val_after": 0.6494
+     },
+     {
+      "generation": 12,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6866,
+      "val_after": 0.6866
+     },
+     {
+      "generation": 13,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.65,
+      "val_after": 0.6498
+     },
+     {
+      "generation": 14,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.6622,
+      "val_after": 0.6624
+     },
+     {
+      "generation": 15,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.663,
+      "val_after": 0.663
+     },
+     {
+      "generation": 16,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.6704,
+      "val_after": 0.6704
+     },
+     {
+      "generation": 17,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6832,
+      "val_after": 0.6832
+     },
+     {
+      "generation": 18,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.712,
+      "val_after": 0.7116
+     },
+     {
+      "generation": 19,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7302,
+      "val_after": 0.73
+     },
+     {
+      "generation": 20,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.743,
+      "val_after": 0.7434
+     },
+     {
+      "generation": 21,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.737,
+      "val_after": 0.737
+     },
+     {
+      "generation": 22,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.74,
+      "val_after": 0.74
+     },
+     {
+      "generation": 23,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7642,
+      "val_after": 0.7642
+     },
+     {
+      "generation": 24,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.768,
+      "val_after": 0.768
+     },
+     {
+      "generation": 25,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7778,
+      "val_after": 0.7778
+     },
+     {
+      "generation": 26,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7844,
+      "val_after": 0.7842
+     },
+     {
+      "generation": 27,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7812,
+      "val_after": 0.7812
+     },
+     {
+      "generation": 28,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7694,
+      "val_after": 0.7692
+     }
+    ],
+    "searches": [
+     {
+      "generation": 0,
+      "candidates": 13,
+      "best": 0.4666666666666667,
+      "no_change": 0.3,
+      "dropout_sd": 0.0415739709641549,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 1,
+      "candidates": 23,
+      "best": 0.5666666666666667,
+      "no_change": 0.36666666666666664,
+      "dropout_sd": 0.17340296164029073,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 10,
+      "candidates": 89,
+      "best": 0.6666666666666666,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.12206429190399905,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 11,
+      "candidates": 105,
+      "best": 0.6333333333333333,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.12455070908781816,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 12,
+      "candidates": 116,
+      "best": 0.7,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.03937787810370966,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 13,
+      "candidates": 132,
+      "best": 0.6666666666666666,
+      "no_change": 0.6,
+      "dropout_sd": 0.10657403385139376,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 14,
+      "candidates": 150,
+      "best": 0.6,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.12594590603503802,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 15,
+      "candidates": 173,
+      "best": 0.6,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.07136240321480627,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 16,
+      "candidates": 190,
+      "best": 0.6666666666666666,
+      "no_change": 0.6,
+      "dropout_sd": 0.09124482058698245,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 17,
+      "candidates": 184,
+      "best": 0.6666666666666666,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.09753835870309344,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 18,
+      "candidates": 198,
+      "best": 0.6666666666666666,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.09795158514056865,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 19,
+      "candidates": 200,
+      "best": 0.7,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.10680546525064813,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 2,
+      "candidates": 32,
+      "best": 0.6333333333333333,
+      "no_change": 0.43333333333333335,
+      "dropout_sd": 0.17864372434237252,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 20,
+      "candidates": 201,
+      "best": 0.7333333333333333,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.17747505089444623,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 21,
+      "candidates": 215,
+      "best": 0.7333333333333333,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.1317450979480198,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 22,
+      "candidates": 229,
+      "best": 0.6666666666666666,
+      "no_change": 0.6,
+      "dropout_sd": 0.12709351579957998,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 23,
+      "candidates": 254,
+      "best": 0.8,
+      "no_change": 0.7166666666666666,
+      "dropout_sd": 0.1315282910936833,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 24,
+      "candidates": 270,
+      "best": 0.8,
+      "no_change": 0.7,
+      "dropout_sd": 0.10962272167780819,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 25,
+      "candidates": 264,
+      "best": 0.7666666666666667,
+      "no_change": 0.7,
+      "dropout_sd": 0.14247698536263562,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 26,
+      "candidates": 279,
+      "best": 0.7666666666666667,
+      "no_change": 0.7,
+      "dropout_sd": 0.12209276055266115,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 27,
+      "candidates": 297,
+      "best": 0.8333333333333334,
+      "no_change": 0.7333333333333333,
+      "dropout_sd": 0.14963303878587877,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 28,
+      "candidates": 318,
+      "best": 0.7666666666666667,
+      "no_change": 0.7666666666666667,
+      "dropout_sd": 0.14021523169318212,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 3,
+      "candidates": 42,
+      "best": 0.6333333333333333,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.1654623152798781,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 4,
+      "candidates": 36,
+      "best": 0.6666666666666666,
+      "no_change": 0.5,
+      "dropout_sd": 0.15713484026367722,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 5,
+      "candidates": 33,
+      "best": 0.5666666666666667,
+      "no_change": 0.4166666666666667,
+      "dropout_sd": 0.08606629658238704,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 6,
+      "candidates": 44,
+      "best": 0.6333333333333333,
+      "no_change": 0.6,
+      "dropout_sd": 0.15634719199411432,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 7,
+      "candidates": 57,
+      "best": 0.6333333333333333,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.08152860590152951,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 8,
+      "candidates": 66,
+      "best": 0.6,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.08888888888888889,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 9,
+      "candidates": 76,
+      "best": 0.6,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.06816162080502822,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     }
+    ]
+   },
+   {
+    "seed": 2,
+    "final_train": 0.6142222222222222,
+    "final_val": 0.665,
+    "final_test": 0.6589,
+    "final_params": 12556,
+    "epochs": 300,
+    "actions": [
+     {
+      "generation": 0,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.4778,
+      "val_after": 0.4774
+     },
+     {
+      "generation": 1,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.487,
+      "val_after": 0.4886
+     },
+     {
+      "generation": 2,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.5392,
+      "val_after": 0.5392
+     },
+     {
+      "generation": 3,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.5128,
+      "val_after": 0.5128
+     },
+     {
+      "generation": 4,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.541,
+      "val_after": 0.541
+     },
+     {
+      "generation": 5,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.5356,
+      "val_after": 0.5356
+     },
+     {
+      "generation": 6,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.5164,
+      "val_after": 0.5204
+     },
+     {
+      "generation": 7,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.512,
+      "val_after": 0.5128
+     },
+     {
+      "generation": 8,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.5354,
+      "val_after": 0.5354
+     },
+     {
+      "generation": 9,
+      "name": "AddNeurons",
+      "op": null,
+      "val_before": 0.5614,
+      "val_after": 0.542
+     },
+     {
+      "generation": 10,
+      "name": "DelNeurons",
+      "op": null,
+      "val_before": 0.5534,
+      "val_after": 0.5522
+     },
+     {
+      "generation": 11,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.6,
+      "val_after": 0.6
+     },
+     {
+      "generation": 12,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.5142,
+      "val_after": 0.5142
+     },
+     {
+      "generation": 13,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.5912,
+      "val_after": 0.5928
+     },
+     {
+      "generation": 14,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.594,
+      "val_after": 0.594
+     },
+     {
+      "generation": 15,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.6114,
+      "val_after": 0.6086
+     },
+     {
+      "generation": 16,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.6148,
+      "val_after": 0.6138
+     },
+     {
+      "generation": 17,
+      "name": "AddNeurons",
+      "op": null,
+      "val_before": 0.6166,
+      "val_after": 0.598
+     },
+     {
+      "generation": 18,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6064,
+      "val_after": 0.6062
+     },
+     {
+      "generation": 19,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.64,
+      "val_after": 0.64
+     },
+     {
+      "generation": 20,
+      "name": "AddNeurons",
+      "op": null,
+      "val_before": 0.5794,
+      "val_after": 0.5808
+     },
+     {
+      "generation": 21,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.6126,
+      "val_after": 0.6126
+     },
+     {
+      "generation": 22,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.6382,
+      "val_after": 0.6382
+     },
+     {
+      "generation": 23,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.6424,
+      "val_after": 0.6424
+     },
+     {
+      "generation": 24,
+      "name": "DelNeurons",
+      "op": null,
+      "val_before": 0.6508,
+      "val_after": 0.6506
+     },
+     {
+      "generation": 25,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.6524,
+      "val_after": 0.6464
+     },
+     {
+      "generation": 26,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.661,
+      "val_after": 0.661
+     },
+     {
+      "generation": 27,
+      "name": "DelLayer",
+      "op": null,
+      "val_before": 0.6644,
+      "val_after": 0.66
+     },
+     {
+      "generation": 28,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.6618,
+      "val_after": 0.6618
+     }
+    ],
+    "searches": [
+     {
+      "generation": 0,
+      "candidates": 13,
+      "best": 0.4166666666666667,
+      "no_change": 0.3,
+      "dropout_sd": 0.00785674201318386,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 1,
+      "candidates": 24,
+      "best": 0.4,
+      "no_change": 0.18333333333333335,
+      "dropout_sd": 0.11547005383792515,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 10,
+      "candidates": 107,
+      "best": 0.6333333333333333,
+      "no_change": 0.5166666666666666,
+      "dropout_sd": 0.17105338131489614,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 11,
+      "candidates": 103,
+      "best": 0.6333333333333333,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.14609691054308163,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 12,
+      "candidates": 119,
+      "best": 0.6,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.10059034614447529,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 13,
+      "candidates": 134,
+      "best": 0.6333333333333333,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.0956520023604083,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 14,
+      "candidates": 163,
+      "best": 0.6,
+      "no_change": 0.5,
+      "dropout_sd": 0.1245139919320787,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 15,
+      "candidates": 179,
+      "best": 0.7333333333333333,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.14414070629033474,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 16,
+      "candidates": 195,
+      "best": 0.6666666666666666,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.07976600817131164,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 17,
+      "candidates": 230,
+      "best": 0.7,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.09374742794825669,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 18,
+      "candidates": 230,
+      "best": 0.7333333333333333,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.13903387494184397,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 19,
+      "candidates": 236,
+      "best": 0.7666666666666667,
+      "no_change": 0.7,
+      "dropout_sd": 0.18439414381793262,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 2,
+      "candidates": 38,
+      "best": 0.5,
+      "no_change": 0.4,
+      "dropout_sd": 0.05665577237325318,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 20,
+      "candidates": 233,
+      "best": 0.7666666666666667,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.0399979593398451,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 21,
+      "candidates": 218,
+      "best": 0.7666666666666667,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.15621008826039035,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 22,
+      "candidates": 248,
+      "best": 0.7333333333333333,
+      "no_change": 0.7,
+      "dropout_sd": 0.1554907542382026,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 23,
+      "candidates": 264,
+      "best": 0.7333333333333333,
+      "no_change": 0.6,
+      "dropout_sd": 0.1183192769719077,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 24,
+      "candidates": 280,
+      "best": 0.7666666666666667,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.12353305900311327,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 25,
+      "candidates": 280,
+      "best": 0.8,
+      "no_change": 0.7,
+      "dropout_sd": 0.1473908232691256,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 26,
+      "candidates": 298,
+      "best": 0.7333333333333333,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.128915666258187,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 27,
+      "candidates": 359,
+      "best": 0.8,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.11412423621436443,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 28,
+      "candidates": 335,
+      "best": 0.7666666666666667,
+      "no_change": 0.7,
+      "dropout_sd": 0.11882754496637875,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 3,
+      "candidates": 56,
+      "best": 0.5666666666666667,
+      "no_change": 0.3333333333333333,
+      "dropout_sd": 0.14800734049197078,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 4,
+      "candidates": 53,
+      "best": 0.5333333333333333,
+      "no_change": 0.35,
+      "dropout_sd": 0.1541604102834623,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 5,
+      "candidates": 47,
+      "best": 0.5333333333333333,
+      "no_change": 0.3666666666666667,
+      "dropout_sd": 0.1,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 6,
+      "candidates": 62,
+      "best": 0.5333333333333333,
+      "no_change": 0.3333333333333333,
+      "dropout_sd": 0.11160384572829157,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 7,
+      "candidates": 77,
+      "best": 0.4666666666666667,
+      "no_change": 0.31666666666666665,
+      "dropout_sd": 0.05174426669499211,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 8,
+      "candidates": 90,
+      "best": 0.6,
+      "no_change": 0.4,
+      "dropout_sd": 0.1395583863831785,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 9,
+      "candidates": 107,
+      "best": 0.6333333333333333,
+      "no_change": 0.5,
+      "dropout_sd": 0.1758479359294408,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     }
+    ]
+   }
+  ],
+  "current": [
+   {
+    "seed": 1,
+    "final_train": 0.6810888888888889,
+    "final_val": 0.736,
+    "final_test": 0.7273,
+    "final_params": 42362,
+    "epochs": 300,
+    "actions": [
+     {
+      "generation": 0,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.4534,
+      "val_after": 0.4534
+     },
+     {
+      "generation": 1,
+      "name": "ResidualBlockAction",
+      "op": "duplicate",
+      "val_before": 0.4266,
+      "val_after": 0.4212
+     },
+     {
+      "generation": 2,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.4746,
+      "val_after": 0.474
+     },
+     {
+      "generation": 3,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.4566,
+      "val_after": 0.4576
+     },
+     {
+      "generation": 4,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.4834,
+      "val_after": 0.4828
+     },
+     {
+      "generation": 5,
+      "name": "ResidualBlockAction",
+      "op": "duplicate",
+      "val_before": 0.5586,
+      "val_after": 0.4112
+     },
+     {
+      "generation": 6,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.5314,
+      "val_after": 0.5314
+     },
+     {
+      "generation": 7,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5442,
+      "val_after": 0.5442
+     },
+     {
+      "generation": 8,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.562,
+      "val_after": 0.562
+     },
+     {
+      "generation": 9,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.561,
+      "val_after": 0.561
+     },
+     {
+      "generation": 10,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5242,
+      "val_after": 0.5242
+     },
+     {
+      "generation": 11,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5946,
+      "val_after": 0.5938
+     },
+     {
+      "generation": 12,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5746,
+      "val_after": 0.5756
+     },
+     {
+      "generation": 13,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.5414,
+      "val_after": 0.5334
+     },
+     {
+      "generation": 14,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5918,
+      "val_after": 0.5924
+     },
+     {
+      "generation": 15,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6214,
+      "val_after": 0.6212
+     },
+     {
+      "generation": 16,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6112,
+      "val_after": 0.612
+     },
+     {
+      "generation": 17,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6246,
+      "val_after": 0.6246
+     },
+     {
+      "generation": 18,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.647,
+      "val_after": 0.6472
+     },
+     {
+      "generation": 19,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.6608,
+      "val_after": 0.6434
+     },
+     {
+      "generation": 20,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.6724,
+      "val_after": 0.6622
+     },
+     {
+      "generation": 21,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.6964,
+      "val_after": 0.6964
+     },
+     {
+      "generation": 22,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.7004,
+      "val_after": 0.7004
+     },
+     {
+      "generation": 23,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7128,
+      "val_after": 0.7128
+     },
+     {
+      "generation": 24,
+      "name": "DelLayer",
+      "op": null,
+      "val_before": 0.7126,
+      "val_after": 0.6922
+     },
+     {
+      "generation": 25,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.7182,
+      "val_after": 0.7138
+     },
+     {
+      "generation": 26,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.7234,
+      "val_after": 0.7086
+     },
+     {
+      "generation": 27,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.728,
+      "val_after": 0.7202
+     },
+     {
+      "generation": 28,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7354,
+      "val_after": 0.7354
+     }
+    ],
+    "searches": [
+     {
+      "generation": 0,
+      "candidates": 15,
+      "best": 0.5333333333333333,
+      "no_change": 0.3333333333333333,
+      "dropout_sd": 0.09428090415820634,
+      "best_duplicate": 0.4,
+      "duplicate_rank": 4,
+      "chosen_op": null
+     },
+     {
+      "generation": 1,
+      "candidates": 12,
+      "best": 0.55,
+      "no_change": null,
+      "dropout_sd": null,
+      "best_duplicate": 0.5,
+      "duplicate_rank": 2,
+      "chosen_op": "duplicate"
+     },
+     {
+      "generation": 10,
+      "candidates": 112,
+      "best": 0.6666666666666666,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.15161171165550208,
+      "best_duplicate": 0.6,
+      "duplicate_rank": 12,
+      "chosen_op": null
+     },
+     {
+      "generation": 11,
+      "candidates": 113,
+      "best": 0.6,
+      "no_change": 0.5,
+      "dropout_sd": 0.14312970031098057,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 32,
+      "chosen_op": null
+     },
+     {
+      "generation": 12,
+      "candidates": 113,
+      "best": 0.6,
+      "no_change": 0.5,
+      "dropout_sd": 0.07199483434830242,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 13,
+      "candidates": 137,
+      "best": 0.6666666666666666,
+      "no_change": 0.5,
+      "dropout_sd": 0.08927830219791658,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 14,
+      "candidates": 160,
+      "best": 0.6,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.07604436382747085,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 15,
+      "candidates": 161,
+      "best": 0.7,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.0758423608597573,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 16,
+      "candidates": 186,
+      "best": 0.6333333333333333,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.06798692684790379,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 17,
+      "candidates": 204,
+      "best": 0.7,
+      "no_change": 0.6,
+      "dropout_sd": 0.11656534952496192,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 18,
+      "candidates": 229,
+      "best": 0.6333333333333333,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.06529510466713294,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 19,
+      "candidates": 255,
+      "best": 0.6666666666666666,
+      "no_change": 0.6,
+      "dropout_sd": 0.08560970823356985,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 2,
+      "candidates": 24,
+      "best": 0.5333333333333333,
+      "no_change": null,
+      "dropout_sd": null,
+      "best_duplicate": 0.4666666666666667,
+      "duplicate_rank": 4,
+      "chosen_op": null
+     },
+     {
+      "generation": 20,
+      "candidates": 283,
+      "best": 0.7,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.04974203565718989,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 21,
+      "candidates": 311,
+      "best": 0.6666666666666666,
+      "no_change": 0.6,
+      "dropout_sd": 0.05214604372858222,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 22,
+      "candidates": 299,
+      "best": 0.7,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.09518517047977745,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 23,
+      "candidates": 324,
+      "best": 0.7,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.059529581249753834,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 24,
+      "candidates": 340,
+      "best": 0.7333333333333333,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.04946444728954667,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 25,
+      "candidates": 339,
+      "best": 0.7333333333333333,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.06187347882738303,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 26,
+      "candidates": 353,
+      "best": 0.7,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.10242996704162384,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 27,
+      "candidates": 380,
+      "best": 0.7333333333333333,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.06248199740725322,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 28,
+      "candidates": 407,
+      "best": 0.7333333333333333,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.11072665241604365,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 3,
+      "candidates": 36,
+      "best": 0.5333333333333333,
+      "no_change": 0.43333333333333335,
+      "dropout_sd": 0.04157397096415492,
+      "best_duplicate": 0.43333333333333335,
+      "duplicate_rank": 14,
+      "chosen_op": null
+     },
+     {
+      "generation": 4,
+      "candidates": 51,
+      "best": 0.6,
+      "no_change": 0.4,
+      "dropout_sd": 0.111665284679121,
+      "best_duplicate": 0.4666666666666667,
+      "duplicate_rank": 16,
+      "chosen_op": null
+     },
+     {
+      "generation": 5,
+      "candidates": 67,
+      "best": 0.6666666666666666,
+      "no_change": 0.4,
+      "dropout_sd": 0.12676409508401476,
+      "best_duplicate": 0.6666666666666666,
+      "duplicate_rank": 1,
+      "chosen_op": "duplicate"
+     },
+     {
+      "generation": 6,
+      "candidates": 88,
+      "best": 0.6333333333333333,
+      "no_change": 0.5,
+      "dropout_sd": 0.09041893048691632,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 17,
+      "chosen_op": null
+     },
+     {
+      "generation": 7,
+      "candidates": 85,
+      "best": 0.6,
+      "no_change": 0.4666666666666667,
+      "dropout_sd": 0.05086899174337599,
+      "best_duplicate": 0.5,
+      "duplicate_rank": 18,
+      "chosen_op": null
+     },
+     {
+      "generation": 8,
+      "candidates": 98,
+      "best": 0.6333333333333333,
+      "no_change": 0.5,
+      "dropout_sd": 0.0988965179468051,
+      "best_duplicate": 0.5,
+      "duplicate_rank": 46,
+      "chosen_op": null
+     },
+     {
+      "generation": 9,
+      "candidates": 99,
+      "best": 0.6,
+      "no_change": 0.5166666666666666,
+      "dropout_sd": 0.15094580646159134,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 34,
+      "chosen_op": null
+     }
+    ]
+   },
+   {
+    "seed": 2,
+    "final_train": 0.6838888888888889,
+    "final_val": 0.7196,
+    "final_test": 0.7187,
+    "final_params": 41578,
+    "epochs": 300,
+    "actions": [
+     {
+      "generation": 0,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.4634,
+      "val_after": 0.4634
+     },
+     {
+      "generation": 1,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.564,
+      "val_after": 0.564
+     },
+     {
+      "generation": 2,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.3726,
+      "val_after": 0.3726
+     },
+     {
+      "generation": 3,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.2994,
+      "val_after": 0.2994
+     },
+     {
+      "generation": 4,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.481,
+      "val_after": 0.4812
+     },
+     {
+      "generation": 5,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5112,
+      "val_after": 0.5112
+     },
+     {
+      "generation": 6,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.5096,
+      "val_after": 0.5098
+     },
+     {
+      "generation": 7,
+      "name": "DelLayer",
+      "op": null,
+      "val_before": 0.5212,
+      "val_after": 0.3784
+     },
+     {
+      "generation": 8,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5086,
+      "val_after": 0.5086
+     },
+     {
+      "generation": 9,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5802,
+      "val_after": 0.5802
+     },
+     {
+      "generation": 10,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5618,
+      "val_after": 0.5618
+     },
+     {
+      "generation": 11,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.6064,
+      "val_after": 0.6064
+     },
+     {
+      "generation": 12,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5746,
+      "val_after": 0.5748
+     },
+     {
+      "generation": 13,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.5574,
+      "val_after": 0.5576
+     },
+     {
+      "generation": 14,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5912,
+      "val_after": 0.5912
+     },
+     {
+      "generation": 15,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5924,
+      "val_after": 0.593
+     },
+     {
+      "generation": 16,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6,
+      "val_after": 0.601
+     },
+     {
+      "generation": 17,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.583,
+      "val_after": 0.5828
+     },
+     {
+      "generation": 18,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.6046,
+      "val_after": 0.6048
+     },
+     {
+      "generation": 19,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.6336,
+      "val_after": 0.6336
+     },
+     {
+      "generation": 20,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6428,
+      "val_after": 0.6428
+     },
+     {
+      "generation": 21,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6688,
+      "val_after": 0.6688
+     },
+     {
+      "generation": 22,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.6832,
+      "val_after": 0.6832
+     },
+     {
+      "generation": 23,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.6868,
+      "val_after": 0.6868
+     },
+     {
+      "generation": 24,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7,
+      "val_after": 0.7002
+     },
+     {
+      "generation": 25,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.7038,
+      "val_after": 0.6894
+     },
+     {
+      "generation": 26,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.7132,
+      "val_after": 0.6878
+     },
+     {
+      "generation": 27,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7176,
+      "val_after": 0.7176
+     },
+     {
+      "generation": 28,
+      "name": "DelLayer",
+      "op": null,
+      "val_before": 0.7144,
+      "val_after": 0.6904
+     }
+    ],
+    "searches": [
+     {
+      "generation": 0,
+      "candidates": 15,
+      "best": 0.4666666666666667,
+      "no_change": 0.3333333333333333,
+      "dropout_sd": 0.01571348402636772,
+      "best_duplicate": 0.3,
+      "duplicate_rank": 9,
+      "chosen_op": null
+     },
+     {
+      "generation": 1,
+      "candidates": 25,
+      "best": 0.6,
+      "no_change": 0.4666666666666667,
+      "dropout_sd": 0.1688336491857997,
+      "best_duplicate": 0.43333333333333335,
+      "duplicate_rank": 12,
+      "chosen_op": null
+     },
+     {
+      "generation": 10,
+      "candidates": 76,
+      "best": 0.6,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.1061476412527015,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 11,
+      "candidates": 91,
+      "best": 0.6666666666666666,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.08952107155695456,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 12,
+      "candidates": 79,
+      "best": 0.6,
+      "no_change": 0.5,
+      "dropout_sd": 0.1304124511210774,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 13,
+      "candidates": 94,
+      "best": 0.6666666666666666,
+      "no_change": 0.6,
+      "dropout_sd": 0.12417077492029784,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 14,
+      "candidates": 115,
+      "best": 0.7333333333333333,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.0681616208050282,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 15,
+      "candidates": 117,
+      "best": 0.7333333333333333,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.1742420507944456,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 16,
+      "candidates": 118,
+      "best": 0.7,
+      "no_change": 0.6,
+      "dropout_sd": 0.08705593143366404,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 17,
+      "candidates": 120,
+      "best": 0.7,
+      "no_change": 0.6,
+      "dropout_sd": 0.10962728031639368,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 18,
+      "candidates": 134,
+      "best": 0.7,
+      "no_change": 0.6,
+      "dropout_sd": 0.04595942252159526,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 19,
+      "candidates": 152,
+      "best": 0.7333333333333333,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.07974200129360563,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 2,
+      "candidates": 19,
+      "best": 0.3333333333333333,
+      "no_change": 0.13333333333333333,
+      "dropout_sd": 0.09428090415820634,
+      "best_duplicate": 0.03333333333333333,
+      "duplicate_rank": 19,
+      "chosen_op": null
+     },
+     {
+      "generation": 20,
+      "candidates": 166,
+      "best": 0.7333333333333333,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.14029950326812973,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 21,
+      "candidates": 167,
+      "best": 0.7333333333333333,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.15532125211324008,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 22,
+      "candidates": 188,
+      "best": 0.7666666666666667,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.05799431172144294,
+      "best_duplicate": 0.6333333333333333,
+      "duplicate_rank": 138,
+      "chosen_op": null
+     },
+     {
+      "generation": 23,
+      "candidates": 215,
+      "best": 0.7333333333333333,
+      "no_change": 0.7,
+      "dropout_sd": 0.08355984993230933,
+      "best_duplicate": 0.36666666666666664,
+      "duplicate_rank": 202,
+      "chosen_op": null
+     },
+     {
+      "generation": 24,
+      "candidates": 245,
+      "best": 0.8,
+      "no_change": 0.7,
+      "dropout_sd": 0.1197528318693998,
+      "best_duplicate": 0.7333333333333333,
+      "duplicate_rank": 7,
+      "chosen_op": null
+     },
+     {
+      "generation": 25,
+      "candidates": 246,
+      "best": 0.7666666666666667,
+      "no_change": 0.7,
+      "dropout_sd": 0.07141908618189005,
+      "best_duplicate": 0.7333333333333333,
+      "duplicate_rank": 3,
+      "chosen_op": null
+     },
+     {
+      "generation": 26,
+      "candidates": 262,
+      "best": 0.7666666666666667,
+      "no_change": 0.7,
+      "dropout_sd": 0.058267158231675074,
+      "best_duplicate": 0.6,
+      "duplicate_rank": 205,
+      "chosen_op": null
+     },
+     {
+      "generation": 27,
+      "candidates": 294,
+      "best": 0.8333333333333334,
+      "no_change": 0.7,
+      "dropout_sd": 0.056443520941215436,
+      "best_duplicate": 0.6666666666666666,
+      "duplicate_rank": 206,
+      "chosen_op": null
+     },
+     {
+      "generation": 28,
+      "candidates": 293,
+      "best": 0.8,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.04906145501237929,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 3,
+      "candidates": 16,
+      "best": 0.3333333333333333,
+      "no_change": null,
+      "dropout_sd": null,
+      "best_duplicate": 0.26666666666666666,
+      "duplicate_rank": 4,
+      "chosen_op": null
+     },
+     {
+      "generation": 4,
+      "candidates": 26,
+      "best": 0.43333333333333335,
+      "no_change": 0.23333333333333334,
+      "dropout_sd": 0.12472191289246472,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 5,
+      "candidates": 36,
+      "best": 0.5333333333333333,
+      "no_change": 0.5,
+      "dropout_sd": 0.09026709338484401,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 6,
+      "candidates": 46,
+      "best": 0.5,
+      "no_change": 0.36666666666666664,
+      "dropout_sd": 0.04743054990691,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 7,
+      "candidates": 61,
+      "best": 0.5666666666666667,
+      "no_change": 0.4,
+      "dropout_sd": 0.08854098583616238,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 8,
+      "candidates": 50,
+      "best": 0.5666666666666667,
+      "no_change": 0.36666666666666664,
+      "dropout_sd": 0.10708764662815526,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 9,
+      "candidates": 65,
+      "best": 0.6666666666666666,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.10252304100493635,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     }
+    ]
+   }
+  ],
+  "+side": [
+   {
+    "seed": 1,
+    "final_train": 0.5501777777777778,
+    "final_val": 0.5762,
+    "final_test": 0.5876,
+    "final_params": 47370,
+    "epochs": 300,
+    "actions": [
+     {
+      "generation": 0,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.4682,
+      "val_after": 0.4682
+     },
+     {
+      "generation": 1,
+      "name": "ResidualBlockAction",
+      "op": "remove",
+      "val_before": 0.3954,
+      "val_after": 0.269
+     },
+     {
+      "generation": 2,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.3706,
+      "val_after": 0.3676
+     },
+     {
+      "generation": 3,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.4068,
+      "val_after": 0.4068
+     },
+     {
+      "generation": 4,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.2898,
+      "val_after": 0.2898
+     },
+     {
+      "generation": 5,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.3066,
+      "val_after": 0.3066
+     },
+     {
+      "generation": 6,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.2954,
+      "val_after": 0.2954
+     },
+     {
+      "generation": 7,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.3232,
+      "val_after": 0.3232
+     },
+     {
+      "generation": 8,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.334,
+      "val_after": 0.3338
+     },
+     {
+      "generation": 9,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.3984,
+      "val_after": 0.3984
+     },
+     {
+      "generation": 10,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.3862,
+      "val_after": 0.3862
+     },
+     {
+      "generation": 11,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.3886,
+      "val_after": 0.3886
+     },
+     {
+      "generation": 12,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.3794,
+      "val_after": 0.3792
+     },
+     {
+      "generation": 13,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.3906,
+      "val_after": 0.3908
+     },
+     {
+      "generation": 14,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.384,
+      "val_after": 0.384
+     },
+     {
+      "generation": 15,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.39,
+      "val_after": 0.3898
+     },
+     {
+      "generation": 16,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.4408,
+      "val_after": 0.4408
+     },
+     {
+      "generation": 17,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.4558,
+      "val_after": 0.4558
+     },
+     {
+      "generation": 18,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.4752,
+      "val_after": 0.4754
+     },
+     {
+      "generation": 19,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.4826,
+      "val_after": 0.4826
+     },
+     {
+      "generation": 20,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.4844,
+      "val_after": 0.4844
+     },
+     {
+      "generation": 21,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.482,
+      "val_after": 0.482
+     },
+     {
+      "generation": 22,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.4952,
+      "val_after": 0.4954
+     },
+     {
+      "generation": 23,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5198,
+      "val_after": 0.5194
+     },
+     {
+      "generation": 24,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5408,
+      "val_after": 0.5408
+     },
+     {
+      "generation": 25,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5594,
+      "val_after": 0.5592
+     },
+     {
+      "generation": 26,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.564,
+      "val_after": 0.564
+     },
+     {
+      "generation": 27,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5698,
+      "val_after": 0.5694
+     },
+     {
+      "generation": 28,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5682,
+      "val_after": 0.5682
+     }
+    ],
+    "searches": [
+     {
+      "generation": 0,
+      "candidates": 15,
+      "best": 0.5166666666666666,
+      "no_change": 0.36666666666666664,
+      "dropout_sd": 0.10274023338281625,
+      "best_duplicate": 0.2,
+      "duplicate_rank": 13,
+      "chosen_op": null
+     },
+     {
+      "generation": 1,
+      "candidates": 12,
+      "best": 0.4666666666666667,
+      "no_change": null,
+      "dropout_sd": null,
+      "best_duplicate": 0.4666666666666667,
+      "duplicate_rank": 1,
+      "chosen_op": "remove"
+     },
+     {
+      "generation": 10,
+      "candidates": 71,
+      "best": 0.4,
+      "no_change": 0.3333333333333333,
+      "dropout_sd": 0.09293511852891712,
+      "best_duplicate": 0.3,
+      "duplicate_rank": 33,
+      "chosen_op": null
+     },
+     {
+      "generation": 11,
+      "candidates": 68,
+      "best": 0.36666666666666664,
+      "no_change": 0.3,
+      "dropout_sd": 0.057526757655589136,
+      "best_duplicate": 0.13333333333333333,
+      "duplicate_rank": 58,
+      "chosen_op": null
+     },
+     {
+      "generation": 12,
+      "candidates": 85,
+      "best": 0.4666666666666667,
+      "no_change": 0.4,
+      "dropout_sd": 0.07012927629960167,
+      "best_duplicate": 0.3333333333333333,
+      "duplicate_rank": 43,
+      "chosen_op": null
+     },
+     {
+      "generation": 13,
+      "candidates": 96,
+      "best": 0.43333333333333335,
+      "no_change": 0.3333333333333333,
+      "dropout_sd": 0.07904474041740107,
+      "best_duplicate": 0.3,
+      "duplicate_rank": 51,
+      "chosen_op": null
+     },
+     {
+      "generation": 14,
+      "candidates": 107,
+      "best": 0.4,
+      "no_change": 0.3333333333333333,
+      "dropout_sd": 0.08311127249237941,
+      "best_duplicate": 0.3,
+      "duplicate_rank": 38,
+      "chosen_op": null
+     },
+     {
+      "generation": 15,
+      "candidates": 104,
+      "best": 0.43333333333333335,
+      "no_change": 0.35,
+      "dropout_sd": 0.09090593428863096,
+      "best_duplicate": 0.3,
+      "duplicate_rank": 55,
+      "chosen_op": null
+     },
+     {
+      "generation": 16,
+      "candidates": 107,
+      "best": 0.43333333333333335,
+      "no_change": 0.3333333333333333,
+      "dropout_sd": 0.10957268290731122,
+      "best_duplicate": 0.26666666666666666,
+      "duplicate_rank": 71,
+      "chosen_op": null
+     },
+     {
+      "generation": 17,
+      "candidates": 104,
+      "best": 0.43333333333333335,
+      "no_change": 0.4,
+      "dropout_sd": 0.03926767262493011,
+      "best_duplicate": 0.4,
+      "duplicate_rank": 15,
+      "chosen_op": null
+     },
+     {
+      "generation": 18,
+      "candidates": 105,
+      "best": 0.43333333333333335,
+      "no_change": 0.36666666666666664,
+      "dropout_sd": 0.03396973739529,
+      "best_duplicate": 0.4,
+      "duplicate_rank": 11,
+      "chosen_op": null
+     },
+     {
+      "generation": 19,
+      "candidates": 104,
+      "best": 0.5333333333333333,
+      "no_change": 0.43333333333333335,
+      "dropout_sd": 0.050892760450417136,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 2,
+      "candidates": 3,
+      "best": 0.37499999999999994,
+      "no_change": null,
+      "dropout_sd": null,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 20,
+      "candidates": 98,
+      "best": 0.4666666666666667,
+      "no_change": 0.4,
+      "dropout_sd": 0.08207193472275284,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 21,
+      "candidates": 110,
+      "best": 0.5333333333333333,
+      "no_change": 0.43333333333333335,
+      "dropout_sd": 0.05937488719215332,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 22,
+      "candidates": 107,
+      "best": 0.43333333333333335,
+      "no_change": 0.43333333333333335,
+      "dropout_sd": 0.06308919807368174,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 23,
+      "candidates": 143,
+      "best": 0.5333333333333333,
+      "no_change": 0.4666666666666667,
+      "dropout_sd": 0.064060156912887,
+      "best_duplicate": 0.5,
+      "duplicate_rank": 4,
+      "chosen_op": null
+     },
+     {
+      "generation": 24,
+      "candidates": 152,
+      "best": 0.5666666666666667,
+      "no_change": 0.4666666666666667,
+      "dropout_sd": 0.09644216777600009,
+      "best_duplicate": 0.4,
+      "duplicate_rank": 116,
+      "chosen_op": null
+     },
+     {
+      "generation": 25,
+      "candidates": 163,
+      "best": 0.5666666666666667,
+      "no_change": 0.5,
+      "dropout_sd": 0.11009956212559119,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 9,
+      "chosen_op": null
+     },
+     {
+      "generation": 26,
+      "candidates": 195,
+      "best": 0.6333333333333333,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.08648716117815695,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 27,
+      "candidates": 204,
+      "best": 0.6666666666666666,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.0940624081422244,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 28,
+      "candidates": 214,
+      "best": 0.6666666666666666,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.09267114755340493,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 3,
+      "candidates": 9,
+      "best": 0.3833333333333333,
+      "no_change": 0.2833333333333333,
+      "dropout_sd": 0.059317101400173954,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 4,
+      "candidates": 6,
+      "best": 0.24,
+      "no_change": null,
+      "dropout_sd": null,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 5,
+      "candidates": 14,
+      "best": 0.33333333333333337,
+      "no_change": 0.23333333333333334,
+      "dropout_sd": 0.05665577237325318,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 6,
+      "candidates": 28,
+      "best": 0.3333333333333333,
+      "no_change": 0.3,
+      "dropout_sd": 0.033333333333333326,
+      "best_duplicate": 0.1,
+      "duplicate_rank": 26,
+      "chosen_op": null
+     },
+     {
+      "generation": 7,
+      "candidates": 39,
+      "best": 0.4,
+      "no_change": 0.35,
+      "dropout_sd": 0.10754700379225521,
+      "best_duplicate": 0.3333333333333333,
+      "duplicate_rank": 16,
+      "chosen_op": null
+     },
+     {
+      "generation": 8,
+      "candidates": 53,
+      "best": 0.4,
+      "no_change": 0.36666666666666664,
+      "dropout_sd": 0.04898979485566356,
+      "best_duplicate": 0.3333333333333333,
+      "duplicate_rank": 17,
+      "chosen_op": null
+     },
+     {
+      "generation": 9,
+      "candidates": 63,
+      "best": 0.43333333333333335,
+      "no_change": 0.31666666666666665,
+      "dropout_sd": 0.0901340261010219,
+      "best_duplicate": 0.4,
+      "duplicate_rank": 2,
+      "chosen_op": null
+     }
+    ]
+   },
+   {
+    "seed": 2,
+    "final_train": 0.7800444444444444,
+    "final_val": 0.7798,
+    "final_test": 0.7786,
+    "final_params": 47074,
+    "epochs": 300,
+    "actions": [
+     {
+      "generation": 0,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.4698,
+      "val_after": 0.4718
+     },
+     {
+      "generation": 1,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.4316,
+      "val_after": 0.4328
+     },
+     {
+      "generation": 2,
+      "name": "AddNeurons",
+      "op": null,
+      "val_before": 0.5332,
+      "val_after": 0.5398
+     },
+     {
+      "generation": 3,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.5298,
+      "val_after": 0.5346
+     },
+     {
+      "generation": 4,
+      "name": "ResidualBlockAction",
+      "op": "duplicate",
+      "val_before": 0.526,
+      "val_after": 0.521
+     },
+     {
+      "generation": 5,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.5144,
+      "val_after": 0.5144
+     },
+     {
+      "generation": 6,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.5338,
+      "val_after": 0.5284
+     },
+     {
+      "generation": 7,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5202,
+      "val_after": 0.52
+     },
+     {
+      "generation": 8,
+      "name": "AddNeurons",
+      "op": null,
+      "val_before": 0.507,
+      "val_after": 0.4872
+     },
+     {
+      "generation": 9,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5922,
+      "val_after": 0.5932
+     },
+     {
+      "generation": 10,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.5928,
+      "val_after": 0.5928
+     },
+     {
+      "generation": 11,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.6078,
+      "val_after": 0.608
+     },
+     {
+      "generation": 12,
+      "name": "AddNeurons",
+      "op": null,
+      "val_before": 0.6776,
+      "val_after": 0.6652
+     },
+     {
+      "generation": 13,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.6194,
+      "val_after": 0.6196
+     },
+     {
+      "generation": 14,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6512,
+      "val_after": 0.6522
+     },
+     {
+      "generation": 15,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.7028,
+      "val_after": 0.7028
+     },
+     {
+      "generation": 16,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6568,
+      "val_after": 0.657
+     },
+     {
+      "generation": 17,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.7232,
+      "val_after": 0.7232
+     },
+     {
+      "generation": 18,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7102,
+      "val_after": 0.7096
+     },
+     {
+      "generation": 19,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.7214,
+      "val_after": 0.7256
+     },
+     {
+      "generation": 20,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.7292,
+      "val_after": 0.7292
+     },
+     {
+      "generation": 21,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7368,
+      "val_after": 0.7364
+     },
+     {
+      "generation": 22,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.7502,
+      "val_after": 0.7492
+     },
+     {
+      "generation": 23,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7536,
+      "val_after": 0.7534
+     },
+     {
+      "generation": 24,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.7736,
+      "val_after": 0.7694
+     },
+     {
+      "generation": 25,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.7772,
+      "val_after": 0.7782
+     },
+     {
+      "generation": 26,
+      "name": "DelLayer",
+      "op": null,
+      "val_before": 0.7798,
+      "val_after": 0.7494
+     },
+     {
+      "generation": 27,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7814,
+      "val_after": 0.7814
+     },
+     {
+      "generation": 28,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7808,
+      "val_after": 0.7808
+     }
+    ],
+    "searches": [
+     {
+      "generation": 0,
+      "candidates": 15,
+      "best": 0.35,
+      "no_change": 0.26666666666666666,
+      "dropout_sd": 0.0415739709641549,
+      "best_duplicate": 0.35,
+      "duplicate_rank": 1,
+      "chosen_op": null
+     },
+     {
+      "generation": 1,
+      "candidates": 26,
+      "best": 0.4,
+      "no_change": 0.3333333333333333,
+      "dropout_sd": 0.04714045207910317,
+      "best_duplicate": 0.3,
+      "duplicate_rank": 13,
+      "chosen_op": null
+     },
+     {
+      "generation": 10,
+      "candidates": 124,
+      "best": 0.7,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.15891043154093204,
+      "best_duplicate": 0.13333333333333333,
+      "duplicate_rank": 113,
+      "chosen_op": null
+     },
+     {
+      "generation": 11,
+      "candidates": 145,
+      "best": 0.6333333333333333,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.08632901741344587,
+      "best_duplicate": 0.4666666666666667,
+      "duplicate_rank": 79,
+      "chosen_op": null
+     },
+     {
+      "generation": 12,
+      "candidates": 161,
+      "best": 0.7666666666666667,
+      "no_change": 0.6166666666666667,
+      "dropout_sd": 0.1966589157676804,
+      "best_duplicate": 0.6666666666666666,
+      "duplicate_rank": 18,
+      "chosen_op": null
+     },
+     {
+      "generation": 13,
+      "candidates": 161,
+      "best": 0.7,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.12434003151291989,
+      "best_duplicate": 0.5666666666666667,
+      "duplicate_rank": 33,
+      "chosen_op": null
+     },
+     {
+      "generation": 14,
+      "candidates": 178,
+      "best": 0.6666666666666666,
+      "no_change": 0.6,
+      "dropout_sd": 0.08560604570781431,
+      "best_duplicate": 0.5666666666666667,
+      "duplicate_rank": 86,
+      "chosen_op": null
+     },
+     {
+      "generation": 15,
+      "candidates": 198,
+      "best": 0.7666666666666667,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.14680151781821132,
+      "best_duplicate": 0.6333333333333333,
+      "duplicate_rank": 127,
+      "chosen_op": null
+     },
+     {
+      "generation": 16,
+      "candidates": 222,
+      "best": 0.7,
+      "no_change": 0.6,
+      "dropout_sd": 0.14932791764938344,
+      "best_duplicate": 0.6333333333333333,
+      "duplicate_rank": 24,
+      "chosen_op": null
+     },
+     {
+      "generation": 17,
+      "candidates": 249,
+      "best": 0.7,
+      "no_change": 0.6,
+      "dropout_sd": 0.08674021854528326,
+      "best_duplicate": 0.5666666666666667,
+      "duplicate_rank": 164,
+      "chosen_op": null
+     },
+     {
+      "generation": 18,
+      "candidates": 274,
+      "best": 0.7333333333333333,
+      "no_change": 0.7,
+      "dropout_sd": 0.12615264729622774,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 226,
+      "chosen_op": null
+     },
+     {
+      "generation": 19,
+      "candidates": 276,
+      "best": 0.7666666666666667,
+      "no_change": 0.7,
+      "dropout_sd": 0.11478488587340847,
+      "best_duplicate": 0.6,
+      "duplicate_rank": 215,
+      "chosen_op": null
+     },
+     {
+      "generation": 2,
+      "candidates": 40,
+      "best": 0.5,
+      "no_change": 0.4,
+      "dropout_sd": 0.13188513936862856,
+      "best_duplicate": 0.23333333333333334,
+      "duplicate_rank": 23,
+      "chosen_op": null
+     },
+     {
+      "generation": 20,
+      "candidates": 301,
+      "best": 0.7333333333333333,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.1285236203491573,
+      "best_duplicate": 0.5,
+      "duplicate_rank": 267,
+      "chosen_op": null
+     },
+     {
+      "generation": 21,
+      "candidates": 326,
+      "best": 0.8,
+      "no_change": 0.7333333333333333,
+      "dropout_sd": 0.14296251282235553,
+      "best_duplicate": 0.6666666666666666,
+      "duplicate_rank": 212,
+      "chosen_op": null
+     },
+     {
+      "generation": 22,
+      "candidates": 345,
+      "best": 0.7,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.11948069375592896,
+      "best_duplicate": 0.5,
+      "duplicate_rank": 306,
+      "chosen_op": null
+     },
+     {
+      "generation": 23,
+      "candidates": 371,
+      "best": 0.7666666666666667,
+      "no_change": 0.7333333333333333,
+      "dropout_sd": 0.11886292551392294,
+      "best_duplicate": 0.6,
+      "duplicate_rank": 315,
+      "chosen_op": null
+     },
+     {
+      "generation": 24,
+      "candidates": 368,
+      "best": 0.7666666666666667,
+      "no_change": 0.7333333333333333,
+      "dropout_sd": 0.1393719992818265,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 348,
+      "chosen_op": null
+     },
+     {
+      "generation": 25,
+      "candidates": 394,
+      "best": 0.7666666666666667,
+      "no_change": 0.7333333333333333,
+      "dropout_sd": 0.0854561787564499,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 366,
+      "chosen_op": null
+     },
+     {
+      "generation": 26,
+      "candidates": 420,
+      "best": 0.7666666666666667,
+      "no_change": 0.7,
+      "dropout_sd": 0.1072891295710153,
+      "best_duplicate": 0.5666666666666667,
+      "duplicate_rank": 374,
+      "chosen_op": null
+     },
+     {
+      "generation": 27,
+      "candidates": 395,
+      "best": 0.8,
+      "no_change": 0.7333333333333333,
+      "dropout_sd": 0.1354899893451766,
+      "best_duplicate": 0.5666666666666667,
+      "duplicate_rank": 349,
+      "chosen_op": null
+     },
+     {
+      "generation": 28,
+      "candidates": 396,
+      "best": 0.8,
+      "no_change": 0.7666666666666667,
+      "dropout_sd": 0.08112871294029968,
+      "best_duplicate": 0.6,
+      "duplicate_rank": 334,
+      "chosen_op": null
+     },
+     {
+      "generation": 3,
+      "candidates": 37,
+      "best": 0.5333333333333333,
+      "no_change": 0.43333333333333335,
+      "dropout_sd": 0.1385799032138497,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 1,
+      "chosen_op": null
+     },
+     {
+      "generation": 4,
+      "candidates": 54,
+      "best": 0.5,
+      "no_change": 0.36666666666666664,
+      "dropout_sd": 0.09258962958222071,
+      "best_duplicate": 0.5,
+      "duplicate_rank": 1,
+      "chosen_op": "duplicate"
+     },
+     {
+      "generation": 5,
+      "candidates": 73,
+      "best": 0.6,
+      "no_change": 0.43333333333333335,
+      "dropout_sd": 0.08826310332989107,
+      "best_duplicate": 0.5666666666666667,
+      "duplicate_rank": 3,
+      "chosen_op": null
+     },
+     {
+      "generation": 6,
+      "candidates": 67,
+      "best": 0.6333333333333333,
+      "no_change": 0.5,
+      "dropout_sd": 0.15675726300931908,
+      "best_duplicate": 0.5,
+      "duplicate_rank": 20,
+      "chosen_op": null
+     },
+     {
+      "generation": 7,
+      "candidates": 83,
+      "best": 0.5666666666666667,
+      "no_change": 0.4,
+      "dropout_sd": 0.14419130094191446,
+      "best_duplicate": 0.43333333333333335,
+      "duplicate_rank": 32,
+      "chosen_op": null
+     },
+     {
+      "generation": 8,
+      "candidates": 98,
+      "best": 0.6,
+      "no_change": 0.48333333333333334,
+      "dropout_sd": 0.14635066968934074,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 14,
+      "chosen_op": null
+     },
+     {
+      "generation": 9,
+      "candidates": 110,
+      "best": 0.6666666666666666,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.12833694078623803,
+      "best_duplicate": 0.5666666666666667,
+      "duplicate_rank": 35,
+      "chosen_op": null
+     }
+    ]
+   }
+  ],
+  "+after_relu": [
+   {
+    "seed": 1,
+    "final_train": 0.7740666666666667,
+    "final_val": 0.8018,
+    "final_test": 0.7982,
+    "final_params": 65802,
+    "epochs": 300,
+    "actions": [
+     {
+      "generation": 0,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.4206,
+      "val_after": 0.4202
+     },
+     {
+      "generation": 1,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5214,
+      "val_after": 0.5218
+     },
+     {
+      "generation": 2,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.554,
+      "val_after": 0.554
+     },
+     {
+      "generation": 3,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5036,
+      "val_after": 0.5038
+     },
+     {
+      "generation": 4,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.4984,
+      "val_after": 0.4986
+     },
+     {
+      "generation": 5,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5738,
+      "val_after": 0.5732
+     },
+     {
+      "generation": 6,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5754,
+      "val_after": 0.575
+     },
+     {
+      "generation": 7,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.582,
+      "val_after": 0.582
+     },
+     {
+      "generation": 8,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.578,
+      "val_after": 0.5782
+     },
+     {
+      "generation": 9,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6292,
+      "val_after": 0.6292
+     },
+     {
+      "generation": 10,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.6632,
+      "val_after": 0.6632
+     },
+     {
+      "generation": 11,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6716,
+      "val_after": 0.6712
+     },
+     {
+      "generation": 12,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5568,
+      "val_after": 0.557
+     },
+     {
+      "generation": 13,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7032,
+      "val_after": 0.7032
+     },
+     {
+      "generation": 14,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6354,
+      "val_after": 0.6354
+     },
+     {
+      "generation": 15,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6914,
+      "val_after": 0.6912
+     },
+     {
+      "generation": 16,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7216,
+      "val_after": 0.7216
+     },
+     {
+      "generation": 17,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.714,
+      "val_after": 0.714
+     },
+     {
+      "generation": 18,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7516,
+      "val_after": 0.7516
+     },
+     {
+      "generation": 19,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7484,
+      "val_after": 0.7484
+     },
+     {
+      "generation": 20,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.7378,
+      "val_after": 0.7378
+     },
+     {
+      "generation": 21,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.7736,
+      "val_after": 0.7736
+     },
+     {
+      "generation": 22,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.7634,
+      "val_after": 0.7634
+     },
+     {
+      "generation": 23,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.7636,
+      "val_after": 0.679
+     },
+     {
+      "generation": 24,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7796,
+      "val_after": 0.7796
+     },
+     {
+      "generation": 25,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7934,
+      "val_after": 0.7934
+     },
+     {
+      "generation": 26,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7926,
+      "val_after": 0.7926
+     },
+     {
+      "generation": 27,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.7966,
+      "val_after": 0.7968
+     },
+     {
+      "generation": 28,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.795,
+      "val_after": 0.795
+     }
+    ],
+    "searches": [
+     {
+      "generation": 0,
+      "candidates": 15,
+      "best": 0.36666666666666664,
+      "no_change": 0.31666666666666665,
+      "dropout_sd": 0.04082482904638629,
+      "best_duplicate": 0.26666666666666666,
+      "duplicate_rank": 9,
+      "chosen_op": null
+     },
+     {
+      "generation": 1,
+      "candidates": 23,
+      "best": 0.43333333333333335,
+      "no_change": 0.4166666666666667,
+      "dropout_sd": 0.035572912430182506,
+      "best_duplicate": 0.4,
+      "duplicate_rank": 6,
+      "chosen_op": null
+     },
+     {
+      "generation": 10,
+      "candidates": 127,
+      "best": 0.6333333333333333,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.13944516698856846,
+      "best_duplicate": 0.5666666666666667,
+      "duplicate_rank": 12,
+      "chosen_op": null
+     },
+     {
+      "generation": 11,
+      "candidates": 149,
+      "best": 0.5666666666666667,
+      "no_change": 0.4666666666666667,
+      "dropout_sd": 0.09850459383632172,
+      "best_duplicate": 0.5,
+      "duplicate_rank": 19,
+      "chosen_op": null
+     },
+     {
+      "generation": 12,
+      "candidates": 171,
+      "best": 0.6,
+      "no_change": 0.5,
+      "dropout_sd": 0.08853883404113597,
+      "best_duplicate": 0.4666666666666667,
+      "duplicate_rank": 95,
+      "chosen_op": null
+     },
+     {
+      "generation": 13,
+      "candidates": 184,
+      "best": 0.7,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.16600566573891198,
+      "best_duplicate": 0.6333333333333333,
+      "duplicate_rank": 62,
+      "chosen_op": null
+     },
+     {
+      "generation": 14,
+      "candidates": 193,
+      "best": 0.7333333333333333,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.15661839287789386,
+      "best_duplicate": 0.6666666666666666,
+      "duplicate_rank": 50,
+      "chosen_op": null
+     },
+     {
+      "generation": 15,
+      "candidates": 206,
+      "best": 0.7666666666666667,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.103170087389445,
+      "best_duplicate": 0.6333333333333333,
+      "duplicate_rank": 127,
+      "chosen_op": null
+     },
+     {
+      "generation": 16,
+      "candidates": 214,
+      "best": 0.7,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.09928917237654565,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 17,
+      "candidates": 229,
+      "best": 0.7666666666666667,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.11838918869558993,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 18,
+      "candidates": 256,
+      "best": 0.8,
+      "no_change": 0.7333333333333333,
+      "dropout_sd": 0.1410846833681047,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 19,
+      "candidates": 269,
+      "best": 0.7,
+      "no_change": 0.6,
+      "dropout_sd": 0.10885542287864988,
+      "best_duplicate": 0.6333333333333333,
+      "duplicate_rank": 7,
+      "chosen_op": null
+     },
+     {
+      "generation": 2,
+      "candidates": 32,
+      "best": 0.6,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.1692394023525313,
+      "best_duplicate": 0.5833333333333333,
+      "duplicate_rank": 3,
+      "chosen_op": null
+     },
+     {
+      "generation": 20,
+      "candidates": 281,
+      "best": 0.7,
+      "no_change": 0.6,
+      "dropout_sd": 0.0840047029841591,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 21,
+      "candidates": 300,
+      "best": 0.7666666666666667,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.09098720032757555,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 22,
+      "candidates": 294,
+      "best": 0.7333333333333333,
+      "no_change": 0.7,
+      "dropout_sd": 0.07940745900565509,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 23,
+      "candidates": 306,
+      "best": 0.7666666666666667,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.08040449864230506,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 24,
+      "candidates": 325,
+      "best": 0.7,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.07338310324756318,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 25,
+      "candidates": 338,
+      "best": 0.7,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.08017145408658666,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 26,
+      "candidates": 355,
+      "best": 0.7,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.09028160640756432,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 27,
+      "candidates": 369,
+      "best": 0.7333333333333333,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.0921982342742646,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 28,
+      "candidates": 397,
+      "best": 0.7,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.07596944742808198,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 3,
+      "candidates": 29,
+      "best": 0.6,
+      "no_change": 0.43333333333333335,
+      "dropout_sd": 0.164898023107287,
+      "best_duplicate": 0.4,
+      "duplicate_rank": 14,
+      "chosen_op": null
+     },
+     {
+      "generation": 4,
+      "candidates": 39,
+      "best": 0.5666666666666667,
+      "no_change": 0.4666666666666667,
+      "dropout_sd": 0.1414213562373095,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 5,
+      "chosen_op": null
+     },
+     {
+      "generation": 5,
+      "candidates": 53,
+      "best": 0.5666666666666667,
+      "no_change": 0.5,
+      "dropout_sd": 0.13202482931462384,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 4,
+      "chosen_op": null
+     },
+     {
+      "generation": 6,
+      "candidates": 65,
+      "best": 0.6,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.15244509232126663,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 12,
+      "chosen_op": null
+     },
+     {
+      "generation": 7,
+      "candidates": 78,
+      "best": 0.6666666666666666,
+      "no_change": 0.55,
+      "dropout_sd": 0.19507833184532708,
+      "best_duplicate": 0.6666666666666666,
+      "duplicate_rank": 1,
+      "chosen_op": null
+     },
+     {
+      "generation": 8,
+      "candidates": 93,
+      "best": 0.6,
+      "no_change": 0.43333333333333335,
+      "dropout_sd": 0.1700562354188681,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 8,
+      "chosen_op": null
+     },
+     {
+      "generation": 9,
+      "candidates": 119,
+      "best": 0.6666666666666666,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.14905463411319114,
+      "best_duplicate": 0.6,
+      "duplicate_rank": 14,
+      "chosen_op": null
+     }
+    ]
+   },
+   {
+    "seed": 2,
+    "final_train": 0.7023333333333334,
+    "final_val": 0.7282,
+    "final_test": 0.7368,
+    "final_params": 65770,
+    "epochs": 300,
+    "actions": [
+     {
+      "generation": 0,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.4696,
+      "val_after": 0.4716
+     },
+     {
+      "generation": 1,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5182,
+      "val_after": 0.5182
+     },
+     {
+      "generation": 2,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.543,
+      "val_after": 0.543
+     },
+     {
+      "generation": 3,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5858,
+      "val_after": 0.5858
+     },
+     {
+      "generation": 4,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.61,
+      "val_after": 0.61
+     },
+     {
+      "generation": 5,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.6062,
+      "val_after": 0.6066
+     },
+     {
+      "generation": 6,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.6052,
+      "val_after": 0.6052
+     },
+     {
+      "generation": 7,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5952,
+      "val_after": 0.5952
+     },
+     {
+      "generation": 8,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5916,
+      "val_after": 0.5916
+     },
+     {
+      "generation": 9,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.607,
+      "val_after": 0.607
+     },
+     {
+      "generation": 10,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6086,
+      "val_after": 0.6086
+     },
+     {
+      "generation": 11,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5766,
+      "val_after": 0.5758
+     },
+     {
+      "generation": 12,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5912,
+      "val_after": 0.591
+     },
+     {
+      "generation": 13,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.6314,
+      "val_after": 0.572
+     },
+     {
+      "generation": 14,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.6202,
+      "val_after": 0.6202
+     },
+     {
+      "generation": 15,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.659,
+      "val_after": 0.659
+     },
+     {
+      "generation": 16,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6588,
+      "val_after": 0.6586
+     },
+     {
+      "generation": 17,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6388,
+      "val_after": 0.6382
+     },
+     {
+      "generation": 18,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.6348,
+      "val_after": 0.6366
+     },
+     {
+      "generation": 19,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.66,
+      "val_after": 0.6412
+     },
+     {
+      "generation": 20,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.6798,
+      "val_after": 0.6712
+     },
+     {
+      "generation": 21,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6886,
+      "val_after": 0.6886
+     },
+     {
+      "generation": 22,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6956,
+      "val_after": 0.698
+     },
+     {
+      "generation": 23,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.7046,
+      "val_after": 0.7046
+     },
+     {
+      "generation": 24,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7044,
+      "val_after": 0.704
+     },
+     {
+      "generation": 25,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.711,
+      "val_after": 0.711
+     },
+     {
+      "generation": 26,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.7174,
+      "val_after": 0.7108
+     },
+     {
+      "generation": 27,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.721,
+      "val_after": 0.7222
+     },
+     {
+      "generation": 28,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7266,
+      "val_after": 0.7264
+     }
+    ],
+    "searches": [
+     {
+      "generation": 0,
+      "candidates": 15,
+      "best": 0.3666666666666667,
+      "no_change": 0.3,
+      "dropout_sd": 0.04157397096415492,
+      "best_duplicate": 0.26666666666666666,
+      "duplicate_rank": 6,
+      "chosen_op": null
+     },
+     {
+      "generation": 1,
+      "candidates": 25,
+      "best": 0.4666666666666667,
+      "no_change": 0.3333333333333333,
+      "dropout_sd": 0.12283795519834814,
+      "best_duplicate": 0.31666666666666665,
+      "duplicate_rank": 17,
+      "chosen_op": null
+     },
+     {
+      "generation": 10,
+      "candidates": 124,
+      "best": 0.6666666666666666,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.19135544419134753,
+      "best_duplicate": 0.5666666666666667,
+      "duplicate_rank": 50,
+      "chosen_op": null
+     },
+     {
+      "generation": 11,
+      "candidates": 133,
+      "best": 0.6666666666666666,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.1661803604777195,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 12,
+      "candidates": 149,
+      "best": 0.7,
+      "no_change": 0.55,
+      "dropout_sd": 0.16666087952915673,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 13,
+      "candidates": 164,
+      "best": 0.6666666666666666,
+      "no_change": 0.5,
+      "dropout_sd": 0.1860461850289259,
+      "best_duplicate": 0.4,
+      "duplicate_rank": 109,
+      "chosen_op": null
+     },
+     {
+      "generation": 14,
+      "candidates": 174,
+      "best": 0.7333333333333333,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.16942392328905348,
+      "best_duplicate": 0.2,
+      "duplicate_rank": 151,
+      "chosen_op": null
+     },
+     {
+      "generation": 15,
+      "candidates": 171,
+      "best": 0.7333333333333333,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.15861224818148667,
+      "best_duplicate": 0.16666666666666666,
+      "duplicate_rank": 153,
+      "chosen_op": null
+     },
+     {
+      "generation": 16,
+      "candidates": 188,
+      "best": 0.7,
+      "no_change": 0.6,
+      "dropout_sd": 0.1567033239586212,
+      "best_duplicate": 0.13333333333333333,
+      "duplicate_rank": 175,
+      "chosen_op": null
+     },
+     {
+      "generation": 17,
+      "candidates": 201,
+      "best": 0.7,
+      "no_change": 0.6,
+      "dropout_sd": 0.09579496221169666,
+      "best_duplicate": 0.2,
+      "duplicate_rank": 183,
+      "chosen_op": null
+     },
+     {
+      "generation": 18,
+      "candidates": 210,
+      "best": 0.6666666666666666,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.15174729690558314,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 19,
+      "candidates": 228,
+      "best": 0.7,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.1149799049338144,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 2,
+      "candidates": 34,
+      "best": 0.5333333333333333,
+      "no_change": 0.3833333333333333,
+      "dropout_sd": 0.13548609331396888,
+      "best_duplicate": 0.1,
+      "duplicate_rank": 32,
+      "chosen_op": null
+     },
+     {
+      "generation": 20,
+      "candidates": 237,
+      "best": 0.7666666666666667,
+      "no_change": 0.6,
+      "dropout_sd": 0.13753662687131216,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 21,
+      "candidates": 247,
+      "best": 0.7333333333333333,
+      "no_change": 0.6,
+      "dropout_sd": 0.10016874651196238,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 22,
+      "candidates": 264,
+      "best": 0.7333333333333333,
+      "no_change": 0.6,
+      "dropout_sd": 0.14676307260951682,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 23,
+      "candidates": 285,
+      "best": 0.7,
+      "no_change": 0.6,
+      "dropout_sd": 0.08529069347560736,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 24,
+      "candidates": 302,
+      "best": 0.6666666666666666,
+      "no_change": 0.6,
+      "dropout_sd": 0.09031749332203873,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 25,
+      "candidates": 319,
+      "best": 0.7333333333333333,
+      "no_change": 0.6,
+      "dropout_sd": 0.12151119132637014,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 26,
+      "candidates": 329,
+      "best": 0.7333333333333333,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.11323011963379685,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 27,
+      "candidates": 343,
+      "best": 0.7333333333333333,
+      "no_change": 0.6,
+      "dropout_sd": 0.10886621079036346,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 28,
+      "candidates": 367,
+      "best": 0.7333333333333333,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.11489870877387505,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 3,
+      "candidates": 48,
+      "best": 0.5333333333333333,
+      "no_change": 0.4166666666666667,
+      "dropout_sd": 0.14005681778658546,
+      "best_duplicate": 0.13333333333333333,
+      "duplicate_rank": 41,
+      "chosen_op": null
+     },
+     {
+      "generation": 4,
+      "candidates": 62,
+      "best": 0.6333333333333333,
+      "no_change": 0.45,
+      "dropout_sd": 0.1404289614355833,
+      "best_duplicate": 0.4666666666666667,
+      "duplicate_rank": 21,
+      "chosen_op": null
+     },
+     {
+      "generation": 5,
+      "candidates": 72,
+      "best": 0.6666666666666666,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.1778377813689868,
+      "best_duplicate": 0.4666666666666667,
+      "duplicate_rank": 47,
+      "chosen_op": null
+     },
+     {
+      "generation": 6,
+      "candidates": 85,
+      "best": 0.7,
+      "no_change": 0.5,
+      "dropout_sd": 0.1783636180584863,
+      "best_duplicate": 0.43333333333333335,
+      "duplicate_rank": 53,
+      "chosen_op": null
+     },
+     {
+      "generation": 7,
+      "candidates": 82,
+      "best": 0.7,
+      "no_change": 0.4,
+      "dropout_sd": 0.21805419036207765,
+      "best_duplicate": 0.36666666666666664,
+      "duplicate_rank": 47,
+      "chosen_op": null
+     },
+     {
+      "generation": 8,
+      "candidates": 97,
+      "best": 0.7,
+      "no_change": 0.5,
+      "dropout_sd": 0.19015134747199067,
+      "best_duplicate": 0.5,
+      "duplicate_rank": 43,
+      "chosen_op": null
+     },
+     {
+      "generation": 9,
+      "candidates": 109,
+      "best": 0.7666666666666667,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.13270169316553057,
+      "best_duplicate": 0.7,
+      "duplicate_rank": 7,
+      "chosen_op": null
+     }
+    ]
+   }
+  ],
+  "+scale (1.0)": [
+   {
+    "seed": 1,
+    "final_train": 0.6657111111111111,
+    "final_val": 0.72,
+    "final_test": 0.7189,
+    "final_params": 51818,
+    "epochs": 300,
+    "actions": [
+     {
+      "generation": 0,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.4764,
+      "val_after": 0.476
+     },
+     {
+      "generation": 1,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5414,
+      "val_after": 0.542
+     },
+     {
+      "generation": 2,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5964,
+      "val_after": 0.5958
+     },
+     {
+      "generation": 3,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.6012,
+      "val_after": 0.6004
+     },
+     {
+      "generation": 4,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.6026,
+      "val_after": 0.6024
+     },
+     {
+      "generation": 5,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6332,
+      "val_after": 0.6338
+     },
+     {
+      "generation": 6,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.5908,
+      "val_after": 0.5908
+     },
+     {
+      "generation": 7,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6136,
+      "val_after": 0.6136
+     },
+     {
+      "generation": 8,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6332,
+      "val_after": 0.6332
+     },
+     {
+      "generation": 9,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5486,
+      "val_after": 0.5484
+     },
+     {
+      "generation": 10,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.6652,
+      "val_after": 0.6652
+     },
+     {
+      "generation": 11,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6476,
+      "val_after": 0.6476
+     },
+     {
+      "generation": 12,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6472,
+      "val_after": 0.6472
+     },
+     {
+      "generation": 13,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6682,
+      "val_after": 0.669
+     },
+     {
+      "generation": 14,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.6872,
+      "val_after": 0.6872
+     },
+     {
+      "generation": 15,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.6624,
+      "val_after": 0.646
+     },
+     {
+      "generation": 16,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.661,
+      "val_after": 0.661
+     },
+     {
+      "generation": 17,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.6714,
+      "val_after": 0.6714
+     },
+     {
+      "generation": 18,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6576,
+      "val_after": 0.6576
+     },
+     {
+      "generation": 19,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6742,
+      "val_after": 0.6742
+     },
+     {
+      "generation": 20,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.669,
+      "val_after": 0.669
+     },
+     {
+      "generation": 21,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.683,
+      "val_after": 0.683
+     },
+     {
+      "generation": 22,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.695,
+      "val_after": 0.695
+     },
+     {
+      "generation": 23,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7052,
+      "val_after": 0.7052
+     },
+     {
+      "generation": 24,
+      "name": "DelLayer",
+      "op": null,
+      "val_before": 0.7102,
+      "val_after": 0.69
+     },
+     {
+      "generation": 25,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.7112,
+      "val_after": 0.6972
+     },
+     {
+      "generation": 26,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7218,
+      "val_after": 0.7218
+     },
+     {
+      "generation": 27,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7204,
+      "val_after": 0.7204
+     },
+     {
+      "generation": 28,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.723,
+      "val_after": 0.723
+     }
+    ],
+    "searches": [
+     {
+      "generation": 0,
+      "candidates": 15,
+      "best": 0.4666666666666667,
+      "no_change": 0.3333333333333333,
+      "dropout_sd": 0.07200822998230957,
+      "best_duplicate": 0.23333333333333334,
+      "duplicate_rank": 10,
+      "chosen_op": null
+     },
+     {
+      "generation": 1,
+      "candidates": 25,
+      "best": 0.6,
+      "no_change": 0.36666666666666664,
+      "dropout_sd": 0.1698058279458911,
+      "best_duplicate": 0.4666666666666667,
+      "duplicate_rank": 10,
+      "chosen_op": null
+     },
+     {
+      "generation": 10,
+      "candidates": 132,
+      "best": 0.6666666666666666,
+      "no_change": 0.6,
+      "dropout_sd": 0.15938752766704345,
+      "best_duplicate": 0.5,
+      "duplicate_rank": 83,
+      "chosen_op": null
+     },
+     {
+      "generation": 11,
+      "candidates": 129,
+      "best": 0.7,
+      "no_change": 0.6,
+      "dropout_sd": 0.16823500533766964,
+      "best_duplicate": 0.26666666666666666,
+      "duplicate_rank": 109,
+      "chosen_op": null
+     },
+     {
+      "generation": 12,
+      "candidates": 140,
+      "best": 0.6333333333333333,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.11276302889631448,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 13,
+      "candidates": 159,
+      "best": 0.6666666666666666,
+      "no_change": 0.6,
+      "dropout_sd": 0.16808190619574986,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 14,
+      "candidates": 180,
+      "best": 0.6666666666666666,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.1552134686503723,
+      "best_duplicate": 0.5666666666666667,
+      "duplicate_rank": 44,
+      "chosen_op": null
+     },
+     {
+      "generation": 15,
+      "candidates": 171,
+      "best": 0.7,
+      "no_change": 0.6,
+      "dropout_sd": 0.10122432950334578,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 118,
+      "chosen_op": null
+     },
+     {
+      "generation": 16,
+      "candidates": 185,
+      "best": 0.7,
+      "no_change": 0.6,
+      "dropout_sd": 0.1289181450273155,
+      "best_duplicate": 0.5666666666666667,
+      "duplicate_rank": 106,
+      "chosen_op": null
+     },
+     {
+      "generation": 17,
+      "candidates": 200,
+      "best": 0.7,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.12460197641613044,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 18,
+      "candidates": 191,
+      "best": 0.6333333333333333,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.09444110971837152,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 19,
+      "candidates": 201,
+      "best": 0.6333333333333333,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.08261833181391813,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 2,
+      "candidates": 34,
+      "best": 0.6333333333333333,
+      "no_change": 0.4,
+      "dropout_sd": 0.1723789609344467,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 8,
+      "chosen_op": null
+     },
+     {
+      "generation": 20,
+      "candidates": 214,
+      "best": 0.7333333333333333,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.08838561957079658,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 21,
+      "candidates": 211,
+      "best": 0.6666666666666666,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.028245445873981652,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 22,
+      "candidates": 222,
+      "best": 0.6666666666666666,
+      "no_change": 0.6,
+      "dropout_sd": 0.10878644557453258,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 23,
+      "candidates": 243,
+      "best": 0.7,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.09270774732273702,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 24,
+      "candidates": 260,
+      "best": 0.6666666666666666,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.05047918529600243,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 25,
+      "candidates": 250,
+      "best": 0.7,
+      "no_change": 0.6,
+      "dropout_sd": 0.07077714746389364,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 26,
+      "candidates": 265,
+      "best": 0.6666666666666666,
+      "no_change": 0.6,
+      "dropout_sd": 0.05241100628920335,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 27,
+      "candidates": 276,
+      "best": 0.7,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.060793627769254385,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 28,
+      "candidates": 287,
+      "best": 0.6666666666666666,
+      "no_change": 0.6,
+      "dropout_sd": 0.10723258203709263,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 3,
+      "candidates": 48,
+      "best": 0.5666666666666667,
+      "no_change": 0.4166666666666667,
+      "dropout_sd": 0.14735900936353896,
+      "best_duplicate": 0.23333333333333334,
+      "duplicate_rank": 34,
+      "chosen_op": null
+     },
+     {
+      "generation": 4,
+      "candidates": 59,
+      "best": 0.6666666666666666,
+      "no_change": 0.4666666666666667,
+      "dropout_sd": 0.17776360487722687,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 14,
+      "chosen_op": null
+     },
+     {
+      "generation": 5,
+      "candidates": 71,
+      "best": 0.7,
+      "no_change": 0.48333333333333334,
+      "dropout_sd": 0.19660996514689108,
+      "best_duplicate": 0.4,
+      "duplicate_rank": 37,
+      "chosen_op": null
+     },
+     {
+      "generation": 6,
+      "candidates": 86,
+      "best": 0.6666666666666666,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.1946189692961006,
+      "best_duplicate": 0.6,
+      "duplicate_rank": 3,
+      "chosen_op": null
+     },
+     {
+      "generation": 7,
+      "candidates": 83,
+      "best": 0.7333333333333333,
+      "no_change": 0.6,
+      "dropout_sd": 0.2073412592930134,
+      "best_duplicate": 0.5,
+      "duplicate_rank": 50,
+      "chosen_op": null
+     },
+     {
+      "generation": 8,
+      "candidates": 99,
+      "best": 0.6,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.17866514077260043,
+      "best_duplicate": 0.36666666666666664,
+      "duplicate_rank": 73,
+      "chosen_op": null
+     },
+     {
+      "generation": 9,
+      "candidates": 117,
+      "best": 0.6666666666666666,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.1520695136156186,
+      "best_duplicate": 0.5,
+      "duplicate_rank": 68,
+      "chosen_op": null
+     }
+    ]
+   },
+   {
+    "seed": 2,
+    "final_train": 0.7158,
+    "final_val": 0.7304,
+    "final_test": 0.7328,
+    "final_params": 47226,
+    "epochs": 300,
+    "actions": [
+     {
+      "generation": 0,
+      "name": "ResidualBlockAction",
+      "op": "duplicate",
+      "val_before": 0.4352,
+      "val_after": 0.3494
+     },
+     {
+      "generation": 1,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5328,
+      "val_after": 0.5308
+     },
+     {
+      "generation": 2,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.535,
+      "val_after": 0.5352
+     },
+     {
+      "generation": 3,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.5546,
+      "val_after": 0.5546
+     },
+     {
+      "generation": 4,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5794,
+      "val_after": 0.5794
+     },
+     {
+      "generation": 5,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.615,
+      "val_after": 0.6152
+     },
+     {
+      "generation": 6,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.6092,
+      "val_after": 0.6092
+     },
+     {
+      "generation": 7,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.5848,
+      "val_after": 0.5836
+     },
+     {
+      "generation": 8,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.5932,
+      "val_after": 0.5932
+     },
+     {
+      "generation": 9,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5918,
+      "val_after": 0.5918
+     },
+     {
+      "generation": 10,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.626,
+      "val_after": 0.6264
+     },
+     {
+      "generation": 11,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5932,
+      "val_after": 0.5932
+     },
+     {
+      "generation": 12,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6034,
+      "val_after": 0.6036
+     },
+     {
+      "generation": 13,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6158,
+      "val_after": 0.6158
+     },
+     {
+      "generation": 14,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.616,
+      "val_after": 0.6188
+     },
+     {
+      "generation": 15,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.6026,
+      "val_after": 0.6026
+     },
+     {
+      "generation": 16,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.6372,
+      "val_after": 0.637
+     },
+     {
+      "generation": 17,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.636,
+      "val_after": 0.6342
+     },
+     {
+      "generation": 18,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6458,
+      "val_after": 0.6462
+     },
+     {
+      "generation": 19,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6602,
+      "val_after": 0.6596
+     },
+     {
+      "generation": 20,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6824,
+      "val_after": 0.6826
+     },
+     {
+      "generation": 21,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6794,
+      "val_after": 0.68
+     },
+     {
+      "generation": 22,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.7002,
+      "val_after": 0.7002
+     },
+     {
+      "generation": 23,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.6948,
+      "val_after": 0.692
+     },
+     {
+      "generation": 24,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.712,
+      "val_after": 0.712
+     },
+     {
+      "generation": 25,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.7206,
+      "val_after": 0.7206
+     },
+     {
+      "generation": 26,
+      "name": "AddResLinearLayer",
+      "op": null,
+      "val_before": 0.7134,
+      "val_after": 0.7134
+     },
+     {
+      "generation": 27,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.723,
+      "val_after": 0.6968
+     },
+     {
+      "generation": 28,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.729,
+      "val_after": 0.729
+     }
+    ],
+    "searches": [
+     {
+      "generation": 0,
+      "candidates": 15,
+      "best": 0.4,
+      "no_change": 0.3333333333333333,
+      "dropout_sd": 0.04157397096415492,
+      "best_duplicate": 0.3333333333333333,
+      "duplicate_rank": 4,
+      "chosen_op": "duplicate"
+     },
+     {
+      "generation": 1,
+      "candidates": 33,
+      "best": 0.4666666666666667,
+      "no_change": 0.26666666666666666,
+      "dropout_sd": 0.1343582010904967,
+      "best_duplicate": 0.43333333333333335,
+      "duplicate_rank": 2,
+      "chosen_op": null
+     },
+     {
+      "generation": 10,
+      "candidates": 121,
+      "best": 0.7,
+      "no_change": 0.5166666666666666,
+      "dropout_sd": 0.16912538266543076,
+      "best_duplicate": 0.43333333333333335,
+      "duplicate_rank": 66,
+      "chosen_op": null
+     },
+     {
+      "generation": 11,
+      "candidates": 133,
+      "best": 0.6666666666666666,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.161610549846455,
+      "best_duplicate": 0.36666666666666664,
+      "duplicate_rank": 90,
+      "chosen_op": null
+     },
+     {
+      "generation": 12,
+      "candidates": 145,
+      "best": 0.7,
+      "no_change": 0.55,
+      "dropout_sd": 0.17776388834631177,
+      "best_duplicate": 0.43333333333333335,
+      "duplicate_rank": 87,
+      "chosen_op": null
+     },
+     {
+      "generation": 13,
+      "candidates": 161,
+      "best": 0.7666666666666667,
+      "no_change": 0.6,
+      "dropout_sd": 0.21400319533957765,
+      "best_duplicate": 0.13333333333333333,
+      "duplicate_rank": 148,
+      "chosen_op": null
+     },
+     {
+      "generation": 14,
+      "candidates": 173,
+      "best": 0.6666666666666666,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.13028932666176193,
+      "best_duplicate": 0.3,
+      "duplicate_rank": 142,
+      "chosen_op": null
+     },
+     {
+      "generation": 15,
+      "candidates": 212,
+      "best": 0.7333333333333333,
+      "no_change": 0.6,
+      "dropout_sd": 0.15037958298138526,
+      "best_duplicate": 0.3,
+      "duplicate_rank": 184,
+      "chosen_op": null
+     },
+     {
+      "generation": 16,
+      "candidates": 243,
+      "best": 0.7333333333333333,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.1540428821257499,
+      "best_duplicate": 0.7,
+      "duplicate_rank": 3,
+      "chosen_op": null
+     },
+     {
+      "generation": 17,
+      "candidates": 272,
+      "best": 0.7333333333333333,
+      "no_change": 0.7,
+      "dropout_sd": 0.16332955400011517,
+      "best_duplicate": 0.7,
+      "duplicate_rank": 43,
+      "chosen_op": null
+     },
+     {
+      "generation": 18,
+      "candidates": 299,
+      "best": 0.7333333333333333,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.114037072604016,
+      "best_duplicate": 0.3333333333333333,
+      "duplicate_rank": 277,
+      "chosen_op": null
+     },
+     {
+      "generation": 19,
+      "candidates": 318,
+      "best": 0.7666666666666667,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.14179665904740774,
+      "best_duplicate": 0.6,
+      "duplicate_rank": 208,
+      "chosen_op": null
+     },
+     {
+      "generation": 2,
+      "candidates": 42,
+      "best": 0.5666666666666667,
+      "no_change": 0.45,
+      "dropout_sd": 0.14561491580090175,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 4,
+      "chosen_op": null
+     },
+     {
+      "generation": 20,
+      "candidates": 334,
+      "best": 0.7333333333333333,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.06245328255011483,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 21,
+      "candidates": 336,
+      "best": 0.7333333333333333,
+      "no_change": 0.7,
+      "dropout_sd": 0.10323235590333926,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 22,
+      "candidates": 352,
+      "best": 0.8,
+      "no_change": 0.7333333333333333,
+      "dropout_sd": 0.11020868096828024,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 23,
+      "candidates": 384,
+      "best": 0.7666666666666667,
+      "no_change": 0.7,
+      "dropout_sd": 0.12095300587265133,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 24,
+      "candidates": 416,
+      "best": 0.8333333333333334,
+      "no_change": 0.7,
+      "dropout_sd": 0.09630769409769559,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 25,
+      "candidates": 417,
+      "best": 0.8,
+      "no_change": 0.7666666666666667,
+      "dropout_sd": 0.11431230543556066,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 26,
+      "candidates": 449,
+      "best": 0.7666666666666667,
+      "no_change": 0.7,
+      "dropout_sd": 0.10332225186535995,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 27,
+      "candidates": 481,
+      "best": 0.7666666666666667,
+      "no_change": 0.7,
+      "dropout_sd": 0.10965964861759234,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 28,
+      "candidates": 503,
+      "best": 0.7666666666666667,
+      "no_change": 0.7,
+      "dropout_sd": 0.0996654332964406,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 3,
+      "candidates": 60,
+      "best": 0.6,
+      "no_change": 0.5,
+      "dropout_sd": 0.10657403385139376,
+      "best_duplicate": 0.43333333333333335,
+      "duplicate_rank": 35,
+      "chosen_op": null
+     },
+     {
+      "generation": 4,
+      "candidates": 51,
+      "best": 0.6,
+      "no_change": 0.23333333333333334,
+      "dropout_sd": 0.22061144610126562,
+      "best_duplicate": 0.6,
+      "duplicate_rank": 1,
+      "chosen_op": null
+     },
+     {
+      "generation": 5,
+      "candidates": 60,
+      "best": 0.7,
+      "no_change": 0.35,
+      "dropout_sd": 0.17219981933143186,
+      "best_duplicate": 0.6333333333333333,
+      "duplicate_rank": 4,
+      "chosen_op": null
+     },
+     {
+      "generation": 6,
+      "candidates": 74,
+      "best": 0.7333333333333333,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.11252434578819699,
+      "best_duplicate": 0.7,
+      "duplicate_rank": 2,
+      "chosen_op": null
+     },
+     {
+      "generation": 7,
+      "candidates": 71,
+      "best": 0.6,
+      "no_change": 0.48333333333333334,
+      "dropout_sd": 0.11889408088351497,
+      "best_duplicate": 0.3333333333333333,
+      "duplicate_rank": 48,
+      "chosen_op": null
+     },
+     {
+      "generation": 8,
+      "candidates": 87,
+      "best": 0.6,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.06440611887195306,
+      "best_duplicate": 0.3,
+      "duplicate_rank": 60,
+      "chosen_op": null
+     },
+     {
+      "generation": 9,
+      "candidates": 106,
+      "best": 0.6666666666666666,
+      "no_change": 0.5,
+      "dropout_sd": 0.15634719199411432,
+      "best_duplicate": 0.26666666666666666,
+      "duplicate_rank": 74,
+      "chosen_op": null
+     }
+    ]
+   }
+  ],
+  "+merge": [
+   {
+    "seed": 1,
+    "final_train": 0.6980666666666666,
+    "final_val": 0.7206,
+    "final_test": 0.7233,
+    "final_params": 45130,
+    "epochs": 300,
+    "actions": [
+     {
+      "generation": 0,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.4682,
+      "val_after": 0.4678
+     },
+     {
+      "generation": 1,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.5102,
+      "val_after": 0.5108
+     },
+     {
+      "generation": 2,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5406,
+      "val_after": 0.5418
+     },
+     {
+      "generation": 3,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.579,
+      "val_after": 0.579
+     },
+     {
+      "generation": 4,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5436,
+      "val_after": 0.5436
+     },
+     {
+      "generation": 5,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.5736,
+      "val_after": 0.5736
+     },
+     {
+      "generation": 6,
+      "name": "DelLayer",
+      "op": null,
+      "val_before": 0.5962,
+      "val_after": 0.582
+     },
+     {
+      "generation": 7,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.5952,
+      "val_after": 0.5952
+     },
+     {
+      "generation": 8,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5792,
+      "val_after": 0.5796
+     },
+     {
+      "generation": 9,
+      "name": "DelLayer",
+      "op": null,
+      "val_before": 0.6158,
+      "val_after": 0.6118
+     },
+     {
+      "generation": 10,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.6054,
+      "val_after": 0.6054
+     },
+     {
+      "generation": 11,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.5842,
+      "val_after": 0.5842
+     },
+     {
+      "generation": 12,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.613,
+      "val_after": 0.613
+     },
+     {
+      "generation": 13,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6292,
+      "val_after": 0.6292
+     },
+     {
+      "generation": 14,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6028,
+      "val_after": 0.6028
+     },
+     {
+      "generation": 15,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6278,
+      "val_after": 0.6298
+     },
+     {
+      "generation": 16,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6092,
+      "val_after": 0.6096
+     },
+     {
+      "generation": 17,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.5902,
+      "val_after": 0.5902
+     },
+     {
+      "generation": 18,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.597,
+      "val_after": 0.5972
+     },
+     {
+      "generation": 19,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.6382,
+      "val_after": 0.6382
+     },
+     {
+      "generation": 20,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6658,
+      "val_after": 0.666
+     },
+     {
+      "generation": 21,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.652,
+      "val_after": 0.6544
+     },
+     {
+      "generation": 22,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.659,
+      "val_after": 0.6486
+     },
+     {
+      "generation": 23,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.6756,
+      "val_after": 0.6756
+     },
+     {
+      "generation": 24,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6924,
+      "val_after": 0.6924
+     },
+     {
+      "generation": 25,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7016,
+      "val_after": 0.7016
+     },
+     {
+      "generation": 26,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.7144,
+      "val_after": 0.6346
+     },
+     {
+      "generation": 27,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.717,
+      "val_after": 0.717
+     },
+     {
+      "generation": 28,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.717,
+      "val_after": 0.717
+     }
+    ],
+    "searches": [
+     {
+      "generation": 0,
+      "candidates": 14,
+      "best": 0.48333333333333334,
+      "no_change": 0.36666666666666664,
+      "dropout_sd": 0.10213764617139019,
+      "best_duplicate": 0.43333333333333335,
+      "duplicate_rank": 3,
+      "chosen_op": null
+     },
+     {
+      "generation": 1,
+      "candidates": 22,
+      "best": 0.6,
+      "no_change": 0.45,
+      "dropout_sd": 0.1461438493107323,
+      "best_duplicate": 0.4666666666666667,
+      "duplicate_rank": 6,
+      "chosen_op": null
+     },
+     {
+      "generation": 10,
+      "candidates": 59,
+      "best": 0.6666666666666666,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.13794742641824956,
+      "best_duplicate": 0.4666666666666667,
+      "duplicate_rank": 36,
+      "chosen_op": null
+     },
+     {
+      "generation": 11,
+      "candidates": 56,
+      "best": 0.6,
+      "no_change": 0.43333333333333335,
+      "dropout_sd": 0.16709574397428856,
+      "best_duplicate": 0.5666666666666667,
+      "duplicate_rank": 2,
+      "chosen_op": null
+     },
+     {
+      "generation": 12,
+      "candidates": 53,
+      "best": 0.6,
+      "no_change": 0.4666666666666667,
+      "dropout_sd": 0.15838205877942702,
+      "best_duplicate": 0.26666666666666666,
+      "duplicate_rank": 42,
+      "chosen_op": null
+     },
+     {
+      "generation": 13,
+      "candidates": 65,
+      "best": 0.6,
+      "no_change": 0.5,
+      "dropout_sd": 0.12699761833092932,
+      "best_duplicate": 0.23333333333333334,
+      "duplicate_rank": 53,
+      "chosen_op": null
+     },
+     {
+      "generation": 14,
+      "candidates": 76,
+      "best": 0.6333333333333333,
+      "no_change": 0.5166666666666666,
+      "dropout_sd": 0.09993138935727437,
+      "best_duplicate": 0.3,
+      "duplicate_rank": 67,
+      "chosen_op": null
+     },
+     {
+      "generation": 15,
+      "candidates": 90,
+      "best": 0.6333333333333333,
+      "no_change": 0.5,
+      "dropout_sd": 0.17506612507320812,
+      "best_duplicate": 0.3,
+      "duplicate_rank": 74,
+      "chosen_op": null
+     },
+     {
+      "generation": 16,
+      "candidates": 102,
+      "best": 0.6333333333333333,
+      "no_change": 0.5,
+      "dropout_sd": 0.14281554906492944,
+      "best_duplicate": 0.43333333333333335,
+      "duplicate_rank": 81,
+      "chosen_op": null
+     },
+     {
+      "generation": 17,
+      "candidates": 114,
+      "best": 0.6666666666666666,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.06285393610547088,
+      "best_duplicate": 0.3333333333333333,
+      "duplicate_rank": 104,
+      "chosen_op": null
+     },
+     {
+      "generation": 18,
+      "candidates": 111,
+      "best": 0.6666666666666666,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.11956839518818026,
+      "best_duplicate": 0.4,
+      "duplicate_rank": 93,
+      "chosen_op": null
+     },
+     {
+      "generation": 19,
+      "candidates": 120,
+      "best": 0.6666666666666666,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.10592916337968966,
+      "best_duplicate": 0.36666666666666664,
+      "duplicate_rank": 109,
+      "chosen_op": null
+     },
+     {
+      "generation": 2,
+      "candidates": 34,
+      "best": 0.6,
+      "no_change": 0.5,
+      "dropout_sd": 0.14035033571478828,
+      "best_duplicate": 0.4,
+      "duplicate_rank": 23,
+      "chosen_op": null
+     },
+     {
+      "generation": 20,
+      "candidates": 117,
+      "best": 0.7,
+      "no_change": 0.6,
+      "dropout_sd": 0.16110992857046735,
+      "best_duplicate": 0.3333333333333333,
+      "duplicate_rank": 105,
+      "chosen_op": null
+     },
+     {
+      "generation": 21,
+      "candidates": 118,
+      "best": 0.6333333333333333,
+      "no_change": 0.5333333333333333,
+      "dropout_sd": 0.14466059589562497,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 22,
+      "candidates": 119,
+      "best": 0.7,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.06073271049999428,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 23,
+      "candidates": 128,
+      "best": 0.7,
+      "no_change": 0.6,
+      "dropout_sd": 0.11948448941128945,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 24,
+      "candidates": 156,
+      "best": 0.7,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.09328330339003879,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 25,
+      "candidates": 169,
+      "best": 0.7333333333333333,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.0893872993321765,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 26,
+      "candidates": 184,
+      "best": 0.7333333333333333,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.08454287891696467,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 27,
+      "candidates": 195,
+      "best": 0.7666666666666667,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.13080472676172628,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 28,
+      "candidates": 210,
+      "best": 0.7333333333333333,
+      "no_change": 0.7,
+      "dropout_sd": 0.13193326761418742,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 3,
+      "candidates": 48,
+      "best": 0.6333333333333333,
+      "no_change": 0.4,
+      "dropout_sd": 0.1945428322510159,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 16,
+      "chosen_op": null
+     },
+     {
+      "generation": 4,
+      "candidates": 62,
+      "best": 0.6333333333333333,
+      "no_change": 0.5,
+      "dropout_sd": 0.16868767103820084,
+      "best_duplicate": 0.36666666666666664,
+      "duplicate_rank": 41,
+      "chosen_op": null
+     },
+     {
+      "generation": 5,
+      "candidates": 76,
+      "best": 0.6,
+      "no_change": 0.5,
+      "dropout_sd": 0.12344444382709875,
+      "best_duplicate": 0.4666666666666667,
+      "duplicate_rank": 33,
+      "chosen_op": null
+     },
+     {
+      "generation": 6,
+      "candidates": 73,
+      "best": 0.6666666666666666,
+      "no_change": 0.5,
+      "dropout_sd": 0.1346864213600073,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 21,
+      "chosen_op": null
+     },
+     {
+      "generation": 7,
+      "candidates": 62,
+      "best": 0.6333333333333333,
+      "no_change": 0.43333333333333335,
+      "dropout_sd": 0.14275128352963248,
+      "best_duplicate": 0.13333333333333333,
+      "duplicate_rank": 56,
+      "chosen_op": null
+     },
+     {
+      "generation": 8,
+      "candidates": 59,
+      "best": 0.5666666666666667,
+      "no_change": 0.5,
+      "dropout_sd": 0.12133516482134196,
+      "best_duplicate": 0.43333333333333335,
+      "duplicate_rank": 31,
+      "chosen_op": null
+     },
+     {
+      "generation": 9,
+      "candidates": 72,
+      "best": 0.6,
+      "no_change": 0.43333333333333335,
+      "dropout_sd": 0.11476969830174742,
+      "best_duplicate": 0.3,
+      "duplicate_rank": 51,
+      "chosen_op": null
+     }
+    ]
+   },
+   {
+    "seed": 2,
+    "final_train": 0.7863333333333333,
+    "final_val": 0.8038,
+    "final_test": 0.8095,
+    "final_params": 63738,
+    "epochs": 300,
+    "actions": [
+     {
+      "generation": 0,
+      "name": "ResidualBlockAction",
+      "op": "duplicate",
+      "val_before": 0.4822,
+      "val_after": 0.431
+     },
+     {
+      "generation": 1,
+      "name": "AddSeqLinearLayer",
+      "op": null,
+      "val_before": 0.5556,
+      "val_after": 0.555
+     },
+     {
+      "generation": 2,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.558,
+      "val_after": 0.5578
+     },
+     {
+      "generation": 3,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6136,
+      "val_after": 0.6134
+     },
+     {
+      "generation": 4,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.509,
+      "val_after": 0.5092
+     },
+     {
+      "generation": 5,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5612,
+      "val_after": 0.5616
+     },
+     {
+      "generation": 6,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.5498,
+      "val_after": 0.5498
+     },
+     {
+      "generation": 7,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.551,
+      "val_after": 0.5516
+     },
+     {
+      "generation": 8,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5754,
+      "val_after": 0.5754
+     },
+     {
+      "generation": 9,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.5606,
+      "val_after": 0.5608
+     },
+     {
+      "generation": 10,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.6172,
+      "val_after": 0.618
+     },
+     {
+      "generation": 11,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6342,
+      "val_after": 0.6346
+     },
+     {
+      "generation": 12,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.6354,
+      "val_after": 0.6354
+     },
+     {
+      "generation": 13,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6656,
+      "val_after": 0.666
+     },
+     {
+      "generation": 14,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.634,
+      "val_after": 0.6338
+     },
+     {
+      "generation": 15,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.6576,
+      "val_after": 0.6578
+     },
+     {
+      "generation": 16,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7028,
+      "val_after": 0.7042
+     },
+     {
+      "generation": 17,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.7054,
+      "val_after": 0.5596
+     },
+     {
+      "generation": 18,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7106,
+      "val_after": 0.7104
+     },
+     {
+      "generation": 19,
+      "name": "AddSeqDropoutLayer",
+      "op": null,
+      "val_before": 0.73,
+      "val_after": 0.73
+     },
+     {
+      "generation": 20,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.7454,
+      "val_after": 0.7454
+     },
+     {
+      "generation": 21,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.7508,
+      "val_after": 0.7512
+     },
+     {
+      "generation": 22,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7716,
+      "val_after": 0.7716
+     },
+     {
+      "generation": 23,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7676,
+      "val_after": 0.7674
+     },
+     {
+      "generation": 24,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7634,
+      "val_after": 0.7634
+     },
+     {
+      "generation": 25,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.7958,
+      "val_after": 0.7958
+     },
+     {
+      "generation": 26,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.8,
+      "val_after": 0.8
+     },
+     {
+      "generation": 27,
+      "name": "AddResConvLayer",
+      "op": null,
+      "val_before": 0.805,
+      "val_after": 0.8048
+     },
+     {
+      "generation": 28,
+      "name": "AddSeqConvLayer",
+      "op": null,
+      "val_before": 0.8082,
+      "val_after": 0.8082
+     }
+    ],
+    "searches": [
+     {
+      "generation": 0,
+      "candidates": 14,
+      "best": 0.3833333333333333,
+      "no_change": 0.23333333333333334,
+      "dropout_sd": 0.0,
+      "best_duplicate": 0.3333333333333333,
+      "duplicate_rank": 3,
+      "chosen_op": "duplicate"
+     },
+     {
+      "generation": 1,
+      "candidates": 32,
+      "best": 0.5666666666666667,
+      "no_change": 0.4,
+      "dropout_sd": 0.078217452155344,
+      "best_duplicate": 0.5333333333333333,
+      "duplicate_rank": 2,
+      "chosen_op": null
+     },
+     {
+      "generation": 10,
+      "candidates": 113,
+      "best": 0.7333333333333333,
+      "no_change": 0.5666666666666667,
+      "dropout_sd": 0.19741725893419063,
+      "best_duplicate": 0.6666666666666666,
+      "duplicate_rank": 13,
+      "chosen_op": null
+     },
+     {
+      "generation": 11,
+      "candidates": 127,
+      "best": 0.7666666666666667,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.21331492654644948,
+      "best_duplicate": 0.6,
+      "duplicate_rank": 59,
+      "chosen_op": null
+     },
+     {
+      "generation": 12,
+      "candidates": 127,
+      "best": 0.7666666666666667,
+      "no_change": 0.6,
+      "dropout_sd": 0.1736499956454198,
+      "best_duplicate": 0.6333333333333333,
+      "duplicate_rank": 34,
+      "chosen_op": null
+     },
+     {
+      "generation": 13,
+      "candidates": 124,
+      "best": 0.7666666666666667,
+      "no_change": 0.6,
+      "dropout_sd": 0.18033627286003803,
+      "best_duplicate": 0.3,
+      "duplicate_rank": 99,
+      "chosen_op": null
+     },
+     {
+      "generation": 14,
+      "candidates": 142,
+      "best": 0.7333333333333333,
+      "no_change": 0.6,
+      "dropout_sd": 0.15970331906549323,
+      "best_duplicate": 0.6,
+      "duplicate_rank": 60,
+      "chosen_op": null
+     },
+     {
+      "generation": 15,
+      "candidates": 157,
+      "best": 0.8,
+      "no_change": 0.7,
+      "dropout_sd": 0.20540835570295718,
+      "best_duplicate": 0.6333333333333333,
+      "duplicate_rank": 103,
+      "chosen_op": null
+     },
+     {
+      "generation": 16,
+      "candidates": 175,
+      "best": 0.8,
+      "no_change": 0.7,
+      "dropout_sd": 0.20133477444481193,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 17,
+      "candidates": 194,
+      "best": 0.7333333333333333,
+      "no_change": 0.6,
+      "dropout_sd": 0.11866014416939596,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 18,
+      "candidates": 207,
+      "best": 0.7333333333333333,
+      "no_change": 0.6333333333333333,
+      "dropout_sd": 0.1278309068290636,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 19,
+      "candidates": 225,
+      "best": 0.7666666666666667,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.16057508754132502,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 2,
+      "candidates": 44,
+      "best": 0.6333333333333333,
+      "no_change": 0.35,
+      "dropout_sd": 0.1743373698279245,
+      "best_duplicate": 0.4666666666666667,
+      "duplicate_rank": 15,
+      "chosen_op": null
+     },
+     {
+      "generation": 20,
+      "candidates": 222,
+      "best": 0.8,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.13009634156685287,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 21,
+      "candidates": 232,
+      "best": 0.8,
+      "no_change": 0.7,
+      "dropout_sd": 0.10261975044955202,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 22,
+      "candidates": 250,
+      "best": 0.8,
+      "no_change": 0.7,
+      "dropout_sd": 0.10034596738036965,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 23,
+      "candidates": 269,
+      "best": 0.7333333333333333,
+      "no_change": 0.6666666666666666,
+      "dropout_sd": 0.057606583985847636,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 24,
+      "candidates": 290,
+      "best": 0.8333333333333334,
+      "no_change": 0.7666666666666667,
+      "dropout_sd": 0.12743142608537728,
+      "best_duplicate": 0.6666666666666666,
+      "duplicate_rank": 202,
+      "chosen_op": null
+     },
+     {
+      "generation": 25,
+      "candidates": 304,
+      "best": 0.8333333333333334,
+      "no_change": 0.7333333333333333,
+      "dropout_sd": 0.13880091711738243,
+      "best_duplicate": 0.8,
+      "duplicate_rank": 6,
+      "chosen_op": null
+     },
+     {
+      "generation": 26,
+      "candidates": 317,
+      "best": 0.7666666666666667,
+      "no_change": 0.7,
+      "dropout_sd": 0.15137107490522825,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 27,
+      "candidates": 334,
+      "best": 0.8,
+      "no_change": 0.75,
+      "dropout_sd": 0.1429883876835657,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 28,
+      "candidates": 351,
+      "best": 0.8,
+      "no_change": 0.7,
+      "dropout_sd": 0.14116024680404105,
+      "best_duplicate": null,
+      "duplicate_rank": null,
+      "chosen_op": null
+     },
+     {
+      "generation": 3,
+      "candidates": 59,
+      "best": 0.7666666666666667,
+      "no_change": 0.6,
+      "dropout_sd": 0.13436861863535432,
+      "best_duplicate": 0.6666666666666666,
+      "duplicate_rank": 6,
+      "chosen_op": null
+     },
+     {
+      "generation": 4,
+      "candidates": 62,
+      "best": 0.6333333333333333,
+      "no_change": 0.5,
+      "dropout_sd": 0.17230814914427822,
+      "best_duplicate": 0.4666666666666667,
+      "duplicate_rank": 25,
+      "chosen_op": null
+     },
+     {
+      "generation": 5,
+      "candidates": 72,
+      "best": 0.6666666666666666,
+      "no_change": 0.6,
+      "dropout_sd": 0.17794588406119705,
+      "best_duplicate": 0.6333333333333333,
+      "duplicate_rank": 8,
+      "chosen_op": null
+     },
+     {
+      "generation": 6,
+      "candidates": 73,
+      "best": 0.7,
+      "no_change": 0.48333333333333334,
+      "dropout_sd": 0.20525033646083007,
+      "best_duplicate": 0.5666666666666667,
+      "duplicate_rank": 22,
+      "chosen_op": null
+     },
+     {
+      "generation": 7,
+      "candidates": 74,
+      "best": 0.7333333333333333,
+      "no_change": 0.5833333333333333,
+      "dropout_sd": 0.20366529520057117,
+      "best_duplicate": 0.5666666666666667,
+      "duplicate_rank": 35,
+      "chosen_op": null
+     },
+     {
+      "generation": 8,
+      "candidates": 86,
+      "best": 0.6666666666666666,
+      "no_change": 0.5,
+      "dropout_sd": 0.16723724918696378,
+      "best_duplicate": 0.6,
+      "duplicate_rank": 12,
+      "chosen_op": null
+     },
+     {
+      "generation": 9,
+      "candidates": 99,
+      "best": 0.7333333333333333,
+      "no_change": 0.5833333333333333,
+      "dropout_sd": 0.14374188114485537,
+      "best_duplicate": 0.6333333333333333,
+      "duplicate_rank": 12,
+      "chosen_op": null
+     }
+    ]
+   }
+  ]
+ }
+}

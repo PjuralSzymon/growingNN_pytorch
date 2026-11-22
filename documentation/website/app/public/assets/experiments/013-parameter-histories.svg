@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="900" viewBox="0 0 1280 900">
+<rect width="100%" height="100%" fill="white"/><style>text{font-family:Arial,sans-serif;fill:#243044}.title{font-size:26px;font-weight:bold}.panel{font-size:20px;font-weight:bold}.axis{font-size:14px}.legend{font-size:14px}.grid{stroke:#d8dee8;stroke-width:1}.axisline{stroke:#526174;stroke-width:1.4}</style>
+<text x='640' y='38' text-anchor='middle' class='title'>Experiment 011: Parameter count by generation</text>
+<text x='90' y='83' class='panel'>CIFAR-10 — block actions enabled</text>
+<line x1='90' y1='380' x2='590' y2='380' class='grid'/><text x='81' y='385' text-anchor='end' class='axis'>0</text>
+<line x1='90' y1='288' x2='590' y2='288' class='grid'/><text x='81' y='293' text-anchor='end' class='axis'>10000</text>
+<line x1='90' y1='197' x2='590' y2='197' class='grid'/><text x='81' y='202' text-anchor='end' class='axis'>20000</text>
+<line x1='90' y1='105' x2='590' y2='105' class='grid'/><text x='81' y='110' text-anchor='end' class='axis'>30000</text>
+<line x1='90' y1='380' x2='590' y2='380' class='axisline'/><line x1='90' y1='380' x2='90' y2='105' class='axisline'/>
+<text x='340' y='406' text-anchor='middle' class='axis'>Generation (0–9)</text>
+<polyline fill='none' stroke='#2563eb' stroke-width='3' points='90,353 146,350 201,348 257,326 312,305 368,305 423,283 479,262 534,262 590,241' />
+<polyline fill='none' stroke='#e4572e' stroke-width='3' points='90,353 146,350 201,350 257,348 312,345 368,324 423,321 479,319 534,297 590,295' />
+<polyline fill='none' stroke='#2a9d68' stroke-width='3' points='90,353 146,332 201,332 257,310 312,289 368,267 423,267 479,246 534,225 590,246' />
+<line x1='90' y1='433' x2='115' y2='433' stroke='#2563eb' stroke-width='3'/><text x='122' y='438' class='legend'>Seed 1</text>
+<line x1='195' y1='433' x2='220' y2='433' stroke='#e4572e' stroke-width='3'/><text x='227' y='438' class='legend'>Seed 2</text>
+<line x1='300' y1='433' x2='325' y2='433' stroke='#2a9d68' stroke-width='3'/><text x='332' y='438' class='legend'>Seed 3</text>
+<text x='680' y='83' class='panel'>CIFAR-10 — block actions disabled</text>
+<line x1='680' y1='380' x2='1180' y2='380' class='grid'/><text x='671' y='385' text-anchor='end' class='axis'>0</text>
+<line x1='680' y1='288' x2='1180' y2='288' class='grid'/><text x='671' y='293' text-anchor='end' class='axis'>10000</text>
+<line x1='680' y1='197' x2='1180' y2='197' class='grid'/><text x='671' y='202' text-anchor='end' class='axis'>20000</text>
+<line x1='680' y1='105' x2='1180' y2='105' class='grid'/><text x='671' y='110' text-anchor='end' class='axis'>30000</text>
+<line x1='680' y1='380' x2='1180' y2='380' class='axisline'/><line x1='680' y1='380' x2='680' y2='105' class='axisline'/>
+<text x='930' y='406' text-anchor='middle' class='axis'>Generation (0–9)</text>
+<polyline fill='none' stroke='#2563eb' stroke-width='3' points='680,353 736,350 791,329 847,307 902,307 958,286 1013,286 1069,265 1124,244 1180,223' />
+<polyline fill='none' stroke='#e4572e' stroke-width='3' points='680,353 736,350 791,329 847,307 902,295 958,263 1013,242 1069,242 1124,239 1180,271' />
+<polyline fill='none' stroke='#2a9d68' stroke-width='3' points='680,353 736,332 791,310 847,289 902,268 958,268 1013,268 1069,246 1124,225 1180,204' />
+<line x1='680' y1='433' x2='705' y2='433' stroke='#2563eb' stroke-width='3'/><text x='712' y='438' class='legend'>Seed 1</text>
+<line x1='785' y1='433' x2='810' y2='433' stroke='#e4572e' stroke-width='3'/><text x='817' y='438' class='legend'>Seed 2</text>
+<line x1='890' y1='433' x2='915' y2='433' stroke='#2a9d68' stroke-width='3'/><text x='922' y='438' class='legend'>Seed 3</text>
+<text x='90' y='488' class='panel'>CIFAR-100 — block actions enabled</text>
+<line x1='90' y1='785' x2='590' y2='785' class='grid'/><text x='81' y='790' text-anchor='end' class='axis'>0</text>
+<line x1='90' y1='693' x2='590' y2='693' class='grid'/><text x='81' y='698' text-anchor='end' class='axis'>10000</text>
+<line x1='90' y1='602' x2='590' y2='602' class='grid'/><text x='81' y='607' text-anchor='end' class='axis'>20000</text>
+<line x1='90' y1='510' x2='590' y2='510' class='grid'/><text x='81' y='515' text-anchor='end' class='axis'>30000</text>
+<line x1='90' y1='785' x2='590' y2='785' class='axisline'/><line x1='90' y1='785' x2='90' y2='510' class='axisline'/>
+<text x='340' y='811' text-anchor='middle' class='axis'>Generation (0–9)</text>
+<polyline fill='none' stroke='#2563eb' stroke-width='3' points='90,744 146,722 201,701 257,680 312,659 368,637 423,616 479,595 534,573 590,552' />
+<polyline fill='none' stroke='#e4572e' stroke-width='3' points='90,744 146,722 201,701 257,701 312,680 368,658 423,658 479,637 534,616 590,616' />
+<polyline fill='none' stroke='#2a9d68' stroke-width='3' points='90,744 146,741 201,741 257,720 312,699 368,677 423,677 479,699 534,677 590,656' />
+<line x1='90' y1='838' x2='115' y2='838' stroke='#2563eb' stroke-width='3'/><text x='122' y='843' class='legend'>Seed 1</text>
+<line x1='195' y1='838' x2='220' y2='838' stroke='#e4572e' stroke-width='3'/><text x='227' y='843' class='legend'>Seed 2</text>
+<line x1='300' y1='838' x2='325' y2='838' stroke='#2a9d68' stroke-width='3'/><text x='332' y='843' class='legend'>Seed 3</text>
+<text x='680' y='488' class='panel'>CIFAR-100 — block actions disabled</text>
+<line x1='680' y1='785' x2='1180' y2='785' class='grid'/><text x='671' y='790' text-anchor='end' class='axis'>0</text>
+<line x1='680' y1='693' x2='1180' y2='693' class='grid'/><text x='671' y='698' text-anchor='end' class='axis'>10000</text>
+<line x1='680' y1='602' x2='1180' y2='602' class='grid'/><text x='671' y='607' text-anchor='end' class='axis'>20000</text>
+<line x1='680' y1='510' x2='1180' y2='510' class='grid'/><text x='671' y='515' text-anchor='end' class='axis'>30000</text>
+<line x1='680' y1='785' x2='1180' y2='785' class='axisline'/><line x1='680' y1='785' x2='680' y2='510' class='axisline'/>
+<text x='930' y='811' text-anchor='middle' class='axis'>Generation (0–9)</text>
+<polyline fill='none' stroke='#2563eb' stroke-width='3' points='680,744 736,722 791,722 847,701 902,699 958,677 1013,656 1069,635 1124,613 1180,613' />
+<polyline fill='none' stroke='#e4572e' stroke-width='3' points='680,744 736,722 791,722 847,701 902,680 958,658 1013,637 1069,616 1124,616 1180,595' />
+<polyline fill='none' stroke='#2a9d68' stroke-width='3' points='680,744 736,741 791,739 847,736 902,715 958,712 1013,712 1069,710 1124,707 1180,705' />
+<line x1='680' y1='838' x2='705' y2='838' stroke='#2563eb' stroke-width='3'/><text x='712' y='843' class='legend'>Seed 1</text>
+<line x1='785' y1='838' x2='810' y2='838' stroke='#e4572e' stroke-width='3'/><text x='817' y='843' class='legend'>Seed 2</text>
+<line x1='890' y1='838' x2='915' y2='838' stroke='#2a9d68' stroke-width='3'/><text x='922' y='843' class='legend'>Seed 3</text>
+</svg>
