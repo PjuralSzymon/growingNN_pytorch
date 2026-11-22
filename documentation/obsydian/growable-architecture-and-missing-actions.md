@@ -50,7 +50,7 @@ Limits: `MAX_ADD_SEQ_LAYER_WEIGHT_MATRIX_SIZE = 1_000_000` for new Linear layers
 5. **Activations on existing paths.** ReLU only arrives with conv + BN + ReLU. Plain seq conv and linear inserts are linear (identity), so stacking them adds no nonlinearity.
 6. **Kernel size.** Fixed to the source conv's kernel (usually 3×3) or 1×1 before flatten.
 
-## 4. Concrete example: Experiment 010 start vs Experiment 013/014 start
+## 4. Concrete example: Experiment 010 start vs Experiment 014/015 start
 
 **Experiment 010 starter** (`TinyCifar10Starter`, `experiments/train_cifar10_exp010_mcts_meta.py`), 296 parameters:
 
@@ -64,7 +64,7 @@ linear2: Linear(8→10, no bias)            # head, output pinned
 
 At the start, `conv1` is fed by the input and `linear2` feeds the output, so **neither is hidden**. Only actions that need sequential pairs are available: seq conv(8→8), seq conv + BN + ReLU(8→8), seq linear(8→8), and dropout. Residual actions and add neurons become possible only after a hidden layer exists. **Every conv stays at 8 channels for the whole run.**
 
-**Experiment 013/014 starter** (`ResidualStarter`, `experiments/train_cifar10_exp013_residual_block_multidataset.py`), 2,970 parameters:
+**Experiment 014/015 starter** (`ResidualStarter`, `experiments/train_cifar10_exp014_residual_block_multidataset.py`), 2,970 parameters:
 
 ```text
 input 3×32×32
@@ -83,7 +83,7 @@ classifier: Linear(16→10)
 | BN directly after the stem | No | Add BN after an existing layer (gap 2) |
 | `x + BN(conv(x))` block | Only as `x + zeroconv(x)` (no BN, added to a later layer's output) | Residual block from scratch (gap 3) |
 
-In experiments, the 296-parameter start reached 46.7–59.2% CIFAR-10 validation after 200 epochs (Experiment 010). The 2,970-parameter start reached 68.5% at epoch 200 and 72.4% at epoch 300 with no residual-block actions (Experiment 014 `off`). The training recipe and search settings were the same or weaker for Experiment 014, so the starter matters a lot.
+In experiments, the 296-parameter start reached 46.7–59.2% CIFAR-10 validation after 200 epochs (Experiment 010). The 2,970-parameter start reached 68.5% at epoch 200 and 72.4% at epoch 300 with no residual-block actions (Experiment 015 `off`). The training recipe and search settings were the same or weaker for Experiment 015, so the starter matters a lot.
 
 ## 5. Suggested new actions (priority order)
 
@@ -99,4 +99,4 @@ All of them should preserve the function (the network output right after the act
 
 - Implement an `Action` subclass in `growingnn/actions/` with `_execute(traced)`, `generate_all_actions(traced, ...)`, `can_be_infulenced`, and `__str__`.
 - Register it in `growingnn/actions/registry.py` behind a new `RunningConfig.ACTIONS_ENABLE_*` flag in `growingnn/core/config.py`. Also add the flag to `update_grow_actions` / `update_shrink_actions`.
-- The MCTS uses `generate_all_actions` output directly. Each extra candidate competes in a search with ~150 candidates and noisy one-epoch scores (Experiment 014), so keep the candidate count per action type moderate.
+- The MCTS uses `generate_all_actions` output directly. Each extra candidate competes in a search with ~150 candidates and noisy one-epoch scores (Experiment 015), so keep the candidate count per action type moderate.

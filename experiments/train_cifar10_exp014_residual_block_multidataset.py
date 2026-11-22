@@ -1,6 +1,6 @@
-"""Experiment 013: archived residual-block comparison across four image datasets.
+"""Experiment 014: archived residual-block comparison across four image datasets.
 
-The active comparison is Experiment 012. This script remains so the interim
+The active comparison is Experiment 013. This script remains so the interim
 MNIST, CIFAR-10, CIFAR-100, and Tiny ImageNet runs can be resumed.
 
 Matched enabled/disabled arms use the same explicit shape-preserving residual
@@ -10,8 +10,8 @@ reaches 90%, or after the configured generation limit.
 Default: MNIST, CIFAR-10, CIFAR-100, Tiny ImageNet; seeds 1, 2, 3;
 30 generations x 10 epochs maximum. Tiny ImageNet is not full ImageNet.
 
-    pipenv run python -u experiments/train_cifar10_exp013_residual_block_multidataset.py
-    pipenv run python -u experiments/train_cifar10_exp013_residual_block_multidataset.py mnist cifar10
+    pipenv run python -u experiments/train_cifar10_exp014_residual_block_multidataset.py
+    pipenv run python -u experiments/train_cifar10_exp014_residual_block_multidataset.py mnist cifar10
 """
 
 from __future__ import annotations
@@ -130,7 +130,7 @@ def _train_one(data, dataset: str, arm: str, seed: int, generations: int, epochs
         board = ExperimentBoard(
             run_dir / "board",
             experiment_id=f"{EXPERIMENT_ID}_{dataset}_{arm}_seed{seed}",
-            experiment_name="Experiment 013 residual-block action multi-dataset study",
+            experiment_name="Experiment 014 residual-block action multi-dataset study",
             dataset=dataset.upper(),
             device=str(device),
         )

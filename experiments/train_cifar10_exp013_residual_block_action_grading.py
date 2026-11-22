@@ -1,11 +1,11 @@
-"""Experiment 012: grade residual-block actions on MNIST and CIFAR-10.
+"""Experiment 013: grade residual-block actions on MNIST and CIFAR-10.
 
 Both arms start from the same identity residual block. One arm can grow or
 shrink residual blocks. The other cannot. Search uses the MCTS settings
 selected by Experiment 010.
 
-    pipenv run python -u experiments/train_cifar10_exp012_residual_block_action_grading.py
-    pipenv run python -u experiments/train_cifar10_exp012_residual_block_action_grading.py mnist
+    pipenv run python -u experiments/train_cifar10_exp013_residual_block_action_grading.py
+    pipenv run python -u experiments/train_cifar10_exp013_residual_block_action_grading.py mnist
 """
 
 from __future__ import annotations
@@ -156,7 +156,7 @@ def _train_one(data, dataset: str, arm: str, seed: int) -> None:
         board = ExperimentBoard(
             run_dir / "board",
             experiment_id=f"{EXPERIMENT_ID}_{dataset}_{arm}_seed{seed}",
-            experiment_name="Experiment 012 residual-block action grading",
+            experiment_name="Experiment 013 residual-block action grading",
             dataset=dataset.upper(),
             device=str(device),
         )

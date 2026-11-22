@@ -1,4 +1,4 @@
-# Experiment 012: residual-block action grading
+# Experiment 013: residual-block action grading
 
 ## Question
 
@@ -38,19 +38,19 @@ The MCTS values are the Experiment 010 pass-2 winners. Each winner had the highe
 
 The stored rollout learning rate is 0.0001. The scheduler floor raises an applied rollout rate below 0.001 up to 0.001, which is the same behavior Experiment 010 selected. The 3-iteration minimum can also extend one search past the 32-second budget.
 
-Script: `experiments/train_cifar10_exp012_residual_block_action_grading.py`  
+Script: `experiments/train_cifar10_exp013_residual_block_action_grading.py`  
 New runs: `experiments/output/train_cifar10/runs/exp012_residual_block_action_grading/`
 
 ```text
-pipenv run python -u experiments/train_cifar10_exp012_residual_block_action_grading.py
-pipenv run python -u experiments/train_cifar10_exp012_residual_block_action_grading.py mnist cifar10
+pipenv run python -u experiments/train_cifar10_exp013_residual_block_action_grading.py
+pipenv run python -u experiments/train_cifar10_exp013_residual_block_action_grading.py mnist cifar10
 ```
 
 ## What the new runs should answer
 
 Each enabled seed has a disabled seed with the same dataset and seed. Compare final test accuracy and final validation accuracy, and count how often `ResidualBlockAction` is executed.
 
-A final-accuracy gap with zero executed block actions measures the effect of offering the action to search. It does not measure the effect of duplicating or removing a block. Experiment 011 offered the action from a starter that had no residual block, and the action was never selected. This protocol starts with one eligible block so grow and shrink candidates exist from the first search. It also drops CIFAR-100 and Tiny ImageNet: Experiment 013 already ran that wider comparison under the old search settings, and MNIST plus CIFAR-10 is enough for this question. Training stops after the generation whose final validation accuracy reaches 90%. The 30-generation budget remains for runs that stay below that accuracy.
+A final-accuracy gap with zero executed block actions measures the effect of offering the action to search. It does not measure the effect of duplicating or removing a block. Experiment 012 offered the action from a starter that had no residual block, and the action was never selected. This protocol starts with one eligible block so grow and shrink candidates exist from the first search. It also drops CIFAR-100 and Tiny ImageNet: Experiment 014 already ran that wider comparison under the old search settings, and MNIST plus CIFAR-10 is enough for this question. Training stops after the generation whose final validation accuracy reaches 90%. The 30-generation budget remains for runs that stay below that accuracy.
 
 ## Completed predecessor: duplicate initialization
 
@@ -69,7 +69,7 @@ The comparison evaluated **copy**, **quasi_identity**, and **identity_residual_z
 | Runs | 30 completed histories: 18 enabled (3 initializers × 2 datasets × 3 seeds) and 12 shared disabled controls |
 
 Historical artifacts: `experiments/output/train_cifar10/runs/exp011_residual_block_action_grading/`  
-Predecessor charts: `documentation/website/scripts/generate_experiment_012_grading_charts.py` and `documentation/website/scripts/generate_experiment_012_grading_history_charts.py`
+Predecessor charts: `documentation/website/scripts/generate_experiment_013_grading_charts.py` and `documentation/website/scripts/generate_experiment_013_grading_history_charts.py`
 
 The current runner does not repeat this initializer comparison. Completed attempts are included below; archived failed attempts are excluded.
 
@@ -92,17 +92,17 @@ The per-seed results and run-level histories are preserved in the output folders
 
 ## Training history and model size
 
-![Training and validation histories by initialization](/assets/experiments/012-training-histories.png)
+![Training and validation histories by initialization](/assets/experiments/013-training-histories.png)
 
 > [!CAPTION] Figure 1. Per-epoch train (solid) and validation (dashed) accuracy by dataset and initializer. Enabled runs are colored by seed; gray lines are the shared disabled controls. Vertical dotted lines mark generation boundaries.
 
-![Parameter history by initialization](/assets/experiments/012-parameter-histories.png)
+![Parameter history by initialization](/assets/experiments/013-parameter-histories.png)
 
 > [!CAPTION] Figure 2. Parameter count after each generation. Each trace is one completed run; gray traces are the shared disabled controls.
 
 ## Final accuracy comparison
 
-![Final test accuracy by initialization and dataset](/assets/experiments/012-initialization-test-comparison.png)
+![Final test accuracy by initialization and dataset](/assets/experiments/013-initialization-test-comparison.png)
 
 > [!CAPTION] Figure 3. Final test accuracy for each seed. Black horizontal marks show means; disabled control results are repeated as the reference for each dataset.
 
@@ -117,7 +117,7 @@ In the historical comparison, identity-style initialization was associated with 
 | CIFAR-10 | 0.2925 (20) | 0.4543 (27) | 0.4523 (29) |
 | CIFAR-100 | 0.0688 (24) | 0.1741 (28) | 0.1894 (24) |
 
-![Residual-block duplicate and remove candidate scores by initializer](/assets/experiments/012-block-grades-by-initialization.png)
+![Residual-block duplicate and remove candidate scores by initializer](/assets/experiments/013-block-grades-by-initialization.png)
 
 > [!CAPTION] Figure 4. Distribution of residual-block candidate rollout scores, grouped by dataset and duplicate initializer. Green triangles mark means; orange lines mark medians. Samples pool candidate appearances across seeds and generations; a candidate received one or two visits.
 
@@ -145,7 +145,7 @@ Block actions were executed in three of the 18 enabled runs:
 
 No residual-block removal was selected. The original copy runs selected no block action, and the other three-seed initializer arms selected none. Thus the final outcomes compare training with the action available to search; only three runs actually applied a block duplicate.
 
-![Training histories and before/after generation measurements for each selected residual-block duplicate](/assets/experiments/012-block-duplicate-impact.png)
+![Training histories and before/after generation measurements for each selected residual-block duplicate](/assets/experiments/013-block-duplicate-impact.png)
 
 > [!CAPTION] Figure 5. Each panel marks the selected duplicate and highlights the following five-epoch generation. The lower panels compare end-of-generation training and validation accuracy and show the parameter-count change. The metric differences are descriptive; continued training and other factors can affect them.
 
@@ -155,21 +155,21 @@ Each generation in this experiment lasts **5 epochs**. The two CIFAR-10 duplicat
 
 The board saved simplified FX graphs immediately before and after each selected duplicate. The after graph is the resulting model at the end of the following generation. New module names ending in `_block_0` identify the copied residual branch.
 
-![CIFAR-10 quasi-identity seed 1 structure before and after block duplication](/assets/experiments/012-block-duplicate-structure-cifar10-quasi_identity-seed1.png)
+![CIFAR-10 quasi-identity seed 1 structure before and after block duplication](/assets/experiments/013-block-duplicate-structure-cifar10-quasi_identity-seed1.png)
 
 > [!CAPTION] Figure 6. CIFAR-10, quasi-identity, seed 1. The duplicate was selected after generation 1; generation 2 contains the copied branch.
 
-![CIFAR-10 residual-zero seed 1 structure before and after block duplication](/assets/experiments/012-block-duplicate-structure-cifar10-identity_residual_zero-seed1.png)
+![CIFAR-10 residual-zero seed 1 structure before and after block duplication](/assets/experiments/013-block-duplicate-structure-cifar10-identity_residual_zero-seed1.png)
 
 > [!CAPTION] Figure 7. CIFAR-10, residual-zero, seed 1. The duplicate was selected after generation 1; generation 2 contains the copied branch.
 
-![CIFAR-100 residual-zero seed 1 structure before and after block duplication](/assets/experiments/012-block-duplicate-structure-cifar100-identity_residual_zero-seed1.png)
+![CIFAR-100 residual-zero seed 1 structure before and after block duplication](/assets/experiments/013-block-duplicate-structure-cifar100-identity_residual_zero-seed1.png)
 
 > [!CAPTION] Figure 8. CIFAR-100, residual-zero, seed 1. The duplicate was selected after generation 2; generation 3 contains the copied branch.
 
 The three duplicates were followed by improved training accuracy in the next generation, but validation did not improve consistently. CIFAR-10 quasi-identity changed train/validation accuracy by **+3.83/−4.02 pp**; CIFAR-10 residual-zero by **+2.76/−0.14 pp**; and CIFAR-100 residual-zero by **+1.28/−0.10 pp**. The recorded parameter count rose by **2,336** in each case. These before/after measurements cover the next five training epochs and show association, not the duplicate's isolated causal effect.
 
-![Accuracy changes over the generation following selected actions](/assets/experiments/012-action-effects.png)
+![Accuracy changes over the generation following selected actions](/assets/experiments/013-action-effects.png)
 
 > [!CAPTION] Figure 9. Train and validation accuracy changes from the end of the action generation to the end of the next generation, grouped by selected action type. Dots are individual actions and bars show action-type means. These windows include continued training and later effects, so they are descriptive associations, not causal estimates.
 

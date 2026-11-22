@@ -1,7 +1,7 @@
-"""Checks for the Experiment 012 MCTS settings and simulation-set size."""
+"""Checks for the Experiment 013 MCTS settings and simulation-set size."""
 
 import growingnn.core.config as project_config
-from experiments.train_cifar10_exp012_residual_block_action_grading import (
+from experiments.train_cifar10_exp013_residual_block_action_grading import (
     MCTS_SETTINGS,
     TARGET_VALIDATION_ACCURACY,
     apply_experiment_010_mcts_settings,
@@ -13,7 +13,7 @@ from growingnn.training.lr_scheduler_action import ActionLearningRateScheduler
 
 def test_validation_stop_is_ninety_percent():
     """
-    Experiment 012 should stop training when validation accuracy reaches 90%.
+    Experiment 013 should stop training when validation accuracy reaches 90%.
     """
 
     # Arrange

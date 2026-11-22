@@ -1,4 +1,4 @@
-"""Experiment 014: step-by-step redesign of the residual-block duplicate action on CIFAR-10.
+"""Experiment 015: step-by-step redesign of the residual-block duplicate action on CIFAR-10.
 
 Each step adds one change to the duplicate action, so every row can be read
 against the row above it:
@@ -14,16 +14,16 @@ Part A, paired checkpoints (about 1 hour): train a checkpoint once, apply
 each setting to the same checkpoint, and train every copy for one generation.
 No search is involved, so the rows show the action's own effect.
 
-Part B, growing runs (about a day): the Experiment 013 CIFAR-10 protocol
+Part B, growing runs (about a day): the Experiment 014 CIFAR-10 protocol
 (30 generations x 10 epochs, 8 s Monte Carlo search, 128 simulation
 examples, 90% validation stop) for the "off" control and each step, 2 seeds.
 Runs are ordered seed-first, so a complete seed-1 ladder exists after half
 the time.
 
-    pipenv run python -u experiments/train_cifar10_exp014_duplicate_action_design.py
-    pipenv run python -u experiments/train_cifar10_exp014_duplicate_action_design.py --part a
-    pipenv run python -u experiments/train_cifar10_exp014_duplicate_action_design.py --part b --seeds 1
-    pipenv run python -u experiments/train_cifar10_exp014_duplicate_action_design.py --summary
+    pipenv run python -u experiments/train_cifar10_exp015_duplicate_action_design.py
+    pipenv run python -u experiments/train_cifar10_exp015_duplicate_action_design.py --part a
+    pipenv run python -u experiments/train_cifar10_exp015_duplicate_action_design.py --part b --seeds 1
+    pipenv run python -u experiments/train_cifar10_exp015_duplicate_action_design.py --summary
 
 Results: experiments/output/train_cifar10/runs/exp014_duplicate_action_design/
 (summary.md is rewritten after every finished run and by --summary).
@@ -56,8 +56,8 @@ if str(ROOT) not in sys.path:
 import growingnn.simulation.simulation_algorithms.montecarlo_alg as montecarlo_alg
 from experiments.train_cifar10_exp008_generation_only import CosineDecayScheduler, with_cutout
 from experiments.train_cifar10_exp009_best_reference import get_datasets
-from experiments.train_cifar10_exp012_residual_block_action_grading import _claim_run_dir
-from experiments.train_cifar10_exp013_residual_block_multidataset import (
+from experiments.train_cifar10_exp013_residual_block_action_grading import _claim_run_dir
+from experiments.train_cifar10_exp014_residual_block_multidataset import (
     SIMULATION_EPOCHS,
     SIMULATION_SECONDS,
     SIMULATION_SET_SIZE,
@@ -225,7 +225,7 @@ def run_part_a(scale: float, seeds) -> None:
     train_loader, val_loader, _ = data.loaders(BATCH_SIZE)
     train_loader = with_cutout(train_loader)
 
-    # Checkpoint 1: the Experiment 013 starter after a short training run.
+    # Checkpoint 1: the Experiment 014 starter after a short training run.
     plain = TracedModel.create(ResidualStarter(3, 10), INPUT_SHAPE)
     _train(plain.gm, train_loader, CHECKPOINT_EPOCHS, CHECKPOINT_LR)
     plain.invalidate()
@@ -301,7 +301,7 @@ def _train_one(data, name: str, settings: dict | None, seed: int, scale: float) 
         board = ExperimentBoard(
             run_dir / "board",
             experiment_id=f"{EXPERIMENT_ID}_{arm_folder(name, scale)}_seed{seed}",
-            experiment_name=f"Experiment 014 duplicate action design: {name}",
+            experiment_name=f"Experiment 015 duplicate action design: {name}",
             dataset=DATASET.upper(),
             device=str(device),
         )
@@ -439,7 +439,7 @@ def _mean(values):
 
 
 def write_summary(scale: float) -> str:
-    lines = [f"# Experiment 014 summary", "", f"Scale used by the +scale and +merge steps: {scale:g}.", ""]
+    lines = [f"# Experiment 015 summary", "", f"Scale used by the +scale and +merge steps: {scale:g}.", ""]
     paired = OUT_DIR / "paired" / "paired_results.json"
     if paired.is_file():
         data = json.loads(paired.read_text(encoding="utf-8"))
@@ -467,7 +467,7 @@ def write_summary(scale: float) -> str:
         stats = [s for s in (_run_stats(d) for d in sorted(arm_dir.glob("seed_*")) if "_" not in d.name[5:]) if s]
         rows.append((name, stats))
     if any(stats for _, stats in rows):
-        lines += ["## Part B: growing runs (Experiment 013 CIFAR-10 protocol)", "",
+        lines += ["## Part B: growing runs (Experiment 014 CIFAR-10 protocol)", "",
                   "Each row adds one change to the row above. Final values are the last recorded epoch, "
                   "averaged over finished seeds. `Score vs no change` is the duplicate's simulation score minus "
                   "the median dropout-candidate score in the same search (dropout does not change predictions).", "",

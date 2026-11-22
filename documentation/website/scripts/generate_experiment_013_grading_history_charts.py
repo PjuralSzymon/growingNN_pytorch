@@ -1,4 +1,4 @@
-"""Generate Experiment 012 accuracy and parameter history figures from board metrics."""
+"""Generate Experiment 013 accuracy and parameter history figures from board metrics."""
 
 from __future__ import annotations
 
@@ -105,10 +105,10 @@ def plot_accuracy(runs: list[dict]) -> None:
             ax.grid(alpha=0.22)
             if row == 0 and col == 0:
                 ax.legend(fontsize=7, ncol=2, frameon=False)
-    fig.suptitle("Experiment 012: per-epoch histories by duplicate initialization", fontsize=15)
+    fig.suptitle("Experiment 013: per-epoch histories by duplicate initialization", fontsize=15)
     fig.text(0.5, 0.015, "Seed colors show enabled runs; gray traces are the same completed actions-disabled controls in every panel. Solid=train, dashed=validation. Dotted lines mark generation boundaries.", ha="center", fontsize=9)
     fig.tight_layout(rect=(0, 0.04, 1, 0.95))
-    fig.savefig(ASSETS / "012-training-histories.png", dpi=170, bbox_inches="tight")
+    fig.savefig(ASSETS / "013-training-histories.png", dpi=170, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -143,10 +143,10 @@ def plot_parameters(runs: list[dict]) -> None:
             ax.grid(alpha=0.22)
             if row == 0 and col == 0:
                 ax.legend(fontsize=7, frameon=False)
-    fig.suptitle("Experiment 012: parameter count by initialization and generation", fontsize=15)
+    fig.suptitle("Experiment 013: parameter count by initialization and generation", fontsize=15)
     fig.text(0.5, 0.015, "Seed colors show enabled runs; gray traces are the same completed actions-disabled controls in every panel.", ha="center", fontsize=9)
     fig.tight_layout(rect=(0, 0.04, 1, 0.95))
-    fig.savefig(ASSETS / "012-parameter-histories.png", dpi=170, bbox_inches="tight")
+    fig.savefig(ASSETS / "013-parameter-histories.png", dpi=170, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -234,10 +234,10 @@ def plot_action_effects() -> None:
         ax.set_xlabel("Accuracy change over next generation (percentage points)")
         ax.grid(axis="x", alpha=0.22)
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.suptitle("Experiment 012: training and validation change after selected actions")
+    fig.suptitle("Experiment 013: training and validation change after selected actions")
     fig.legend(handles, labels, loc="lower center", ncol=2, frameon=False)
     fig.tight_layout(rect=(0, 0.08, 1, 0.95))
-    fig.savefig(ASSETS / "012-action-effects.png", dpi=170, bbox_inches="tight")
+    fig.savefig(ASSETS / "013-action-effects.png", dpi=170, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -318,12 +318,12 @@ def plot_duplicate_impacts(runs: list[dict]) -> None:
                 f"Parameters: {event['before']['params']:,} → {event['after']['params']:,} ({params_delta:+,})",
                 transform=ax.transAxes, ha="center", fontsize=9)
 
-    fig.suptitle("Experiment 012: observed changes after selected residual-block duplicates", fontsize=15)
+    fig.suptitle("Experiment 013: observed changes after selected residual-block duplicates", fontsize=15)
     fig.text(0.5, 0.015,
              "Before/after are final-epoch metrics for adjacent generations. Accuracy changes include continued training and other effects; they are not causal estimates.",
              ha="center", fontsize=9)
     fig.tight_layout(rect=(0, 0.045, 1, 0.94))
-    fig.savefig(ASSETS / "012-block-duplicate-impact.png", dpi=170, bbox_inches="tight")
+    fig.savefig(ASSETS / "013-block-duplicate-impact.png", dpi=170, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -386,7 +386,7 @@ def plot_duplicate_structure_changes(runs: list[dict]) -> None:
             dataset = run["dataset"]
             init = run["init"]
             seed = run["seed"]
-            fig.savefig(ASSETS / f"012-block-duplicate-structure-{dataset}-{init}-seed{seed}.png",
+            fig.savefig(ASSETS / f"013-block-duplicate-structure-{dataset}-{init}-seed{seed}.png",
                         dpi=170, bbox_inches="tight")
             plt.close(fig)
 
@@ -414,10 +414,10 @@ def plot_initialization_outcomes(runs: list[dict]) -> None:
         ax.set_ylabel("Final test accuracy (%)")
         ax.set_title(dataset.upper())
         ax.grid(axis="y", alpha=0.22)
-    fig.suptitle("Experiment 012: final test accuracy by block initialization")
+    fig.suptitle("Experiment 013: final test accuracy by block initialization")
     fig.text(0.5, 0.015, "Dots are individual seeds; black bars mark means. Disabled controls are shared across initializer comparisons.", ha="center", fontsize=9)
     fig.tight_layout(rect=(0, 0.04, 1, 0.93))
-    fig.savefig(ASSETS / "012-initialization-test-comparison.png", dpi=170, bbox_inches="tight")
+    fig.savefig(ASSETS / "013-initialization-test-comparison.png", dpi=170, bbox_inches="tight")
     plt.close(fig)
 
 
@@ -430,7 +430,7 @@ def main() -> None:
     plot_duplicate_impacts(runs)
     plot_duplicate_structure_changes(runs)
     plot_initialization_outcomes(runs)
-    print(f"Wrote Experiment 012 history figures to {ASSETS}")
+    print(f"Wrote Experiment 013 history figures to {ASSETS}")
 
 
 if __name__ == "__main__":

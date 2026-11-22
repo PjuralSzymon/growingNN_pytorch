@@ -1,4 +1,4 @@
-"""Experiment 011: test residual-block grow/shrink actions on three datasets.
+"""Experiment 012: test residual-block grow/shrink actions on three datasets.
 
 Every run starts from the same topology: one small convolution, global average
 pool, and a dataset-sized linear classifier. The only arm difference is
@@ -7,8 +7,8 @@ types and training/search settings are held fixed. Two seeds are run per arm
 and dataset; history.pt records train/validation/test histories and each
 chosen action with generation and validation change.
 
-    pipenv run python -u experiments/train_cifar10_exp011_residual_block_actions.py
-    pipenv run python -u experiments/train_cifar10_exp011_residual_block_actions.py cifar10
+    pipenv run python -u experiments/train_cifar10_exp012_residual_block_actions.py
+    pipenv run python -u experiments/train_cifar10_exp012_residual_block_actions.py cifar10
 """
 
 from __future__ import annotations

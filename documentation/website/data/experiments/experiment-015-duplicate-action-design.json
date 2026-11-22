@@ -261,10 +261,10 @@
  "context_final_val_pct": {
   "Exp010: 296-param starter 128 sim examples, 200 epochs": 46.74,
   "Exp010: 296-param starter tuned search, 200 epochs": 59.16,
-  "Exp014 off: 2,970-param residual starter, at epoch 200": 68.51,
-  "Exp013 block actions off same starter, 300 epochs": 72.98,
-  "Exp014 off 300 epochs": 72.36,
-  "Exp014 +after_relu 300 epochs": 76.49999999999999
+  "Exp015 off: 2,970-param residual starter, at epoch 200": 68.51,
+  "Exp014 block actions off same starter, 300 epochs": 72.98,
+  "Exp015 off 300 epochs": 72.36,
+  "Exp015 +after_relu 300 epochs": 76.49999999999999
  },
  "block_action_events": [
   {

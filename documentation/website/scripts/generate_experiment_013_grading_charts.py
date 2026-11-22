@@ -1,4 +1,4 @@
-"""Generate Experiment 012 score and final-test plots from its run artifacts."""
+"""Generate Experiment 013 score and final-test plots from its run artifacts."""
 
 from __future__ import annotations
 
@@ -60,9 +60,9 @@ def main() -> None:
         ax.set_ylabel("MCTS mean rollout score (validation accuracy)")
         ax.tick_params(axis="x", rotation=25)
         ax.grid(axis="y", alpha=0.25)
-    fig.suptitle("Experiment 012: enabled-arm candidate grades")
+    fig.suptitle("Experiment 013: enabled-arm candidate grades")
     fig.tight_layout()
-    fig.savefig(ASSETS / "012-candidate-grades.png", dpi=170)
+    fig.savefig(ASSETS / "013-candidate-grades.png", dpi=170)
     plt.close(fig)
 
     initializations = ["copy", "quasi_identity", "identity_residual_zero"]
@@ -91,10 +91,10 @@ def main() -> None:
     fig.legend(handles=[Patch(facecolor="#7c3aed", label="Duplicate"),
                         Patch(facecolor="#94a3b8", label="Remove")],
                loc="lower center", bbox_to_anchor=(0.5, 0.065), ncol=2, frameon=False)
-    fig.suptitle("Experiment 012: residual-block candidate grades by duplicate initializer")
+    fig.suptitle("Experiment 013: residual-block candidate grades by duplicate initializer")
     fig.text(0.5, 0.02, "Boxes pool candidate appearances across seeds and generations; each candidate received one or two visits.", ha="center", fontsize=9)
     fig.tight_layout(rect=(0, 0.12, 1, 0.92))
-    fig.savefig(ASSETS / "012-block-grades-by-initialization.png", dpi=170, bbox_inches="tight")
+    fig.savefig(ASSETS / "013-block-grades-by-initialization.png", dpi=170, bbox_inches="tight")
     plt.close(fig)
 
     tests: dict[tuple[str, str], list[tuple[int, float]]] = {}
@@ -127,9 +127,9 @@ def main() -> None:
         ax.grid(axis="y", alpha=0.25)
     fig.suptitle("Final test accuracy by duplicate initialization; bars mark means")
     fig.tight_layout()
-    fig.savefig(ASSETS / "012-final-test.png", dpi=170)
+    fig.savefig(ASSETS / "013-final-test.png", dpi=170)
     plt.close(fig)
-    print(f"Wrote Experiment 012 charts to {ASSETS}")
+    print(f"Wrote Experiment 013 charts to {ASSETS}")
 
 
 if __name__ == "__main__":
