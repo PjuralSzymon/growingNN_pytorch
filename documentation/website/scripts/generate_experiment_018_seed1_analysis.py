@@ -1,4 +1,4 @@
-"""Visualize completed Experiment 15 seed 1 using its saved board records."""
+"""Visualize completed Experiment 18 seed 1 using its saved board records."""
 import csv
 import json
 from collections import Counter
@@ -9,7 +9,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator, FuncFormatter
 
-from documentation.website.scripts.generate_experiment_013_action_scores import group_key, candidate_detail, GROUPS, COLORS
+from documentation.website.scripts.generate_experiment_017_action_scores import group_key, candidate_detail, GROUPS, COLORS
 
 ROOT = Path(__file__).resolve().parents[3]
 RUN = ROOT / 'experiments/output/train_cifar10/runs/exp014_action_replay/v1/full_growth_5min/seed_1'
@@ -29,7 +29,7 @@ def generate():
                                     gridspec_kw={'height_ratios': [2, 1]}, layout='constrained')
     ax.plot(epochs, [100*r['trainAcc'] for r in metrics], label='Training', color='#2563eb')
     ax.plot(epochs, [100*r['valAcc'] for r in metrics], label='Validation', color='#e56b28')
-    ax.set(ylabel='Accuracy (%)', ylim=(0, 100), title='Experiment 15 Phase 5 · seed 1')
+    ax.set(ylabel='Accuracy (%)', ylim=(0, 100), title='Experiment 18 Phase 5 · seed 1')
     ax.legend()
     size.step(epochs, [r['paramCount'] for r in metrics], where='post', color='#168a69')
     size.set(xlabel='Training epoch', ylabel='Parameters')
@@ -39,7 +39,7 @@ def generate():
         axis.grid(alpha=.25)
         for boundary in range(20, 200, 20):
             axis.axvline(boundary + .5, color='#999999', ls=':', lw=.8)
-    fig.savefig(OUTPUT / '015-full-seed1-training.png', dpi=150, bbox_inches='tight')
+    fig.savefig(OUTPUT / '018-full-seed1-training.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
 
     groups = [(key, name.replace('\n', ' ')) for key, name in GROUPS
@@ -48,7 +48,7 @@ def generate():
     for s in searches:
         for row in s['candidates']:
             ids.setdefault(row['action'], f'A{len(ids)+1:03d}')
-    with (OUTPUT / '015-full-seed1-candidates.csv').open('w', newline='', encoding='utf-8-sig') as f:
+    with (OUTPUT / '018-full-seed1-candidates.csv').open('w', newline='', encoding='utf-8-sig') as f:
         writer = csv.writer(f)
         writer.writerow(['generation', 'action_id', 'action_type', 'full_recorded_action',
                          'mean_search_score', 'visits', 'chosen', 'last_rollout_validation_accuracy'])
@@ -74,7 +74,7 @@ def generate():
         ax.grid(axis='y', alpha=.25)
     axes[-1, 0].set_xticks(range(len(groups)), [label for _, label in groups], rotation=25, ha='right')
     fig.subplots_adjust(top=.97, bottom=.035, hspace=.22)
-    fig.savefig(OUTPUT / '015-full-seed1-scores-overview.png', dpi=130, bbox_inches='tight')
+    fig.savefig(OUTPUT / '018-full-seed1-scores-overview.png', dpi=130, bbox_inches='tight')
     plt.close(fig)
 
     for s in searches:
@@ -99,11 +99,11 @@ def generate():
             ax.text(min(row['score'] + .008, .98), pos,
                     f"{'★ ' if row.get('chosen') else ''}{row['score']:.3f}  n={row.get('visits', 0)}",
                     va='center', fontsize=7)
-        fig.savefig(OUTPUT / f"015-full-seed1-scores-gen-{s['generation']}.png", dpi=140, bbox_inches='tight')
+        fig.savefig(OUTPUT / f"018-full-seed1-scores-gen-{s['generation']}.png", dpi=140, bbox_inches='tight')
         plt.close(fig)
 
     lines = ['', '### Seed 1: training history and action decisions', '',
-             '![Seed 1 training accuracy and model parameters](/assets/experiments/015-full-seed1-training.png)', '',
+             '![Seed 1 training accuracy and model parameters](/assets/experiments/018-full-seed1-training.png)', '',
              'The dotted lines mark generation boundaries. The change after 20 epochs includes the '
              'selected action **and continued training**; it is not an isolated causal effect.', '',
              '| Generation ending | Before action validation | Parameters | Selected action | Next generation validation | Change after training | Candidates | Search time |',
@@ -122,11 +122,11 @@ def generate():
               'positions stay fixed in every generation. These are search scores, not the individual '
               'accuracy measurements inside each rollout. One visit can combine multiple model scores; '
               'the CSV includes the board’s separate latest rollout accuracy.', '',
-              '![Seed 1 candidate score distributions](/assets/experiments/015-full-seed1-scores-overview.png)', '',
+              '![Seed 1 candidate score distributions](/assets/experiments/018-full-seed1-scores-overview.png)', '',
               'Individual action charts: ' + ', '.join(
-                  f"[generation {s['generation']}](/assets/experiments/015-full-seed1-scores-gen-{s['generation']}.png)"
+                  f"[generation {s['generation']}](/assets/experiments/018-full-seed1-scores-gen-{s['generation']}.png)"
                   for s in searches) + '.', '',
-              '[Download all recorded candidate scores and full action descriptions](/assets/experiments/015-full-seed1-candidates.csv).', '',
+              '[Download all recorded candidate scores and full action descriptions](/assets/experiments/018-full-seed1-candidates.csv).', '',
               '| Generation | ' + ' | '.join(label for _, label in groups) + ' | Total scored |',
               '| ---: | ' + ' | '.join('---:' for _ in groups) + ' | ---: |']
     for s in searches:

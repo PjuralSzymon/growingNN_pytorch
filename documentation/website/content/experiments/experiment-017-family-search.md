@@ -1,4 +1,4 @@
-# Experiment 013: Growing a small network on CIFAR-10
+# Experiment 017: Growing a small network on CIFAR-10
 
 ## Result
 
@@ -9,8 +9,8 @@ validation and **54.14%** test accuracy with 2,432 parameters.
 
 | Run | Completed seeds | Final validation | Final test | Final parameters | Elapsed |
 | --- | --- | ---: | ---: | ---: | ---: |
-| Experiment 012: budgeted search | 1 | 53.90% | 54.14% | 2,432 | 73.8 min |
-| Experiment 013: family-balanced search | 1 | 69.48% | 69.83% | 80,887 | 83.9 min |
+| Experiment 016: budgeted search | 1 | 53.90% | 54.14% | 2,432 | 73.8 min |
+| Experiment 017: family-balanced search | 1 | 69.48% | 69.83% | 80,887 | 83.9 min |
 
 The validation difference is **15.58 percentage points** for seed 1. This is
 an encouraging result, but one seed is not enough to establish reliability.
@@ -36,13 +36,13 @@ An evaluation already in progress was allowed to finish after the deadline.
 
 ## Training and model growth
 
-![Experiment 013 training accuracy, validation accuracy, and parameter count](/assets/experiments/013-training-and-parameters.png)
+![Experiment 017 training accuracy, validation accuracy, and parameter count](/assets/experiments/017-training-and-parameters.png)
 
 The upper graph shows accuracy after each epoch; the lower graph shows the
 number of parameters during training. Dotted lines mark generation boundaries.
 The reported test accuracy is the final result, not an epoch-by-epoch curve.
 
-![Validation accuracy and parameter growth comparison for experiments 011 and 012](/assets/experiments/012-013-validation-and-growth.png)
+![Validation accuracy and parameter growth comparison for experiments 011 and 012](/assets/experiments/016-017-validation-and-growth.png)
 
 The comparison uses a logarithmic parameter-count scale because the final
 models differ greatly in size. It shows one seed for each implementation.
@@ -174,7 +174,7 @@ evaluated; it does not mean a score of zero or prove that the action was
 unavailable. Every distinct recorded action has a fixed slot and an `A` number
 within its type; its location, dimensions or ratio are shown below its bar.
 For widening, the per-evaluation random seed is excluded when matching actions
-across generations. The [full recorded action details and scores](/assets/experiments/013-action-score-details.csv)
+across generations. The [full recorded action details and scores](/assets/experiments/017-action-score-details.csv)
 include the original seeds and parameters.
 
 Each bar is one **evaluated root candidate**, grouped by action family. Its
@@ -208,23 +208,23 @@ Both sequential-convolution groups use the same colour. In generations 0–3,
 all five generated candidates were scored; in generations 5–8, only five of
 21 were scored. Repeated evaluations of one candidate still produce one bar.
 
-![Candidate scores for each search in Experiment 013](/assets/experiments/013-action-scores-overview.png)
+![Candidate scores for each search in Experiment 017](/assets/experiments/017-action-scores-overview.png)
 
 Generation numbers start at zero. Generation 3 is the search **after epoch
 80**. There is no generation-9 search because training ended after that
-generation. Larger individual charts: [0](/assets/experiments/013-action-scores-gen-0.png),
-[1](/assets/experiments/013-action-scores-gen-1.png),
-[2](/assets/experiments/013-action-scores-gen-2.png),
-[3](/assets/experiments/013-action-scores-gen-3.png),
-[4](/assets/experiments/013-action-scores-gen-4.png),
-[5](/assets/experiments/013-action-scores-gen-5.png),
-[6](/assets/experiments/013-action-scores-gen-6.png),
-[7](/assets/experiments/013-action-scores-gen-7.png), and
-[8](/assets/experiments/013-action-scores-gen-8.png).
+generation. Larger individual charts: [0](/assets/experiments/017-action-scores-gen-0.png),
+[1](/assets/experiments/017-action-scores-gen-1.png),
+[2](/assets/experiments/017-action-scores-gen-2.png),
+[3](/assets/experiments/017-action-scores-gen-3.png),
+[4](/assets/experiments/017-action-scores-gen-4.png),
+[5](/assets/experiments/017-action-scores-gen-5.png),
+[6](/assets/experiments/017-action-scores-gen-6.png),
+[7](/assets/experiments/017-action-scores-gen-7.png), and
+[8](/assets/experiments/017-action-scores-gen-8.png).
 
 ### Why the epoch-80 action won, and what happened later
 
-![Candidate scores after epoch 80](/assets/experiments/013-action-scores-gen-3.png)
+![Candidate scores after epoch 80](/assets/experiments/017-action-scores-gen-3.png)
 
 At generation 3, the convolution with BatchNorm and ReLU had the highest
 recorded mean: **0.392 over two evaluations**, compared with **0.373** for the
@@ -257,7 +257,7 @@ decision checkpoints can support a future controlled test.
 
 The family-balanced search's code has since been removed from the repository;
 this section records what it did and which ideas were kept. It scored root
-actions only (rollout depth 0), like Experiment 012, with three additions:
+actions only (rollout depth 0), like Experiment 016, with three additions:
 
 - **Family round-robin order.** Candidates were grouped by action type
   (widening, sequential convolution, residual convolution, linear layer,
@@ -278,7 +278,7 @@ actions only (rollout depth 0), like Experiment 012, with three additions:
 
 **What was kept.** Both widening variants are kept in the library as one
 action, `WidenConv`: it widens along a single path or, when the output feeds
-several convolutions, along every branch. Experiment 15 Phase 7 ran before fan-out
+several convolutions, along every branch. Experiment 18 Phase 7 ran before fan-out
 widening was added to the library and found that no widening was available once a
 residual branch was added after `conv1`. Monte Carlo 2 keeps selecting by mean
 score with rollout depth 0. Family round-robin ordering only matters when the

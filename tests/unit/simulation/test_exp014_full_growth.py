@@ -425,7 +425,7 @@ def test_normalization_phase_is_a_short_widening_run_with_normalization_candidat
 
 
 def test_normalization_candidates_get_their_own_group_in_reports():
-    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
     assert group_key({'action': " ( Add Normalization Action: ['conv1', 'BatchNorm2d', 8, 'norm_0'] ) "}) \
         == 'Add normalization'
 

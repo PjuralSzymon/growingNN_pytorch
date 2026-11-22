@@ -1,8 +1,8 @@
 ---
-title: "Experiment 15: replaying the epoch-80 decision"
+title: "Experiment 18: replaying the epoch-80 decision"
 ---
 
-All arms start from the Experiment 13 generation-3 pre-decision checkpoint, after epoch 80. Each recorded action and an unchanged control is trained for 20 epochs with the same nominal seed, training recipe and saved learning-rate schedule. The primary comparison uses 3,880 validation examples outside the original 1,120-example simulation validation subset.
+All arms start from the Experiment 17 generation-3 pre-decision checkpoint, after epoch 80. Each recorded action and an unchanged control is trained for 20 epochs with the same nominal seed, training recipe and saved learning-rate schedule. The primary comparison uses 3,880 validation examples outside the original 1,120-example simulation validation subset.
 
 The five actions and the original simulation scores are from the recorded decision. Resetting the seed does not guarantee identical random draws across different architectures. This is one checkpoint and one training seed; it is not a multi-seed estimate.
 
@@ -15,7 +15,7 @@ The five actions and the original simulation scores are from the recorded decisi
 | Conv without BN/ReLU | 25.98% | 39,296 | 33.58% | 28.48% | 39.90% | +1.65 pp | 39.70% |
 | A08: conv + BN + ReLU | 39.15% | 39,424 | 33.58% | 45.00% | 56.80% | +18.56 pp | 56.80% |
 
-![Held-out validation accuracy for all replay arms](/assets/experiments/015-action-replay-validation.png)
+![Held-out validation accuracy for all replay arms](/assets/experiments/018-action-replay-validation.png)
 
 Full validation includes the original simulation-validation subset; held-out validation is the primary comparison. No test-set scores were used. The original run followed a different random trajectory, so its subsequent accuracy need not be reproduced exactly.
 
@@ -31,7 +31,7 @@ Each cell is validation accuracy after scoring a fresh copy of the same action, 
 | 10 | 37.14% | 38.21% | 41.96% | 36.70% | 41.43% |
 | 20 | 37.23% | 40.00% | 40.00% | 36.79% | 48.57% |
 
-![Simulation accuracy by scoring epochs and action](/assets/experiments/015-scoring-epochs.png)
+![Simulation accuracy by scoring epochs and action](/assets/experiments/018-scoring-epochs.png)
 
 These simulation scores use different data and training budgets than the full-training results above.
 
@@ -47,7 +47,7 @@ Each row runs the complete Monte Carlo 2 search from the same checkpoint with th
 | 10 | 0.3791 (n=1) | 0.3952 (n=1) | 0.3888 (n=1) | 0.3386 (n=1) | **0.4237 (n=1)** |
 | 20 | 0.3996 (n=1) | 0.3986 (n=1) | 0.3713 (n=1) | 0.2504 (n=1) | **0.4835 (n=1)** |
 
-![Monte Carlo 2 search values by scoring epochs](/assets/experiments/015-montecarlo2-epochs.png)
+![Monte Carlo 2 search values by scoring epochs](/assets/experiments/018-montecarlo2-epochs.png)
 
 A run uses one nominal seed; differences may reflect search order, randomness and unequal visit counts as well as scoring epochs.
 
@@ -80,7 +80,7 @@ Cells show the root search value and visit count; **bold** marks the selected ac
 | 25 minutes | 26.7 min | 2 | 11 | 0.4009 (n=2) | 0.4010 (n=2) | 0.3679 (n=2) | 0.3181 (n=2) | **0.4777 (n=2)** |
 | 30 minutes | 33.1 min | 2 | 13 | 0.3813 (n=3) | 0.3979 (n=2) | 0.3564 (n=2) | 0.3355 (n=2) | **0.4823 (n=3)** |
 
-![Monte Carlo 2 search values by time budget](/assets/experiments/015-montecarlo2-time.png)
+![Monte Carlo 2 search values by time budget](/assets/experiments/018-montecarlo2-time.png)
 
 Each setting uses one nominal seed. Greater budgets may allow deeper exploration, but do not guarantee equal visits or identical random trajectories.
 
@@ -101,7 +101,7 @@ Experiment 010 selected settings in sequential sweeps; its report does not provi
 
 ### Seed 1: training history and action decisions
 
-![Seed 1 training accuracy and model parameters](/assets/experiments/015-full-seed1-training.png)
+![Seed 1 training accuracy and model parameters](/assets/experiments/018-full-seed1-training.png)
 
 The dotted lines mark generation boundaries. The change after 20 epochs includes the selected action **and continued training**; it is not an isolated causal effect.
 
@@ -121,11 +121,11 @@ The dotted lines mark generation boundaries. The change after 20 epochs includes
 
 Each dot is one recorded candidate; the black-edged star is the chosen action. Family positions stay fixed in every generation. These are search scores, not the individual accuracy measurements inside each rollout. One visit can combine multiple model scores; the CSV includes the board’s separate latest rollout accuracy.
 
-![Seed 1 candidate score distributions](/assets/experiments/015-full-seed1-scores-overview.png)
+![Seed 1 candidate score distributions](/assets/experiments/018-full-seed1-scores-overview.png)
 
-Individual action charts: [generation 0](/assets/experiments/015-full-seed1-scores-gen-0.png), [generation 1](/assets/experiments/015-full-seed1-scores-gen-1.png), [generation 2](/assets/experiments/015-full-seed1-scores-gen-2.png), [generation 3](/assets/experiments/015-full-seed1-scores-gen-3.png), [generation 4](/assets/experiments/015-full-seed1-scores-gen-4.png), [generation 5](/assets/experiments/015-full-seed1-scores-gen-5.png), [generation 6](/assets/experiments/015-full-seed1-scores-gen-6.png), [generation 7](/assets/experiments/015-full-seed1-scores-gen-7.png), [generation 8](/assets/experiments/015-full-seed1-scores-gen-8.png).
+Individual action charts: [generation 0](/assets/experiments/018-full-seed1-scores-gen-0.png), [generation 1](/assets/experiments/018-full-seed1-scores-gen-1.png), [generation 2](/assets/experiments/018-full-seed1-scores-gen-2.png), [generation 3](/assets/experiments/018-full-seed1-scores-gen-3.png), [generation 4](/assets/experiments/018-full-seed1-scores-gen-4.png), [generation 5](/assets/experiments/018-full-seed1-scores-gen-5.png), [generation 6](/assets/experiments/018-full-seed1-scores-gen-6.png), [generation 7](/assets/experiments/018-full-seed1-scores-gen-7.png), [generation 8](/assets/experiments/018-full-seed1-scores-gen-8.png).
 
-[Download all recorded candidate scores and full action descriptions](/assets/experiments/015-full-seed1-candidates.csv).
+[Download all recorded candidate scores and full action descriptions](/assets/experiments/018-full-seed1-candidates.csv).
 
 | Generation | Sequential conv with BN + ReLU | Sequential conv without BN/ReLU | Residual convolution | Sequential linear | Dropout | Delete layer | Total scored |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -154,7 +154,7 @@ The following issues were fixed in the Monte Carlo 2 simulation algorithm (`mont
 - **Score memory.** Only the node's initial score is remembered for reuse; scores of random rollout steps were stored under keys that could never be reused.
 - **Board records.** Each candidate's recorded composite score is the weighted rollout value used by the search (not the last step's score), and the chosen row is marked by tree node rather than by its action text.
 
-This phase repeats the Phase 3 search on the same Experiment 013 generation-3 checkpoint and five recorded root actions, with the fixed algorithm and the settings planned for Phase 7: **rollout depth 0**, **5 scoring epochs**, convolution widening enabled, UCB C=1.0, minimum iterations 3 and a 32-second soft budget. Three search seeds are run to show how stable the ranking is. Cells show the mean search value and visit count; **bold** marks the selected action.
+This phase repeats the Phase 3 search on the same Experiment 017 generation-3 checkpoint and five recorded root actions, with the fixed algorithm and the settings planned for Phase 7: **rollout depth 0**, **5 scoring epochs**, convolution widening enabled, UCB C=1.0, minimum iterations 3 and a 32-second soft budget. Three search seeds are run to show how stable the ranking is. Cells show the mean search value and visit count; **bold** marks the selected action.
 
 | Seed | Search time | Widen 256 | Widen 128 | Add linear | Conv without BN/ReLU | A08: conv + BN/ReLU | Selected |
 | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
@@ -183,7 +183,7 @@ The Phase 5 recipe repeated with the fixed algorithm and the Phase 6 settings: c
 | Phase 5 | 64.02% | 63.92% | 64.86% | 5,600 | 788 min | 199.6 min |
 | Phase 7 | 59.84% | 60.11% | 60.48% | 3,392 | 50 min | 7.6 min |
 
-![Phase 7 and Phase 5 seed 1 validation accuracy and parameters](/assets/experiments/015-phase7-seed1-vs-phase5.png)
+![Phase 7 and Phase 5 seed 1 validation accuracy and parameters](/assets/experiments/018-phase7-seed1-vs-phase5.png)
 
 ### Seed 1 decisions
 
@@ -316,31 +316,31 @@ Average final validation over the complete seeds (1):
 
 Solid lines are validation accuracy, dashed lines training accuracy. The best cell (C=1.0, CCS) is compared with the other UCB C at the same simulation set, and with the other simulation set at the same C.
 
-![UCB C compared](/assets/experiments/015-grid-training-ucb.png)
+![UCB C compared](/assets/experiments/018-grid-training-ucb.png)
 
-![Simulation set compared](/assets/experiments/015-grid-training-simset.png)
+![Simulation set compared](/assets/experiments/018-grid-training-simset.png)
 
 ### Factor means
 
-![Phase 10 mean final validation per factor level](/assets/experiments/015-grid-factor-means.png)
+![Phase 10 mean final validation per factor level](/assets/experiments/018-grid-factor-means.png)
 
 Each bar averages the two runs at that level (one per level of the other factor); dots are the individual runs.
 
 ### Could the search tell its candidates apart?
 
-![How clearly each search separated its candidates](/assets/experiments/015-grid-separation.png)
+![How clearly each search separated its candidates](/assets/experiments/018-grid-separation.png)
 
 Each dot is one candidate, placed by how far its score was below the best candidate of that search. The grey band is the 1 pp noise level of one scoring run; the number above each generation counts the candidates inside it. A search that knows what is best has one dot at 0 and the rest well below; many dots inside the band mean the choice was effectively a coin toss among near-ties.
 
 ### What the selected actions delivered
 
-![What each selected action delivered](/assets/experiments/015-grid-action-gains.png)
+![What each selected action delivered](/assets/experiments/018-grid-action-gains.png)
 
-Validation change over the generation after each decision, for every decision in the four cells, by kind of action. The grey line is Experiment 13 for contrast: its generation-3 action (A08, 64 → 64 convolution after widening to 64 channels) gave the +20.8 pp jump.
+Validation change over the generation after each decision, for every decision in the four cells, by kind of action. The grey line is Experiment 17 for contrast: its generation-3 action (A08, 64 → 64 convolution after widening to 64 channels) gave the +20.8 pp jump.
 
 ### Candidate scores in the best cell
 
-![Candidate scores, C=1.0, CCS](/assets/experiments/015-grid-c1p0_ccs-scores.png)
+![Candidate scores, C=1.0, CCS](/assets/experiments/018-grid-c1p0_ccs-scores.png)
 
 Each row is one generation and each dot one candidate, grouped by action type; the black-edged star is the selected action.
 
@@ -362,13 +362,13 @@ Selected action type in each generation, with the rank of the best widening cand
 
 ### What Phase 10 shows
 
-- **Final validation ranged from 59.38% to 63.06%.** No cell beat Phase 5 (64.02%) and all stayed far below Experiment 13 (69.48%). C = 1.0 ended higher than C = 0.05 with both simulation sets; with one seed per cell this is within the seed-to-seed spread. Moderate and CCS were practically equal.
+- **Final validation ranged from 59.38% to 63.06%.** No cell beat Phase 5 (64.02%) and all stayed far below Experiment 17 (69.48%). C = 1.0 ended higher than C = 0.05 with both simulation sets; with one seed per cell this is within the seed-to-seed spread. Moderate and CCS were practically equal.
 - **Nothing useful was added after generation 2.** Generations 0–2 gained +6.9 pp on average. From generation 3, generations where the selected action added a layer gained +1.4 pp, and generations where it added no capacity (dropout, neuron or layer removal) gained +1.9 pp. The added layers brought nothing beyond continued training.
 - **The models are capacity-limited, not overfitting.** Final training accuracy was 58.2–62.0% against 59.4–63.1% validation (training is measured with cutout augmentation). The networks cannot fit even the training data, so only a real capacity increase can help.
-- **The network stayed 8 channels wide.** The only widening chosen took conv1 to 16 channels in generation 7 of C = 1.0, Moderate, too late to matter. Every added convolution is 8 → 8 (about +600 parameters) and everything reaches the classifier through an 8-channel global pool. Final models had 3,904–5,752 parameters. Experiment 13 widened conv1 to 64 channels in generations 0–2 and had 39,424 parameters after its generation-3 action.
+- **The network stayed 8 channels wide.** The only widening chosen took conv1 to 16 channels in generation 7 of C = 1.0, Moderate, too late to matter. Every added convolution is 8 → 8 (about +600 parameters) and everything reaches the classifier through an 8-channel global pool. Final models had 3,904–5,752 parameters. Experiment 17 widened conv1 to 64 channels in generations 0–2 and had 39,424 parameters after its generation-3 action.
 - **The score cannot see the value of widening.** Widening was offered in 35 of 36 searches and chosen 1 time. Its best score was on average -0.3 pp from a nearly-no-change action (dropout 0.1), while the best added layer scored +1.6 pp above it. Widening copies channels so the function is unchanged, and the copies only drift apart slowly, so within 5 scoring epochs a widened model behaves like the unwidened one. An added layer gets a small short-term edge that does not last.
 - **The scores flatten as the model trains.** Every candidate starts from the same trained weights and changes it only slightly, so in generations 7–8 between 7 and 34 of 31–77 candidates scored within 1 pp of the best (the separation chart).
-- **Late changes have little learning rate left.** The cosine schedule falls from 0.1 to 0.036 at the end of generation 5 and 0.0034 at the end of generation 8, so a new layer added late cannot learn much in the remaining epochs. Experiment 13 made its decisive change at generation 3, with the learning rate still at 0.066.
+- **Late changes have little learning rate left.** The cosine schedule falls from 0.1 to 0.036 at the end of generation 5 and 0.0034 at the end of generation 8, so a new layer added late cannot learn much in the remaining epochs. Experiment 17 made its decisive change at generation 3, with the learning rate still at 0.066.
 - **The budget bought fewer rollouts than planned:** 1.2 per candidate from generation 3, at about 20 s per rollout instead of 10–12 s in Phase 9. Expanding a node builds every child up front, which is the most likely cause (not profiled). As a result UCB C changed little after the first generations.
 
 ### What to change
@@ -380,7 +380,7 @@ The search is not failing to find a good action among those it compares; it comp
 3. **Decide big changes early or keep the learning rate up.** Either limit growth to the first half of the run, or restart the learning rate after each structural change, so late additions can still learn.
 4. **Build children lazily** so the budget buys the intended two or more rollouts per candidate.
 
-A cheap way to confirm the diagnosis before changing the search: one run that widens conv1 by 2× in each of generations 0–2 (as Experiment 13 did) and then lets the Phase 10 search decide. If it reaches Experiment 13 territory, width is the missing ingredient and items 1–2 are the right fix.
+A cheap way to confirm the diagnosis before changing the search: one run that widens conv1 by 2× in each of generations 0–2 (as Experiment 17 did) and then lets the Phase 10 search decide. If it reaches Experiment 17 territory, width is the missing ingredient and items 1–2 are the right fix.
 
 
 ## Simulation fixes after Phase 10
@@ -401,7 +401,7 @@ Expected effect, to be checked in the next run: late-generation candidates shoul
 
 ## Phase 11: the A08 decision with the first three simulation fixes
 
-The Phase 9 replay repeated with the code at `5d3c3f0`: lazy expansion, the restarted scoring learning rate and futures that continue from trained models. Everything else matches Phase 9: the Experiment 13 generation-3 checkpoint, the five recorded root actions, 5 scoring epochs with the mean of the last two, rollout depth 0, UCB C = 1.0, a 5-minute budget and seeds 1–3. This was a quick check run with a temporary script (saved with the results as `check_script.py`), not an experiment phase; measuring again before expanding (`abe0a33`) was not yet in the code.
+The Phase 9 replay repeated with the code at `5d3c3f0`: lazy expansion, the restarted scoring learning rate and futures that continue from trained models. Everything else matches Phase 9: the Experiment 17 generation-3 checkpoint, the five recorded root actions, 5 scoring epochs with the mean of the last two, rollout depth 0, UCB C = 1.0, a 5-minute budget and seeds 1–3. This was a quick check run with a temporary script (saved with the results as `check_script.py`), not an experiment phase; measuring again before expanding (`abe0a33`) was not yet in the code.
 
 | Seed | Selected | A08 score | Next best | A08 lead | Phase 9 lead | Phase 6 lead | Rollouts | Tree depth |
 | ---: | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |
@@ -437,11 +437,11 @@ The best Phase 10 cell (UCB C = 1.0, CCS simulation set) repeated with all four 
 | **Phase 12** | 2 | **63.28%** | 64.19% | 5,616 | 156 min |
 | Phase 10, C = 1.0, CCS | 1 | 63.06% | 63.18% | 5,032 | 157 min |
 | Phase 5 (no widening, 20 scoring epochs) | 1 | 64.02% | 63.92% | 5,600 | 788 min |
-| Experiment 13 (family search) | 1 | 69.48% | 69.83% | 80,887 | — |
+| Experiment 17 (family search) | 1 | 69.48% | 69.83% | 80,887 | — |
 
-Experiment 13's search time is not shown: its simulation files record only part of the family search.
+Experiment 17's search time is not shown: its simulation files record only part of the family search.
 
-![Phase 12 against the best Phase 10 cell](/assets/experiments/015-sim-fixes-training.png)
+![Phase 12 against the best Phase 10 cell](/assets/experiments/018-sim-fixes-training.png)
 
 Solid lines are validation accuracy, dashed lines training accuracy.
 
@@ -500,7 +500,7 @@ Selected action type per generation, with the change in validation accuracy over
 - **Late-generation candidates now separate.** In generations 5–8, Phase 10 had on average 16.5 candidates within 1 pp of the best (up to 34 of 77 in generation 7); Phase 12 had 3.2 and 3.5. This is what the fixes were meant to do, but the better separation did not show up in the final accuracy.
 - **Scores now sit below the model being grown.** With the restarted learning rate, scoring trains each candidate for 5 epochs at about 0.1 while the main training in generations 5–8 runs at about 0.035 down to 0.001. In generations 6–8 the selected candidate scored on average 7.4 and 8.0 pp below the model's validation accuracy, against 1.1 pp in Phase 10. The score now measures how a candidate does after a short high-learning-rate restart, and the main training then continues the low-learning-rate schedule instead. Whether the two rank candidates differently was not measured.
 - **Seed 1 spent its late generations on Dropout.** It selected Dropout in generations 6 and 7, which added no parameters and left validation accuracy flat (60.4% and 60.3% after them). Dropout leading under high-learning-rate scoring fits the point above, but the cause was not measured.
-- **Widening was never selected** (0 of 18 decisions), although it was runner-up in several searches; the runs ended at 4,400–5,600 parameters, far below Experiment 13's 80,887.
+- **Widening was never selected** (0 of 18 decisions), although it was runner-up in several searches; the runs ended at 4,400–5,600 parameters, far below Experiment 17's 80,887.
 - **Searches went shallower.** Measuring each node twice uses rollouts that used to expand the tree: Phase 12 searches reached depth 1 from generation 1 on, Phase 10 reached depth 2. Search time was unchanged (137 and 156 min against 157 min).
 
 ### What to change
@@ -537,7 +537,7 @@ The rebuilt model reached 53.08% validation at the end of generation 3 (Phase 12
 | 15 | Residual convolution — seq_conv_0 → seq_conv_2 / 8→8, 3×3 | 50.08% | -4.60 pp | 0.4379 | 14 |
 | 16 | Sequential linear — seq_conv_2 → linear2 / 8→8 | 48.38% | -6.30 pp | 0.4801 | 6 |
 
-![Phase 13 training histories](/assets/experiments/015-decision-replay-training.png)
+![Phase 13 training histories](/assets/experiments/018-decision-replay-training.png)
 
 Every line starts from the same model and training seed and differs only in the action applied before epoch 1. The dashed black line is the control without an action. The middle panel subtracts the control, so a line above zero is ahead of it at that epoch. One candidate holds more than one role.
 
@@ -561,7 +561,7 @@ Phase 12 repeated after the widening refactor (`91085d0`). Before it, widening w
 | Phase 12 | 1 | 60.90% | 61.04% | 4,448 | 137 min |
 | Phase 12 | 2 | 63.28% | 64.19% | 5,616 | 156 min |
 
-![Phase 14 training history](/assets/experiments/015-widening-training.png)
+![Phase 14 training history](/assets/experiments/018-widening-training.png)
 
 Solid lines are validation accuracy, dashed lines training accuracy; dotted vertical lines mark generation boundaries, where the selected action is applied. The letters at the bottom name the action applied at each boundary (W widen convolution, SC sequential convolution with BN + ReLU, SC- without them, RC residual convolution, SL sequential linear, N add neurons, O other, e.g. a residual linear layer). Parameters use a log scale.
 
@@ -626,7 +626,7 @@ The residual starter of the other branch (conv 16 → BatchNorm → ReLU, then r
 | 2 | 13 | 1 | 39.8% (5 of 13) | 42.4% | 3.0 | Sequential convolution + BN |
 | 3 | 21 | 1 | 45.2% (4 of 21) | 46.7% | 3.0 | Sequential convolution + BN |
 
-![Phase 16a candidate scores](/assets/experiments/015-normalization-16a-scores.png)
+![Phase 16a candidate scores](/assets/experiments/018-normalization-16a-scores.png)
 
 Each dot is one measured candidate of one search; normalization candidates are magenta and the selected candidate has a black ring.
 
@@ -639,15 +639,27 @@ Each dot is one measured candidate of one search; normalization candidates are m
 | 2 | 23 | 0 | — | 47.3% | — | Sequential convolution + BN |
 | 3 | 34 | 0 | — | 48.7% | — | Residual convolution |
 
-![Phase 16b candidate scores](/assets/experiments/015-normalization-16b-scores.png)
+![Phase 16b candidate scores](/assets/experiments/018-normalization-16b-scores.png)
 
 Each dot is one measured candidate of one search; normalization candidates are magenta and the selected candidate has a black ring.
 
-**16c**: pending. Run with `--phase full-residual-stem --seeds 1`.
+### 16c: Starter with BatchNorm and a residual block
+
+Partial: 4 of 5 generations trained and 3 searches finished; read from the run files.
+
+| Search after generation | Candidates | Normalization candidates | Best normalization score (rank) | Best score | Mean visits, normalization | Selected |
+| ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 0 | 17 | 0 | — | 42.8% | — | Widen convolution |
+| 1 | 17 | 0 | — | 47.3% | — | Sequential linear |
+| 2 | 29 | 1 | 42.1% (24 of 29) | 49.9% | 3.0 | Sequential convolution + BN |
+
+![Phase 16c candidate scores](/assets/experiments/018-normalization-16c-scores.png)
+
+Each dot is one measured candidate of one search; normalization candidates are magenta and the selected candidate has a black ring.
 
 ### Training
 
-![Phase 16 training history](/assets/experiments/015-normalization-training.png)
+![Phase 16 training history](/assets/experiments/018-normalization-training.png)
 
 Solid lines are validation accuracy, dashed lines training accuracy.
 
@@ -656,3 +668,4 @@ Solid lines are validation accuracy, dashed lines training accuracy.
 | Phase 14 seed 1 | 100 | 53.78% | — | 6,328 |
 | Phase 16a: Exp 010 starter, normalization action | 100 | 57.64% | 57.76% | 2,888 |
 | Phase 16b: Starter with BatchNorm after conv1 | 100 | 58.24% | 58.47% | 2,696 |
+| Phase 16c: Starter with BatchNorm and a residual block | 80 | 60.94% | — | 5,584 |

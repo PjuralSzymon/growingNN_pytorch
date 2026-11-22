@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 def _module():
-    path = Path(__file__).with_name('generate_experiment_013_action_scores.py')
+    path = Path(__file__).with_name('generate_experiment_017_action_scores.py')
     spec = importlib.util.spec_from_file_location('action_score_charts', path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)

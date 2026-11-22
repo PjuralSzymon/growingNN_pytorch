@@ -1,4 +1,4 @@
-# Experiment 012: Budgeted search on CIFAR-10
+# Experiment 016: Budgeted search on CIFAR-10
 
 ## Result
 
@@ -33,7 +33,7 @@ all root actions must be evaluated.
 
 ## Training and model growth
 
-![Experiment 012 training accuracy, validation accuracy, and parameter count](/assets/experiments/012-training-and-parameters.png)
+![Experiment 016 training accuracy, validation accuracy, and parameter count](/assets/experiments/016-training-and-parameters.png)
 
 The upper graph shows accuracy after each epoch; the lower graph shows the
 number of parameters during training. Dotted lines mark generation boundaries.
@@ -72,7 +72,7 @@ second convolution. Those partial runs are not comparable final results.
 The widening implementation was revised to preserve outputs on the supported
 unbranched convolution paths, and regression tests were added. A later structural
 replay indicated widening was unavailable after a residual branch was added;
-the separate Experiment 013 prototype explored support for that case.
+the separate Experiment 017 prototype explored support for that case.
 
 ## How the budgeted search worked
 
@@ -100,7 +100,7 @@ actions with rollout depth zero.
 
 **What was kept.** Selecting by mean score, adding each score only once and
 skipping random follow-up actions (rollout depth 0) are now part of Monte Carlo
-2 (see [Experiment 015](experiment-015-action-replay.md)). The convolution
+2 (see [Experiment 018](experiment-018-action-replay.md)). The convolution
 widening action used here is kept in the library. The hard-stop deadline was
 not kept: Monte Carlo 2 still scores every root action at least once.
 
@@ -116,7 +116,7 @@ not kept: Monte Carlo 2 still scores every root action at least once.
   fingerprint were saved with the `v3` run (`source_snapshot.zip` in the run's
   output folder, which is not tracked by git); use those to reproduce it.
 
-[Experiment 013](experiment-013-family-search.md) reports the subsequent
+[Experiment 017](experiment-017-family-search.md) reports the subsequent
 family-balanced run separately. Its one-seed result is higher, but the runs
 changed several things and neither enforces full root coverage.
 

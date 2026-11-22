@@ -1,4 +1,4 @@
-"""Create Experiment 015's report and learning-curve figure from saved results."""
+"""Create Experiment 018's report and learning-curve figure from saved results."""
 import json
 import random
 import sys
@@ -11,11 +11,11 @@ import matplotlib.pyplot as plt
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 RUN = ROOT / 'experiments/output/train_cifar10/runs/exp014_action_replay/v1'
-REPORT = ROOT / 'documentation/website/content/experiments/experiment-015-action-replay.md'
-CHART = ROOT / 'documentation/website/app/public/assets/experiments/015-action-replay-validation.png'
-SCORING_CHART = ROOT / 'documentation/website/app/public/assets/experiments/015-scoring-epochs.png'
-MCTS_CHART = ROOT / 'documentation/website/app/public/assets/experiments/015-montecarlo2-epochs.png'
-TIME_CHART = ROOT / 'documentation/website/app/public/assets/experiments/015-montecarlo2-time.png'
+REPORT = ROOT / 'documentation/website/content/experiments/experiment-018-action-replay.md'
+CHART = ROOT / 'documentation/website/app/public/assets/experiments/018-action-replay-validation.png'
+SCORING_CHART = ROOT / 'documentation/website/app/public/assets/experiments/018-scoring-epochs.png'
+MCTS_CHART = ROOT / 'documentation/website/app/public/assets/experiments/018-montecarlo2-epochs.png'
+TIME_CHART = ROOT / 'documentation/website/app/public/assets/experiments/018-montecarlo2-time.png'
 LABELS = {'control': 'Unchanged', 'candidate_1': 'Widen to 256', 'candidate_2': 'Widen to 128',
           'candidate_3': 'Add linear', 'candidate_4': 'Conv without BN/ReLU',
           'candidate_5': 'A08: conv + BN + ReLU'}
@@ -34,7 +34,7 @@ def scoring_section():
             ax.plot(epochs_list, [100 * values[(epoch, arm)] for epoch in epochs_list],
                     marker='o', linewidth=2.8 if i == 5 else 1.5, label=LABELS[arm])
         ax.set(xlabel='Scoring epochs', ylabel='Simulation validation accuracy (%)',
-               title='Experiment 15: effect of scoring epochs', xticks=epochs_list)
+               title='Experiment 18: effect of scoring epochs', xticks=epochs_list)
         ax.set_ylim(0, 100)
         ax.grid(alpha=.25)
         ax.legend()
@@ -56,7 +56,7 @@ def scoring_section():
     note = ('These simulation scores use different data and training budgets than the full-training results above.'
             if values else 'Run the experiment script with `--phase scoring`, then regenerate this report.')
     if values:
-        lines += ['', '![Simulation accuracy by scoring epochs and action](/assets/experiments/015-scoring-epochs.png)']
+        lines += ['', '![Simulation accuracy by scoring epochs and action](/assets/experiments/018-scoring-epochs.png)']
     return lines + ['', note, '']
 
 
@@ -93,14 +93,14 @@ def montecarlo2_section():
             ax.plot(epochs, [plotted[e][arm]['score'] for e in epochs], marker='o',
                     linewidth=2.8 if i == 5 else 1.5, label=LABELS[arm])
         ax.set(xlabel='Scoring epochs', ylabel='Mean search value',
-               title='Experiment 15: Monte Carlo 2 search values', xticks=sorted(plotted))
+               title='Experiment 18: Monte Carlo 2 search values', xticks=sorted(plotted))
         ax.grid(alpha=.25)
         ax.legend()
         fig.tight_layout()
         MCTS_CHART.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(MCTS_CHART, dpi=150)
         plt.close(fig)
-        lines += ['', '![Monte Carlo 2 search values by scoring epochs](/assets/experiments/015-montecarlo2-epochs.png)']
+        lines += ['', '![Monte Carlo 2 search values by scoring epochs](/assets/experiments/018-montecarlo2-epochs.png)']
     lines += ['', 'A run uses one nominal seed; differences may reflect search order, randomness and '
               'unequal visit counts as well as scoring epochs.', '',
               '### What `MCTS_PROPAGATE_ROLLOUT_VALUE` means', '',
@@ -169,7 +169,7 @@ def time_budget_section():
                                 else float('nan') for _, rows in plotted], marker='o',
                     linewidth=2.8 if i == 5 else 1.5, label=LABELS[arm])
         ax.set(xlabel='Nominal time budget', ylabel='Mean search value',
-               title='Experiment 15: Monte Carlo 2 time budgets',
+               title='Experiment 18: Monte Carlo 2 time budgets',
                xticks=list(positions), xticklabels=[label for label, _ in plotted])
         ax.grid(alpha=.25)
         ax.legend()
@@ -177,7 +177,7 @@ def time_budget_section():
         TIME_CHART.parent.mkdir(parents=True, exist_ok=True)
         fig.savefig(TIME_CHART, dpi=150)
         plt.close(fig)
-        lines += ['', '![Monte Carlo 2 search values by time budget](/assets/experiments/015-montecarlo2-time.png)']
+        lines += ['', '![Monte Carlo 2 search values by time budget](/assets/experiments/018-montecarlo2-time.png)']
     return lines + ['', 'Each setting uses one nominal seed. Greater budgets may allow deeper exploration, '
                     'but do not guarantee equal visits or identical random trajectories.', '']
 
@@ -270,7 +270,7 @@ def score_fix_section():
              'The following issues were fixed in the Monte Carlo 2 simulation algorithm '
              '(`montecarlo_alg_2.py`):', '',
              *SCORE_FIX_LIST, '',
-             'This phase repeats the Phase 3 search on the same Experiment 013 generation-3 checkpoint '
+             'This phase repeats the Phase 3 search on the same Experiment 017 generation-3 checkpoint '
              'and five recorded root actions, with the fixed algorithm and the settings planned for '
              'Phase 7: **rollout depth 0**, **5 scoring epochs**, convolution widening enabled, UCB C=1.0, '
              'minimum iterations 3 and a 32-second soft budget. Three search seeds are run to show '
@@ -335,7 +335,7 @@ def _near_ties(search):
 
 
 def sim_fixes_growth_section():
-    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
     target = RUN / 'full_growth_sim_fixes'
     lines = ['', '## Phase 12: full growth with the simulation fixes', '',
              'The best Phase 10 cell (UCB C = 1.0, CCS simulation set) repeated with all four simulation fixes made '
@@ -359,12 +359,12 @@ def sim_fixes_growth_section():
     ref_metrics, ref_searches, _ = _load_growth_run(RUN / 'full_grid' / 'c1p0_ccs' / 'seed_1')
     for label, directory in (('Phase 10, C = 1.0, CCS', RUN / 'full_grid' / 'c1p0_ccs' / 'seed_1'),
                              ('Phase 5 (no widening, 20 scoring epochs)', RUN / 'full_growth_5min' / 'seed_1'),
-                             ('Experiment 13 (family search)', EXP13_RUN)):
+                             ('Experiment 17 (family search)', EXP13_RUN)):
         metrics, searches, run = _load_growth_run(directory)
         search_time = '—' if directory == EXP13_RUN else f"{sum(s['durationSec'] for s in searches) / 60:.0f} min"
         lines.append(f"| {label} | 1 | {100 * run['final_validation_accuracy']:.2f}% | "
                      f"{100 * run['final_test_accuracy']:.2f}% | {metrics[-1]['paramCount']:,} | {search_time} |")
-    lines += ['', "Experiment 13's search time is not shown: its simulation files record only part of the family "
+    lines += ['', "Experiment 17's search time is not shown: its simulation files record only part of the family "
               'search.']
     if not runs:
         return lines + ['', 'Run with `--phase full-sim-fixes`, then regenerate this report.', '']
@@ -388,10 +388,10 @@ def sim_fixes_growth_section():
             axis.axvline(boundary + .5, color='#bbbbbb', ls=':', lw=.8)
     acc.legend(loc='lower right', fontsize=8)
     size.legend(loc='upper left', fontsize=8)
-    fig.savefig(ASSET_DIR / '015-sim-fixes-training.png', dpi=150, bbox_inches='tight')
+    fig.savefig(ASSET_DIR / '018-sim-fixes-training.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
 
-    lines += ['', '![Phase 12 against the best Phase 10 cell](/assets/experiments/015-sim-fixes-training.png)', '',
+    lines += ['', '![Phase 12 against the best Phase 10 cell](/assets/experiments/018-sim-fixes-training.png)', '',
               'Solid lines are validation accuracy, dashed lines training accuracy.', '']
 
     columns = {'Phase 10, C = 1.0, CCS': (ref_metrics, ref_searches),
@@ -427,7 +427,7 @@ def sim_fixes_growth_section():
 
 
 def _sim_fixes_growth_findings(columns):
-    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
     mean = lambda values: sum(values) / len(values)
     late = range(5, 9)
     phase12 = {name: value for name, value in columns.items() if name.startswith('Phase 12')}
@@ -489,7 +489,7 @@ def _sim_fixes_growth_findings(columns):
             'Dropout leading under high-learning-rate scoring fits the point above, but the cause was not measured.',
             f'- **Widening was never selected** ({widen} of {sum(len(s) for _, s in phase12.values())} decisions), '
             'although it was runner-up in several searches; the runs ended at 4,400–5,600 parameters, '
-            'far below Experiment 13\'s 80,887.',
+            'far below Experiment 17\'s 80,887.',
             '- **Searches went shallower.** Measuring each node twice uses rollouts that used to expand the tree: '
             'Phase 12 searches reached depth 1 from generation 1 on, Phase 10 reached depth 2. Search time was '
             'unchanged (137 and 156 min against 157 min).', '',
@@ -595,10 +595,10 @@ def _decision_replay_histories(control, arms, real_ranks, sim_ranks):
     for axis in (val, gap, train):
         axis.grid(alpha=.25)
     val.legend(loc='lower right', fontsize=8)
-    fig.savefig(ASSET_DIR / '015-decision-replay-training.png', dpi=150, bbox_inches='tight')
+    fig.savefig(ASSET_DIR / '018-decision-replay-training.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
     note = ' One candidate holds more than one role.' if len(highlighted) < 3 else ''
-    return ['', '![Phase 13 training histories](/assets/experiments/015-decision-replay-training.png)', '',
+    return ['', '![Phase 13 training histories](/assets/experiments/018-decision-replay-training.png)', '',
             'Every line starts from the same model and training seed and differs only in the action applied '
             'before epoch 1. The dashed black line is the control without an action. The middle panel '
             'subtracts the control, so a line above zero is ahead of it at that epoch.' + note, '']
@@ -618,7 +618,7 @@ def _partial_growth_run(directory):
 
 
 def _widening_training_chart(runs):
-    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
     short = {'Widen convolution': 'W', 'Sequential convolution + BN': 'SC', 'Sequential convolution without BN':
              'SC-', 'Residual convolution': 'RC', 'Sequential linear': 'SL', 'Add neurons': 'N',
              'Delete neurons': 'DN', 'Dropout': 'D', 'Delete layer': 'DL', 'Other': 'O'}
@@ -650,9 +650,9 @@ def _widening_training_chart(runs):
             axis.axvline(boundary + .5, color='#bbbbbb', ls=':', lw=.8)
     acc.legend(loc='lower right', fontsize=8)
     size.legend(loc='upper left', fontsize=8)
-    fig.savefig(ASSET_DIR / '015-widening-training.png', dpi=150, bbox_inches='tight')
+    fig.savefig(ASSET_DIR / '018-widening-training.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    return ['', '![Phase 14 training history](/assets/experiments/015-widening-training.png)', '',
+    return ['', '![Phase 14 training history](/assets/experiments/018-widening-training.png)', '',
             'Solid lines are validation accuracy, dashed lines training accuracy; dotted vertical lines mark '
             'generation boundaries, where the selected action is applied. The letters at the bottom name the '
             'action applied at each boundary (W widen convolution, SC sequential convolution with BN + ReLU, '
@@ -664,7 +664,7 @@ WIDENING_SEEDS = (1, 2, 3)
 
 
 def widening_growth_section():
-    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
     target = RUN / 'full_growth_widening'
     lines = ['', '## Phase 14: full growth with widening for every convolution', '',
              'Phase 12 repeated after the widening refactor (`91085d0`). Before it, widening was offered only '
@@ -743,7 +743,7 @@ NORMALIZATION_PARTS = (('16a', 'full_growth_normalization', 'Exp 010 starter, no
 
 
 def _normalization_searches(searches):
-    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
     rows = []
     for search in searches:
         measured = [row for row in search['candidates'] if row.get('visits', 0) > 0]
@@ -821,9 +821,9 @@ def normalization_section():
                      xticks=[row['generation'] for row in rows])
             axis.grid(alpha=.25)
             axis.legend(loc='lower right', fontsize=8)
-            fig.savefig(ASSET_DIR / f'015-normalization-{part}-scores.png', dpi=150, bbox_inches='tight')
+            fig.savefig(ASSET_DIR / f'018-normalization-{part}-scores.png', dpi=150, bbox_inches='tight')
             plt.close(fig)
-            lines += ['', f'![Phase {part} candidate scores](/assets/experiments/015-normalization-{part}-scores.png)',
+            lines += ['', f'![Phase {part} candidate scores](/assets/experiments/018-normalization-{part}-scores.png)',
                       '', 'Each dot is one measured candidate of one search; normalization candidates are magenta and '
                       'the selected candidate has a black ring.', '']
     if not runs:
@@ -843,9 +843,9 @@ def normalization_section():
     axis.set(xlabel='Training epoch', ylabel='Accuracy (%)', title='Phase 16 against the same epochs of Phase 14')
     axis.grid(alpha=.25)
     axis.legend(loc='lower right', fontsize=8)
-    fig.savefig(ASSET_DIR / '015-normalization-training.png', dpi=150, bbox_inches='tight')
+    fig.savefig(ASSET_DIR / '018-normalization-training.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
-    lines += ['### Training', '', '![Phase 16 training history](/assets/experiments/015-normalization-training.png)', '',
+    lines += ['### Training', '', '![Phase 16 training history](/assets/experiments/018-normalization-training.png)', '',
               'Solid lines are validation accuracy, dashed lines training accuracy.', '',
               '| Run | Epochs | Validation at the last epoch | Test | Parameters |', '| --- | ---: | ---: | ---: | ---: |']
     for label, curve, _ in curves:
@@ -895,7 +895,7 @@ def sim_fixes_check_section():
     lines = ['', '## Phase 11: the A08 decision with the first three simulation fixes', '',
              'The Phase 9 replay repeated with the code at `5d3c3f0`: lazy expansion, the restarted scoring '
              'learning rate and futures that continue from trained models. Everything else matches Phase 9: '
-             'the Experiment 13 generation-3 checkpoint, the five recorded root actions, 5 scoring epochs with the '
+             'the Experiment 17 generation-3 checkpoint, the five recorded root actions, 5 scoring epochs with the '
              'mean of the last two, rollout depth 0, UCB C = 1.0, a 5-minute budget and seeds 1–3. This was a quick '
              'check run with a temporary script (saved with the results as `check_script.py`), not an experiment '
              'phase; measuring again before expanding (`abe0a33`) was not yet in the code.', '']
@@ -1093,10 +1093,10 @@ def _grid_figures(runs, complete):
     color = dict(zip(GRID_CELLS, GRID_COLORS))
     _training_comparison([(other_c, color[other_c]), (best, color[best])],
                          f'UCB C compared ({GRID_SET_NAMES[best[1]]} simulation set), seed {seed}',
-                         '015-grid-training-ucb.png', seed)
+                         '018-grid-training-ucb.png', seed)
     _training_comparison([(other_set, color[other_set]), (best, color[best])],
                          f'Simulation set compared (C = {best[0]}), seed {seed}',
-                         '015-grid-training-simset.png', seed)
+                         '018-grid-training-simset.png', seed)
 
     # Factor means: one panel per factor, bars from zero, individual runs as dots.
     fig, axes = plt.subplots(1, 2, figsize=(10, 4.5), sharey=True, layout='constrained')
@@ -1115,7 +1115,7 @@ def _grid_figures(runs, complete):
         ax.set_axisbelow(True)
     axes[0].set_ylabel('Final validation accuracy (%)')
     fig.suptitle(f'Phase 10: mean final validation per factor level (dots: individual runs, seed {seed})')
-    fig.savefig(ASSET_DIR / '015-grid-factor-means.png', dpi=150, bbox_inches='tight')
+    fig.savefig(ASSET_DIR / '018-grid-factor-means.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
 
     # How well each search separated its candidates: every candidate's score minus the best.
@@ -1135,11 +1135,11 @@ def _grid_figures(runs, complete):
     axes[0].set_ylabel('Score minus best candidate (pp)')
     fig.suptitle(f'How clearly each search separated its candidates, seed {seed} '
                  '(grey band: within 1 pp of the best; numbers: candidates inside it)')
-    fig.savefig(ASSET_DIR / '015-grid-separation.png', dpi=150, bbox_inches='tight')
+    fig.savefig(ASSET_DIR / '018-grid-separation.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
 
-    # What each selected action delivered, against Experiment 13.
-    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
+    # What each selected action delivered, against Experiment 17.
+    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
     fig, ax = plt.subplots(figsize=(11, 5), layout='constrained')
     styles = {'adds layer': ('o', '#2a78d6'), 'widens': ('D', '#1baf7a'), 'no capacity': ('x', '#eb6834')}
     plotted = set()
@@ -1160,18 +1160,18 @@ def _grid_figures(runs, complete):
     exp13 = json.loads((EXP13_RUN / 'board/metrics/training.json').read_text(encoding='utf-8'))['epochs']
     end13 = {row['globalEpoch'] // 20: row['valAcc'] for row in exp13}
     ax.plot(range(9), [100 * (end13[g + 1] - end13[g]) for g in range(9)], color='#6b6b66', lw=1.4,
-            marker='.', label='Experiment 13 (widened to 64 channels, then A08 at generation 3)')
+            marker='.', label='Experiment 17 (widened to 64 channels, then A08 at generation 3)')
     ax.axhline(0, color='#999999', lw=.8)
     ax.set(xlabel='Generation in which the action was chosen', xticks=range(9),
            ylabel='Validation change over the next generation (pp)',
            title=f'What each selected action delivered (all four Phase 10 cells, seed {seed})')
     ax.grid(axis='y', alpha=.25)
     ax.legend(fontsize=8)
-    fig.savefig(ASSET_DIR / '015-grid-action-gains.png', dpi=150, bbox_inches='tight')
+    fig.savefig(ASSET_DIR / '018-grid-action-gains.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
 
     # Detailed candidate chart for the best cell only.
-    from documentation.website.scripts.generate_experiment_013_action_scores import COLORS, GROUPS
+    from documentation.website.scripts.generate_experiment_017_action_scores import COLORS, GROUPS
     searches = _grid_searches(*best, seed)
     groups = [(key, name.replace('\n', ' ')) for key, name in GROUPS
               if any(group_key(row) == key for search in searches for row in search['candidates'])]
@@ -1195,7 +1195,7 @@ def _grid_figures(runs, complete):
         ax.grid(axis='y', alpha=.25)
     axes[-1, 0].set_xticks(range(len(groups)), [label for _, label in groups], rotation=25, ha='right')
     fig.subplots_adjust(top=.965, bottom=.04, hspace=.22)
-    best_name = f'015-grid-{_cell_name(*best)}-scores.png'
+    best_name = f'018-grid-{_cell_name(*best)}-scores.png'
     fig.savefig(ASSET_DIR / best_name, dpi=120, bbox_inches='tight')
     plt.close(fig)
 
@@ -1203,22 +1203,22 @@ def _grid_figures(runs, complete):
             f'Solid lines are validation accuracy, dashed lines training accuracy. The best cell '
             f'({_cell_label(*best)}) is compared with the other UCB C at the same simulation set, and with the '
             'other simulation set at the same C.', '',
-            '![UCB C compared](/assets/experiments/015-grid-training-ucb.png)', '',
-            '![Simulation set compared](/assets/experiments/015-grid-training-simset.png)', '',
+            '![UCB C compared](/assets/experiments/018-grid-training-ucb.png)', '',
+            '![Simulation set compared](/assets/experiments/018-grid-training-simset.png)', '',
             '### Factor means', '',
-            '![Phase 10 mean final validation per factor level](/assets/experiments/015-grid-factor-means.png)', '',
+            '![Phase 10 mean final validation per factor level](/assets/experiments/018-grid-factor-means.png)', '',
             'Each bar averages the two runs at that level (one per level of the other factor); dots are the '
             'individual runs.', '',
             '### Could the search tell its candidates apart?', '',
-            '![How clearly each search separated its candidates](/assets/experiments/015-grid-separation.png)', '',
+            '![How clearly each search separated its candidates](/assets/experiments/018-grid-separation.png)', '',
             'Each dot is one candidate, placed by how far its score was below the best candidate of that search. '
             'The grey band is the 1 pp noise level of one scoring run; the number above each generation counts the '
             'candidates inside it. A search that knows what is best has one dot at 0 and the rest well below; many '
             'dots inside the band mean the choice was effectively a coin toss among near-ties.', '',
             '### What the selected actions delivered', '',
-            '![What each selected action delivered](/assets/experiments/015-grid-action-gains.png)', '',
+            '![What each selected action delivered](/assets/experiments/018-grid-action-gains.png)', '',
             'Validation change over the generation after each decision, for every decision in the four cells, '
-            'by kind of action. The grey line is Experiment 13 for contrast: its generation-3 action (A08, '
+            'by kind of action. The grey line is Experiment 17 for contrast: its generation-3 action (A08, '
             '64 → 64 convolution after widening to 64 channels) gave the +20.8 pp jump.', '',
             '### Candidate scores in the best cell', '',
             f'![Candidate scores, {_cell_label(*best)}](/assets/experiments/{best_name})', '',
@@ -1227,7 +1227,7 @@ def _grid_figures(runs, complete):
 
 
 def _grid_findings(runs, complete):
-    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
     seed = complete[0]
     searches = [search for cell in GRID_CELLS for search in _grid_searches(*cell, seed)]
     late = [search for search in searches if search['generation'] >= 3]
@@ -1279,7 +1279,7 @@ def _grid_findings(runs, complete):
 
     return ['', '### What Phase 10 shows', '',
             f'- **Final validation ranged from {min(values):.2f}% to {max(values):.2f}%.** No cell beat Phase 5 '
-            '(64.02%) and all stayed far below Experiment 13 (69.48%). C = 1.0 ended higher than C = 0.05 with both '
+            '(64.02%) and all stayed far below Experiment 17 (69.48%). C = 1.0 ended higher than C = 0.05 with both '
             'simulation sets; with one seed per cell this is within the seed-to-seed spread. Moderate and CCS were '
             'practically equal.',
             f'- **Nothing useful was added after generation 2.** Generations 0–2 gained {mean(gains["early"]):+.1f} pp '
@@ -1294,7 +1294,7 @@ def _grid_findings(runs, complete):
             f'- **The network stayed 8 channels wide.** The only widening chosen took conv1 to 16 channels in '
             f'generation 7 of C = 1.0, Moderate, too late to matter. Every added convolution is 8 → 8 '
             f'(about +600 parameters) and everything reaches the classifier through an 8-channel global pool. Final '
-            f'models had {min(final_params):,}–{max(final_params):,} parameters. Experiment 13 widened conv1 to 64 '
+            f'models had {min(final_params):,}–{max(final_params):,} parameters. Experiment 17 widened conv1 to 64 '
             f'channels in generations 0–2 and had {exp13_params[4]:,} parameters after its generation-3 action.',
             f'- **The score cannot see the value of widening.** Widening was offered in {widen_offered} of '
             f'{len(searches)} searches and chosen {widen_chosen} {"time" if widen_chosen == 1 else "times"}. Its best '
@@ -1307,7 +1307,7 @@ def _grid_findings(runs, complete):
             f'{min(late_sizes)}–{max(late_sizes)} candidates scored within 1 pp of the best (the separation chart).',
             f'- **Late changes have little learning rate left.** The cosine schedule falls from 0.1 to '
             f'{lr[5]:.3f} at the end of generation 5 and {lr[8]:.4f} at the end of generation 8, so a new layer added '
-            'late cannot learn much in the remaining epochs. Experiment 13 made its decisive change at generation 3, '
+            'late cannot learn much in the remaining epochs. Experiment 17 made its decisive change at generation 3, '
             f'with the learning rate still at {lr[3]:.3f}.',
             f'- **The budget bought fewer rollouts than planned:** {rollouts / candidates:.1f} per candidate from '
             f'generation 3, at about {seconds:.0f} s per rollout instead of 10–12 s in Phase 9. Expanding a node builds '
@@ -1326,8 +1326,8 @@ def _grid_findings(runs, complete):
             'the run, or restart the learning rate after each structural change, so late additions can still learn.',
             '4. **Build children lazily** so the budget buys the intended two or more rollouts per candidate.',
             '', 'A cheap way to confirm the diagnosis before changing the search: one run that widens conv1 by 2× in '
-            'each of generations 0–2 (as Experiment 13 did) and then lets the Phase 10 search decide. If it reaches '
-            'Experiment 13 territory, width is the missing ingredient and items 1–2 are the right fix.']
+            'each of generations 0–2 (as Experiment 17 did) and then lets the Phase 10 search decide. If it reaches '
+            'Experiment 17 territory, width is the missing ingredient and items 1–2 are the right fix.']
 
 
 def _grid_searches(ucb_c, selector, seed):
@@ -1338,7 +1338,7 @@ def _grid_searches(ucb_c, selector, seed):
 
 
 def _grid_decisions(seed):
-    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
     lines = ['', f'### Seed {seed} decisions', '',
              'Selected action type in each generation, with the rank of the best widening candidate '
              '(by mean score) in brackets.', '',
@@ -1489,7 +1489,7 @@ def _averaged_a08_lead(runs):
     return 100 * (a08 - max(means.values()))
 
 
-PHASE7_CHART = ROOT / 'documentation/website/app/public/assets/experiments/015-phase7-seed1-vs-phase5.png'
+PHASE7_CHART = ROOT / 'documentation/website/app/public/assets/experiments/018-phase7-seed1-vs-phase5.png'
 
 
 def _load_growth_run(directory):
@@ -1503,7 +1503,7 @@ def _load_growth_run(directory):
 
 
 def _action_label(action):
-    from documentation.website.scripts.generate_experiment_013_action_scores import candidate_detail, group_key
+    from documentation.website.scripts.generate_experiment_017_action_scores import candidate_detail, group_key
     row = {'action': action}
     detail = ' / '.join(part for part in candidate_detail(row).splitlines() if part)
     return f'{group_key(row)} — {detail}' if detail else group_key(row)
@@ -1518,7 +1518,7 @@ def _phase7_seed1_analysis(target):
         epochs = [row['globalEpoch'] + 1 for row in metrics]
         acc.plot(epochs, [100 * row['valAcc'] for row in metrics], label=f'{name} validation', color=color)
         size.step(epochs, [row['paramCount'] for row in metrics], where='post', label=name, color=color)
-    acc.set(ylabel='Validation accuracy (%)', ylim=(0, 100), title='Experiment 15 seed 1: Phase 7 vs Phase 5')
+    acc.set(ylabel='Validation accuracy (%)', ylim=(0, 100), title='Experiment 18 seed 1: Phase 7 vs Phase 5')
     size.set(xlabel='Training epoch', ylabel='Parameters')
     for axis in (acc, size):
         axis.grid(alpha=.25)
@@ -1538,7 +1538,7 @@ def _phase7_seed1_analysis(target):
                      f"{100 * run['final_test_accuracy']:.2f}% | {100 * run['best_validation_accuracy']:.2f}% | "
                      f"{metrics[-1]['paramCount']:,} | {sum(durations):.0f} min | {max(durations):.1f} min |")
     lines += ['', '![Phase 7 and Phase 5 seed 1 validation accuracy and parameters]'
-              '(/assets/experiments/015-phase7-seed1-vs-phase5.png)', '',
+              '(/assets/experiments/018-phase7-seed1-vs-phase5.png)', '',
               '### Seed 1 decisions', '',
               "Mean score is the selected action's mean search value. Widening shows how many widening "
               'candidates passed the output-preservation check and the best rank one reached (by mean score). '
@@ -1576,7 +1576,7 @@ def _generations(numbers):
 
 def _phase7_seed1_findings(phase5, phase7):
     """Findings computed from the saved seed-1 records, so they stay in step with the tables."""
-    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
     (metrics5, searches5, run5), (metrics7, searches7, run7) = phase5, phase7
     minutes5 = [search['durationSec'] / 60 for search in searches5]
     minutes7 = [search['durationSec'] / 60 for search in searches7]
@@ -1660,15 +1660,15 @@ def main():
         ax.plot(range(81, 81 + len(vals)), [100 * v for v in vals], label=LABELS[row['arm']],
                 linewidth=2.5 if row['original_chosen'] else 1.5)
     ax.set(xlabel='Total training epoch', ylabel='Held-out validation accuracy (%)',
-           title='Experiment 15: training after each generation-3 action')
+           title='Experiment 18: training after each generation-3 action')
     ax.grid(alpha=.25)
     ax.legend()
     fig.tight_layout()
     CHART.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(CHART, dpi=150)
     plt.close(fig)
-    lines = ['---', 'title: "Experiment 15: replaying the epoch-80 decision"', '---', '',
-             'All arms start from the Experiment 13 generation-3 pre-decision checkpoint, after epoch 80. '
+    lines = ['---', 'title: "Experiment 18: replaying the epoch-80 decision"', '---', '',
+             'All arms start from the Experiment 17 generation-3 pre-decision checkpoint, after epoch 80. '
              'Each recorded action and an unchanged control is trained for 20 epochs with the same '
              'nominal seed, training recipe and saved learning-rate schedule. The primary comparison uses '
              '3,880 validation examples outside the original 1,120-example simulation validation subset.', '',
@@ -1684,7 +1684,7 @@ def main():
                      f"{pct(row['initial_heldout_accuracy'])} | {pct(row['history']['val_acc'][0])} | "
                      f"{pct(row['final_heldout_accuracy'])} | {row['gain_vs_control_pp']:+.2f} pp | "
                      f"{pct(row['final_full_validation_accuracy'])} |")
-    lines += ['', '![Held-out validation accuracy for all replay arms](/assets/experiments/015-action-replay-validation.png)', '',
+    lines += ['', '![Held-out validation accuracy for all replay arms](/assets/experiments/018-action-replay-validation.png)', '',
               'Full validation includes the original simulation-validation subset; held-out validation is the primary '
               'comparison. No test-set scores were used. The original run followed a different random trajectory, '
               'so its subsequent accuracy need not be reproduced exactly.', '']
@@ -1692,7 +1692,7 @@ def main():
     lines += montecarlo2_section()
     lines += time_budget_section()
     lines += full_growth_section()
-    from documentation.website.scripts.generate_experiment_015_seed1_analysis import generate as generate_seed1
+    from documentation.website.scripts.generate_experiment_018_seed1_analysis import generate as generate_seed1
     lines += generate_seed1()
     lines += score_fix_section()
     lines += full_growth_score_fix_section()

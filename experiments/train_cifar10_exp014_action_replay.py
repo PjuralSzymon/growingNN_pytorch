@@ -1,4 +1,4 @@
-"""Experiment 015 (code IDs keep "014"): replay the Experiment 013 generation-3 decision and test Monte Carlo 2.
+"""Experiment 018 (code IDs keep "014"): replay the Experiment 017 generation-3 decision and test Monte Carlo 2.
 
 Run: python -u experiments/train_cifar10_exp014_action_replay.py --phase <name>
 
@@ -130,10 +130,10 @@ class WideningMonteCarlo2:
 
 FULL_GROWTH_PHASES = {
     'full': {'folder': 'full_growth_5min', 'phase_name': 'phase5', 'label': '014_full_growth',
-             'name': 'Experiment 014 full growth', 'id_prefix': 'exp014', 'scoring_epochs': 20,
+             'name': 'Experiment 018 full growth', 'id_prefix': 'exp014', 'scoring_epochs': 20,
              'overrides': {}, 'widen_conv': False, 'note': None},
     'full-score-fix': {'folder': 'full_growth_5min_score_fix', 'phase_name': 'phase7',
-                       'label': '014_full_growth_score_fix', 'name': 'Experiment 014 full growth (score fix)',
+                       'label': '014_full_growth_score_fix', 'name': 'Experiment 018 full growth (score fix)',
                        'id_prefix': 'exp014_score_fix', 'scoring_epochs': SCORE_FIX_SCORING_EPOCHS,
                        'overrides': SCORE_FIX_MCTS_VALUES, 'widen_conv': True, 'note': SCORE_FIX_NOTE},
 }
@@ -169,7 +169,7 @@ def grid_spec(ucb_c, simulation_set):
     """One Phase 10 cell: a UCB C value and a simulation-set selector."""
     cell = f"c{str(ucb_c).replace('.', 'p')}_{simulation_set}"
     return {'folder': f'full_grid/{cell}', 'phase_name': 'phase10', 'label': '014_full_grid',
-            'name': f'Experiment 015 Phase 10 ({cell})', 'id_prefix': f'exp014_grid_{cell}',
+            'name': f'Experiment 018 Phase 10 ({cell})', 'id_prefix': f'exp014_grid_{cell}',
             'scoring_epochs': SCORE_FIX_SCORING_EPOCHS,
             'overrides': {**SCORE_FIX_MCTS_VALUES, 'MCTS_UCB1_C': ucb_c},
             'widen_conv': True, 'note': GRID_NOTE, 'simulation_set': simulation_set,
@@ -186,7 +186,7 @@ SIM_FIXES_NOTE = ('Phase 12: the Phase 10 cell C = 1.0 with CCS, run with the si
 def sim_fixes_spec():
     """Phase 12: the best Phase 10 cell (C = 1.0, CCS) with the simulation fixes made after Phase 10."""
     return {**grid_spec(1.0, 'ccs'), 'folder': 'full_growth_sim_fixes', 'phase_name': 'phase12',
-            'label': '014_full_growth_sim_fixes', 'name': 'Experiment 015 Phase 12 (simulation fixes)',
+            'label': '014_full_growth_sim_fixes', 'name': 'Experiment 018 Phase 12 (simulation fixes)',
             'id_prefix': 'exp014_sim_fixes', 'note': SIM_FIXES_NOTE}
 
 
@@ -207,7 +207,7 @@ WIDENING_NOTE = ('Phase 14: Phase 12 rerun after the widening refactor (91085d0)
 def widening_spec():
     """Phase 14: Phase 12 with widening offered for every convolution."""
     return {**sim_fixes_spec(), 'folder': 'full_growth_widening', 'phase_name': 'phase14',
-            'label': '014_full_growth_widening', 'name': 'Experiment 015 Phase 14 (widening for every convolution)',
+            'label': '014_full_growth_widening', 'name': 'Experiment 018 Phase 14 (widening for every convolution)',
             'id_prefix': 'exp014_widening', 'note': WIDENING_NOTE}
 
 
@@ -228,7 +228,7 @@ class NormalizationMonteCarlo2(GridMonteCarlo2):
 def normalization_spec():
     """Phase 16: Phase 14 with normalization candidates, shortened to a few generations."""
     return {**widening_spec(), 'folder': 'full_growth_normalization', 'phase_name': 'phase16',
-            'label': '014_full_growth_normalization', 'name': 'Experiment 015 Phase 16 (add normalization)',
+            'label': '014_full_growth_normalization', 'name': 'Experiment 018 Phase 16 (add normalization)',
             'id_prefix': 'exp014_normalization', 'note': NORMALIZATION_NOTE,
             'generations': NORMALIZATION_GENERATIONS, 'add_normalization': True,
             'search': NormalizationMonteCarlo2(GRID_SECONDS_PER_CANDIDATE, GRID_MINIMUM_SECONDS,
@@ -262,7 +262,7 @@ NORMALIZED_STEM_NOTE = ('Phase 16b: Phase 16 started from the Experiment 010 sta
 def normalized_stem_spec():
     """Phase 16b: Phase 16 from a starter that already has BatchNorm in its stem."""
     return {**normalization_spec(), 'folder': 'full_growth_normalized_stem', 'phase_name': 'phase16b',
-            'label': '014_full_growth_normalized_stem', 'name': 'Experiment 015 Phase 16b (BatchNorm in the stem)',
+            'label': '014_full_growth_normalized_stem', 'name': 'Experiment 018 Phase 16b (BatchNorm in the stem)',
             'id_prefix': 'exp014_normalized_stem', 'note': NORMALIZED_STEM_NOTE,
             'starter': NormalizedStemStarter, 'starter_name': 'TinyCifar10Starter + BatchNorm after conv1'}
 
@@ -293,7 +293,7 @@ RESIDUAL_STEM_NOTE = ('Phase 16c: Phase 16b with the residual block of the other
 def residual_stem_spec():
     """Phase 16c: Phase 16b from a starter with a residual block after its stem."""
     return {**normalized_stem_spec(), 'folder': 'full_growth_residual_stem', 'phase_name': 'phase16c',
-            'label': '014_full_growth_residual_stem', 'name': 'Experiment 015 Phase 16c (residual block)',
+            'label': '014_full_growth_residual_stem', 'name': 'Experiment 018 Phase 16c (residual block)',
             'id_prefix': 'exp014_residual_stem', 'note': RESIDUAL_STEM_NOTE, 'starter': ResidualStemStarter,
             'starter_name': 'TinyCifar10Starter + BatchNorm after conv1 + residual block relu(x + BN(conv(x)))'}
 
@@ -338,7 +338,7 @@ def run_full_growth(output, seeds, phase='full', spec=None):
                 experiment_label=spec['label'], experiment_name=spec['name'],
                 experiment_id_prefix=spec['id_prefix'], scoring_epochs=spec['scoring_epochs'])
             if output == OUTPUT:
-                from documentation.website.scripts.generate_experiment_015_action_replay_report import main as generate_report
+                from documentation.website.scripts.generate_experiment_018_report import main as generate_report
                 generate_report()
     finally:
         exp010.montecarlo_alg, exp010.sample_loaders, exp010.initial_graph = previous, previous_sampler, previous_starter
@@ -472,7 +472,7 @@ def run_decision_replay(output, epochs):
     write_json(target / 'summary.json', {'manifest': metadata, 'rebuilt_validation_accuracy':
                                          payload['validation_accuracy'], 'results': results})
     if output == OUTPUT:
-        from documentation.website.scripts.generate_experiment_015_action_replay_report import main as generate_report
+        from documentation.website.scripts.generate_experiment_018_report import main as generate_report
         generate_report()
     print('COMPLETE', flush=True)
 
@@ -588,7 +588,7 @@ def run_scoring_calibration(output, measurements=CALIBRATION_MEASUREMENTS, setti
     write_json(target / 'summary.json', {'manifest': metadata, 'control_validation_accuracy': control,
                                          'settings': rows})
     if output == OUTPUT:
-        from documentation.website.scripts.generate_experiment_015_action_replay_report import main as generate_report
+        from documentation.website.scripts.generate_experiment_018_report import main as generate_report
         generate_report()
     print('COMPLETE', flush=True)
 
@@ -893,7 +893,7 @@ def main():
                 args.output / 'montecarlo2_time' / f'{minutes}min', minutes * 60,
                 epochs_values=(20,))
         if args.output == OUTPUT:
-            from documentation.website.scripts.generate_experiment_015_action_replay_report import main as generate_report
+            from documentation.website.scripts.generate_experiment_018_report import main as generate_report
             generate_report()
         return
     if args.phase in CHECK_PHASES:

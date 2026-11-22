@@ -98,6 +98,6 @@ or calibrated weight and bias without asking.
 
 Widen conv is the reference implementation: `can_resize_conv_output` offers every convolution whose
 new width is absorbed by convolutions or linear layers, and `_keep_old_weights_and_zero_new_inputs`
-initializes every layer the propagation grew. On the Experiment 015 Phase 12 network all 20
+initializes every layer the propagation grew. On the Experiment 018 Phase 12 network all 20
 widenings left the output exactly unchanged; the earlier quasi-identity rescaling changed it by up
 to 1.07 (mean output 0.83).

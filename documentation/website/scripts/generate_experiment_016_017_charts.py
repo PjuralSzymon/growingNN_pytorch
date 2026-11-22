@@ -89,7 +89,7 @@ def comparison(runs):
     generation_lines((acc, size), len(runs['013'][1]))
     fig.text(0.01, -0.01, 'One seed per method; implementations differ. Dotted lines mark generation boundaries.',
              fontsize=8, color='#536176')
-    fig.savefig(OUTPUT / '012-013-validation-and-growth.png', dpi=170, bbox_inches='tight')
+    fig.savefig(OUTPUT / '016-017-validation-and-growth.png', dpi=170, bbox_inches='tight')
     plt.close(fig)
 
 
