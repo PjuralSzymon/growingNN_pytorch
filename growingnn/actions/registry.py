@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from growingnn.actions.action import Action, Layer_Type
+from growingnn.actions.add_normalization import AddNormalization
 from growingnn.actions.add_res_conv_layer import AddResConvLayer
 from growingnn.actions.add_res_linear_layer import AddResLinearLayer
 from growingnn.actions.add_seq_dropout_layer import AddSeqDropoutLayer
@@ -20,6 +21,8 @@ def generate_all_actions(traced: TracedModel, config: RunningConfig) -> list[Act
     actions: list[Action] = []
     if config.ACTIONS_ENABLE_WIDEN_CONV:
         actions.extend(WidenConv.generate_all_actions(traced))
+    if config.ACTIONS_ENABLE_ADD_NORMALIZATION:
+        actions.extend(AddNormalization.generate_all_actions(traced))
     if config.ACTIONS_ENABLE_ADD_RES_LAYER:
         actions.extend(AddResLinearLayer.generate_all_actions(traced, layer_types=(Layer_Type.EYE, Layer_Type.ZERO)))
     if config.ACTIONS_ENABLE_ADD_RES_CONV_LAYER:

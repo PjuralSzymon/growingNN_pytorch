@@ -147,7 +147,8 @@ class RunningConfig:
         self.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_01 = True
         self.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_02 = True
         self.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_05 = True
-        self.ACTIONS_ENABLE_WIDEN_CONV = False  # off by default; update_grow_actions sets it
+        self.ACTIONS_ENABLE_WIDEN_CONV = True
+        self.ACTIONS_ENABLE_ADD_NORMALIZATION = True
 
     def set_simulation_loaders(self, sim_train_loader: DataLoader, sim_val_loader: DataLoader):
         self.sim_train_loader = sim_train_loader
@@ -165,6 +166,7 @@ class RunningConfig:
         self.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_02 = is_enabled
         self.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_05 = is_enabled
         self.ACTIONS_ENABLE_WIDEN_CONV = is_enabled
+        self.ACTIONS_ENABLE_ADD_NORMALIZATION = is_enabled
 
     def update_shrink_actions(self, is_enabled: bool):
         self.ACTIONS_ENABLE_DEL_LAYER = is_enabled

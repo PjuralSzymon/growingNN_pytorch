@@ -80,6 +80,12 @@ For each action, a unit test that:
 | Sequential conv / linear | composition | identity (`create_eye_conv`, `Layer_Type.EYE`) | yes, except with BatchNorm after it |
 | Add neurons | addition | quasi-identity rescaling of old weights | **no** (output change about the size of the output) |
 | Widen conv | addition | old weights kept, new channels random, zero weights where they are read (`resize_conv_output`) | yes, in both modes |
+| Add normalization (`AddNormalization`) | composition | PyTorch default (BatchNorm: weight 1, bias 0, running mean 0, variance 1; LayerNorm: weight 1, bias 0) | BatchNorm: in evaluation mode only; LayerNorm: no |
+
+**Add normalization is a deliberate exception.** The user chose plain default initialization so the
+new BatchNorm stays a normal BatchNorm (no gate, no calibration batch), and accepted the change in
+training mode, where batch statistics normalize from the first step. Do not "fix" it with a gate
+or calibrated weight and bias without asking.
 
 ### To do
 
