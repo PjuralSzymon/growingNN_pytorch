@@ -107,3 +107,52 @@ def test_sequential_linear_after_a_concatenation_reads_the_concatenated_width():
         candidate = copy.deepcopy(traced)
         action.execute(candidate)
         assert candidate.gm(inputs).shape == before.shape, str(action)
+
+
+class LinearThenLayerNorm(nn.Module):
+    """A LayerNorm two layers after the resized one: the second linear absorbs the new width first."""
+
+    def __init__(self):
+        super().__init__()
+        self.first, self.second, self.norm, self.head = nn.Linear(6, 10), nn.Linear(10, 8), nn.LayerNorm(8), nn.Linear(8, 3)
+
+    def forward(self, x):
+        return self.head(self.norm(self.second(F.relu(self.first(x)))))
+
+
+class TokenMean(nn.Module):
+    """A reduction the propagation rules do not know, between the resized layer and the head."""
+
+    def __init__(self):
+        super().__init__()
+        self.hidden, self.head = nn.Linear(5, 8), nn.Linear(8, 3)
+
+    def forward(self, x):
+        return self.head(F.relu(self.hidden(x)).mean(1))
+
+
+def _verdict(model, layer, shape):
+    from growingnn.utils.fx import ModuleResolver, NodeWidthAnalyser
+    traced = TracedModel.create(model, shape)
+    node = ModuleResolver.find_call_module(traced.gm.graph.nodes, layer)
+    return traced, NodeWidthAnalyser.propagation_verdict(traced.gm, node)
+
+
+def test_propagation_stops_at_the_layer_that_absorbs_the_new_width():
+    from growingnn.utils.fx import PropagationVerdict
+    assert _verdict(LinearThenLayerNorm(), 'first', (1, 6))[1] is PropagationVerdict.SAFE
+    assert _verdict(LinearThenLayerNorm(), 'second', (1, 6))[1] is PropagationVerdict.BLOCKED
+
+
+def test_a_view_of_the_new_width_blocks_the_resize():
+    from growingnn.utils.fx import PropagationVerdict
+    assert _verdict(LinearToConv(), 'proj', (1, 6))[1] is PropagationVerdict.BLOCKED
+
+
+def test_an_unknown_operation_is_resized_only_after_a_trial_on_a_copy():
+    from growingnn.actions.utils.layer_resize import can_resize_linear_output
+    from growingnn.utils.fx import PropagationVerdict
+    traced, verdict = _verdict(TokenMean(), 'hidden', (1, 4, 5))
+    assert verdict is PropagationVerdict.UNKNOWN
+    assert not can_resize_linear_output(traced.gm, 'hidden', 16)
+    assert not can_resize_linear_output(traced.gm, 'hidden', 16, traced.probe())

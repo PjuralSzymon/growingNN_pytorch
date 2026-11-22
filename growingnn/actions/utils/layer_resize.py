@@ -7,7 +7,8 @@ import torch.nn as nn
 from growingnn.core import config
 from growingnn.core.config import PASSTHROUGH_MODULES_TO_UPDATE, PROPAGATION_RESIZABLE_MODULES, PASSTHROUGH_MODULES
 from growingnn.core.logger import logger
-from growingnn.utils.fx import ModuleResolver, NodeEditor, NodeTypeChecker, NodeWidthAnalyser
+from growingnn.actions.utils.dry_run import edit_keeps_network_working
+from growingnn.utils.fx import ModuleResolver, NodeEditor, NodeTypeChecker, NodeWidthAnalyser, PropagationVerdict
 from growingnn.actions.utils.layer_Factory import ConvFactory, LinearFactory
 from growingnn.utils.quaziIdentity import get_reshsper
 
@@ -451,8 +452,13 @@ def can_resize_linear_output(
     gm: nn.Module | fx.GraphModule,
     layer_id: str,
     new_width: int,
+    probe: torch.Tensor | None = None,
 ) -> bool:
-    """Return True when a Linear layer output can be rescaled to new_width and propagated."""
+    """Return True when a Linear layer output can be rescaled to new_width and propagated.
+
+    When the new width reaches an operation the propagation rules do not know, the resize is tried
+    on a copy of the network with *probe* as input; without a probe such a resize is refused.
+    """
     gm = gm if isinstance(gm, fx.GraphModule) else fx.symbolic_trace(gm)
     mod = ModuleResolver.get_layer_module(layer_id, gm)
     if not isinstance(mod, nn.Linear) or new_width == mod.out_features:
@@ -463,7 +469,10 @@ def can_resize_linear_output(
     elif not _within_linear_matrix_limit(mod, new_width):
         return False
     node = ModuleResolver.find_call_module(gm.graph.nodes, layer_id)
-    return not NodeWidthAnalyser.propagation_hits_unsizable(gm, node)
+    verdict = NodeWidthAnalyser.propagation_verdict(gm, node)
+    if verdict is PropagationVerdict.UNKNOWN and probe is not None:
+        return edit_keeps_network_working(gm, probe, lambda candidate: resize_layer_output(candidate, layer_id, new_width))
+    return verdict is PropagationVerdict.SAFE
 
 
 def resize_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, new_width: int) -> fx.GraphModule:

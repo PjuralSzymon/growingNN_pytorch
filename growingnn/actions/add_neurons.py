@@ -1,23 +1,25 @@
 from typing import List
 
+import torch
 from torch import fx, nn
 
 from growingnn.core.traced_model import TracedModel
 from growingnn.utils.fx import ModuleResolver
-from growingnn.actions.utils.dry_run import edit_keeps_network_working, output_shapes
+from growingnn.actions.utils.dry_run import output_shapes
 from growingnn.actions.utils.layer_resize import can_resize_linear_output, resize_layer_output
 from growingnn.core import config
 from .action import Action
 
 
-def expand_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, ratio: float) -> fx.GraphModule:
+def expand_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, ratio: float,
+                        probe: torch.Tensor | None = None) -> fx.GraphModule:
     """Grow a Linear layer's output by ratio and propagate shapes."""
     gm = gm if isinstance(gm, fx.GraphModule) else fx.symbolic_trace(gm)
     mod = ModuleResolver.get_layer_module(layer_id, gm)
     if not isinstance(mod, nn.Linear):
         raise TypeError(f"{layer_id} is not nn.Linear")
     new = max(1, int(mod.out_features * ratio))
-    if not can_resize_linear_output(gm, layer_id, new):
+    if not can_resize_linear_output(gm, layer_id, new, probe):
         return gm
     return resize_layer_output(gm, layer_id, new)
 
@@ -28,7 +30,7 @@ class AddNeurons(Action):
         ratio = self.params[1] if len(self.params) > 1 else config.DEFAULT_NEURONS_GROW_RATIO
         probe = traced.probe()
         expected = output_shapes(traced.gm, probe)
-        expand_layer_output(traced.gm, layer_id, ratio)
+        expand_layer_output(traced.gm, layer_id, ratio, probe)
         if output_shapes(traced.gm, probe) != expected:
             raise RuntimeError(f"{self} changed the network's output shape")
 
@@ -48,9 +50,7 @@ class AddNeurons(Action):
             if not isinstance(mod, nn.Linear):
                 continue
             new_out = max(1, int(mod.out_features * ratio))
-            if not can_resize_linear_output(gm, layer_id, new_out):
-                continue
-            if not edit_keeps_network_working(gm, probe, lambda copy, name=layer_id: expand_layer_output(copy, name, ratio)):
+            if not can_resize_linear_output(gm, layer_id, new_out, probe):
                 continue
             actions.append(AddNeurons([layer_id, ratio]))
         return actions
