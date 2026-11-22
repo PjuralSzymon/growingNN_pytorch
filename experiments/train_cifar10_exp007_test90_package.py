@@ -113,6 +113,10 @@ class StepDecayScheduler:
     def structure_changed(self) -> None:
         return None
 
+    def restarted(self) -> "StepDecayScheduler":
+        """A copy at epoch 0, for an independent training run such as simulation scoring."""
+        return StepDecayScheduler(self.at_01, self.at_001)
+
     def learning_rate_config_board_labels(self) -> tuple[str, float]:
         return "StepDecay", 0.1
 

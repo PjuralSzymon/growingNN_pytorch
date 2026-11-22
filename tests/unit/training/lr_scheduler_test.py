@@ -29,7 +29,6 @@ from growingnn.training.lr_scheduler_global import (
     LinearDecayLearningRate,
     StepLearningRate,
     build_composed_learning_rate_scheduler,
-    freeze_global_learning_rate_progress_if_supported,
 )
 
 
@@ -289,32 +288,31 @@ def test_composed_learning_rate_scheduler_is_learning_rate_scheduler():
     assert isinstance(composed, ComposedLearningRateScheduler)
 
 
-def test_composed_freeze_global_schedule_progress_does_not_advance_global_epoch():
+def test_composed_restarted_copy_starts_from_epoch_zero_and_leaves_original():
     """
-    freeze_global_schedule_progress should keep global_epoch unchanged while alpha_scheduler still returns a value.
+    restarted() should return a copy at global epoch 0 with recovery fully warmed, without
+    changing the original schedule.
     """
     # Arrange
     composed = ComposedLearningRateScheduler(
         global_schedule=StepLearningRate(step_size=5, gamma=0.5, initial_lr=0.01),
-        recovery=ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=1.0),
+        recovery=ActionLearningRateScheduler(ScheduleMode.WARMUP_COSINE, alpha=1.0, warmup_iterations=4),
         total_epochs=20,
         initial_lr=0.01,
     )
-    composed.alpha_scheduler(0, 10)
-    epoch_before = composed.global_epoch
+    for _ in range(12):
+        composed.alpha_scheduler(0, 10)
+    composed.structure_changed()
 
     # Act
-    with composed.freeze_global_schedule_progress():
-        lr_a = composed.alpha_scheduler(0, 10)
-        lr_b = composed.alpha_scheduler(0, 10)
-    epoch_after = composed.global_epoch
-    lr_next = composed.alpha_scheduler(0, 10)
+    fresh = composed.restarted()
+    first = fresh.alpha_scheduler(0, 10)
 
     # Assert
-    assert epoch_before == epoch_after == 1
-    assert lr_a == lr_b == pytest.approx(0.01)
-    assert composed.global_epoch == 2
-    assert lr_next == pytest.approx(0.01)
+    assert composed.global_epoch == 12
+    assert fresh is not composed
+    assert fresh.global_epoch == 1
+    assert first == pytest.approx(0.01)
 
 
 def test_non_composed_learning_rate_scheduler_unchanged():
@@ -368,19 +366,21 @@ def test_build_composed_learning_rate_scheduler_selects_cosine_base():
     assert composed.recovery._schedule.alpha == 1.0
 
 
-def test_freeze_global_learning_rate_progress_if_supported_is_noop_for_plain_scheduler():
+def test_action_scheduler_restarted_copy_resets_warmup_only_in_the_copy():
     """
-    freeze_global_learning_rate_progress_if_supported should be a no-op around LearningRateScheduler.
+    restarted() on an action scheduler should restart warmup in the copy and leave the original.
     """
     # Arrange
-    scheduler = ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.01)
+    scheduler = ActionLearningRateScheduler(ScheduleMode.WARMUP_COSINE, alpha=0.1, warmup_iterations=4)
+    for _ in range(3):
+        scheduler.alpha_scheduler(0, 5)
 
     # Act
-    with freeze_global_learning_rate_progress_if_supported(scheduler):
-        value = scheduler.alpha_scheduler(0, 5)
+    fresh = scheduler.restarted()
 
     # Assert
-    assert value == 0.01
+    assert fresh._schedule.iterations_since_change == 0
+    assert scheduler._schedule.iterations_since_change == 3
 
 
 if __name__ == "__main__":

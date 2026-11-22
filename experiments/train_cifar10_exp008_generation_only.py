@@ -227,31 +227,16 @@ class CosineDecayScheduler:
         self.global_epoch = 0
         self.total_epochs = max(int(total_epochs), 1)
         self.floor = float(floor)
-        self._global_schedule_progress_frozen = False
 
     def alpha_scheduler(self, _i: int, _iterations: int) -> float:
         epoch = min(self.global_epoch, self.total_epochs - 1)
-        if not self._global_schedule_progress_frozen:
-            self.global_epoch += 1
+        self.global_epoch += 1
         progress = epoch / max(self.total_epochs - 1, 1)
         return self.floor + 0.5 * (0.1 - self.floor) * (1.0 + math.cos(math.pi * progress))
 
-    def freeze_global_schedule_progress(self):
-        """Keep simulation scoring from advancing the training epoch counter."""
-        from contextlib import contextmanager
-
-        scheduler = self
-
-        @contextmanager
-        def _freeze():
-            previous = scheduler._global_schedule_progress_frozen
-            scheduler._global_schedule_progress_frozen = True
-            try:
-                yield scheduler
-            finally:
-                scheduler._global_schedule_progress_frozen = previous
-
-        return _freeze()
+    def restarted(self) -> "CosineDecayScheduler":
+        """A copy at epoch 0, for an independent training run such as simulation scoring."""
+        return CosineDecayScheduler(self.total_epochs, self.floor)
 
     def structure_changed(self) -> None:
         return None

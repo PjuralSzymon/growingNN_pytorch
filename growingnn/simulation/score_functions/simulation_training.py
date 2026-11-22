@@ -7,9 +7,6 @@ import torch.nn as nn
 
 from growingnn.core.config import RunningConfig
 from growingnn.training.gradient_descent import gradient_descent
-from growingnn.training.lr_scheduler_global import (
-    freeze_global_learning_rate_progress_if_supported,
-)
 
 
 def run_simulation_scoring_gradient_descent(
@@ -17,22 +14,22 @@ def run_simulation_scoring_gradient_descent(
     running_config: RunningConfig,
 ) -> tuple[nn.Module | fx.GraphModule, dict[str, list[float]]]:
     """
-    Run short GD for scoring with global LR progress frozen when composed.
+    Run short GD for scoring.
 
-    Freezing keeps a shared ComposedLearningRateScheduler from advancing
-    global_epoch during MCTS / simulation rollouts.
+    Each scoring run trains with a restarted copy of the main learning-rate schedule, so every
+    candidate in every generation is trained the way the main run starts, and scoring never
+    moves the main run's schedule.
     """
-    with freeze_global_learning_rate_progress_if_supported(running_config.lr_scheduler):
-        return gradient_descent(
-            model,
-            running_config.simulation_scheduler.simulation_epochs,
-            running_config.sim_train_loader,
-            running_config.sim_val_loader,
-            running_config.criterion,
-            running_config.lr_scheduler,
-            quiet=True,
-            momentum=running_config.momentum,
-            weight_decay=running_config.weight_decay,
-            device=running_config.device,
-            max_grad_norm=running_config.max_grad_norm,
-        )
+    return gradient_descent(
+        model,
+        running_config.simulation_scheduler.simulation_epochs,
+        running_config.sim_train_loader,
+        running_config.sim_val_loader,
+        running_config.criterion,
+        running_config.lr_scheduler.restarted(),
+        quiet=True,
+        momentum=running_config.momentum,
+        weight_decay=running_config.weight_decay,
+        device=running_config.device,
+        max_grad_norm=running_config.max_grad_norm,
+    )
