@@ -298,9 +298,82 @@ Seed 1 is run for all four cells first. Each factor is judged on two runs agains
 
 | UCB C | Simulation set | Seed 1 validation | Seed 2 validation | Mean validation | Mean test | Final parameters | Search time per run |
 | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0.05 | Moderate | Pending | Pending | — | — | — | — |
-| 0.05 | CCS | Pending | Pending | — | — | — | — |
-| 1.0 | Moderate | Pending | Pending | — | — | — | — |
-| 1.0 | CCS | Pending | Pending | — | — | — | — |
+| 0.05 | Moderate | 60.76% | Pending | 60.76% | 60.08% | 5,000 | 141 min |
+| 0.05 | CCS | 59.38% | Pending | 59.38% | 59.62% | 3,904 | 128 min |
+| 1.0 | Moderate | 61.92% | Pending | 61.92% | 62.15% | 5,752 | 101 min |
+| 1.0 | CCS | 63.06% | Pending | 63.06% | 63.18% | 5,032 | 157 min |
 
-Run with `--phase full-grid --seeds 1` (all four cells), then regenerate this report.
+Average final validation over the complete seeds (1):
+
+| Factor | Level | Mean validation |
+| --- | --- | ---: |
+| UCB C | 0.05 | 60.07% |
+| UCB C | 1.0 | 62.49% |
+| Simulation set | Moderate | 61.34% |
+| Simulation set | CCS | 61.22% |
+
+### Training histories
+
+![Phase 10 training histories](/assets/experiments/015-grid-training.png)
+
+Validation accuracy (top) and parameters (bottom) for each cell; dotted lines are generation boundaries.
+
+### Factor means
+
+![Phase 10 mean final validation per factor level](/assets/experiments/015-grid-factor-means.png)
+
+Each bar averages the two runs at that level (one per level of the other factor); dots are the individual runs. The values are in the factor table above.
+
+### Distribution of candidate scores
+
+One chart per cell, in the same style as Phase 5: each row is one generation, each dot one candidate (its mean search score), grouped by action type; the black-edged star is the selected action. Tight clusters with the star barely above the rest mean the search could not separate the candidates.
+
+**C=0.05, Moderate**
+
+![Candidate scores, C=0.05, Moderate](/assets/experiments/015-grid-c0p05_moderate-scores.png)
+
+**C=0.05, CCS**
+
+![Candidate scores, C=0.05, CCS](/assets/experiments/015-grid-c0p05_ccs-scores.png)
+
+**C=1.0, Moderate**
+
+![Candidate scores, C=1.0, Moderate](/assets/experiments/015-grid-c1p0_moderate-scores.png)
+
+**C=1.0, CCS**
+
+![Candidate scores, C=1.0, CCS](/assets/experiments/015-grid-c1p0_ccs-scores.png)
+
+How far the selected action stood out: the gap between the best and second-best mean score in each generation, and the spread (best minus median).
+
+| Cell | Median gap best − 2nd | Generations with gap < 1 pp | Median spread best − median |
+| --- | ---: | ---: | ---: |
+| C=0.05, Moderate | 0.40 pp | 5 of 9 | 4.67 pp |
+| C=0.05, CCS | 0.20 pp | 8 of 9 | 3.39 pp |
+| C=1.0, Moderate | 0.29 pp | 6 of 9 | 5.29 pp |
+| C=1.0, CCS | 0.62 pp | 6 of 9 | 4.04 pp |
+
+### Seed 1 decisions
+
+Selected action type in each generation, with the rank of the best widening candidate (by mean score) in brackets.
+
+| Generation | C=0.05, Moderate | C=0.05, CCS | C=1.0, Moderate | C=1.0, CCS |
+| ---: | --- | --- | --- | --- |
+| 0 | Sequential convolution + BN (#3) | Sequential convolution + BN (#3) | Sequential convolution + BN (#2) | Sequential convolution + BN (#2) |
+| 1 | Sequential convolution + BN (#6) | Sequential convolution without BN (#2) | Sequential convolution + BN (#4) | Sequential convolution + BN (#7) |
+| 2 | Residual convolution (#8) | Sequential convolution + BN (#3) | Sequential linear (#7) | Residual convolution (#6) |
+| 3 | Residual convolution (#6) | Residual convolution (#6) | Add neurons (#19) | Sequential convolution + BN (#5) |
+| 4 | Dropout (#13) | Dropout (#2) | Sequential convolution + BN (#8) | Sequential convolution + BN (#4) |
+| 5 | Residual convolution (#11) | Residual convolution (#4) | Dropout (#10) | Residual convolution (#12) |
+| 6 | Residual convolution (#27) | Dropout (#5) | Add neurons (#6) | Residual convolution (#17) |
+| 7 | Sequential convolution without BN (#8) | Residual convolution (#11) | Widen convolution (#1) | Dropout (#18) |
+| 8 | Residual convolution (#5) | Sequential linear (#15) | Residual convolution (#–) | Sequential convolution without BN (#8) |
+
+### What Phase 10 shows
+
+- **Final validation ranged from 59.38% to 63.06%.** None of the four cells beat Phase 5 (64.02%), and all stayed far below Experiment 13 (69.48%). C = 1.0 ended higher than C = 0.05 with both simulation sets, but with one seed per cell this difference is within the seed-to-seed spread seen before; Moderate and CCS were practically equal.
+- **The budget bought fewer rollouts than planned.** From generation 3 on, searches made 1374 rollouts for 1113 candidates (1.2 per candidate), at about 20 seconds per rollout instead of the 10–12 seconds measured in Phase 9. Expanding a node builds every possible child up front (including the widening output checks), which is the most likely cause; this was not profiled.
+- **So UCB C hardly mattered after the first generations.** With about one rollout per candidate, most candidates got one visit and the leaders at most two in either setting. Only in generations 0–1, where the 5-minute minimum left spare time, did the settings differ: the most-visited candidate got 2–9 visits with C = 0.05 and 2–4 with C = 1.0.
+- **Widening was available but rarely chosen.** Fan-out widening made it available in 35 of 36 searches, yet it was selected 1 time. With 5-epoch scoring, adding a layer beats widening in the short term, so the search never takes the wide path that Experiment 13 took with 1-epoch scoring. Dropout was selected in 5 of 36 searches, which adds no capacity.
+- **In late generations the scores are nearly flat.** In generations 7–8, between 7 and 34 of the 31–77 candidates scored within 1 pp of the best, across every action type (see the distribution charts). The selected action is then effectively a random pick among near-ties, which explains why dropout and other capacity-neutral actions keep being chosen.
+- **Next steps suggested by this phase:** build children only when they are first visited, so the budget buys the planned number of rollouts; and test whether shorter (1-epoch) scoring, or a score that credits added capacity, lets the search take the widening path in full growth.

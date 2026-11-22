@@ -17,7 +17,7 @@ class Action:
         model.gm.append(self.name)
 
 
-def test_expand_creates_children_without_scoring(monkeypatch):
+def test_expand_builds_children_only_when_selected(monkeypatch):
     scoring = Mock()
     config = SimpleNamespace(simulation_score=SimpleNamespace(score=scoring))
     actions = [Action('a'), Action('b')]
@@ -25,10 +25,55 @@ def test_expand_creates_children_without_scoring(monkeypatch):
     node = search.TreeNode(None, None, Model(), config)
 
     node.expand()
+    assert node.child_nodes == [] and not node.is_leaf()
+    assert node.get_best_child() is None  # UCB alone never builds a child
 
-    assert sorted(child.traced.gm for child in node.child_nodes) == [['a'], ['b']]
+    first = node.select_child()
+    assert len(node.child_nodes) == 1
+    second = node.select_child()
+
+    assert sorted([first.traced.gm, second.traced.gm]) == [['a'], ['b']]
     assert node.traced.gm == []
     scoring.assert_not_called()
+
+
+def test_node_without_actions_is_terminal_after_expansion(monkeypatch):
+    monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: [])
+    node = search.TreeNode(None, None, Model(), SimpleNamespace())
+    node.value, node.visit_counter = 0.4, 1
+
+    value, _, rollouts = search._simulate(node)
+
+    assert (value, rollouts) == (0.4, 0)
+    assert not node.is_leaf() and node.child_nodes == []
+
+
+def test_search_builds_only_the_children_it_visits(monkeypatch):
+    from growingnn.core.config import RunningConfig
+
+    built = []
+
+    class Counted(Action):
+        def execute(self, model):
+            built.append(self.name)
+            super().execute(model)
+
+    config = RunningConfig(generations=1, epochs=1)
+    config.simulation_scheduler = SimpleNamespace(simulation_time=0)
+    config.simulation_score = SimpleNamespace(score=lambda gm, cfg: 0.5)
+    # Three root actions, each with twenty possible follow-ups.
+    monkeypatch.setattr(search, 'generate_all_actions',
+                        lambda model, cfg: [Counted(f'r{i}') for i in range(3)] if model.gm == []
+                        else [Counted(f'f{i}') for i in range(20)])
+    monkeypatch.setattr(search, 'clear_reshepers_cache', lambda: None)
+    monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 0)
+    monkeypatch.setattr(search.project_config, 'SIMULATION_MIN_ALGORITHM_ITERATION_RUNS', 5)
+
+    _, _, rollouts = search.get_action(Model(), config)
+
+    # Each rollout scores one newly built child; the other follow-ups are never built.
+    assert rollouts == 5
+    assert len(built) == rollouts
 
 
 def test_rollout_scores_each_step_and_weights_nearer_states(monkeypatch):

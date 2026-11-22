@@ -67,6 +67,8 @@ class TreeNode:
         # Every scoring run in one search uses the same training seed, so score differences
         # come from the architectures rather than from the random training draw.
         self.search_seed: int | None = parent.search_seed if parent is not None else None
+        # Actions whose child has not been built yet; None until the node is expanded.
+        self._unbuilt_actions: list | None = None
 
     def _score(self, traced: TracedModel) -> float:
         cfg = self.running_config
@@ -77,13 +79,19 @@ class TreeNode:
             return cfg.simulation_score.score(copy.deepcopy(traced.gm), cfg)
 
     def expand(self) -> None:
-        cfg = self.running_config
-        for action in _type_interleaved(generate_all_actions(self.traced, cfg)):
+        """List this node's possible actions; their child models are built only when first visited."""
+        self._unbuilt_actions = _type_interleaved(generate_all_actions(self.traced, self.running_config))
+
+    def select_child(self) -> TreeNode | None:
+        """Build and return the next unvisited child; once every child is built, choose by UCB."""
+        if self._unbuilt_actions:
+            action = self._unbuilt_actions.pop(0)
             traced_copy = copy.deepcopy(self.traced)
             action.execute(traced_copy)
-            self.child_nodes.append(
-                TreeNode(self, action, traced_copy, cfg)
-            )
+            child = TreeNode(self, action, traced_copy, self.running_config)
+            self.child_nodes.append(child)
+            return child
+        return self.get_best_child()
 
     def rollout(self) -> float:
         """Score this node's model, then up to MCTS_ROLLOUT_DEPTH random follow-up actions.
@@ -138,7 +146,7 @@ class TreeNode:
         return max(evaluated, key=lambda child: child.value / child.visit_counter, default=None)
 
     def is_leaf(self) -> bool:
-        return len(self.child_nodes) == 0
+        return self._unbuilt_actions is None and not self.child_nodes
 
     def kill(self) -> None:
         if self._cleaned:
@@ -146,6 +154,7 @@ class TreeNode:
         for child in self.child_nodes:
             child.kill()
         self.child_nodes.clear()
+        self._unbuilt_actions = None
         self.traced = None
         self.parent = None
         self._cleaned = True
@@ -159,7 +168,7 @@ def _simulate(node: TreeNode, depth: int = 0, rollouts: int = 0) -> tuple[float,
             node.visit_counter += 1
             return value, depth, rollouts + 1
         node.expand()
-    child = node.get_best_child()
+    child = node.select_child()
     if child is None:
         return node.value / node.visit_counter, depth, rollouts
     value, depth, rollouts = _simulate(child, depth + 1, rollouts)

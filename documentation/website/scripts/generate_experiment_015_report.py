@@ -371,9 +371,208 @@ def full_grid_section():
                   f'| UCB C | 1.0 | {factor_mean(lambda cell: cell[0] == 1.0):.2f}% |',
                   f'| Simulation set | Moderate | {factor_mean(lambda cell: cell[1] == "moderate"):.2f}% |',
                   f'| Simulation set | CCS | {factor_mean(lambda cell: cell[1] == "ccs"):.2f}% |']
+        lines += _grid_figures(runs, complete)
+        lines += _grid_decisions(1) + _grid_findings(runs, complete)
     else:
         lines += ['', 'Run with `--phase full-grid --seeds 1` (all four cells), then regenerate this report.']
     return lines + ['']
+
+
+GRID_COLORS = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100']  # validated categorical slots 1-4, in cell order
+ASSET_DIR = ROOT / 'documentation/website/app/public/assets/experiments'
+
+
+def _cell_name(ucb_c, selector):
+    return f"c{str(ucb_c).replace('.', 'p')}_{selector}"
+
+
+def _cell_label(ucb_c, selector):
+    return f'C={ucb_c}, {GRID_SET_NAMES[selector]}'
+
+
+def _grid_figures(runs, complete):
+    seed = complete[0]
+    lines = []
+    # Training histories: validation accuracy and model size, one line per cell.
+    fig, (acc, size) = plt.subplots(2, 1, figsize=(11, 7.5), sharex=True,
+                                    gridspec_kw={'height_ratios': [2, 1]}, layout='constrained')
+    for (ucb_c, selector), color in zip(GRID_CELLS, GRID_COLORS):
+        board = RUN / 'full_grid' / _cell_name(ucb_c, selector) / f'seed_{seed}' / 'board'
+        metrics = json.loads((board / 'metrics/training.json').read_text(encoding='utf-8'))['epochs']
+        epochs = [row['globalEpoch'] + 1 for row in metrics]
+        label = _cell_label(ucb_c, selector)
+        acc.plot(epochs, [100 * row['valAcc'] for row in metrics], color=color, lw=1.6,
+                 label=f"{label} (final {100 * metrics[-1]['valAcc']:.1f}%)")
+        size.step(epochs, [row['paramCount'] for row in metrics], where='post', color=color, lw=1.6, label=label)
+    acc.set(ylabel='Validation accuracy (%)', ylim=(0, 80), title=f'Phase 10 seed {seed}: training histories')
+    size.set(xlabel='Training epoch', ylabel='Parameters')
+    for axis in (acc, size):
+        axis.grid(alpha=.25)
+        for boundary in range(20, 200, 20):
+            axis.axvline(boundary + .5, color='#bbbbbb', ls=':', lw=.8)
+    acc.legend(loc='lower right')
+    fig.savefig(ASSET_DIR / '015-grid-training.png', dpi=150, bbox_inches='tight')
+    plt.close(fig)
+
+    # Factor means: one panel per factor, bars from zero, individual runs as dots.
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4.5), sharey=True, layout='constrained')
+    factors = [('UCB C', [(0.05, '0.05'), (1.0, '1.0')], 0), ('Simulation set', [('moderate', 'Moderate'), ('ccs', 'CCS')], 1)]
+    for ax, (title, levels, index) in zip(axes, factors):
+        for position, (level, name) in enumerate(levels):
+            values = [100 * runs[cell][s]['final_validation_accuracy'] for cell in GRID_CELLS
+                      if cell[index] == level for s in complete]
+            mean = sum(values) / len(values)
+            ax.bar(position, mean, width=.55, color='#2a78d6')
+            ax.scatter([position] * len(values), values, s=36, color='#3d3d3a', zorder=3)
+            ax.text(position, max([mean, *values]) + 1.5, f'{mean:.2f}%', ha='center', fontsize=10, color='#1f1f1d')
+        ax.set_xticks(range(len(levels)), [name for _, name in levels])
+        ax.set(title=title, ylim=(0, 75))
+        ax.grid(axis='y', alpha=.25)
+        ax.set_axisbelow(True)
+    axes[0].set_ylabel('Final validation accuracy (%)')
+    fig.suptitle(f'Phase 10: mean final validation per factor level (dots: individual runs, seed {seed})')
+    fig.savefig(ASSET_DIR / '015-grid-factor-means.png', dpi=150, bbox_inches='tight')
+    plt.close(fig)
+
+    lines += ['', '### Training histories', '',
+              '![Phase 10 training histories](/assets/experiments/015-grid-training.png)', '',
+              'Validation accuracy (top) and parameters (bottom) for each cell; dotted lines are generation boundaries.', '',
+              '### Factor means', '',
+              '![Phase 10 mean final validation per factor level](/assets/experiments/015-grid-factor-means.png)', '',
+              'Each bar averages the two runs at that level (one per level of the other factor); dots are the '
+              'individual runs. The values are in the factor table above.']
+
+    # Candidate-score distributions, one overview per cell, in the style of Phase 5.
+    from documentation.website.scripts.generate_experiment_013_action_scores import COLORS, GROUPS, group_key
+    lines += ['', '### Distribution of candidate scores', '',
+              'One chart per cell, in the same style as Phase 5: each row is one generation, each dot one candidate '
+              "(its mean search score), grouped by action type; the black-edged star is the selected action. Tight "
+              'clusters with the star barely above the rest mean the search could not separate the candidates.', '']
+    gaps = {}
+    for ucb_c, selector in GRID_CELLS:
+        searches = _grid_searches(ucb_c, selector, seed)
+        groups = [(key, name.replace('\n', ' ')) for key, name in GROUPS
+                  if any(group_key(row) == key for search in searches for row in search['candidates'])]
+        fig, axes = plt.subplots(len(searches), 1, figsize=(15, 2.6 * len(searches)), squeeze=False,
+                                 sharex=True, sharey=True)
+        fig.suptitle(f'Phase 10 {_cell_label(ucb_c, selector)}, seed {seed}: candidate search scores by action type',
+                     fontsize=14, weight='bold')
+        for ax, search in zip(axes.flat, searches):
+            for position, (key, _) in enumerate(groups):
+                rows = [row for row in search['candidates'] if group_key(row) == key and row.get('score') is not None]
+                for j, row in enumerate(rows):
+                    offset = .56 * (j - (len(rows) - 1) / 2) / max(len(rows) - 1, 1)
+                    chosen = row['action'] == search['actionChosen']
+                    color = (COLORS['Sequential convolution'] if key.startswith('Sequential convolution')
+                             else COLORS.get(key, COLORS['Other']))
+                    ax.scatter(position + offset, row['score'], s=120 if chosen else 22,
+                               marker='*' if chosen else 'o', color=color,
+                               edgecolors='black' if chosen else 'none', zorder=3)
+            ax.set_ylim(0, 1)
+            ax.set_ylabel(f"Gen {search['generation']}\nscore")
+            ax.grid(axis='y', alpha=.25)
+        axes[-1, 0].set_xticks(range(len(groups)), [label for _, label in groups], rotation=25, ha='right')
+        fig.subplots_adjust(top=.965, bottom=.04, hspace=.22)
+        name = f'015-grid-{_cell_name(ucb_c, selector)}-scores.png'
+        fig.savefig(ASSET_DIR / name, dpi=120, bbox_inches='tight')
+        plt.close(fig)
+        lines += [f'**{_cell_label(ucb_c, selector)}**', '', f'![Candidate scores, {_cell_label(ucb_c, selector)}](/assets/experiments/{name})', '']
+        gaps[(ucb_c, selector)] = [
+            100 * (scores[0] - scores[1]) for scores in
+            (sorted((row['score'] for row in search['candidates']), reverse=True) for search in searches)
+            if len(scores) > 1]
+    lines += ['How far the selected action stood out: the gap between the best and second-best mean score in each '
+              'generation, and the spread (best minus median).', '',
+              '| Cell | Median gap best − 2nd | Generations with gap < 1 pp | Median spread best − median |',
+              '| --- | ---: | ---: | ---: |']
+    for ucb_c, selector in GRID_CELLS:
+        searches = _grid_searches(ucb_c, selector, seed)
+        spreads = []
+        for search in searches:
+            scores = sorted((row['score'] for row in search['candidates']), reverse=True)
+            spreads.append(100 * (scores[0] - scores[len(scores) // 2]))
+        cell_gaps = sorted(gaps[(ucb_c, selector)])
+        median = lambda values: sorted(values)[len(values) // 2]
+        lines.append(f'| {_cell_label(ucb_c, selector)} | {median(cell_gaps):.2f} pp | '
+                     f'{sum(gap < 1 for gap in cell_gaps)} of {len(cell_gaps)} | {median(spreads):.2f} pp |')
+    return lines
+
+
+def _grid_searches(ucb_c, selector, seed):
+    board = RUN / 'full_grid' / f"c{str(ucb_c).replace('.', 'p')}_{selector}" / f'seed_{seed}' / 'board'
+    return sorted((json.loads(path.read_text(encoding='utf-8'))
+                   for path in (board / 'simulations').glob('simulation_gen_*.json')),
+                  key=lambda search: search['generation'])
+
+
+def _grid_decisions(seed):
+    from documentation.website.scripts.generate_experiment_013_action_scores import group_key
+    lines = ['', f'### Seed {seed} decisions', '',
+             'Selected action type in each generation, with the rank of the best widening candidate '
+             '(by mean score) in brackets.', '',
+             '| Generation | ' + ' | '.join(f'C={c}, {GRID_SET_NAMES[s]}' for c, s in GRID_CELLS) + ' |',
+             '| ---: |' + ' --- |' * len(GRID_CELLS)]
+    per_cell = [_grid_searches(c, s, seed) for c, s in GRID_CELLS]
+    for generation in range(max(len(searches) for searches in per_cell)):
+        cells = []
+        for searches in per_cell:
+            if generation >= len(searches):
+                cells.append('—')
+                continue
+            search = searches[generation]
+            ranked = sorted(search['candidates'], key=lambda row: row['score'], reverse=True)
+            widen = [rank for rank, row in enumerate(ranked, 1) if 'Widen Conv' in row['action']]
+            cells.append(f"{group_key({'action': search['actionChosen']})} (#{widen[0] if widen else '–'})")
+        lines.append(f'| {generation} | ' + ' | '.join(cells) + ' |')
+    return lines
+
+
+def _grid_findings(runs, complete):
+    searches = [search for c, s in GRID_CELLS for seed in complete for search in _grid_searches(c, s, seed)]
+    late = [search for search in searches if search['generation'] >= 3]
+    candidates = sum(len(search['candidates']) for search in late)
+    rollouts = sum(search['rollouts'] for search in late)
+    seconds = sum(search['durationSec'] for search in late) / rollouts
+    widen_offered = sum(any('Widen Conv' in row['action'] for row in search['candidates']) for search in searches)
+    widen_chosen = sum('Widen Conv' in search['actionChosen'] for search in searches)
+    dropout_chosen = sum('Dropout' in search['actionChosen'] for search in searches)
+    values = [runs[cell][seed]['final_validation_accuracy'] * 100 for cell in GRID_CELLS for seed in complete]
+    early = [search for search in searches if search['generation'] <= 1]
+    def early_visits(ucb_c):
+        rows = [max(row['visits'] for row in search['candidates']) for (c, s) in GRID_CELLS if c == ucb_c
+                for seed in complete for search in _grid_searches(c, s, seed) if search['generation'] <= 1]
+        return f'{min(rows)}–{max(rows)}'
+    ties = [sum(max(row['score'] for row in search['candidates']) - row['score'] < 0.01 for row in search['candidates'])
+            for search in searches if search['generation'] >= 7]
+    late_sizes = [len(search['candidates']) for search in searches if search['generation'] >= 7]
+    tie_line = (f'- **In late generations the scores are nearly flat.** In generations 7–8, between {min(ties)} and '
+                f'{max(ties)} of the {min(late_sizes)}–{max(late_sizes)} candidates scored within 1 pp of the best, '
+                'across every action type (see the distribution charts). The selected action is then effectively '
+                'a random pick among near-ties, which explains why dropout and other capacity-neutral actions keep '
+                'being chosen.')
+    return ['', '### What Phase 10 shows', '',
+            f'- **Final validation ranged from {min(values):.2f}% to {max(values):.2f}%.** None of the four cells '
+            'beat Phase 5 (64.02%), and all stayed far below Experiment 13 (69.48%). C = 1.0 ended higher than '
+            'C = 0.05 with both simulation sets, but with one seed per cell this difference is within the '
+            'seed-to-seed spread seen before; Moderate and CCS were practically equal.',
+            f'- **The budget bought fewer rollouts than planned.** From generation 3 on, searches made {rollouts} '
+            f'rollouts for {candidates} candidates ({rollouts / candidates:.1f} per candidate), at about '
+            f'{seconds:.0f} seconds per rollout instead of the 10–12 seconds measured in Phase 9. Expanding a node '
+            'builds every possible child up front (including the widening output checks), which is the most '
+            'likely cause; this was not profiled.',
+            f'- **So UCB C hardly mattered after the first generations.** With about one rollout per candidate, '
+            'most candidates got one visit and the leaders at most two in either setting. Only in generations 0–1, '
+            f'where the 5-minute minimum left spare time, did the settings differ: the most-visited candidate got '
+            f'{early_visits(0.05)} visits with C = 0.05 and {early_visits(1.0)} with C = 1.0.',
+            f'- **Widening was available but rarely chosen.** Fan-out widening made it available in '
+            f'{widen_offered} of {len(searches)} searches, yet it was selected {widen_chosen} {"time" if widen_chosen == 1 else "times"}. With 5-epoch '
+            'scoring, adding a layer beats widening in the short term, so the search never takes the wide path that '
+            'Experiment 13 took with 1-epoch scoring. Dropout was selected in '
+            f'{dropout_chosen} of {len(searches)} searches, which adds no capacity.',
+            tie_line,
+            '- **Next steps suggested by this phase:** build children only when they are first visited, so the '
+            'budget buys the planned number of rollouts; and test whether shorter (1-epoch) scoring, or a score '
+            'that credits added capacity, lets the search take the widening path in full growth.']
 
 
 def noise_fix_section():
