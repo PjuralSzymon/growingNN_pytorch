@@ -74,6 +74,7 @@ def test_search_can_score_and_execute_widening(monkeypatch):
     monkeypatch.setattr(montecarlo_alg_2, 'generate_all_actions',
                         lambda model, cfg: [action] if model is traced else [])
     monkeypatch.setattr('growingnn.core.config.MCTS_ROLLOUT_DEPTH', 0)
+    monkeypatch.setattr('growingnn.core.config.MCTS_MEASUREMENTS_BEFORE_EXPAND', 1)
     chosen, depth, rollouts = montecarlo_alg_2.get_action(traced, config)
     assert chosen is action
     assert (depth, rollouts) == (1, 1)

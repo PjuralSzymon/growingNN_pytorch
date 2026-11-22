@@ -51,8 +51,9 @@ def test_expand_builds_children_only_when_selected(monkeypatch):
 
 def test_node_without_actions_is_terminal_after_expansion(monkeypatch):
     monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: [])
+    monkeypatch.setattr(search.project_config, 'MCTS_MEASUREMENTS_BEFORE_EXPAND', 1)
     node = search.TreeNode(None, None, Model(), SimpleNamespace())
-    node.value, node.visit_counter = 0.4, 1
+    node.value, node.visit_counter, node._own_scores = 0.4, 1, [0.4]
 
     value, _, rollouts = search._simulate(node)
 
@@ -73,6 +74,7 @@ def test_search_builds_only_the_children_it_visits(monkeypatch):
     config = RunningConfig(generations=1, epochs=1)
     config.simulation_scheduler = SimpleNamespace(simulation_time=0)
     config.simulation_score = FakeScore(lambda gm, cfg: 0.5)
+    monkeypatch.setattr(search.project_config, 'MCTS_MEASUREMENTS_BEFORE_EXPAND', 1)
     # Three root actions, each with twenty possible follow-ups.
     monkeypatch.setattr(search, 'generate_all_actions',
                         lambda model, cfg: [Counted(f'r{i}') for i in range(3)] if model.gm == []
@@ -102,16 +104,16 @@ def test_rollout_scores_each_step_and_weights_nearer_states(monkeypatch):
     assert node.traced.gm == []
 
 
-def test_rollout_reuses_initial_score_and_uses_configured_decay(monkeypatch):
-    scoring = Mock(side_effect=[0.4, 0.8, 0.6])
+def test_each_rollout_measures_the_node_again_and_uses_configured_decay(monkeypatch):
+    scoring = Mock(side_effect=[0.4, 0.8, 0.5, 0.6])
     config = SimpleNamespace(experiment_board=None, simulation_score=FakeScore(scoring))
     monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: [Action('next')])
     monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 1)
     monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_WEIGHT_DECAY', 0.25)
     node = search.TreeNode(None, None, Model(), config)
     assert abs(node.rollout() - (0.4 + 0.25 * 0.8) / 1.25) < 1e-9
-    assert abs(node.rollout() - (0.4 + 0.25 * 0.6) / 1.25) < 1e-9
-    assert scoring.call_count == 3
+    assert abs(node.rollout() - (0.5 + 0.25 * 0.6) / 1.25) < 1e-9
+    assert node._own_scores == [0.4, 0.5]
 
 
 def test_final_choice_uses_mean_not_exploration_bonus(monkeypatch):
@@ -132,14 +134,14 @@ def test_final_choice_uses_mean_not_exploration_bonus(monkeypatch):
     assert root.get_final_child() is None
 
 
-def test_rollout_remembers_only_its_own_score(monkeypatch):
+def test_rollout_records_only_the_nodes_own_score(monkeypatch):
     scoring = Mock(side_effect=[0.4, 0.8])
     config = SimpleNamespace(experiment_board=None, simulation_score=FakeScore(scoring))
     monkeypatch.setattr(search, 'generate_all_actions', lambda model, cfg: [Action('next')])
     monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 1)
     node = search.TreeNode(None, None, Model(), config)
     node.rollout()
-    assert node._own_score == 0.4
+    assert node._own_scores == [0.4]
 
 
 def test_rollout_metrics_record_weighted_composite(monkeypatch):
@@ -318,6 +320,7 @@ def test_children_continue_from_the_parents_trained_model(monkeypatch):
     monkeypatch.setattr(search, 'generate_all_actions',
                         lambda model, cfg: [Action('x')] if model.gm == [] else [Action('y')])
     monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 0)
+    monkeypatch.setattr(search.project_config, 'MCTS_MEASUREMENTS_BEFORE_EXPAND', 1)
     root = search.TreeNode(None, None, Model(), config)
     root.expand()
 
@@ -339,3 +342,56 @@ def test_rollout_follow_ups_continue_from_the_trained_model(monkeypatch):
 
     assert scorer.scored == [[], ['trained', 'next'], ['trained', 'next', 'trained', 'next']]
     assert node.traced.gm == []
+
+
+def _search_with_recorded_draws(monkeypatch, measurements, calls):
+    """Run *calls* search steps over two root actions; record (model, training draw) per scoring run."""
+    import torch
+
+    scored = []
+
+    def score(gm, cfg):
+        scored.append((list(gm), torch.rand(1).item()))
+        return 0.9 if gm == ['b'] else 0.5
+
+    monkeypatch.setattr(search, 'generate_all_actions',
+                        lambda model, cfg: [Action('a'), Action('b')] if model.gm == [] else [Action('z')])
+    monkeypatch.setattr(search.project_config, 'MCTS_ROLLOUT_DEPTH', 0)
+    monkeypatch.setattr(search.project_config, 'MCTS_MEASUREMENTS_BEFORE_EXPAND', measurements)
+    root = search.TreeNode(None, None, Model(), SimpleNamespace(experiment_board=None,
+                                                                 simulation_score=FakeScore(score)))
+    root.search_seed = 123
+    root.expand()
+    for _ in range(calls):
+        search._simulate(root)
+    return root, scored
+
+
+def test_leader_is_measured_again_with_a_new_seed_before_expanding(monkeypatch):
+    root, scored = _search_with_recorded_draws(monkeypatch, measurements=2, calls=4)
+
+    assert sorted(model for model, _ in scored[:2]) == [['a'], ['b']]  # every action measured once first
+    first_draws = {draw for _, draw in scored[:2]}
+    assert len(first_draws) == 1  # first measurements of all candidates share a seed
+    remeasured = [(model, draw) for model, draw in scored[2:] if model in (['a'], ['b'])]
+    assert remeasured and all(draw not in first_draws for _, draw in remeasured)
+    leader = next(child for child in root.child_nodes if child.action.name == 'b')
+    assert len(leader._own_scores) == 2
+    assert leader.value / leader.visit_counter == sum(leader._own_scores) / 2
+    assert all(len(child._own_scores) <= 2 for child in root.child_nodes)
+
+
+def test_node_expands_only_after_enough_measurements(monkeypatch):
+    root, scored = _search_with_recorded_draws(monkeypatch, measurements=2, calls=6)
+
+    for child in root.child_nodes:
+        if child.child_nodes:
+            assert len(child._own_scores) == 2
+    assert any(child.child_nodes for child in root.child_nodes)
+
+
+def test_measuring_again_uses_the_same_number_of_scoring_runs(monkeypatch):
+    _, once = _search_with_recorded_draws(monkeypatch, measurements=1, calls=6)
+    _, twice = _search_with_recorded_draws(monkeypatch, measurements=2, calls=6)
+
+    assert len(once) == len(twice) == 6

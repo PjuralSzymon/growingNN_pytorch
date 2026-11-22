@@ -61,6 +61,9 @@ WEIGHT_COUNT_WEIGHT = 1e-6
 MCTS_UCB1_C = 2
 MCTS_ROLLOUT_DEPTH = 2
 MCTS_ROLLOUT_WEIGHT_DECAY = 0.5
+# Monte Carlo 2: measurements of a node's own score (each with a new training seed) before the
+# search expands it; the node's value is their average. 1 measures once.
+MCTS_MEASUREMENTS_BEFORE_EXPAND = 2
 MCTS_ROLLOUT_EPOCHS = 1
 MCTS_ROLLOUT_LR = ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.0001)
 #TODO: To be reaserched:

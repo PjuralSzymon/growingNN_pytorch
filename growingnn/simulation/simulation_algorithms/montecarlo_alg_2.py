@@ -63,26 +63,30 @@ class TreeNode:
         self.visit_counter = 0
         self._cleaned = False
         self.rollout_metrics: dict[str, Any] | None = None
-        self._own_score: float | None = None  # this node's model never changes, so score it once
-        # This node's model after its scoring training; children and rollout follow-ups continue
-        # from it, as the real run trains after each action before the next one.
+        self._own_scores: list[float] = []  # one per measurement, each with a new training seed
+        # This node's model after its first scoring training; children continue from it, as the
+        # real run trains after each action before the next one.
         self.trained: TracedModel | None = None
-        # Every scoring run in one search uses the same training seed, so score differences
-        # come from the architectures rather than from the random training draw.
+        # Measurement i of every node in one search uses training seed search_seed + i, so score
+        # differences come from the architectures rather than from the random training draw.
         self.search_seed: int | None = parent.search_seed if parent is not None else None
         # Actions whose child has not been built yet; None until the node is expanded.
         self._unbuilt_actions: list | None = None
 
-    def _score(self, traced: TracedModel) -> tuple[float, TracedModel]:
+    def _score(self, traced: TracedModel, measurement: int) -> tuple[float, TracedModel]:
         """Score a copy of *traced*; return the score and that copy after its scoring training."""
         cfg = self.running_config
         if self.search_seed is None:
             score, trained = cfg.simulation_score.score_and_train(traced.gm, cfg)
         else:
             with torch.random.fork_rng(devices=range(torch.cuda.device_count())):
-                torch.manual_seed(self.search_seed)
+                torch.manual_seed(self.search_seed + measurement)
                 score, trained = cfg.simulation_score.score_and_train(traced.gm, cfg)
         return score, TracedModel(trained, traced.input_shape)
+
+    def needs_measurement(self) -> bool:
+        """True until the node's own score has been measured MCTS_MEASUREMENTS_BEFORE_EXPAND times."""
+        return len(self._own_scores) < project_config.MCTS_MEASUREMENTS_BEFORE_EXPAND
 
     def _model_for_next_actions(self) -> TracedModel:
         """The trained model when this node has been scored; the root uses the main run's model."""
@@ -105,18 +109,20 @@ class TreeNode:
         return self.get_best_child()
 
     def rollout(self) -> float:
-        """Score this node's model, then up to MCTS_ROLLOUT_DEPTH random follow-up actions.
+        """Measure this node's model once more, then up to MCTS_ROLLOUT_DEPTH random follow-up actions.
 
         Each follow-up is applied to the model trained in the previous step. Returns the average of
         the scores weighted 1, decay, decay**2, ...
         """
         cfg = self.running_config
-        if self._own_score is None:
-            self._own_score, self.trained = self._score(self.traced)
-        current = self.trained
+        measurement = len(self._own_scores)
+        own_score, current = self._score(self.traced, measurement)
+        self._own_scores.append(own_score)
+        if self.trained is None:
+            self.trained = current
         depth = project_config.MCTS_ROLLOUT_DEPTH
         weight = 1.0
-        weighted_score = self._own_score
+        weighted_score = own_score
         total_weight = weight
         while depth > 0:
             actions = generate_all_actions(current, cfg)
@@ -124,7 +130,7 @@ class TreeNode:
                 break
             follow_up = copy.deepcopy(current)
             _random_follow_up(actions).execute(follow_up)
-            step_score, current = self._score(follow_up)
+            step_score, current = self._score(follow_up, measurement)
             weight *= project_config.MCTS_ROLLOUT_WEIGHT_DECAY
             weighted_score += weight * step_score
             total_weight += weight
@@ -176,9 +182,9 @@ class TreeNode:
 
 def _simulate(node: TreeNode, depth: int = 0, rollouts: int = 0) -> tuple[float, int, int]:
     if node.is_leaf():
-        if node.visit_counter == 0:
+        if node.needs_measurement():
             value = node.rollout()
-            node.value = value
+            node.value += value
             node.visit_counter += 1
             return value, depth, rollouts + 1
         node.expand()
