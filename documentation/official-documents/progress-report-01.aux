@@ -1,0 +1,46 @@
+\relax 
+\citation{growingnn_original}
+\@writefile{toc}{\contentsline {title}{Development of GrowingNN Architecture Search Algorithms in PyTorch\unskip \ \ignorespaces  Results Report, Part 1 (02.11.2026 -- 30.11.2026)\unskip {}}{1}{}\protected@file@percent }
+\@writefile{toc}{\authcount {1}}
+\@writefile{toc}{\contentsline {author}{Szymon Świderski}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2}When and What the Search Can Change (MNIST)}{2}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}When the search runs}{2}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces When to search: mean final training (blue) and validation (green) accuracy for each slope threshold and warm-up curve, two seeds each.}}{2}{}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig:000}{{1}{2}{}{figure.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Which networks the search can grow}{2}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Starting depth: mean final accuracy for the big, medium and very small starters.}}{3}{}\protected@file@percent }
+\newlabel{fig:001}{{2}{3}{}{figure.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces The small starter (top) and the network the search grew from it in five generations (bottom, 62\% validation), drawn from the run's graph.}}{3}{}\protected@file@percent }
+\newlabel{fig:002}{{3}{3}{}{figure.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Which search algorithm to keep}{4}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Search algorithms: final training and validation accuracy for each algorithm, on the big and medium starters.}}{4}{}\protected@file@percent }
+\newlabel{fig:005}{{4}{4}{}{figure.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Making Growth Work on CIFAR-10}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}The problem: the network stalls or memorizes}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}A better network exists}{4}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Early CIFAR-10 runs, 10 generations of 100 epochs. Top: with live augmentation both curves flatten near 67\%. Bottom: without it training reaches 98\% while test falls to 45\%.}}{5}{}\protected@file@percent }
+\newlabel{fig:early}{{5}{5}{}{figure.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Diagnostic search with full training of each candidate: each kept widening raises test accuracy further.}}{5}{}\protected@file@percent }
+\newlabel{fig:widening}{{6}{5}{}{figure.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}What made the grown network learn}{6}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Five-seed mean training, official test and validation. Green combines the new learning rate and the new convolution insertion; gray changes neither, blue only the learning rate, orange only the convolution.}}{6}{}\protected@file@percent }
+\newlabel{fig:lrconv}{{7}{6}{}{figure.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Result: learning continues across generations}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Three Datasets}{6}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces All actions available, 10, 12, 15 and 20 generations (rows): training, official test and validation, three seeds each. With 15 generations every seed reaches about 90\%.}}{7}{}\protected@file@percent }
+\newlabel{fig:gencount}{{8}{7}{}{figure.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Growth by sequential convolutions, 12 generations of 10 epochs: training (left), official test (middle) and validation (right) for three seeds.}}{7}{}\protected@file@percent }
+\newlabel{fig:reference}{{9}{7}{}{figure.9}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Official test accuracy of the sequential-convolution runs at the end of selected generations.}}{7}{}\protected@file@percent }
+\newlabel{tab:reference}{{1}{7}{}{table.1}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Official test accuracy after each generation on the three datasets; colors are seeds. The dashed CIFAR-10 line is the 91.21\% sequential-convolution result.}}{8}{}\protected@file@percent }
+\newlabel{fig:009}{{10}{8}{}{figure.10}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Final official test accuracy and size of the grown networks.}}{8}{}\protected@file@percent }
+\newlabel{tab:009}{{2}{8}{}{table.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces Change in training (blue) and validation (green) accuracy over the generation after each action, by action type and dataset.}}{8}{}\protected@file@percent }
+\newlabel{fig:009-actions}{{11}{8}{}{figure.11}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Summary}{8}{}\protected@file@percent }
+\bibcite{growingnn_original}{1}
+\gdef \@abspage@last{9}
