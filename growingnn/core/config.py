@@ -60,11 +60,15 @@ WEIGHT_COUNT_WEIGHT = 1e-6
 # Monte Carlo tree search (architecture simulation)
 MCTS_UCB1_C = 2
 MCTS_ROLLOUT_DEPTH = 2
+MCTS_ROLLOUT_WEIGHT_DECAY = 0.5
+# Monte Carlo 2: measurements of a node's own score (each with a new training seed) before the
+# search expands it; the node's value is their average. 1 measures once.
+MCTS_MEASUREMENTS_BEFORE_EXPAND = 2
 MCTS_ROLLOUT_EPOCHS = 1
 MCTS_ROLLOUT_LR = ActionLearningRateScheduler(ScheduleMode.CONSTANT, alpha=0.0001)
 #TODO: To be reaserched:
 MCTS_UCB1_USE_SQRT = False  # False: legacy sum + log(N)/n; True: mean + sqrt(log(N)/n)
-MCTS_PROPAGATE_ROLLOUT_VALUE = False  # False: return node.value; True: return latest rollout only
+MCTS_PROPAGATE_ROLLOUT_VALUE = False  # montecarlo_alg only (False: return node.value; True: latest rollout); montecarlo_alg_2 always propagates the rollout
 
 # Minimum sequential simulation algorithm iteration runs after the first pass.
 # Complete these even if simulation_time is already gone.
@@ -145,6 +149,8 @@ class RunningConfig:
         self.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_01 = True
         self.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_02 = True
         self.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_05 = True
+        self.ACTIONS_ENABLE_WIDEN_CONV = True
+        self.ACTIONS_ENABLE_ADD_NORMALIZATION = True
 
     def set_simulation_loaders(self, sim_train_loader: DataLoader, sim_val_loader: DataLoader):
         self.sim_train_loader = sim_train_loader
@@ -162,6 +168,8 @@ class RunningConfig:
         self.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_01 = is_enabled
         self.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_02 = is_enabled
         self.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_05 = is_enabled
+        self.ACTIONS_ENABLE_WIDEN_CONV = is_enabled
+        self.ACTIONS_ENABLE_ADD_NORMALIZATION = is_enabled
 
     def update_shrink_actions(self, is_enabled: bool):
         self.ACTIONS_ENABLE_DEL_LAYER = is_enabled

@@ -10,9 +10,8 @@ action-aware recovery factor from ``lr_scheduler_action``.
 
 from __future__ import annotations
 
-from contextlib import contextmanager, nullcontext
 from math import cos, isclose, pi
-from typing import Any, Iterator, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from growingnn.training.lr_scheduler_action import (
     ActionLearningRateScheduler,
@@ -21,19 +20,6 @@ from growingnn.training.lr_scheduler_action import (
     clamp_to_minimum_learning_rate,
     mark_warmup_schedule_as_fully_complete,
 )
-
-
-def freeze_global_learning_rate_progress_if_supported(lr_scheduler: Any):
-    """
-    Context manager that freezes global epoch progress when available.
-
-    Used by simulation scoring so shared composed schedulers do not burn
-    global_epoch during short rollouts. Non-composed schedulers are a no-op.
-    """
-    freeze = getattr(lr_scheduler, "freeze_global_schedule_progress", None)
-    if callable(freeze):
-        return freeze()
-    return nullcontext()
 
 
 @runtime_checkable
@@ -236,7 +222,6 @@ class ComposedLearningRateScheduler(LearningRateScheduler):
             else float(global_schedule.lr_at(0, total_epochs))
         )
         self.global_epoch = 0
-        self._global_schedule_progress_frozen = False
         mark_warmup_schedule_as_fully_complete(self.recovery._schedule)
 
     def _compose_effective_learning_rate(
@@ -251,8 +236,7 @@ class ComposedLearningRateScheduler(LearningRateScheduler):
             self.global_epoch, self.total_epochs
         )
         recovery_factor = self.recovery.alpha_scheduler(i, iterations)
-        if not self._global_schedule_progress_frozen:
-            self.global_epoch += 1
+        self.global_epoch += 1
         return self._compose_effective_learning_rate(global_learning_rate, recovery_factor)
 
     def structure_changed(self) -> None:
@@ -260,6 +244,10 @@ class ComposedLearningRateScheduler(LearningRateScheduler):
 
     def reset(self) -> None:
         self.structure_changed()
+
+    def _restart(self) -> None:
+        self.global_epoch = 0
+        mark_warmup_schedule_as_fully_complete(self.recovery._schedule)
 
     def learning_rate_config_board_labels(self) -> tuple[str, float]:
         """Mode name and initial global LR for ExperimentBoard config snapshots."""
@@ -269,13 +257,3 @@ class ComposedLearningRateScheduler(LearningRateScheduler):
             f"+{type(recovery_schedule).__name__}]"
         )
         return mode_name, float(self.initial_lr)
-
-    @contextmanager
-    def freeze_global_schedule_progress(self) -> Iterator[ComposedLearningRateScheduler]:
-        """Freeze global epoch progress (use during simulation scoring)."""
-        previous = self._global_schedule_progress_frozen
-        self._global_schedule_progress_frozen = True
-        try:
-            yield self
-        finally:
-            self._global_schedule_progress_frozen = previous

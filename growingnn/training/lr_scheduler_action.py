@@ -8,6 +8,7 @@ curves. They are not the same as standard global epoch LR schedules; see
 
 from __future__ import annotations
 
+import copy
 from abc import ABC, abstractmethod
 from enum import Enum
 from math import cos, exp, pi, tanh
@@ -198,6 +199,15 @@ class LearningRateScheduler(ABC):
 
     def reset(self) -> None:
         self.structure_changed()
+
+    def restarted(self) -> LearningRateScheduler:
+        """A copy in the state it had when training started, for an independent training run."""
+        fresh = copy.deepcopy(self)
+        fresh._restart()
+        return fresh
+
+    def _restart(self) -> None:
+        self.reset()
 
     @abstractmethod
     def learning_rate_config_board_labels(self) -> tuple[str, float]:

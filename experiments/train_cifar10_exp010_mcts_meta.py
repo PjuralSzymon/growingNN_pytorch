@@ -192,6 +192,10 @@ def run_candidate(
     output_dir: Path,
     generations: int = GENERATIONS,
     phase_name: str = "pass",
+    experiment_label: str = "010_mcts_meta",
+    experiment_name: str = "Experiment 010 MCTS meta-parameter tuning",
+    experiment_id_prefix: str = "exp010",
+    scoring_epochs: int = 1,
 ) -> dict[str, Any]:
     history_path = output_dir / "history.pt"
     metadata_path = output_dir / "run.json"
@@ -219,8 +223,8 @@ def run_candidate(
     actual_sim_val_size = len(sim_val.dataset)
     board = ExperimentBoard(
         output_dir / "board",
-        experiment_id=f"exp010_{parameter}_{str(value).replace('.', 'p')}_{dataset}_seed{seed}",
-        experiment_name="Experiment 010 MCTS meta-parameter tuning",
+        experiment_id=f"{experiment_id_prefix}_{parameter}_{str(value).replace('.', 'p')}_{dataset}_seed{seed}",
+        experiment_name=experiment_name,
         dataset=dataset,
         device=str(device),
     )
@@ -231,7 +235,7 @@ def run_candidate(
         lr_scheduler=CosineDecayScheduler(total_epochs=generations * EPOCHS),
         stopper=AccuracyStopper(target_accuracy=0.999),
         simulation_alg=montecarlo_alg,
-        simulation_scheduler=AlwaysSimulationScheduler(float(active["simulation_time"]), 1),
+        simulation_scheduler=AlwaysSimulationScheduler(float(active["simulation_time"]), scoring_epochs),
         simulation_score=SimulationScore(weight_acc=1.0, weight_countW=0.0),
         simulation_set_size=actual_sim_train_size,
         criterion=nn.CrossEntropyLoss(label_smoothing=0.1),
@@ -245,7 +249,7 @@ def run_candidate(
     )
 
     print(
-        f"EXP010 {phase_name}={output_dir.parts[-5]} parameter={parameter} value={value} "
+        f"{experiment_id_prefix.upper()} {phase_name}={output_dir.parts[-5]} parameter={parameter} value={value} "
         f"dataset={dataset} seed={seed} sim_train={actual_sim_train_size}/{len(clean_loader.dataset)} "
         f"({percent:.4f}%) sim_val={actual_sim_val_size} time={active['simulation_time']}s",
         flush=True,
@@ -260,7 +264,7 @@ def run_candidate(
         test_loader=test_loader,
     )
     history = {
-        "experiment": "010_mcts_meta",
+        "experiment": experiment_label,
         "dataset": dataset,
         "seed": seed,
         "parameter": parameter,
@@ -278,6 +282,7 @@ def run_candidate(
     }
     torch.save(history, history_path)
     result = {
+        "experiment": experiment_label,
         "dataset": dataset,
         "seed": seed,
         "parameter": parameter,

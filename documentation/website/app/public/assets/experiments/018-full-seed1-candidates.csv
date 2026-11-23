@@ -1,0 +1,370 @@
+﻿generation,action_id,action_type,full_recorded_action,mean_search_score,visits,chosen,last_rollout_validation_accuracy
+0,A001,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_0', True, True, True] ) ",0.3925595238095238,1,True,0.4044642857142857
+0,A002,Sequential linear," ( Add Seq Linear Layer Action: ['conv1', 'linear2', Linear(in_features=8, out_features=8, bias=True), 'seq_linear_0'] ) ",0.34910714285714284,1,False,0.3455357142857143
+0,A003,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_0', True] ) ",0.30714285714285716,1,False,0.3357142857142857
+1,A004,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_1', False, True, True] ) ",0.4511904761904762,1,True,0.45357142857142857
+1,A005,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__0'] ) ",0.43303571428571425,1,False,0.41517857142857145
+1,A006,Sequential linear," ( Add Seq Linear Layer Action: ['seq_conv_0', 'linear2', Linear(in_features=8, out_features=8, bias=True), 'seq_linear_0'] ) ",0.430952380952381,1,False,0.41785714285714287
+1,A007,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_1', False] ) ",0.4080357142857143,1,False,0.2883928571428571
+1,A008,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_0', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.4008928571428571,1,False,0.3455357142857143
+1,A009,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_0', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_1', True] ) ",0.3919642857142857,1,False,0.33303571428571427
+1,A010,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_0', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_1', True, True, True] ) ",0.3904761904761904,1,False,0.3767857142857143
+1,A011,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_0', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.37916666666666665,1,False,0.45
+1,A012,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_0', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.2348214285714286,1,False,0.2044642857142857
+2,A013,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_2', False, True, True] ) ",0.5354166666666667,1,True,0.5455357142857142
+2,A014,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__0'] ) ",0.525892857142857,1,False,0.4973214285714286
+2,A015,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_0', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_2', True, True, True] ) ",0.5241071428571429,1,False,0.50625
+2,A006,Sequential linear," ( Add Seq Linear Layer Action: ['seq_conv_0', 'linear2', Linear(in_features=8, out_features=8, bias=True), 'seq_linear_0'] ) ",0.5157738095238096,1,False,0.5151785714285714
+2,A016,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5077380952380952,1,False,0.49642857142857144
+2,A017,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_2', False] ) ",0.49940476190476185,1,False,0.46785714285714286
+2,A018,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.49613095238095234,1,False,0.48660714285714285
+2,A019,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_2', False] ) ",0.4952380952380952,1,False,0.3982142857142857
+2,A020,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_0', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.4928571428571429,1,False,0.49642857142857144
+2,A021,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__0'] ) ",0.4889880952380952,1,False,0.5044642857142857
+2,A022,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_0', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.4845238095238096,1,False,0.49464285714285716
+2,A023,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_0', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_2', True] ) ",0.4758928571428571,1,False,0.4830357142857143
+2,A024,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_2', False, True, True] ) ",0.462797619047619,1,False,0.3580357142857143
+2,A005,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__0'] ) ",0.44107142857142856,1,False,0.48035714285714287
+2,A025,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.41160714285714284,1,False,0.48839285714285713
+2,A026,Delete layer, ( Delete Layer Action: ['seq_conv_1'] ) ,0.41041666666666665,1,False,0.3044642857142857
+2,A027,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_0', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.35595238095238096,1,False,0.3607142857142857
+3,A028,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__0'] ) ",0.5666666666666667,1,True,0.5535714285714286
+3,A029,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False] ) ",0.5645833333333333,1,False,0.5616071428571429
+3,A005,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__0'] ) ",0.5586309523809524,1,False,0.5258928571428572
+3,A030,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_2', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__0'] ) ",0.5532738095238096,1,False,0.5455357142857142
+3,A014,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__0'] ) ",0.5502976190476191,1,False,0.51875
+3,A031,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_0', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', True] ) ",0.5485119047619048,1,False,0.5276785714285714
+3,A032,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__0'] ) ",0.5467261904761904,1,False,0.5508928571428572
+3,A033,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False, True, True] ) ",0.5455357142857142,1,False,0.5633928571428571
+3,A034,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_2', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False] ) ",0.5366071428571428,1,False,0.5366071428571428
+3,A035,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_0', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', True, True, True] ) ",0.5273809523809524,1,False,0.5589285714285714
+3,A021,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__0'] ) ",0.5255952380952381,1,False,0.4875
+3,A036,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_2', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5235119047619048,1,False,0.51875
+3,A037,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False, True, True] ) ",0.5214285714285715,1,False,0.5
+3,A038,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_2', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5169642857142857,1,False,0.53125
+3,A016,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5139880952380952,1,False,0.5169642857142858
+3,A039,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_2', 'seq_conv_0', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5130952380952382,1,False,0.49107142857142855
+3,A026,Delete layer, ( Delete Layer Action: ['seq_conv_1'] ) ,0.5122023809523809,1,False,0.48482142857142857
+3,A040,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_2', 'seq_conv_0', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5071428571428571,1,False,0.49464285714285716
+3,A041,Delete layer, ( Delete Layer Action: ['seq_conv_2'] ) ,0.4979166666666666,1,False,0.41517857142857145
+3,A006,Sequential linear," ( Add Seq Linear Layer Action: ['seq_conv_0', 'linear2', Linear(in_features=8, out_features=8, bias=True), 'seq_linear_0'] ) ",0.49404761904761907,1,False,0.34464285714285714
+3,A042,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_2', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False, True, True] ) ",0.48928571428571427,1,False,0.38392857142857145
+3,A043,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False] ) ",0.4467261904761905,1,False,0.3723214285714286
+3,A018,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.4443452380952381,1,False,0.32410714285714287
+3,A044,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_2', 'seq_conv_0', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.42857142857142855,1,False,0.4035714285714286
+3,A025,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.3505952380952381,1,False,0.2375
+3,A045,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_2', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.3449404761904762,1,False,0.3669642857142857
+4,A046,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__1'] ) ",0.5744047619047619,1,True,0.5732142857142857
+4,A029,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False] ) ",0.5702380952380952,1,False,0.5625
+4,A047,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__0', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.562797619047619,1,False,0.5633928571428571
+4,A048,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False] ) ",0.5553571428571429,1,False,0.49642857142857144
+4,A049,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False, True, True] ) ",0.5517857142857143,1,False,0.5553571428571429
+4,A050,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__0', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5464285714285714,1,False,0.5482142857142858
+4,A034,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_2', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False] ) ",0.5461309523809524,1,False,0.49375
+4,A051,Delete layer, ( Delete Layer Action: ['res_conv__0'] ) ,0.5461309523809524,1,False,0.53125
+4,A052,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__1'] ) ",0.5455357142857143,1,False,0.5383928571428571
+4,A043,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False] ) ",0.5449404761904763,1,False,0.5491071428571429
+4,A040,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_2', 'seq_conv_0', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.544345238095238,1,False,0.5508928571428572
+4,A042,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_2', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False, True, True] ) ",0.5422619047619047,1,False,0.475
+4,A053,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__1'] ) ",0.5419642857142857,1,False,0.4705357142857143
+4,A037,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False, True, True] ) ",0.5407738095238095,1,False,0.46875
+4,A033,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False, True, True] ) ",0.5401785714285714,1,False,0.5419642857142857
+4,A054,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__1'] ) ",0.5398809523809524,1,False,0.4982142857142857
+4,A006,Sequential linear," ( Add Seq Linear Layer Action: ['seq_conv_0', 'linear2', Linear(in_features=8, out_features=8, bias=True), 'seq_linear_0'] ) ",0.5392857142857143,1,False,0.5321428571428571
+4,A055,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__0', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5380952380952381,1,False,0.5553571428571429
+4,A056,Residual convolution," ( Add Res Conv Layer Action: ['res_conv__0', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__1'] ) ",0.5339285714285714,1,False,0.5178571428571429
+4,A016,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.531547619047619,1,False,0.5428571428571428
+4,A057,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['res_conv__0', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False, True, True] ) ",0.530654761904762,1,False,0.49375
+4,A018,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5291666666666667,1,False,0.49464285714285716
+4,A026,Delete layer, ( Delete Layer Action: ['seq_conv_1'] ) ,0.5276785714285714,1,False,0.5169642857142858
+4,A058,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'res_conv__0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__1'] ) ",0.5255952380952381,1,False,0.5428571428571428
+4,A038,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_2', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5252976190476191,1,False,0.5276785714285714
+4,A031,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_0', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', True] ) ",0.525,1,False,0.5107142857142857
+4,A039,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_2', 'seq_conv_0', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5226190476190476,1,False,0.5160714285714286
+4,A059,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__0', 'seq_conv_0', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5145833333333334,1,False,0.4955357142857143
+4,A060,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['res_conv__0', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False] ) ",0.5133928571428571,1,False,0.47946428571428573
+4,A035,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_0', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', True, True, True] ) ",0.5026785714285714,1,False,0.37410714285714286
+4,A036,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_2', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5023809523809524,1,False,0.45535714285714285
+4,A061,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_2', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__1'] ) ",0.48601190476190476,1,False,0.5044642857142857
+4,A025,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.4842261904761905,1,False,0.41875
+4,A062,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__0', 'seq_conv_0', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.4791666666666667,1,False,0.3982142857142857
+4,A063,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__1'] ) ",0.4767857142857143,1,False,0.48392857142857143
+4,A041,Delete layer, ( Delete Layer Action: ['seq_conv_2'] ) ,0.46607142857142864,1,False,0.49642857142857144
+4,A045,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_2', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.45654761904761904,1,False,0.44642857142857145
+4,A064,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__0', 'seq_conv_0', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.44255952380952385,1,False,0.39017857142857143
+4,A044,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_2', 'seq_conv_0', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.39375,1,False,0.32410714285714287
+5,A065,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['res_conv__1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False] ) ",0.599107142857143,1,True,0.5651785714285714
+5,A066,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__1', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5949404761904762,1,False,0.59375
+5,A050,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__0', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5910714285714286,1,False,0.5767857142857142
+5,A067,Residual convolution," ( Add Res Conv Layer Action: ['res_conv__1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.5907738095238094,1,False,0.5741071428571428
+5,A068,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'res_conv__0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.5872023809523809,1,False,0.5741071428571428
+5,A055,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__0', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5869047619047619,1,False,0.5767857142857142
+5,A069,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'res_conv__1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.5818452380952381,1,False,0.5598214285714286
+5,A070,Residual convolution," ( Add Res Conv Layer Action: ['res_conv__0', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.5794642857142858,1,False,0.5741071428571428
+5,A016,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5794642857142858,1,False,0.56875
+5,A071,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.5788690476190476,1,False,0.5723214285714285
+5,A033,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False, True, True] ) ",0.5785714285714286,1,False,0.5303571428571429
+5,A072,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.5761904761904763,1,False,0.5625
+5,A073,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['res_conv__1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False, True, True] ) ",0.575,1,False,0.5696428571428571
+5,A034,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_2', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False] ) ",0.5684523809523809,1,False,0.5553571428571429
+5,A037,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False, True, True] ) ",0.5681547619047619,1,False,0.54375
+5,A035,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_0', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', True, True, True] ) ",0.5663690476190476,1,False,0.5669642857142857
+5,A074,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__1', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.5651785714285714,1,False,0.5080357142857143
+5,A042,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_2', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False, True, True] ) ",0.5645833333333333,1,False,0.5116071428571428
+5,A075,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.5633928571428571,1,False,0.5383928571428571
+5,A076,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.562797619047619,1,False,0.5419642857142857
+5,A029,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False] ) ",0.5616071428571429,1,False,0.5205357142857143
+5,A057,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['res_conv__0', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False, True, True] ) ",0.5607142857142856,1,False,0.5375
+5,A048,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False] ) ",0.5604166666666667,1,False,0.5169642857142858
+5,A077,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False, True, True] ) ",0.5571428571428572,1,False,0.5714285714285714
+5,A051,Delete layer, ( Delete Layer Action: ['res_conv__0'] ) ,0.5529761904761905,1,False,0.5339285714285714
+5,A047,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__0', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.5526785714285715,1,False,0.48660714285714285
+5,A043,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False] ) ",0.5520833333333334,1,False,0.5330357142857143
+5,A018,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.550297619047619,1,False,0.5723214285714285
+5,A078,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__1', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5499999999999999,1,False,0.5232142857142857
+5,A079,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False] ) ",0.549404761904762,1,False,0.4875
+5,A038,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_2', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5482142857142858,1,False,0.5232142857142857
+5,A040,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_2', 'seq_conv_0', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5467261904761905,1,False,0.5241071428571429
+5,A080,Delete layer, ( Delete Layer Action: ['res_conv__1'] ) ,0.5467261904761904,1,False,0.44375
+5,A081,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__1', 'seq_conv_2', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5437500000000001,1,False,0.5544642857142857
+5,A060,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['res_conv__0', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False] ) ",0.5401785714285714,1,False,0.5276785714285714
+5,A006,Sequential linear," ( Add Seq Linear Layer Action: ['seq_conv_0', 'linear2', Linear(in_features=8, out_features=8, bias=True), 'seq_linear_0'] ) ",0.5395833333333333,1,False,0.48839285714285713
+5,A082,Residual convolution," ( Add Res Conv Layer Action: ['res_conv__1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.537797619047619,1,False,0.47767857142857145
+5,A025,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.5377976190476191,1,False,0.5098214285714285
+5,A036,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_2', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5372023809523809,1,False,0.48839285714285713
+5,A062,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__0', 'seq_conv_0', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5336309523809524,1,False,0.5151785714285714
+5,A039,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_2', 'seq_conv_0', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5244047619047619,1,False,0.5410714285714285
+5,A031,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_0', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', True] ) ",0.5229166666666667,1,False,0.5133928571428571
+5,A059,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__0', 'seq_conv_0', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5157738095238096,1,False,0.55625
+5,A026,Delete layer, ( Delete Layer Action: ['seq_conv_1'] ) ,0.5154761904761905,1,False,0.5053571428571428
+5,A041,Delete layer, ( Delete Layer Action: ['seq_conv_2'] ) ,0.5077380952380953,1,False,0.48214285714285715
+5,A083,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__1', 'seq_conv_2', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5026785714285714,1,False,0.4669642857142857
+5,A049,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_3', False, True, True] ) ",0.49672619047619043,1,False,0.4133928571428571
+5,A084,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__1', 'seq_conv_2', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.4919642857142857,1,False,0.5044642857142857
+5,A085,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.4851190476190476,1,False,0.5607142857142857
+5,A045,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_2', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.47202380952380957,1,False,0.4857142857142857
+5,A086,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_2', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.4580357142857143,1,False,0.5544642857142857
+5,A044,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_2', 'seq_conv_0', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.4074404761904762,1,False,0.44375
+5,A064,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__0', 'seq_conv_0', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.40119047619047615,1,False,0.3357142857142857
+6,A072,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.6172619047619048,1,True,0.6142857142857143
+6,A078,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__1', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.6077380952380952,1,False,0.6
+6,A051,Delete layer, ( Delete Layer Action: ['res_conv__0'] ) ,0.6074404761904763,1,False,0.6133928571428572
+6,A069,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'res_conv__1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.606547619047619,1,False,0.6160714285714286
+6,A067,Residual convolution," ( Add Res Conv Layer Action: ['res_conv__1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.6053571428571428,1,False,0.5892857142857143
+6,A076,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.6038690476190476,1,False,0.6044642857142857
+6,A087,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_2', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False] ) ",0.6023809523809524,1,False,0.5982142857142857
+6,A088,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_3', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.6017857142857143,1,False,0.5839285714285715
+6,A047,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__0', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.6014880952380952,1,False,0.5973214285714286
+6,A074,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__1', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.6014880952380952,1,False,0.60625
+6,A070,Residual convolution," ( Add Res Conv Layer Action: ['res_conv__0', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.5988095238095238,1,False,0.6142857142857143
+6,A089,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False] ) ",0.5964285714285714,1,False,0.5785714285714286
+6,A090,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['res_conv__0', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False] ) ",0.5949404761904762,1,False,0.5901785714285714
+6,A091,Delete layer, ( Delete Layer Action: ['seq_conv_3'] ) ,0.5943452380952381,1,False,0.5919642857142857
+6,A075,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.5931547619047618,1,False,0.56875
+6,A092,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False, True, True] ) ",0.5925595238095238,1,False,0.5901785714285714
+6,A093,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_3', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False, True, True] ) ",0.5916666666666667,1,False,0.5589285714285714
+6,A055,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__0', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5913690476190476,1,False,0.5741071428571428
+6,A094,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.5901785714285714,1,False,0.5723214285714285
+6,A095,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['res_conv__1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False, True, True] ) ",0.5889880952380953,1,False,0.5366071428571428
+6,A096,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False] ) ",0.5886904761904762,1,False,0.6
+6,A097,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False] ) ",0.5880952380952381,1,False,0.5285714285714286
+6,A068,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'res_conv__0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.5869047619047619,1,False,0.5910714285714286
+6,A098,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_3', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False] ) ",0.5869047619047619,1,False,0.6053571428571428
+6,A099,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['res_conv__1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False] ) ",0.5863095238095238,1,False,0.5964285714285714
+6,A071,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.5860119047619047,1,False,0.5544642857142857
+6,A100,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False, True, True] ) ",0.5860119047619047,1,False,0.54375
+6,A101,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_3', 'seq_conv_2', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5848214285714285,1,False,0.5383928571428571
+6,A102,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_0', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', True] ) ",0.5833333333333334,1,False,0.6035714285714285
+6,A050,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__0', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5824404761904761,1,False,0.5348214285714286
+6,A006,Sequential linear," ( Add Seq Linear Layer Action: ['seq_conv_0', 'linear2', Linear(in_features=8, out_features=8, bias=True), 'seq_linear_0'] ) ",0.5821428571428572,1,False,0.5821428571428572
+6,A016,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5821428571428572,1,False,0.5785714285714286
+6,A103,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False] ) ",0.5800595238095237,1,False,0.5651785714285714
+6,A104,Residual convolution," ( Add Res Conv Layer Action: ['res_conv__1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.5794642857142858,1,False,0.56875
+6,A105,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__1', 'seq_conv_3', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5776785714285714,1,False,0.5598214285714286
+6,A066,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__1', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5705357142857143,1,False,0.5794642857142858
+6,A106,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_0', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', True, True, True] ) ",0.5702380952380953,1,False,0.6053571428571428
+6,A107,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_3', 'seq_conv_2', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5675595238095238,1,False,0.5080357142857143
+6,A018,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5672619047619047,1,False,0.5714285714285714
+6,A108,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False, True, True] ) ",0.5648809523809524,1,False,0.49464285714285716
+6,A080,Delete layer, ( Delete Layer Action: ['res_conv__1'] ) ,0.5553571428571429,1,False,0.5785714285714286
+6,A109,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_2', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False, True, True] ) ",0.5538690476190476,1,False,0.58125
+6,A110,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_3', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.5535714285714286,1,False,0.4982142857142857
+6,A111,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__1', 'seq_conv_3', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5482142857142858,1,False,0.5232142857142857
+6,A085,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.5467261904761905,1,False,0.5455357142857142
+6,A082,Residual convolution," ( Add Res Conv Layer Action: ['res_conv__1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.5464285714285714,1,False,0.4714285714285714
+6,A112,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_3', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5455357142857142,1,False,0.4955357142857143
+6,A040,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_2', 'seq_conv_0', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5443452380952382,1,False,0.5169642857142858
+6,A059,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__0', 'seq_conv_0', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5410714285714286,1,False,0.5178571428571429
+6,A113,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_3', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5404761904761904,1,False,0.5178571428571429
+6,A114,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['res_conv__0', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False, True, True] ) ",0.5383928571428571,1,False,0.46339285714285716
+6,A086,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_2', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.5360119047619047,1,False,0.5491071428571429
+6,A115,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__2'] ) ",0.5267857142857143,1,False,0.5642857142857143
+6,A116,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False, True, True] ) ",0.5267857142857143,1,False,0.45357142857142857
+6,A117,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_3', 'seq_conv_2', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.519345238095238,1,False,0.47767857142857145
+6,A025,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.512797619047619,1,False,0.4705357142857143
+6,A062,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__0', 'seq_conv_0', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.499702380952381,1,False,0.4348214285714286
+6,A039,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_2', 'seq_conv_0', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.4994047619047619,1,False,0.4392857142857143
+6,A118,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_3', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.4901785714285714,1,False,0.48482142857142857
+6,A026,Delete layer, ( Delete Layer Action: ['seq_conv_1'] ) ,0.4875,1,False,0.49464285714285716
+6,A119,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__1', 'seq_conv_3', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.4767857142857143,1,False,0.5107142857142857
+6,A041,Delete layer, ( Delete Layer Action: ['seq_conv_2'] ) ,0.4616071428571429,1,False,0.3776785714285714
+6,A064,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__0', 'seq_conv_0', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.4449404761904762,1,False,0.41517857142857145
+6,A044,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_2', 'seq_conv_0', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.43273809523809526,1,False,0.4035714285714286
+7,A120,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False] ) ",0.6422619047619048,1,True,0.6392857142857142
+7,A121,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_3', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6375000000000001,1,False,0.6303571428571428
+7,A122,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['res_conv__2', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', True, True, True] ) ",0.6369047619047619,1,False,0.6321428571428571
+7,A123,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'res_conv__0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6366071428571428,1,False,0.6205357142857143
+7,A124,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__2', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.6363095238095238,1,False,0.6339285714285714
+7,A125,Residual convolution," ( Add Res Conv Layer Action: ['res_conv__1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6354166666666666,1,False,0.6348214285714285
+7,A097,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False] ) ",0.6351190476190477,1,False,0.6232142857142857
+7,A126,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6339285714285715,1,False,0.6410714285714286
+7,A127,Residual convolution," ( Add Res Conv Layer Action: ['res_conv__1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6339285714285714,1,False,0.6232142857142857
+7,A128,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'res_conv__1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6303571428571428,1,False,0.6285714285714286
+7,A129,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False, True, True] ) ",0.6285714285714286,1,False,0.6321428571428571
+7,A050,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__0', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.6276785714285714,1,False,0.6098214285714286
+7,A103,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False] ) ",0.6267857142857143,1,False,0.6142857142857143
+7,A102,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_0', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', True] ) ",0.6267857142857143,1,False,0.6285714285714286
+7,A130,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6264880952380952,1,False,0.6169642857142857
+7,A093,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_3', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False, True, True] ) ",0.6264880952380952,1,False,0.6205357142857143
+7,A131,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_3', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6261904761904762,1,False,0.6196428571428572
+7,A109,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_2', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False, True, True] ) ",0.6261904761904762,1,False,0.6285714285714286
+7,A006,Sequential linear," ( Add Seq Linear Layer Action: ['seq_conv_0', 'linear2', Linear(in_features=8, out_features=8, bias=True), 'seq_linear_0'] ) ",0.625,1,False,0.6339285714285714
+7,A066,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__1', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.624702380952381,1,False,0.6098214285714286
+7,A132,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__2', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.624702380952381,1,False,0.6098214285714286
+7,A133,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6238095238095238,1,False,0.6
+7,A091,Delete layer, ( Delete Layer Action: ['seq_conv_3'] ) ,0.6235119047619048,1,False,0.63125
+7,A134,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6232142857142856,1,False,0.6053571428571428
+7,A135,Residual convolution," ( Add Res Conv Layer Action: ['res_conv__1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6223214285714286,1,False,0.61875
+7,A106,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_0', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', True, True, True] ) ",0.6223214285714286,1,False,0.6044642857142857
+7,A116,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False, True, True] ) ",0.6193452380952381,1,False,0.6116071428571429
+7,A136,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__2', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.6184523809523809,1,False,0.5892857142857143
+7,A055,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__0', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.6163690476190476,1,False,0.5848214285714286
+7,A098,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_3', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False] ) ",0.6142857142857143,1,False,0.6125
+7,A137,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6136904761904762,1,False,0.6196428571428572
+7,A108,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False, True, True] ) ",0.6116071428571428,1,False,0.6223214285714286
+7,A090,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['res_conv__0', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False] ) ",0.6113095238095239,1,False,0.6142857142857143
+7,A138,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'res_conv__2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6110119047619048,1,False,0.5794642857142858
+7,A099,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['res_conv__1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False] ) ",0.6071428571428572,1,False,0.5964285714285714
+7,A089,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False] ) ",0.6071428571428571,1,False,0.5428571428571428
+7,A139,Sequential linear," ( Add Seq Linear Layer Action: ['res_conv__2', 'linear2', Linear(in_features=8, out_features=8, bias=True), 'seq_linear_0'] ) ",0.606547619047619,1,False,0.5767857142857142
+7,A114,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['res_conv__0', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False, True, True] ) ",0.6062500000000001,1,False,0.5598214285714286
+7,A101,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_3', 'seq_conv_2', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.6029761904761904,1,False,0.6035714285714285
+7,A140,Residual convolution," ( Add Res Conv Layer Action: ['res_conv__0', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6020833333333333,1,False,0.5151785714285714
+7,A141,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6017857142857143,1,False,0.5982142857142857
+7,A092,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False, True, True] ) ",0.6005952380952381,1,False,0.5553571428571429
+7,A051,Delete layer, ( Delete Layer Action: ['res_conv__0'] ) ,0.5982142857142857,1,False,0.6035714285714285
+7,A142,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_2', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.5964285714285714,1,False,0.6035714285714285
+7,A078,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__1', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5958333333333333,1,False,0.6125
+7,A040,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_2', 'seq_conv_0', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5955357142857143,1,False,0.5919642857142857
+7,A143,Delete layer, ( Delete Layer Action: ['res_conv__2'] ) ,0.594047619047619,1,False,0.5232142857142857
+7,A087,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_2', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False] ) ",0.5931547619047619,1,False,0.60625
+7,A080,Delete layer, ( Delete Layer Action: ['res_conv__1'] ) ,0.5916666666666667,1,False,0.6035714285714285
+7,A100,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False, True, True] ) ",0.5898809523809524,1,False,0.49642857142857144
+7,A096,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False] ) ",0.5895833333333333,1,False,0.5348214285714286
+7,A074,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__1', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.5895833333333333,1,False,0.5794642857142858
+7,A144,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['res_conv__2', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', True] ) ",0.5892857142857143,1,False,0.6017857142857143
+7,A047,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__0', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.5886904761904762,1,False,0.5821428571428572
+7,A112,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_3', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5863095238095238,1,False,0.5821428571428572
+7,A145,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.5830357142857143,1,False,0.5758928571428571
+7,A059,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__0', 'seq_conv_0', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5812499999999999,1,False,0.5669642857142857
+7,A016,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5806547619047618,1,False,0.5919642857142857
+7,A018,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5708333333333333,1,False,0.5678571428571428
+7,A105,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__1', 'seq_conv_3', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5651785714285714,1,False,0.5705357142857143
+7,A113,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_3', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5565476190476191,1,False,0.5392857142857143
+7,A062,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__0', 'seq_conv_0', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5520833333333334,1,False,0.5348214285714286
+7,A117,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_3', 'seq_conv_2', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.5461309523809524,1,False,0.5116071428571428
+7,A095,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['res_conv__1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_4', False, True, True] ) ",0.5348214285714286,1,False,0.4133928571428571
+7,A107,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_3', 'seq_conv_2', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5336309523809524,1,False,0.4830357142857143
+7,A025,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.5327380952380952,1,False,0.5
+7,A111,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__1', 'seq_conv_3', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5300595238095238,1,False,0.5258928571428572
+7,A026,Delete layer, ( Delete Layer Action: ['seq_conv_1'] ) ,0.5264880952380953,1,False,0.5580357142857143
+7,A039,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_2', 'seq_conv_0', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5193452380952381,1,False,0.4455357142857143
+7,A118,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_3', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.48214285714285715,1,False,0.4642857142857143
+7,A041,Delete layer, ( Delete Layer Action: ['seq_conv_2'] ) ,0.4764880952380952,1,False,0.45625
+7,A064,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__0', 'seq_conv_0', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.47291666666666665,1,False,0.45625
+7,A044,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_2', 'seq_conv_0', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.4666666666666666,1,False,0.45
+7,A119,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__1', 'seq_conv_3', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.4523809523809524,1,False,0.41785714285714287
+7,A146,Delete layer, ( Delete Layer Action: ['seq_conv_0'] ) ,0.36160714285714285,1,False,0.24732142857142858
+8,A138,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'res_conv__2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.662797619047619,1,True,0.6633928571428571
+8,A147,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_4', 'res_conv__2', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.6622023809523809,1,False,0.6580357142857143
+8,A125,Residual convolution," ( Add Res Conv Layer Action: ['res_conv__1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6619047619047619,1,False,0.6589285714285714
+8,A148,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_4', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.6598214285714286,1,False,0.65625
+8,A127,Residual convolution," ( Add Res Conv Layer Action: ['res_conv__1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6547619047619048,1,False,0.6535714285714286
+8,A149,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'seq_conv_4', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False, True, True] ) ",0.6541666666666667,1,False,0.6482142857142857
+8,A150,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_4', 'res_conv__2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6538690476190476,1,False,0.6401785714285714
+8,A140,Residual convolution," ( Add Res Conv Layer Action: ['res_conv__0', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6529761904761905,1,False,0.6392857142857142
+8,A151,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False] ) ",0.6526785714285714,1,False,0.6491071428571429
+8,A152,Delete layer, ( Delete Layer Action: ['seq_conv_4'] ) ,0.6523809523809524,1,False,0.6357142857142857
+8,A130,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6520833333333333,1,False,0.65625
+8,A153,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_4', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.6511904761904762,1,False,0.6553571428571429
+8,A006,Sequential linear," ( Add Seq Linear Layer Action: ['seq_conv_0', 'linear2', Linear(in_features=8, out_features=8, bias=True), 'seq_linear_0'] ) ",0.6497023809523809,1,False,0.6241071428571429
+8,A123,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'res_conv__0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6488095238095238,1,False,0.6303571428571428
+8,A066,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__1', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.6482142857142857,1,False,0.6589285714285714
+8,A137,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6473214285714286,1,False,0.6473214285714286
+8,A128,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'res_conv__1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6470238095238096,1,False,0.6357142857142857
+8,A154,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_4', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.6470238095238096,1,False,0.6428571428571429
+8,A133,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6464285714285715,1,False,0.6267857142857143
+8,A134,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6461309523809523,1,False,0.6348214285714285
+8,A155,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False] ) ",0.6449404761904762,1,False,0.6491071428571429
+8,A135,Residual convolution," ( Add Res Conv Layer Action: ['res_conv__1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6440476190476191,1,False,0.6339285714285714
+8,A121,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_3', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6437499999999999,1,False,0.6330357142857143
+8,A156,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False] ) ",0.6431547619047618,1,False,0.6526785714285714
+8,A050,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__0', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.6425595238095239,1,False,0.6419642857142858
+8,A157,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_4', 'res_conv__2', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.6425595238095237,1,False,0.6151785714285715
+8,A131,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_3', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6410714285714286,1,False,0.6428571428571429
+8,A158,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_4', 'res_conv__2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False, True, True] ) ",0.6410714285714286,1,False,0.6375
+8,A159,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_4', 'res_conv__2', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.6410714285714286,1,False,0.6053571428571428
+8,A160,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['res_conv__0', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False] ) ",0.6404761904761905,1,False,0.6267857142857143
+8,A161,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False, True, True] ) ",0.6389880952380952,1,False,0.6330357142857143
+8,A162,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_3', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False] ) ",0.6386904761904763,1,False,0.6321428571428571
+8,A163,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_4', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6357142857142857,1,False,0.5928571428571429
+8,A164,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_0', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', True, True, True] ) ",0.6345238095238095,1,False,0.6392857142857142
+8,A165,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['res_conv__2', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', True, True, True] ) ",0.6339285714285714,1,False,0.6232142857142857
+8,A166,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['res_conv__1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False, True, True] ) ",0.6324404761904762,1,False,0.63125
+8,A055,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__0', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.6324404761904762,1,False,0.5901785714285714
+8,A126,Residual convolution," ( Add Res Conv Layer Action: ['conv1', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6318452380952381,1,False,0.5758928571428571
+8,A167,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_2', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False] ) ",0.6306547619047619,1,False,0.63125
+8,A168,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False] ) ",0.6303571428571428,1,False,0.6321428571428571
+8,A169,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_0', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', True] ) ",0.6297619047619047,1,False,0.6
+8,A170,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False, True, True] ) ",0.6282738095238095,1,False,0.6205357142857143
+8,A143,Delete layer, ( Delete Layer Action: ['res_conv__2'] ) ,0.6279761904761906,1,False,0.5928571428571429
+8,A139,Sequential linear," ( Add Seq Linear Layer Action: ['res_conv__2', 'linear2', Linear(in_features=8, out_features=8, bias=True), 'seq_linear_0'] ) ",0.6276785714285714,1,False,0.5473214285714286
+8,A141,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6270833333333333,1,False,0.6401785714285714
+8,A171,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['seq_conv_4', 'res_conv__2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False] ) ",0.6238095238095238,1,False,0.5428571428571428
+8,A051,Delete layer, ( Delete Layer Action: ['res_conv__0'] ) ,0.6223214285714286,1,False,0.5794642857142858
+8,A172,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_3', 'seq_conv_2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False, True, True] ) ",0.6220238095238095,1,False,0.6267857142857143
+8,A142,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_2', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6217261904761905,1,False,0.6419642857142858
+8,A173,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['conv1', 'seq_conv_4', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False] ) ",0.6196428571428572,1,False,0.5553571428571429
+8,A174,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'seq_conv_1', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False, True, True] ) ",0.6190476190476191,1,False,0.5839285714285715
+8,A091,Delete layer, ( Delete Layer Action: ['seq_conv_3'] ) ,0.6178571428571429,1,False,0.5839285714285715
+8,A078,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__1', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.6169642857142857,1,False,0.6116071428571429
+8,A145,Residual convolution," ( Add Res Conv Layer Action: ['seq_conv_1', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'res_conv__3'] ) ",0.6154761904761905,1,False,0.6089285714285714
+8,A175,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['res_conv__1', 'seq_conv_3', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False] ) ",0.6142857142857143,1,False,0.5589285714285714
+8,A176,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['conv1', 'res_conv__0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False, True, True] ) ",0.6098214285714286,1,False,0.5348214285714286
+8,A177,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['seq_conv_2', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False, True, True] ) ",0.605654761904762,1,False,0.5276785714285714
+8,A016,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.6047619047619048,1,False,0.5946428571428571
+8,A101,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_3', 'seq_conv_2', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.6035714285714285,1,False,0.5946428571428571
+8,A178,Sequential convolution without BN," ( Add Seq Conv Layer Action: ['res_conv__2', 'linear2', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', True] ) ",0.6011904761904763,1,False,0.5160714285714286
+8,A059,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__0', 'seq_conv_0', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5967261904761905,1,False,0.59375
+8,A047,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__0', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.5955357142857143,1,False,0.5276785714285714
+8,A040,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_2', 'seq_conv_0', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5886904761904762,1,False,0.5964285714285714
+8,A080,Delete layer, ( Delete Layer Action: ['res_conv__1'] ) ,0.588392857142857,1,False,0.5508928571428572
+8,A179,Sequential convolution + BN," ( Add Seq Conv Layer Action: ['res_conv__0', 'seq_conv_0', Conv2d(8, 8, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)), 'seq_conv_5', False, True, True] ) ",0.5851190476190476,1,False,0.4607142857142857
+8,A105,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__1', 'seq_conv_3', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5830357142857143,1,False,0.5794642857142858
+8,A018,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5767857142857143,1,False,0.5696428571428571
+8,A074,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'res_conv__1', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.5705357142857143,1,False,0.5705357142857143
+8,A107,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_3', 'seq_conv_2', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5666666666666667,1,False,0.5607142857142857
+8,A112,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_3', Dropout2d(p=0.1, inplace=False), 'seq_dropout_0'] ) ",0.5372023809523809,1,False,0.43125
+8,A113,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_3', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5336309523809524,1,False,0.5276785714285714
+8,A111,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__1', 'seq_conv_3', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5258928571428572,1,False,0.5169642857142858
+8,A062,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__0', 'seq_conv_0', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5178571428571429,1,False,0.48392857142857143
+8,A025,Dropout," ( Add Seq Dropout Layer Action: ['conv1', 'seq_conv_1', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.5154761904761905,1,False,0.5107142857142857
+8,A039,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_2', 'seq_conv_0', Dropout2d(p=0.2, inplace=False), 'seq_dropout_0'] ) ",0.5071428571428571,1,False,0.4446428571428571
+8,A044,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_2', 'seq_conv_0', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.4770833333333333,1,False,0.48482142857142857
+8,A117,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_3', 'seq_conv_2', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.47261904761904766,1,False,0.45714285714285713
+8,A064,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__0', 'seq_conv_0', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.47232142857142856,1,False,0.4455357142857143
+8,A026,Delete layer, ( Delete Layer Action: ['seq_conv_1'] ) ,0.4702380952380952,1,False,0.40714285714285714
+8,A041,Delete layer, ( Delete Layer Action: ['seq_conv_2'] ) ,0.45535714285714285,1,False,0.45535714285714285
+8,A119,Dropout," ( Add Seq Dropout Layer Action: ['res_conv__1', 'seq_conv_3', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.4306547619047619,1,False,0.48839285714285713
+8,A118,Dropout," ( Add Seq Dropout Layer Action: ['seq_conv_1', 'seq_conv_3', Dropout2d(p=0.5, inplace=False), 'seq_dropout_0'] ) ",0.42470238095238094,1,False,0.41875
+8,A146,Delete layer, ( Delete Layer Action: ['seq_conv_0'] ) ,0.4226190476190476,1,False,0.43392857142857144

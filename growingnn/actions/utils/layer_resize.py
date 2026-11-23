@@ -1,3 +1,5 @@
+import copy
+
 import torch
 import torch.fx as fx
 import torch.nn as nn
@@ -5,7 +7,8 @@ import torch.nn as nn
 from growingnn.core import config
 from growingnn.core.config import PASSTHROUGH_MODULES_TO_UPDATE, PROPAGATION_RESIZABLE_MODULES, PASSTHROUGH_MODULES
 from growingnn.core.logger import logger
-from growingnn.utils.fx import ModuleResolver, NodeEditor, NodeTypeChecker, NodeWidthAnalyser
+from growingnn.actions.utils.dry_run import edit_keeps_network_working
+from growingnn.utils.fx import ModuleResolver, NodeEditor, NodeTypeChecker, NodeWidthAnalyser, PropagationVerdict
 from growingnn.actions.utils.layer_Factory import ConvFactory, LinearFactory
 from growingnn.utils.quaziIdentity import get_reshsper
 
@@ -39,6 +42,29 @@ def _rescale_sequential_output(gm, name: str, mod: nn.Sequential, width: int) ->
     path, conv = found
     if conv.out_channels != width:
         NodeEditor.replace_submodule(gm, path, ConvFactory.create_conv_with_rescaled_output_channels(conv, width))
+
+
+def _rescale_sequential_input(gm, name: str, mod: nn.Sequential, width: int) -> None:
+    """Resize the input of the first convolution or linear layer inside a residual branch."""
+    for child_name, child in mod.named_children():
+        path = f"{name}.{child_name}"
+        if isinstance(child, nn.Conv2d):
+            if child.in_channels != width:
+                NodeEditor.replace_submodule(gm, path, ConvFactory.create_conv_with_rescaled_input_channels(child, width))
+            return
+        if isinstance(child, nn.Linear):
+            if child.in_features != width:
+                NodeEditor.replace_submodule(gm, path, LinearFactory.create_linear_with_rescaled_connections(child, width))
+            return
+
+
+def _sequential_input_width(mod: nn.Sequential) -> int | None:
+    for child in mod.children():
+        if isinstance(child, nn.Conv2d):
+            return child.in_channels
+        if isinstance(child, nn.Linear):
+            return child.in_features
+    return None
 
 
 def _norm_feature_width(mod: nn.Module) -> int | None:
@@ -129,6 +155,7 @@ _INPUT_RESIZE_CHAIN = (
     (nn.Conv2d, _rescale_conv_input),
     (PASSTHROUGH_MODULES_TO_UPDATE, _rescale_batch_norm),
     (nn.LayerNorm, _rescale_layer_norm),
+    (nn.Sequential, _rescale_sequential_input),
 )
 
 
@@ -205,6 +232,8 @@ def _module_input_width(mod: nn.Module) -> int | None:
         return mod.in_features
     if isinstance(mod, nn.Conv2d):
         return mod.in_channels
+    if isinstance(mod, nn.Sequential):
+        return _sequential_input_width(mod)
     return _norm_feature_width(mod)
 
 
@@ -283,7 +312,7 @@ def _fix_module_input_mismatch(gm: fx.GraphModule, node: fx.Node) -> bool:
     current = _module_input_width(mod)
     if current is None or current == target_w:
         return False
-    if isinstance(mod, (PROPAGATION_RESIZABLE_MODULES, PASSTHROUGH_MODULES_TO_UPDATE, nn.LayerNorm)):
+    if isinstance(mod, (PROPAGATION_RESIZABLE_MODULES, PASSTHROUGH_MODULES_TO_UPDATE, nn.LayerNorm, nn.Sequential)):
         _rescale_input_connections(gm, name, mod, target_w)
         updated = ModuleResolver.get_layer_module(name, gm)
         return updated is not None and _module_input_width(updated) == target_w and current != target_w
@@ -423,8 +452,13 @@ def can_resize_linear_output(
     gm: nn.Module | fx.GraphModule,
     layer_id: str,
     new_width: int,
+    probe: torch.Tensor | None = None,
 ) -> bool:
-    """Return True when a Linear layer output can be rescaled to new_width and propagated."""
+    """Return True when a Linear layer output can be rescaled to new_width and propagated.
+
+    When the new width reaches an operation the propagation rules do not know, the resize is tried
+    on a copy of the network with *probe* as input; without a probe such a resize is refused.
+    """
     gm = gm if isinstance(gm, fx.GraphModule) else fx.symbolic_trace(gm)
     mod = ModuleResolver.get_layer_module(layer_id, gm)
     if not isinstance(mod, nn.Linear) or new_width == mod.out_features:
@@ -435,7 +469,10 @@ def can_resize_linear_output(
     elif not _within_linear_matrix_limit(mod, new_width):
         return False
     node = ModuleResolver.find_call_module(gm.graph.nodes, layer_id)
-    return not NodeWidthAnalyser.propagation_hits_unsizable(gm, node)
+    verdict = NodeWidthAnalyser.propagation_verdict(gm, node)
+    if verdict is PropagationVerdict.UNKNOWN and probe is not None:
+        return edit_keeps_network_working(gm, probe, lambda candidate: resize_layer_output(candidate, layer_id, new_width))
+    return verdict is PropagationVerdict.SAFE
 
 
 def resize_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, new_width: int) -> fx.GraphModule:
@@ -456,4 +493,105 @@ def resize_layer_output(gm: nn.Module | fx.GraphModule, layer_id: str, new_width
     for tensor in list(gm.parameters()) + list(gm.buffers()):
         if tensor.numel() > 0 and not tensor.is_contiguous():
             tensor.data = tensor.data.contiguous()
+    return gm
+
+
+def _width_is_absorbed(gm: fx.GraphModule, node: fx.Node) -> bool:
+    """True when every path from *node* reaches a convolution or linear layer through channel-wise operations.
+
+    Those layers read the new channels with zero weights, so a wider *node* leaves the network's
+    output shape and values unchanged. Flatten counts only after global pooling, where it keeps the
+    channel count.
+    """
+    pending, seen = list(node.users), set()
+    while pending:
+        cur = pending.pop()
+        if cur in seen:
+            continue
+        seen.add(cur)
+        if cur.op == "call_module":
+            module = ModuleResolver.get_layer_module(cur.target, gm)
+            if isinstance(module, nn.Linear) or (isinstance(module, nn.Conv2d) and module.groups == 1):
+                continue
+            if isinstance(module, nn.Sequential) and _sequential_branch_resizable(module):
+                continue
+        if NodeTypeChecker.is_flatten_node(cur, gm):
+            if not NodeTypeChecker.is_global_pool(cur.all_input_nodes[0], gm):
+                return False
+        elif not (NodeTypeChecker.is_passthrough(gm, cur) or NodeTypeChecker.is_add(cur)
+                  or NodeTypeChecker.is_pool_node(cur, gm)
+                  or (cur.op == "call_module" and isinstance(
+                      ModuleResolver.get_layer_module(cur.target, gm), PASSTHROUGH_MODULES_TO_UPDATE))):
+            return False
+        pending.extend(cur.users)
+    return True
+
+
+def can_resize_conv_output(gm: fx.GraphModule, layer_id: str) -> bool:
+    """Return True when an ungrouped convolution can be widened and the new width propagated."""
+    mod = ModuleResolver.get_layer_module(layer_id, gm)
+    if not isinstance(mod, nn.Conv2d) or mod.groups != 1:
+        return False
+    node = next((n for n in gm.graph.nodes if n.op == "call_module" and n.target == layer_id), None)
+    return (node is not None and not NodeWidthAnalyser.propagation_hits_unsizable(gm, node)
+            and _width_is_absorbed(gm, node))
+
+
+def _keep_old_weights_and_zero_new_inputs(gm: fx.GraphModule, before: dict[str, nn.Module]) -> None:
+    """Initialize every grown layer so the network computes what it did before growing.
+
+    Old weights keep their values and positions. New output channels get the layer's default random
+    initialization; inputs from new channels get zero weights. New channels only add terms to the sums
+    that later layers compute, so those zeros make every sum, and the output, unchanged.
+    """
+    def size(module):
+        return module.weight.shape if isinstance(module, (nn.Conv2d, nn.Linear)) else (module.num_features,)
+
+    with torch.no_grad():
+        for name, mod in gm.named_modules():
+            old = before.get(name)
+            if old is None or type(old) is not type(mod) or size(old) == size(mod):
+                continue
+            if any(new < previous for new, previous in zip(size(mod), size(old))):
+                raise RuntimeError(f"{name} shrank while widening")
+            mod.reset_parameters()
+            if isinstance(mod, (nn.Conv2d, nn.Linear)):
+                outputs, inputs = old.weight.shape[:2]
+                mod.weight[:, inputs:] = 0
+                mod.weight[:outputs, :inputs] = old.weight
+                if mod.bias is not None:
+                    mod.bias[:outputs] = old.bias
+                continue
+            for attr in ("weight", "bias", "running_mean", "running_var", "num_batches_tracked"):
+                value = getattr(old, attr)
+                if value is None:
+                    continue
+                target = getattr(mod, attr)
+                if value.dim() == 0:
+                    target.copy_(value)
+                else:
+                    target[:old.num_features] = value
+
+
+def resize_conv_output(gm: fx.GraphModule, layer_id: str, new_width: int) -> fx.GraphModule:
+    """Widen an ungrouped convolution, propagate the new width, and keep the network's function.
+
+    Every layer the new width reaches grows with it: BatchNorm, the partners of residual sums, and the
+    layers that read the channels, up to the classifier after global pooling.
+    """
+    mod = ModuleResolver.get_layer_module(layer_id, gm)
+    if not isinstance(mod, nn.Conv2d) or mod.groups != 1:
+        raise ValueError(f"{layer_id} must be an ungrouped Conv2d")
+    if new_width <= mod.out_channels:
+        raise ValueError("convolution widening must increase the channel count")
+    if not can_resize_conv_output(gm, layer_id):
+        raise ValueError(f"Cannot safely propagate width from {layer_id}")
+    before = {name: copy.deepcopy(module) for name, module in gm.named_modules()
+              if isinstance(module, (nn.Conv2d, nn.Linear, *PASSTHROUGH_MODULES_TO_UPDATE))}
+    head_name, head_width = _snapshot_pinned_head_out(gm)
+    _rescale_conv_output(gm, layer_id, mod, new_width)
+    fix_graph_widths(gm, align_add_to=new_width, pinned_head_out=head_width,
+                     pinned_head_name=head_name)
+    _keep_old_weights_and_zero_new_inputs(gm, before)
+    gm.recompile()
     return gm

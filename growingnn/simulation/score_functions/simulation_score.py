@@ -26,6 +26,7 @@ class SimulationScore:
         "weight_time": score_time,
         "weight_countW": score_count_weights,
     }
+    _TRAINING_TERMS = ("weight_acc", "weight_loss", "weight_time")
 
     def __init__(
         self,
@@ -34,6 +35,7 @@ class SimulationScore:
         weight_time: float = 0.0,
         weight_countW: float = 0.5,
         accuracy_metric: AccuracyMetric | str = AccuracyMetric.VAL_ACC,
+        average_last_epochs: int = 1,
     ):
         self.weights = {
             "weight_acc": weight_acc,
@@ -42,6 +44,8 @@ class SimulationScore:
             "weight_countW": weight_countW,
         }
         self.accuracy_metric = parse_accuracy_metric(accuracy_metric)
+        # Averaging the last few scoring epochs smooths epoch-to-epoch validation noise.
+        self.average_last_epochs = int(average_last_epochs)
 
     def weight_sum(self) -> float:
         return sum(self.weights.values())
@@ -51,6 +55,21 @@ class SimulationScore:
         model: nn.Module | fx.GraphModule,
         running_config: RunningConfig,
     ) -> float:
+        return self.score_and_train(model, running_config)[0]
+
+    def score_and_train(
+        self,
+        model: nn.Module | fx.GraphModule,
+        running_config: RunningConfig,
+    ) -> tuple[float, nn.Module | fx.GraphModule]:
+        """Score a copy of *model* and also return that copy after its scoring training.
+
+        The first term that trains (accuracy, loss or time) trains the returned copy in place, so a
+        search can continue training from it. If only parameter count is weighted, the copy is
+        untrained.
+        """
+        trained = copy.deepcopy(model)
+        trained_in_use = False
         total = 0.0
         board = running_config.experiment_board
         board_metrics = board.simulation_metrics if board is not None else None
@@ -61,7 +80,11 @@ class SimulationScore:
             weight = self.weights[key]
             if weight <= 0.0:
                 continue
-            term_score = fn(copy.deepcopy(model), running_config)
+            if not trained_in_use and key in self._TRAINING_TERMS:
+                term_model, trained_in_use = trained, True
+            else:
+                term_model = copy.deepcopy(model)
+            term_score = fn(term_model, running_config)
             if board_metrics is not None:
                 board_metrics[f"{key}_score"] = term_score
                 board_metrics[f"{key}_weight"] = weight
@@ -70,8 +93,8 @@ class SimulationScore:
         divisor = self.weight_sum()
         if math.isclose(divisor, 0.0):
             logger.error("SimulationScore.score: all weights are 0, returning 0 instead of NaN")
-            return 0.0
+            return 0.0, trained
         composite = total / divisor
         if board_metrics is not None:
             board_metrics["composite_score"] = composite
-        return composite
+        return composite, trained

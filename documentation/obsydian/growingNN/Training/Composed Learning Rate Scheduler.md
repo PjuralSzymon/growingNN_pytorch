@@ -65,7 +65,7 @@ config.lr_scheduler = build_composed_learning_rate_scheduler(
 
 ## Simulation scoring
 
-`run_simulation_scoring_gradient_descent` in `growingnn/simulation/score_functions/simulation_training.py` wraps `gradient_descent` with `freeze_global_learning_rate_progress_if_supported`. That freezes `global_epoch` on the shared composed scheduler so short simulation rollouts do not burn global progress. `structure_changed` still only resets recovery.
+`run_simulation_scoring_gradient_descent` in `growingnn/simulation/score_functions/simulation_training.py` trains each candidate with `lr_scheduler.restarted()`: a copy of the main schedule in its starting state (global epoch 0, recovery fully warmed). Every candidate in every generation is scored with the learning rates the main run starts with, and scoring never changes the main schedule. `structure_changed` still only resets recovery.
 
 ## Comparison with the original growingNN paper
 

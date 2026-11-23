@@ -1,0 +1,3 @@
+# Investigate repeated training during Monte Carlo search
+
+Monte Carlo search can train models at three stages: when expanding a tree node, after each additional rollout action, and again when calculating the simulation score. The first two use `MCTS_ROLLOUT_EPOCHS`; scoring uses `simulation_scheduler.simulation_epochs`. Investigate whether each stage improves action selection enough to justify its compute cost, or whether some stages are redundant or could be combined. Trace which stages actually run for each search configuration, then compare action rankings, downstream model performance, and runtime with individual stages reduced or removed before changing the algorithm.

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from enum import Enum
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -15,6 +17,28 @@ from growingnn.core.config import (
     PASSTHROUGH_FUNCTIONS,
     PROPAGATION_RESIZABLE_MODULES,
 )
+
+
+# Operations that move or merge the feature dimension, so a new width changes what they compute.
+RESHAPING_OPERATIONS = frozenset({torch.cat, torch.concat, torch.reshape, torch.permute, torch.transpose,
+                                  "view", "reshape", "permute", "transpose"})
+
+
+class PropagationVerdict(Enum):
+    """Whether a new layer width can be propagated through the rest of the graph."""
+
+    SAFE = "safe"
+    UNKNOWN = "unknown"  # the width reaches an operation the rules do not know
+    BLOCKED = "blocked"
+
+
+class _WidthStep(Enum):
+    """How an operation treats a new width on its input."""
+
+    ABSORBS = "absorbs"  # reads it with resizable weights; its own output keeps its width
+    CARRIES = "carries"  # passes it on unchanged
+    BLOCKS = "blocks"
+    UNKNOWN = "unknown"
 
 
 class ModuleResolver:
@@ -100,6 +124,17 @@ class NodeTypeChecker:
         return NodeTypeChecker.two_d_pool_kind(node, gm) is not None
 
     @staticmethod
+    def is_global_pool(node: fx.Node, gm: fx.GraphModule) -> bool:
+        """True for adaptive 2-D pooling to a 1x1 output."""
+        if NodeTypeChecker.two_d_pool_kind(node, gm) not in ("adaptive_max", "adaptive_avg"):
+            return False
+        if node.op == "call_module":
+            size = ModuleResolver.get_layer_module(node, gm).output_size
+        else:
+            size = node.args[1] if len(node.args) > 1 else node.kwargs.get("output_size")
+        return size in (1, (1, 1))
+
+    @staticmethod
     def two_d_pool_kind(node: fx.Node, gm: fx.GraphModule) -> str | None:
         """Return windowed_max/windowed_avg/adaptive_max/adaptive_avg, else None."""
         if node.op == "call_function":
@@ -152,7 +187,18 @@ class NodeWidthAnalyser:
                     elif isinstance(child, nn.Linear):
                         width = child.out_features
                 return width
-        if (NodeTypeChecker.is_passthrough(gm, n) or NodeTypeChecker.is_add(n)) and n.all_input_nodes:
+        # Flatten keeps the width only when nothing spatial is left: after global pooling, or on
+        # (batch, features) input. After other pooling its width is channels x height x width.
+        if NodeTypeChecker.is_flatten_node(n, gm) and n.all_input_nodes:
+            source = n.all_input_nodes[0]
+            if NodeTypeChecker.is_global_pool(source, gm):
+                return NodeWidthAnalyser.node_output_width(gm, source)
+            if source.op == "call_module" and isinstance(ModuleResolver.get_layer_module(source.target, gm), nn.Linear):
+                return NodeWidthAnalyser.node_output_width(gm, source)
+            return None
+        # 2-D pooling keeps the channel count.
+        if (NodeTypeChecker.is_passthrough(gm, n) or NodeTypeChecker.is_add(n)
+                or NodeTypeChecker.is_pool_node(n, gm)) and n.all_input_nodes:
             return NodeWidthAnalyser.node_output_width(gm, n.all_input_nodes[0])
         return None
 
@@ -180,65 +226,91 @@ class NodeWidthAnalyser:
         return False
 
     @staticmethod
-    def branch_has_unsizable_module(gm: fx.GraphModule, node: fx.Node, seen: set[str] | None = None) -> bool:
-        """True when walking backward from node hits a module propagation cannot resize."""
-        local_seen = seen if seen is not None else set()
+    def _width_step(gm: fx.GraphModule, node: fx.Node) -> _WidthStep:
+        """How *node* treats a new width on its input."""
+        if node.op == "output":
+            return _WidthStep.ABSORBS
+        if NodeTypeChecker.is_flatten_node(node, gm):
+            source = node.all_input_nodes[0]
+            keeps_width = NodeTypeChecker.is_global_pool(source, gm) or (
+                source.op == "call_module"
+                and isinstance(ModuleResolver.get_layer_module(source.target, gm), nn.Linear))
+            return _WidthStep.CARRIES if keeps_width else _WidthStep.BLOCKS
+        if node.op == "call_module":
+            mod = ModuleResolver.get_layer_module(node.target, gm)
+            if isinstance(mod, PROPAGATION_RESIZABLE_MODULES):
+                return _WidthStep.ABSORBS
+            if isinstance(mod, nn.Sequential):
+                return _WidthStep.ABSORBS if NodeWidthAnalyser._sequential_branch_resizable(mod) else _WidthStep.BLOCKS
+            if isinstance(mod, (PASSTHROUGH_MODULES, PASSTHROUGH_MODULES_TO_UPDATE)):
+                return _WidthStep.CARRIES
+            return _WidthStep.BLOCKS
+        if (NodeTypeChecker.is_add(node) or NodeTypeChecker.is_pool_node(node, gm)
+                or NodeTypeChecker.is_passthrough(gm, node)):
+            return _WidthStep.CARRIES
+        if node.target in RESHAPING_OPERATIONS:
+            return _WidthStep.BLOCKS
+        return _WidthStep.UNKNOWN
 
-        def _walk(n: fx.Node) -> bool:
-            if n.name in local_seen:
-                return False
-            local_seen.add(n.name)
-            if NodeTypeChecker.is_passthrough(gm, n) or (
-                n.op == "call_module"
-                and isinstance(ModuleResolver.get_layer_module(n.target, gm), PASSTHROUGH_MODULES_TO_UPDATE)
-            ):
-                return any(_walk(inp) for inp in n.all_input_nodes)
-            if n.op == "call_module":
-                mod = ModuleResolver.get_layer_module(n.target, gm)
-                if isinstance(mod, nn.Sequential):
-                    return not NodeWidthAnalyser._sequential_branch_resizable(mod)
-                return mod is not None and not isinstance(mod, PROPAGATION_RESIZABLE_MODULES)
-            if n.op == "placeholder":
-                return False
-            return any(_walk(inp) for inp in n.all_input_nodes)
+    @staticmethod
+    def _queue_resized_partner(gm: fx.GraphModule, partner: fx.Node, pending: list[fx.Node]) -> PropagationVerdict:
+        """Walk up from a sum input to the layers that must be resized to match it, queueing every node
+        whose width changes with them."""
+        stack, seen = [partner], set()
+        while stack:
+            node = stack.pop()
+            if node in seen:
+                continue
+            seen.add(node)
+            if node.op == "placeholder":
+                return PropagationVerdict.BLOCKED
+            step = NodeWidthAnalyser._width_step(gm, node)
+            if step is _WidthStep.BLOCKS:
+                return PropagationVerdict.BLOCKED
+            if step is _WidthStep.UNKNOWN:
+                return PropagationVerdict.UNKNOWN
+            pending.append(node)
+            if step is _WidthStep.CARRIES:
+                stack.extend(node.all_input_nodes)
+        return PropagationVerdict.SAFE
 
-        return _walk(node)
+    @staticmethod
+    def propagation_verdict(gm: fx.GraphModule, start_node: fx.Node) -> PropagationVerdict:
+        """Whether a new output width of *start_node* can be propagated through the graph.
+
+        The width travels through operations that keep it (activations, BatchNorm, pooling, sums) and
+        stops at the convolutions and linear layers that read it. A sum also resizes its other inputs,
+        whose other readers are checked the same way.
+        """
+        verdict = PropagationVerdict.SAFE
+        pending, seen = [start_node], set()
+        while pending:
+            node = pending.pop()
+            if node in seen:
+                continue
+            seen.add(node)
+            for user in node.users:
+                step = NodeWidthAnalyser._width_step(gm, user)
+                if step is _WidthStep.BLOCKS:
+                    return PropagationVerdict.BLOCKED
+                if step is _WidthStep.UNKNOWN:
+                    verdict = PropagationVerdict.UNKNOWN
+                    continue
+                if step is _WidthStep.ABSORBS:
+                    continue
+                if NodeTypeChecker.is_add(user):
+                    for partner in user.all_input_nodes:
+                        if partner is node:
+                            continue
+                        partner_verdict = NodeWidthAnalyser._queue_resized_partner(gm, partner, pending)
+                        if partner_verdict is PropagationVerdict.BLOCKED:
+                            return partner_verdict
+                        if partner_verdict is PropagationVerdict.UNKNOWN:
+                            verdict = partner_verdict
+                pending.append(user)
+        return verdict
 
     @staticmethod
     def propagation_hits_unsizable(gm: fx.GraphModule, start_node: fx.Node) -> bool:
-        """True if forward propagation would hit an add whose sibling branch cannot be width-synced,
-        or a downstream module that cannot be resized (e.g. LayerNorm, non-resizable ops)."""
-        seen: set[str] = set()
-
-        def _module_blocks_resize(mod: nn.Module | None) -> bool:
-            if mod is None:
-                return False
-            if isinstance(mod, PROPAGATION_RESIZABLE_MODULES):
-                return False
-            if isinstance(mod, PASSTHROUGH_MODULES) or isinstance(mod, PASSTHROUGH_MODULES_TO_UPDATE):
-                return False
-            if isinstance(mod, nn.Sequential):
-                return not NodeWidthAnalyser._sequential_branch_resizable(mod)
-            # LayerNorm and other fixed-shape modules block safe neuron resize.
-            return True
-
-        def _walk(node: fx.Node) -> bool:
-            if node.name in seen:
-                return False
-            seen.add(node.name)
-            for user in node.users:
-                if user.op == "output":
-                    continue
-                if NodeTypeChecker.is_add(user):
-                    for inp in user.all_input_nodes:
-                        if inp is not node and NodeWidthAnalyser.branch_has_unsizable_module(gm, inp, seen):
-                            return True
-                if user.op == "call_module":
-                    mod = ModuleResolver.get_layer_module(user.target, gm)
-                    if _module_blocks_resize(mod):
-                        return True
-                if _walk(user):
-                    return True
-            return False
-
-        return _walk(start_node)
+        """True unless the rules show that a new width of *start_node* propagates safely."""
+        return NodeWidthAnalyser.propagation_verdict(gm, start_node) is not PropagationVerdict.SAFE
