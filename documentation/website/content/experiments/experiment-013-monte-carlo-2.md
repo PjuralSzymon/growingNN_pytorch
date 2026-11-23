@@ -1008,6 +1008,8 @@ The network of this run at four points: the starter, two generations in between,
 
 > [!CAPTION] Final figure. Left: A08's lead over the next-best candidate in each replay of the epoch-80 decision (mean of three seeds), with the number of seeds in which A08 was strictly ahead. Right, from top: Phase 18 training accuracy per epoch, test accuracy after each generation and parameters in thousands, Monte Carlo 1 against Monte Carlo 2 (the surviving seed of each; still running). Gray lines are generation boundaries (30 epochs).
 
+**The main result: Monte Carlo 2 learns CIFAR-10 starting from an almost empty network.** The run starts from 904 parameters: one 8-channel convolution, one small residual block and a linear classifier, a network that reaches only about 53% on its own. Monte Carlo 2 grew it, one change per generation, into a network of about 485,000 parameters that reaches about 80% validation and 74.8% test after 300 epochs (Figures 7 and 9). Our earlier good CIFAR-10 results (86–91% in Experiments 008–009) started from a hand-built network of 187,000 parameters; here almost the whole network was built by the search itself.
+
 **Monte Carlo 2 now finds the action that really helps.** After the scoring fixes it is ahead with A08 in every seed, by +6.1 pp on average, against +3.5 pp and a tie in one seed for the first version. In the long Phase 18 run it is ahead of the original Monte Carlo search after every generation from the third on, 74.0% against 65.9% test so far, and it grows a much larger network. With the better starter, growth with Monte Carlo 2 reached 82.3% test after 300 epochs, against 53% without growth.
 
 - **Part 1:** measuring each candidate several times and the three simulation fixes made the search pick A08 reliably.

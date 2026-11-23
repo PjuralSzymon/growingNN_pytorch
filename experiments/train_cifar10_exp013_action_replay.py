@@ -67,7 +67,7 @@ from growingnn.simulation.score_functions.simulation_score import SimulationScor
 from growingnn.simulation.simulation_schedulers import AlwaysSimulationScheduler
 from growingnn.simulation.simulation_algorithms.montecarlo_alg import TreeNode
 from growingnn.simulation.simulation_algorithms import montecarlo_alg, montecarlo_alg_2
-from growingnn.simulation.simulation_sets import CcsSimulationSet, ModerateSimulationSet
+from growingnn.simulation.simulation_sets import CcsSimulationSet, ModerateSimulationSet, StratifiedRandomSimulationSet
 import growingnn.core.config as project_config
 
 RUN = ROOT / 'experiments/output/train_cifar10/runs/exp012_family_search/v1/gen_10/family/cifar10/seed_1'
@@ -161,7 +161,8 @@ class GridMonteCarlo2:
 
 
 GRID_UCB_C = (0.05, 1.0)
-GRID_SIMULATION_SETS = {'moderate': ModerateSimulationSet, 'ccs': CcsSimulationSet}
+GRID_SIMULATION_SETS = {'moderate': ModerateSimulationSet, 'ccs': CcsSimulationSet,
+                        'stratified': StratifiedRandomSimulationSet}
 GRID_SECONDS_PER_CANDIDATE = 24.0  # about two 5-epoch rollouts per candidate (Phase 9: 10-12 s each)
 GRID_MINIMUM_SECONDS = 300.0
 GRID_NOTE = ('Phase 10: Phase 7 growth with the Phase 9 search (type-balanced expansion, one training seed '
@@ -443,9 +444,10 @@ def run_full_growth(output, seeds, phase='full', spec=None):
     target = output / spec['folder']
     digest = source_fingerprint()
     settings = full_growth_settings(spec)
+    dataset = spec.get('dataset', 'cifar10')
     generations = spec.get('generations', 10)
     epochs = spec.get('epochs', 20)
-    metadata = {'source_sha256': digest, 'dataset': 'cifar10', 'generations': generations,
+    metadata = {'source_sha256': digest, 'dataset': dataset, 'generations': generations,
                 'epochs_per_generation': epochs, 'scoring_epochs': spec['scoring_epochs'], 'settings': settings,
                 'algorithm': spec.get('algorithm', 'montecarlo_alg_2'), 'rollout_weight_decay': project_config.MCTS_ROLLOUT_WEIGHT_DECAY,
                 'reference': 'Experiment 010 Pass 2 10-generation recipe'}
@@ -470,12 +472,12 @@ def run_full_growth(output, seeds, phase='full', spec=None):
     if 'simulation_set' in spec:
         exp010.sample_loaders = GRID_SIMULATION_SETS[spec['simulation_set']]().sample_loaders
     if 'starter' in spec:
-        exp010.initial_graph = lambda dataset='cifar10': spec['starter']()
+        exp010.initial_graph = lambda name=dataset: spec['starter']()
     try:
-        data = get_datasets('cifar10')
+        data = get_datasets(dataset)
         for seed in seeds:
             print(f"START {spec['phase_name']} seed={seed}", flush=True)
-            exp010.run_candidate('cifar10', seed, 'method', 'montecarlo2', settings, data,
+            exp010.run_candidate(dataset, seed, 'method', 'montecarlo2', settings, data,
                 target / f'seed_{seed}', generations=generations, phase_name=spec['phase_name'],
                 experiment_label=spec['label'], experiment_name=spec['name'],
                 experiment_id_prefix=spec['id_prefix'], scoring_epochs=spec['scoring_epochs'])

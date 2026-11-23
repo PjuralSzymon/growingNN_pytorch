@@ -1,0 +1,430 @@
+% Implementation Report 3: experiments 000--009. Compile from this folder:
+%   pdflatex -interaction=nonstopmode progress-report-01.tex   (twice, for references)
+\documentclass[runningheads]{llncs}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage{cite}
+\usepackage{caption}
+\captionsetup{font=small}
+
+\setcounter{secnumdepth}{3}
+
+\begin{document}
+
+\title{Refactoring GrowingNN Using PyTorch and torch.fx for Graph Analysis\\
+Implementation Report 3: Making the Growing Network Learn\\from MNIST to CIFAR-10 (Experiments 000--009)}
+\titlerunning{Refactoring GrowingNN -- Implementation Report 3}
+\author{Szymon Świderski}
+\authorrunning{S. Świderski}
+\institute{}
+\maketitle
+
+\begin{abstract}
+Report~2 ended with a complete training loop: networks trained by SGD and grown by Monte Carlo tree search (MCTS), and a first CIFAR-10 run that reached about 70\% validation accuracy. This report covers the systematic experiments that followed, numbered 000 to 009 and carried out between July and November 2026. The MNIST series (000--006) tuned the growth loop itself: when the search may run, how the learning rate recovers after a change, which starting network to use, how a candidate change is graded, which learning-rate curve to follow, and which search algorithm to keep. The CIFAR-10 series (007--008) then faced a harder problem: the network either stopped learning or memorized the training set. Changes to augmentation, the learning rate and the way new convolutions are inserted turned this around: three runs grown only by sequential convolutions finished at 91.11\%, 91.17\% and 91.36\% official test accuracy, with training, validation and test rising together. Experiment 009 repeated the method on MNIST, CIFAR-10 and CIFAR-100 with every action enabled, reaching 96.3\%, 86.4\% and 62.8\% mean test accuracy with networks 3 to 10 times smaller than standard reference models.
+\keywords{dynamic neural networks \and growing networks \and Monte Carlo tree search \and CIFAR-10 \and learning-rate schedules}
+\end{abstract}
+
+\section{Introduction}
+
+GrowingNN~\cite{growingnn_original} trains a neural network in \emph{generations}. After each generation a search algorithm may apply one change to the architecture, such as adding a layer, and training continues with the changed network. Report~1~\cite{report1} described how the actions that change the network were rebuilt on \texttt{torch.fx}. Report~2~\cite{report2} added the training loop, the MCTS search, the experiment board and the first CIFAR-10 grid search. This report does not repeat that implementation work. It reports the experiments that used it.
+
+Each experiment answers one question and keeps the best option for the next one. Experiments 000--006 use MNIST, where runs are short and many settings can be compared. Experiments 007--008 move to CIFAR-10, and Experiment 009 tests the result on three datasets. Every number below comes from the experiment records published on the project website, where each experiment has a longer page with all tables.
+
+Three accuracies are used. \emph{Training accuracy} is measured on the images used to update the weights. \emph{Validation accuracy} is measured on held-out images that the search may use to grade candidate changes. \emph{Official test accuracy} is measured on the separate CIFAR test set of 10{,}000 images, which the search never reads. When training and test disagree, the test result decides.
+
+\section{Part I: Tuning the Growth Loop on MNIST}
+
+All MNIST runs start from a very small convolutional network of a few hundred parameters, so that the search has to build most of the network itself. A run lasts five to ten generations.
+
+\subsection{When to search, and how the learning rate recovers (Experiment 000)}
+
+The search should not run while the network is still learning quickly. A \emph{slope threshold} lets it run only when the training curve has flattened: below \(1^\circ\) or \(3^\circ\). After a change the learning rate drops and then \emph{warms up} back to its target value of 0.01 along a cosine, logistic or exponential curve (Fig.~\ref{fig:000-design}).
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/000-learning-rate-design.png}
+\caption{Experiment 000: design of the action-aware learning rate. The rate stays at its target while the network is unchanged, and recovers along a warm-up curve only after an architecture change.}
+\label{fig:000-design}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/000-final-accuracy.png}
+\caption{Experiment 000: mean final training (blue) and validation (green) accuracy for each slope threshold and warm-up curve, two seeds each.}
+\label{fig:000-final}
+\end{figure}
+
+The \(3^\circ\) threshold with logistic warm-up was clearly best, with 93.6\% mean final validation accuracy against 77.7--83.0\% for the other pairs (Fig.~\ref{fig:000-final}). Most of the gain came from the first architecture change, and residual convolutions were the most useful action type (Fig.~\ref{fig:000-types}). Later dropout and deletion actions often hurt.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.75\textwidth]{figures/000-action-types.png}
+\caption{Experiment 000: change in accuracy over the generation after each action, grouped by action type. Residual convolution gives the largest gain.}
+\label{fig:000-types}
+\end{figure}
+
+\subsection{How large the starting network must be (Experiments 001 and 002)}
+
+Experiment 001 kept the \(3^\circ\) logistic setting and started from three depths: \emph{big} (420 parameters), \emph{medium} and \emph{very small}. The big starter ended best, at 91.2\% validation; medium reached 82.3\% and very small only 48.9\% (Fig.~\ref{fig:001}). The reason was found in the action records: a sequential convolution could never be inserted on these MNIST graphs, so a thin network had no direct way to rebuild a missing convolution. Medium networks instead spent many generations adding and deleting layers.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/001-final-accuracy.png}
+\caption{Experiment 001: mean final accuracy by starting depth, over three slope thresholds and two seeds.}
+\label{fig:001}
+\end{figure}
+
+After sequential convolutions could be inserted before the classifier, Experiment 002 compared four starter layouts with the same width (4 channels) and pooling. The \texttt{medium\_1conv\_2linear} starter was the best compromise: 70.5\% mean final validation, stable seeds, and a best seed (84.0\%) as good as the big starter (Fig.~\ref{fig:002}). The small starter could now grow by itself (Fig.~\ref{fig:002-small}), but five generations were not enough to catch up. The experiment also exposed a policy problem: dropout was chosen too often, because it raises validation accuracy while training accuracy stays flat.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/002-final-accuracy-by-architecture.png}
+\caption{Experiment 002: mean final training and validation accuracy for the four starter layouts; dots are seeds.}
+\label{fig:002}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.55\textwidth]{figures/002-start-small.png}\\[2mm]
+\includegraphics[width=0.95\textwidth]{figures/002-final-small.png}
+\caption{Experiment 002: the small starter (top) and the network it grew into after five generations (bottom, 62\% validation), drawn from the run's graph.}
+\label{fig:002-small}
+\end{figure}
+
+\subsection{How a candidate change is graded (Experiment 003)}
+
+The search grades each candidate by briefly training it and measuring an accuracy. Experiment 003 compared grading by validation accuracy and by training accuracy, first as it was and then after banning a second dropout layer on the same path.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/003-compare-final-validation-by-score-metric.png}
+\caption{Experiment 003: mean final validation accuracy by grading rule and starter, before and after the ban on stacked dropout; dots are seeds.}
+\label{fig:003}
+\end{figure}
+
+Before the ban, grading by training accuracy was slightly ahead (61.7\% against 58.4\%). After the ban, grading by validation accuracy was clearly better on both starters, 68.9\% against 57.9\% (Fig.~\ref{fig:003}). The ban also halved the number of dropout actions, from 18 to 9, and nearly doubled the residual convolutions, from 12 to 21 (Fig.~\ref{fig:003-dropout}). Validation grading with the ban became the default.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/003-compare-dropout-actions-by-score-metric.png}
+\caption{Experiment 003: mean number of dropout actions per run, before and after the ban.}
+\label{fig:003-dropout}
+\end{figure}
+
+\subsection{The shape of the learning-rate curve (Experiment 004)}
+
+Experiment 004 combined the warm-up after each change with seven base learning-rate curves (Fig.~\ref{fig:004-shapes}) and checked both that each curve behaves as designed and which one learns best.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/004-scheduler-shape-guide.png}
+\caption{Experiment 004: the base learning-rate curves that were compared.}
+\label{fig:004-shapes}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/004-final-accuracy-by-schedule.png}
+\caption{Experiment 004: mean final training and validation accuracy by learning-rate curve; markers are seeds.}
+\label{fig:004}
+\end{figure}
+
+Step decay (89.4\%) and exponential decay (88.7\%) were the strongest, and the custom cascade from 1.0 to 0.1 failed at 15.4\% (Fig.~\ref{fig:004}). Exponential decay was chosen: it is almost as good as step decay, is a standard choice, and almost never lost training accuracy after a change (Fig.~\ref{fig:004-post}).
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/004-post-action-train-acc-change-by-schedule.png}
+\caption{Experiment 004: change in training accuracy one generation after each architecture change, by learning-rate curve. Exponential decay loses accuracy after only 1 of 22 changes.}
+\label{fig:004-post}
+\end{figure}
+
+\subsection{Which search algorithm to keep (Experiment 005)}
+
+MCTS can look several changes ahead, but its results varied strongly between seeds. Experiment 005 compared thirteen search algorithms on two starters with five seeds each; all 130 runs finished.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/005-final-accuracy-combined.png}
+\caption{Experiment 005: final training and validation accuracy for each search algorithm, on the big and medium starters.}
+\label{fig:005}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/005-seed-stability-final-val.png}
+\caption{Experiment 005: spread of final validation accuracy across seeds for each algorithm. Smaller spread means a more reliable search.}
+\label{fig:005-stability}
+\end{figure}
+
+Sequential halving with a beam, UGapE with deepening, best-first search and beam search were kept, with MCTS, greedy and random search as references (Figs.~\ref{fig:005} and \ref{fig:005-stability}). Six algorithms were dropped. MNIST turned out to be easy: greedy search was already near the top, so this comparison is a filter for harder tasks rather than a final ranking.
+
+\subsection{Adding and removing neurons (Experiment 006)}
+
+Experiment 006 was meant to decide whether actions that add or remove neurons should stay on. It could not: the search almost never executed them (Fig.~\ref{fig:006}). While analysing it, a bug was found in sequential halving: scoring every candidate once used up the whole time budget, so the halving rounds never ran and the first candidates in list order always won. The bug was fixed, and the question was postponed until the search could actually try these actions.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.75\textwidth]{figures/006-simulation-chosen-actions-by-group.png}
+\caption{Experiment 006: actions chosen by the search in each neuron-resize setting. Neuron deletion was never chosen and neuron addition only three times.}
+\label{fig:006}
+\end{figure}
+
+\subsection{What the MNIST series settled}
+
+\begin{table}[!htbp]
+\centering
+\caption{Settings chosen in the MNIST experiments.}
+\label{tab:mnist}
+\small
+\begin{tabular}{lll}
+\toprule
+Question & Experiment & Choice \\
+\midrule
+When to search, warm-up & 000 & \(3^\circ\) slope threshold, logistic warm-up \\
+Starting network & 001, 002 & not the smallest; sequential convolution enabled \\
+Grading a candidate & 003 & validation accuracy, no stacked dropout \\
+Learning-rate curve & 004 & exponential decay \\
+Search algorithm & 005 & four look-ahead methods; MCTS as reference \\
+Neuron actions & 006 & undecided; search bug fixed \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Part II: From Memorization to Sustained Learning on CIFAR-10}
+
+The 70\% CIFAR-10 result of Report~2 did not improve with longer training. Experiments 007 and 008 investigated why, from September to October 2026. The charts below are taken from those runs, in the order the questions were asked.
+
+\subsection{The problem: the network stalls or memorizes}
+
+With live augmentation (random crop and flip), a run of 10 generations of 100 epochs reached 57.9\% test after the first generation and then improved only slowly, ending at 67.3\% (Fig.~\ref{fig:early}, top). Without augmentation the same setup reached 98\% training accuracy, while test accuracy fell from 54.1\% to 44.6\%: the network memorized the training images (Fig.~\ref{fig:early}, bottom).
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/cifar-summary-early-augmented.png}\\[2mm]
+\includegraphics[width=\textwidth]{figures/cifar-summary-early-no-augmentation.png}
+\caption{Early CIFAR-10 runs, 10 generations of 100 epochs, one seed. Top: with live augmentation both curves flatten near 67\%. Bottom: without it training reaches 98\% while test falls to 45\%.}
+\label{fig:early}
+\end{figure}
+
+A larger comparison with 24 runs of 400 epochs confirmed this. With augmentation the mean final test was 76.96\%, without it 65.62\%, although training reached 96.8\% (Fig.~\ref{fig:aug}). Turning off residual actions did not remove the memorization. Live augmentation was kept.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/cifar-summary-augmentation-comparison.png}
+\caption{Augmentation on (left) and off (right): training (top) and official test (bottom). Gray allows all actions, blue excludes residual additions; thin lines are seeds, thick lines means.}
+\label{fig:aug}
+\end{figure}
+
+\subsection{A better network existed, but the training setup could not reach it}
+
+A slow diagnostic search trained every candidate for 100 epochs on the full training set. It found a sequence of six convolution widenings that raised test accuracy from 57.9\% to 80.3\% (Fig.~\ref{fig:widening}). The small starter could therefore become a good network, but the cheap search did not find this path.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.75\textwidth]{figures/cifar-summary-manual-widening.png}
+\caption{Diagnostic search with full 100-epoch training of each candidate: a sequence of widenings keeps improving test accuracy.}
+\label{fig:widening}
+\end{figure}
+
+To separate the network from the training setup, ten grown networks were retrained from scratch for 200 epochs with a standard recipe. They reached 76.6--83.6\% test, against 95.3\% for ResNet-18 (Fig.~\ref{fig:standard}). Training settings also changed how well a network recovered after each generation boundary (Fig.~\ref{fig:optim}), and simply training for another 1{,}000 epochs only moved test accuracy from 86.0\% to 86.3\% (Fig.~\ref{fig:plateau}). Both the training setup and the way the network grows had to change.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/cifar-summary-standard-training-histories.png}
+\caption{Grown networks retrained with a standard 200-epoch recipe, compared with ResNet-18: training (top) and official test (bottom).}
+\label{fig:standard}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.7\textwidth]{figures/cifar-summary-optimizer-curves.png}
+\caption{The same grown network trained with different learning rates and momentum settings over three generations. Some settings lose accuracy when a new generation starts, others keep improving.}
+\label{fig:optim}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.65\textwidth]{figures/cifar-summary-long-training-plateau.png}
+\caption{Ten generations of 200 epochs: the best setting plateaus near 86\%. More epochs alone did not solve the problem.}
+\label{fig:plateau}
+\end{figure}
+
+\subsection{A revised package (Experiment 007)}
+
+Experiment 007 compared the original recipe with a revised package on three seeds. The package used a wider starter with BatchNorm, sequential convolutions inserted before global pooling with BatchNorm and ReLU, a higher learning rate, lower weight decay and gradient clipping, followed by a training-only finish stage. The original recipe ended at 66.8\% mean test; the revised package reached 82.0\% at the end of growth and 89.9\% at its best finish checkpoint (Fig.~\ref{fig:007}). Several changes act together here and the revised run is longer, so this shows the package works, not which part matters most.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.65\textwidth]{figures/cifar-summary-original-vs-improved.png}
+\caption{Experiment 007: official test of the original recipe and the revised package, per seed.}
+\label{fig:007}
+\end{figure}
+
+\subsection{Learning through generations alone (Experiment 008)}
+
+Experiment 008 removed the finish stage: every epoch belongs to a generation, so any gain must come from the growing network itself. Several follow-ups tested the limits of this setup:
+
+\begin{itemize}
+\item \textbf{Broader search can disrupt training.} With all actions allowed, final test averaged 85.7\% and one seed briefly fell near chance before recovering (Fig.~\ref{fig:budget}). A longer search raised the mean to 87.6\% but made one seed worse.
+\item \textbf{The simulation set size matters.} Grading candidates on 2{,}500 clean images for four epochs gave the best and most consistent result, 89.01\% with only 0.66 points between seeds; very small sets brought back large seed differences (Fig.~\ref{fig:simsize}).
+\item \textbf{Longer generations are not automatically better.} 10, 20 and 30 epochs per generation gave 88.2\%, 84.7\% and 87.5\% (Fig.~\ref{fig:longer}). Ten epochs per generation was kept.
+\end{itemize}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/cifar-summary-search-budget-histories.png}
+\caption{Sequential-convolution reference (top), all actions with a short search (middle) and all actions with a longer search (bottom): training, official test and validation, three seeds each.}
+\label{fig:budget}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.6\textwidth]{figures/cifar-summary-simulation-size-comparison.png}
+\caption{Final official test by number of clean images used to grade candidates; colored points are seeds, the dark line the mean.}
+\label{fig:simsize}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{figures/cifar-summary-longer-generations.png}
+\caption{10, 20 and 30 training epochs per generation (rows): training, official test and validation, three seeds each.}
+\label{fig:longer}
+\end{figure}
+
+Two changes were then tested separately and together with five seeds: a global learning rate from 0.1 to 0.001 that does not restart after a change, and inserting new convolutions before pooling (on an \(8\times8\) map) with BatchNorm and ReLU instead of after pooling. Each change alone gave about 83\%; together they reached 88.04\%, 5.9 points above the old setting (Fig.~\ref{fig:lrconv}).
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/cifar-summary-training-convolution-histories.png}
+\caption{Five-seed mean training, official test and validation. Green combines the new learning rate and the new convolution insertion; gray changes neither, blue only the learning rate, orange only the convolution.}
+\label{fig:lrconv}
+\end{figure}
+
+\subsection{The result: sustained learning above 90\%}
+
+With all actions enabled and 15 generations of 10 epochs, the three seeds finished at 90.62\%, 90.51\% and 88.99\% official test, a mean of 90.04\% (Fig.~\ref{fig:gencount}). Training, validation and test rose together, unlike the memorizing runs at the start.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/cifar-summary-generation-count-histories.png}
+\caption{All actions enabled, 10, 12, 15 and 20 generations (rows): training, official test and validation, three seeds each. With 15 generations every seed reaches about 90\%.}
+\label{fig:gencount}
+\end{figure}
+
+The most consistent configuration grew the network only by sequential convolutions, starting from a 187{,}008-parameter network with BatchNorm and ending at 1.8 million parameters, with a cosine learning rate from 0.1 to 0.001 over 120 epochs and no finish stage. All three seeds passed 90\% before the last generation and finished at their highest test accuracy (Fig.~\ref{fig:reference}, Table~\ref{tab:reference}).
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/cifar-summary-final-training-curves.png}
+\caption{Sequential-convolution reference, 12 generations of 10 epochs: training (left), official test (middle) and validation (right) for three seeds. All three pass 90\% test by epoch 100.}
+\label{fig:reference}
+\end{figure}
+
+\begin{table}[!htbp]
+\centering
+\caption{Official test accuracy of the sequential-convolution reference at the end of selected generations.}
+\label{tab:reference}
+\begin{tabular}{rrrrr}
+\toprule
+Epoch & Seed 110 & Seed 111 & Seed 112 & Mean \\
+\midrule
+10 & 59.27\% & 58.32\% & 63.35\% & 60.31\% \\
+40 & 81.65\% & 83.80\% & 83.74\% & 83.06\% \\
+100 & 90.55\% & 90.82\% & 90.64\% & 90.67\% \\
+120 & \textbf{91.11\%} & \textbf{91.17\%} & \textbf{91.36\%} & \textbf{91.21\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The newly inserted layers did not improve accuracy at the moment they were added (at most 0.08 points); the gains came in the training that followed. The growing network now uses each new generation to learn more, instead of changing its graph while staying on a flat curve.
+
+\section{Part III: Three Datasets (Experiment 009)}
+
+Experiment 009 ran the method with every action enabled for 20 generations of 10 epochs on MNIST, CIFAR-10 and CIFAR-100, three seeds each. The MNIST starter has 152 parameters, the CIFAR starters 187{,}008 and 268{,}672.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/009-small20-train-histories.png}
+\caption{Experiment 009: training (solid) and validation (dashed) accuracy for each dataset; colors are seeds, vertical lines generation boundaries.}
+\label{fig:009-train}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/009-small20-test-by-generation.png}
+\caption{Experiment 009: official test accuracy after each generation. The dashed CIFAR-10 line is the 91.21\% sequential-convolution reference.}
+\label{fig:009-test}
+\end{figure}
+
+\begin{table}[!htbp]
+\centering
+\caption{Experiment 009: final official test accuracy and size of the grown networks.}
+\label{tab:009}
+\begin{tabular}{lrrrrl}
+\toprule
+Dataset & Seed 1 & Seed 2 & Seed 3 & Mean & Final parameters \\
+\midrule
+MNIST & 96.77\% & 98.09\% & 93.99\% & 96.28\% & 5.8--9.0 thousand \\
+CIFAR-10 & 86.25\% & 86.04\% & 86.82\% & 86.37\% & 1.5--2.2 million \\
+CIFAR-100 & 68.26\% & 66.02\% & 54.00\% & 62.76\% & 1.8--3.9 million \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+CIFAR-10 was stable across seeds (86.37\% mean, 0.78 points spread), 4.8 points below the sequential-convolution reference. CIFAR-100 split: two seeds reached 66--68\% and one stayed at 54\% (Figs.~\ref{fig:009-train}, \ref{fig:009-test} and Table~\ref{tab:009}). All grown networks are smaller than standard references: 6 to 11 times smaller than LeNet-5 on MNIST and 3 to 7 times smaller than ResNet-18 on CIFAR (Fig.~\ref{fig:009-params}), while ResNet-18 reaches about 95\% on CIFAR-10 and 76\% on CIFAR-100.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/009-small20-parameters.png}
+\caption{Experiment 009: parameter count at the end of each generation, in thousands.}
+\label{fig:009-params}
+\end{figure}
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/009-small20-action-types-by-dataset.png}
+\caption{Experiment 009: change in training (blue) and validation (green) accuracy over the generation after each action, by action type and dataset.}
+\label{fig:009-actions}
+\end{figure}
+
+Fig.~\ref{fig:009-actions} shows which actions helped. Sequential convolution gave the largest mean gain (+7.3 points validation over 21 actions), mostly on MNIST and CIFAR-100. On CIFAR-10 the search mostly added residual linear layers (26 of 57 actions), which explains why the all-action result stayed below the sequential-convolution reference. Fig.~\ref{fig:009-arch} shows one grown CIFAR-10 network.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/009-small20-arch-cifar10-seed1.png}
+\caption{Experiment 009: the network grown on CIFAR-10, seed 1, reconstructed from its saved list of actions.}
+\label{fig:009-arch}
+\end{figure}
+
+\section{Summary and Next Steps}
+
+Between July and November 2026 the growing network went from a 70\% CIFAR-10 result that would not improve to runs that keep learning across generations and finish above 91\% official test on all three seeds. The main steps were:
+
+\begin{itemize}
+\item an action-aware learning rate that recovers after each change, and a slope threshold that lets the search run only when training has flattened (Experiment 000);
+\item grading candidates by validation accuracy, with stacked dropout banned (Experiment 003), and enabling sequential convolutions so that small networks can grow (Experiments 001--002);
+\item on CIFAR-10, live augmentation against memorization, a global learning rate from 0.1 to 0.001, and new convolutions inserted before pooling with BatchNorm and ReLU (Experiments 007--008);
+\item a confirmation on three datasets with networks several times smaller than standard models (Experiment 009).
+\end{itemize}
+
+Several questions remain open. The best results restrict the search to one action type: with all actions enabled, the search sometimes chooses changes that disrupt training, and on CIFAR-10 it preferred residual linear layers. It has not yet been shown that the search beats a fixed or predetermined growth path trained for the same time, and the neuron actions were never properly tested because the search did not try them. The next stage of the work therefore focuses on the search itself: tuning the Monte Carlo search, the set of images used to grade candidates, and the reliability of the grading score.
+
+\begin{thebibliography}{3}
+\bibitem{growingnn_original}
+Świderski, S., Jastrzębska, A.: Dynamic Growing and Shrinking of Neural Networks with Monte Carlo Tree Search. In: Computational Science -- ICCS 2024. LNCS, vol. 14832. Springer (2024). \url{https://doi.org/10.1007/978-3-031-63749-0_25}
+
+\bibitem{report1}
+Refactoring GrowingNN Using PyTorch and torch.fx for Graph Analysis. Implementation Report 1 (2026)
+
+\bibitem{report2}
+Refactoring GrowingNN Using PyTorch and torch.fx for Graph Analysis. Implementation Report 2: Dynamic Architecture Evolution Using Monte Carlo Tree Search (2026)
+\end{thebibliography}
+
+\end{document}
