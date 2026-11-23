@@ -1,7 +1,7 @@
 import copy
 from types import SimpleNamespace
 
-from experiments.train_cifar10_exp014_action_replay import Phase3Board
+from experiments.train_cifar10_exp013_action_replay import Phase3Board
 from growingnn.core.config import RunningConfig
 from growingnn.simulation.simulation_algorithms import montecarlo_alg_2 as search
 
@@ -59,7 +59,7 @@ def test_search_reports_candidates_to_enabled_collector(monkeypatch):
 def test_heldout_validation_excludes_search_examples():
     import torch
 
-    from experiments.train_cifar10_exp014_action_replay import heldout_validation_loader
+    from experiments.train_cifar10_exp013_action_replay import heldout_validation_loader
 
     dataset = torch.utils.data.TensorDataset(torch.arange(10), torch.arange(10))
     val = torch.utils.data.DataLoader(dataset, batch_size=2)

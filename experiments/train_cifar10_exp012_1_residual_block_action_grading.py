@@ -4,8 +4,8 @@ Both arms start from the same identity residual block. One arm can grow or
 shrink residual blocks. The other cannot. Search uses the MCTS settings
 selected by Experiment 010.
 
-    pipenv run python -u experiments/train_cifar10_exp013_residual_block_action_grading.py
-    pipenv run python -u experiments/train_cifar10_exp013_residual_block_action_grading.py mnist
+    pipenv run python -u experiments/train_cifar10_exp012_1_residual_block_action_grading.py
+    pipenv run python -u experiments/train_cifar10_exp012_1_residual_block_action_grading.py mnist
 """
 
 from __future__ import annotations

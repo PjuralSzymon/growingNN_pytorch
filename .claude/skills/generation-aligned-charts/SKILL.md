@@ -13,7 +13,7 @@ applied and where jumps, dips or slope changes come from.
 
 1. **Read the generation length from the run**, never assume it: `epochs_per_generation` in the run's
    `manifest.json`, or `epochInGeneration` / `generation` in `board/metrics/training.json`. Runs differ
-   (Experiment 018 Phase 17 has 20 epochs per generation, Phase 18 has 30).
+   (Experiment 013 Phase 17 has 20 epochs per generation, Phase 18 has 30).
 2. **The x axis is scaled to generations.** Put the major ticks and the vertical grid lines at the
    generation boundaries (multiples of the generation length): 0, 30, 60, ... for 30 epochs per
    generation. Do not leave matplotlib's default ticks (0, 50, 100, ...), which do not match the

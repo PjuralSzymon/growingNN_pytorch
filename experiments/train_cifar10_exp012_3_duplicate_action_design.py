@@ -20,10 +20,10 @@ examples, 90% validation stop) for the "off" control and each step, 2 seeds.
 Runs are ordered seed-first, so a complete seed-1 ladder exists after half
 the time.
 
-    pipenv run python -u experiments/train_cifar10_exp015_duplicate_action_design.py
-    pipenv run python -u experiments/train_cifar10_exp015_duplicate_action_design.py --part a
-    pipenv run python -u experiments/train_cifar10_exp015_duplicate_action_design.py --part b --seeds 1
-    pipenv run python -u experiments/train_cifar10_exp015_duplicate_action_design.py --summary
+    pipenv run python -u experiments/train_cifar10_exp012_3_duplicate_action_design.py
+    pipenv run python -u experiments/train_cifar10_exp012_3_duplicate_action_design.py --part a
+    pipenv run python -u experiments/train_cifar10_exp012_3_duplicate_action_design.py --part b --seeds 1
+    pipenv run python -u experiments/train_cifar10_exp012_3_duplicate_action_design.py --summary
 
 Results: experiments/output/train_cifar10/runs/exp014_duplicate_action_design/
 (summary.md is rewritten after every finished run and by --summary).
@@ -56,8 +56,8 @@ if str(ROOT) not in sys.path:
 import growingnn.simulation.simulation_algorithms.montecarlo_alg as montecarlo_alg
 from experiments.train_cifar10_exp008_generation_only import CosineDecayScheduler, with_cutout
 from experiments.train_cifar10_exp009_best_reference import get_datasets
-from experiments.train_cifar10_exp013_residual_block_action_grading import _claim_run_dir
-from experiments.train_cifar10_exp014_residual_block_multidataset import (
+from experiments.train_cifar10_exp012_1_residual_block_action_grading import _claim_run_dir
+from experiments.train_cifar10_exp012_2_residual_block_multidataset import (
     SIMULATION_EPOCHS,
     SIMULATION_SECONDS,
     SIMULATION_SET_SIZE,

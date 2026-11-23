@@ -1,16 +1,14 @@
 # Experiment 010: MCTS meta-parameter tuning
 
-## Context
+## Introduction
 
-This experiment looks for the best way to run the Monte Carlo tree search (MCTS) that chooses each change to the growing network.
+We started by testing whether new Monte Carlo tree search (MCTS) variants could improve on the algorithm already choosing changes to the network. Neither variant beat the existing search in this comparison, so we kept it and changed direction: instead of replacing the algorithm, we looked for better meta-parameters. The report follows that comparison and the two tuning passes that followed.
 
 ## Part 1: MCTS variants
 
-We started by comparing the existing Monte Carlo search with two new variants, Stabilized and Extended. The comparison ran once, in a sibling repository, on CIFAR-10 from a tiny starter network, in two rounds with two seeds each: Phase 1 with short training and Phase 2 with longer training and a stronger training recipe. The variants brought no benefit: the original search had the best result in both phases, so we kept it. The results are shown below.
+The first idea was to improve how the search evaluates a possible change. Stabilized compares a changed model with an unchanged copy and re-tests promising changes; Extended also explores short sequences of changes. We tested both against the existing Monte Carlo search to see whether either was worth adopting.
 
-![Mean test accuracy of the three search algorithms in both phases](/assets/experiments/010-mcts-variants.png)
-
-> [!CAPTION] Figure 1. Mean test accuracy (two seeds) of the three algorithms in Phase 1 (short training) and Phase 2 (longer training). The pre-study used a different code version and schedule from Part 2, so these numbers are not comparable with the tuning results.
+The comparison ran in a sibling repository on CIFAR-10 from a tiny starter network, with two seeds per algorithm in each of two phases: short training first, then longer training with a stronger training recipe.
 
 | Algorithm | How it picks the next change |
 | --- | --- |
@@ -20,31 +18,43 @@ We started by comparing the existing Monte Carlo search with two new variants, S
 
 > [!CAPTION] Table 1. The three algorithms.
 
+![Mean test accuracy of the three search algorithms in both phases](/assets/experiments/010-mcts-variants.png)
+
+> [!CAPTION] Figure 1. Mean test accuracy (two seeds) of the three algorithms in Phase 1 (short training) and Phase 2 (longer training). The pre-study used a different code version and schedule from Part 2, so these numbers are not comparable with the tuning results.
+
+Neither new variant improved on the existing search: it had the highest mean test accuracy in both phases. We therefore stopped pursuing these alternatives in this study and kept the original algorithm. The next question became whether better settings could improve the search we already had.
+
 ## Part 2: tuning the Monte Carlo search
 
-We then tuned the nine meta-parameters of the existing Monte Carlo search, listed below. Tuning ran in two passes. In the first pass we started from the default settings and tested every value of one meta-parameter, kept the best one, and moved on to the next meta-parameter with that winner fixed. In the second pass we repeated all nine sweeps starting from the Pass 1 winners, to check whether the choices still held. All runs use CIFAR-10, the 296-parameter starter (Conv 3→8, pool, Linear), 10 generations × 20 epochs and seeds 1 and 2; the best value is the one with the highest mean final validation accuracy.
+We kept the algorithm fixed and tuned its nine meta-parameters, listed below. Pass 1 started from the defaults: test one parameter, retain its best value, then move to the next. Because an earlier choice might change once the other settings changed, Pass 2 repeated all nine sweeps from the Pass 1 winners.
+
+All tuning runs use CIFAR-10, the 296-parameter starter (Conv 3→8, pool, Linear), 10 generations × 20 epochs and seeds 1 and 2. Each sweep selects the highest mean final validation accuracy.
 
 | Meta-parameter | What it controls | Values tested |
 | --- | --- | --- |
-| UCB1 C | How much the search explores less-visited changes | 0.5, 1, **2**, 4, 8 |
-| UCB1 square root | Which UCB1 formula is used | **no**, yes |
-| Propagate rollout value | Whether a node passes its latest score up the tree | **no**, yes |
+| UCB1 C | Larger: explore less-tested changes; smaller: favor changes already scoring well | 0.5, 1, **2**, 4, 8 |
+| UCB1 square root | Switch from the original selection rule to a mean score plus a square-root exploration bonus | **no**, yes |
+| Propagate rollout value | Pass only the latest result upward, rather than the accumulated total | **no**, yes |
 | Rollout depth | Random follow-up changes added before scoring | 0, 1, **2**, 3 |
-| Rollout epochs | Training epochs per scored copy | **1**, 2, 4 |
-| Rollout learning rate | Learning rate when training a scored copy | **1e-4**, 3e-3, 1e-2 |
+| Rollout epochs | Training after each simulated change, before the separate scoring stage | **1**, 2, 4 |
+| Rollout learning rate | Learning rate for that training after a simulated change | **1e-4**, 3e-3, 1e-2 |
 | Minimum iterations | Search steps made even after the time runs out | 1, **3**, 5 |
 | Search time | Time budget per search | **8 s**, 16 s, 32 s |
-| Simulation set | Share of the training data used to score copies | **0.3%** (128 images), 5%, 10%, 30%, 40% |
+| Simulation set | Share of the training data used to score copies | **0.3%** (128 examples), 5%, 10%, 30%, 40% |
 
 > [!CAPTION] Table 2. The nine meta-parameters; bold is the default.
 
+Each sweep retains earlier winners, so the rows are not independent tests of one fixed baseline. The sections follow the tuning order, showing both passes together. Table ranges give the two seed results; pp means percentage points.
+
 ### UCB1 exploration constant (`MCTS_UCB1_C`)
+
+UCB1 balances **exploration** (trying less-tested changes) with **exploitation** (returning to changes that already score well). A larger C gives more weight to exploration; a smaller C makes the search rely more on the scores collected so far.
 
 The first meta-parameter checked was the UCB1 exploration constant C. In Pass 1 the best value was 1 (56.3%), and in Pass 2 it was also 1 (64.1%).
 
-![UCB1 C in both passes](/assets/experiments/010-sweep-ucb1-c.png)
+![ucb1 c: final validation accuracy in both tuning passes](/assets/experiments/010-sweep-ucb1-c.png)
 
-> [!CAPTION] Figure 2. Final validation accuracy for each value of UCB1 C, Pass 1 (left) and Pass 2 (right). Small dots are the two seeds, the large marker their mean; orange is the selected value.
+> [!CAPTION] Figure 2. Final validation accuracy in Pass 1 (left) and Pass 2 (right). Small dots are the two seeds; the large marker is their mean. Orange marks the selected value.
 
 | Value | Pass 1 | Pass 2 |
 | --- | ---: | ---: |
@@ -56,19 +66,17 @@ The first meta-parameter checked was the UCB1 exploration constant C. In Pass 1 
 
 > [!CAPTION] Table 3. Mean final validation accuracy (the two seeds in brackets); bold is the selected value.
 
-The training histories show how large the seed noise is: with C = 1 the two seeds end 16 pp apart.
-
-![Pass 1 training histories, UCB1 C](/assets/experiments/010-pass-1-ucb1-c-training-histories-grid.svg)
-
-> [!CAPTION] Figure 3. Pass 1 training (solid) and validation (dashed) accuracy for each value; blue seed 1, orange seed 2. Gray lines are generation boundaries (20 epochs).
+With C = 1 in Pass 1, the two seeds finish 16 pp apart, so the best mean still comes with substantial variation.
 
 ### UCB1 formula (`MCTS_UCB1_USE_SQRT`)
 
+This chooses how the exploration bonus changes with visit counts. With the square root, the bonus decreases more slowly as a candidate is revisited. In this implementation, the switch also uses the candidate's **mean score** instead of its accumulated total, so this comparison changes both parts of the selection rule—not just a square root.
+
 Next was the UCB1 formula. The default formula without the square root won both passes (50.5% and 63.4%).
 
-![UCB1 formula in both passes](/assets/experiments/010-sweep-ucb1-sqrt.png)
+![ucb1 sqrt: final validation accuracy in both tuning passes](/assets/experiments/010-sweep-ucb1-sqrt.png)
 
-> [!CAPTION] Figure 4. Final validation accuracy for each value of UCB1 formula, Pass 1 (left) and Pass 2 (right). Small dots are the two seeds, the large marker their mean; orange is the selected value.
+> [!CAPTION] Figure 3. Final validation accuracy in Pass 1 (left) and Pass 2 (right). Small dots are the two seeds; the large marker is their mean. Orange marks the selected value.
 
 | Value | Pass 1 | Pass 2 |
 | --- | ---: | ---: |
@@ -79,11 +87,13 @@ Next was the UCB1 formula. The default formula without the square root won both 
 
 ### Rollout value propagation (`MCTS_PROPAGATE_ROLLOUT_VALUE`)
 
+After evaluating a simulated change, the search passes its result back up the tree. **On** passes only the latest result; **off** passes the accumulated total, which can count earlier results again at higher levels. This controls score accounting, not whether rollouts happen. Experiment 013 later corrected this accounting in Monte Carlo 2.
+
 Turning rollout value propagation on won both passes, but by only 1.1 pp and 0.02 pp: effectively a tie.
 
-![rollout propagation in both passes](/assets/experiments/010-sweep-propagate-rollout.png)
+![propagate rollout: final validation accuracy in both tuning passes](/assets/experiments/010-sweep-propagate-rollout.png)
 
-> [!CAPTION] Figure 5. Final validation accuracy for each value of rollout propagation, Pass 1 (left) and Pass 2 (right). Small dots are the two seeds, the large marker their mean; orange is the selected value.
+> [!CAPTION] Figure 4. Final validation accuracy in Pass 1 (left) and Pass 2 (right). Small dots are the two seeds; the large marker is their mean. Orange marks the selected value.
 
 | Value | Pass 1 | Pass 2 |
 | --- | ---: | ---: |
@@ -96,9 +106,9 @@ Turning rollout value propagation on won both passes, but by only 1.1 pp and 0.0
 
 Depth 0 was best in Pass 1 (51.8%) and depth 1 in Pass 2 (64.1%). The default depth 2 never won.
 
-![rollout depth in both passes](/assets/experiments/010-sweep-rollout-depth.png)
+![rollout depth: final validation accuracy in both tuning passes](/assets/experiments/010-sweep-rollout-depth.png)
 
-> [!CAPTION] Figure 6. Final validation accuracy for each value of rollout depth, Pass 1 (left) and Pass 2 (right). Small dots are the two seeds, the large marker their mean; orange is the selected value.
+> [!CAPTION] Figure 5. Final validation accuracy in Pass 1 (left) and Pass 2 (right). Small dots are the two seeds; the large marker is their mean. Orange marks the selected value.
 
 | Value | Pass 1 | Pass 2 |
 | --- | ---: | ---: |
@@ -111,11 +121,13 @@ Depth 0 was best in Pass 1 (51.8%) and depth 1 in Pass 2 (64.1%). The default de
 
 ### Rollout training epochs (`MCTS_ROLLOUT_EPOCHS`)
 
+**Terminology clarified in later work:** this setting trains a candidate after a simulated change. The separate **scoring epochs** setting trains a copy further to measure its score; both stages train weights. Here we varied rollout training over 1, 2 and 4 epochs while scoring stayed at 1 epoch. Experiment 013's scoring-epoch comparisons vary that second stage. Neither count is the main model's 20 epochs per generation.
+
 2 rollout epochs were best in Pass 1 (51.6%) and 1 epoch in Pass 2 (63.0%).
 
-![rollout epochs in both passes](/assets/experiments/010-sweep-rollout-epochs.png)
+![rollout epochs: final validation accuracy in both tuning passes](/assets/experiments/010-sweep-rollout-epochs.png)
 
-> [!CAPTION] Figure 7. Final validation accuracy for each value of rollout epochs, Pass 1 (left) and Pass 2 (right). Small dots are the two seeds, the large marker their mean; orange is the selected value.
+> [!CAPTION] Figure 6. Final validation accuracy in Pass 1 (left) and Pass 2 (right). Small dots are the two seeds; the large marker is their mean. Orange marks the selected value.
 
 | Value | Pass 1 | Pass 2 |
 | --- | ---: | ---: |
@@ -125,19 +137,17 @@ Depth 0 was best in Pass 1 (51.8%) and depth 1 in Pass 2 (64.1%). The default de
 
 > [!CAPTION] Table 7. Mean final validation accuracy (the two seeds in brackets); bold is the selected value.
 
-With 4 rollout epochs both seeds drop sharply after generation 2 and stay below about 35% for most of the run.
-
-![Pass 1 training histories, Rollout epochs](/assets/experiments/010-pass-1-rollout-epochs-training-histories-grid.svg)
-
-> [!CAPTION] Figure 8. Pass 1 training (solid) and validation (dashed) accuracy for each value; blue seed 1, orange seed 2. Gray lines are generation boundaries (20 epochs).
+Four rollout training epochs perform worst in Pass 1; the second pass favors one. More training at this stage did not consistently improve the final result.
 
 ### Rollout learning rate (`MCTS_ROLLOUT_LR`)
 
+This is the step size for training after a simulated change, not the learning-rate schedule used by the separate scoring stage or the main training run.
+
 1e-2 was best in Pass 1 (48.1%). In Pass 2, 1e-4 and 1e-2 tied (62.06% and 62.05%) and 1e-4 was kept.
 
-![rollout learning rate in both passes](/assets/experiments/010-sweep-rollout-lr.png)
+![rollout lr: final validation accuracy in both tuning passes](/assets/experiments/010-sweep-rollout-lr.png)
 
-> [!CAPTION] Figure 9. Final validation accuracy for each value of rollout learning rate, Pass 1 (left) and Pass 2 (right). Small dots are the two seeds, the large marker their mean; orange is the selected value.
+> [!CAPTION] Figure 7. Final validation accuracy in Pass 1 (left) and Pass 2 (right). Small dots are the two seeds; the large marker is their mean. Orange marks the selected value.
 
 | Value | Pass 1 | Pass 2 |
 | --- | ---: | ---: |
@@ -149,11 +159,11 @@ With 4 rollout epochs both seeds drop sharply after generation 2 and stay below 
 
 ### Minimum search iterations (`SIMULATION_MIN_ALGORITHM_ITERATION_RUNS`)
 
-1 was best in Pass 1 (46.5%) and the default 3 in Pass 2 (60.9%).
+1 was best in Pass 1 (46.5%) and the default 3 in Pass 2 (60.8%).
 
-![minimum iterations in both passes](/assets/experiments/010-sweep-min-iterations.png)
+![min iterations: final validation accuracy in both tuning passes](/assets/experiments/010-sweep-min-iterations.png)
 
-> [!CAPTION] Figure 10. Final validation accuracy for each value of minimum iterations, Pass 1 (left) and Pass 2 (right). Small dots are the two seeds, the large marker their mean; orange is the selected value.
+> [!CAPTION] Figure 8. Final validation accuracy in Pass 1 (left) and Pass 2 (right). Small dots are the two seeds; the large marker is their mean. Orange marks the selected value.
 
 | Value | Pass 1 | Pass 2 |
 | --- | ---: | ---: |
@@ -167,9 +177,9 @@ With 4 rollout epochs both seeds drop sharply after generation 2 and stay below 
 
 16 s was best in Pass 1 (43.7%) and 32 s in Pass 2 (60.7%).
 
-![search time in both passes](/assets/experiments/010-sweep-search-time.png)
+![search time: final validation accuracy in both tuning passes](/assets/experiments/010-sweep-search-time.png)
 
-> [!CAPTION] Figure 11. Final validation accuracy for each value of search time, Pass 1 (left) and Pass 2 (right). Small dots are the two seeds, the large marker their mean; orange is the selected value.
+> [!CAPTION] Figure 9. Final validation accuracy in Pass 1 (left) and Pass 2 (right). Small dots are the two seeds; the large marker is their mean. Orange marks the selected value.
 
 | Value | Pass 1 | Pass 2 |
 | --- | ---: | ---: |
@@ -181,11 +191,11 @@ With 4 rollout epochs both seeds drop sharply after generation 2 and stay below 
 
 ### Simulation set size (`simulation_set_percent`)
 
-40% was best in Pass 1 (64.0%) and 10% in Pass 2 (59.2%). The default 128 images (0.3%) was the worst in both passes, 10–25 pp below the best: the largest effect in the whole study.
+40% was best in Pass 1 (64.0%) and 10% in Pass 2 (59.2%). The default 128 examples (0.3%) was the worst in both passes, 10–25 pp below the best: the largest effect in the whole study.
 
-![simulation set size in both passes](/assets/experiments/010-sweep-simulation-set.png)
+![simulation set: final validation accuracy in both tuning passes](/assets/experiments/010-sweep-simulation-set.png)
 
-> [!CAPTION] Figure 12. Final validation accuracy for each value of simulation set size, Pass 1 (left) and Pass 2 (right). Small dots are the two seeds, the large marker their mean; orange is the selected value.
+> [!CAPTION] Figure 10. Final validation accuracy in Pass 1 (left) and Pass 2 (right). Small dots are the two seeds; the large marker is their mean. Orange marks the selected value.
 
 | Value | Pass 1 | Pass 2 |
 | --- | ---: | ---: |
@@ -197,29 +207,15 @@ With 4 rollout epochs both seeds drop sharply after generation 2 and stay below 
 
 > [!CAPTION] Table 11. Mean final validation accuracy (the two seeds in brackets); bold is the selected value.
 
-With 128 images (0.3%) or 5%, the runs stay near 35% for several generations and the two seeds split apart. From 10% on, both seeds climb from the second generation and stay close together.
-
-![Pass 1 training histories, Sim. set](/assets/experiments/010-pass-1-simulation-set-percent-training-histories-grid.svg)
-
-> [!CAPTION] Figure 13. Pass 1 training (solid) and validation (dashed) accuracy for each value; blue seed 1, orange seed 2. Gray lines are generation boundaries (20 epochs).
-
-## Limitations
-
-- Two seeds per value, while seeds differ by up to 25 pp. The selected configuration is a reasonable choice, not a proven optimum.
-- One meta-parameter at a time; interactions were not tested.
-- A planned 40-generation confirmation (Phase 3) was not run.
-
-## Saved results
-
-Script: `experiments/train_cifar10_exp010_mcts_meta.py`. Data snapshot with every run: `documentation/website/data/experiments/experiment-010-mcts-meta.json`. The runs are in `exp010_mcts_meta_g10_tiny/` of the `growingNN_pytorch-3` checkout; pass that folder to `generate_experiment_010_charts.py`. Charts: `generate_experiment_010_overview.py` and `generate_experiment_010_charts.py`.
+The direct comparison makes the main result clear: the 128-example subset performs worst in both passes. The preferred larger subset changes between passes, so these runs support increasing the subset more strongly than they establish one best size.
 
 ## Summary
 
-In Part 1 the existing Monte Carlo search beat both new variants, so it was kept. In Part 2 its nine meta-parameters were tuned in two passes; the figure shows every tested value and the table gives the final set of parameters, which is the default search in the experiments that follow.
+In Part 1 the existing Monte Carlo search beat both new variants, so it was kept. In Part 2 its nine meta-parameters were tuned in two passes; the figure shows every tested value and the table gives the final set of parameters, used as the tuned reference in later experiments; some follow-ups explicitly retain older defaults.
 
 ![Final validation accuracy for every candidate value in both passes](/assets/experiments/010-sweep-overview.png)
 
-> [!CAPTION] Figure 14. Final validation accuracy of every tested value, Pass 1 (top) and Pass 2 (bottom). The two small dots are the two seeds, the large marker their mean; orange marks the selected value. `*` marks the default.
+> [!CAPTION] Figure 11. Final validation accuracy of every tested value, Pass 1 (top) and Pass 2 (bottom). The two small dots are the two seeds, the large marker their mean; orange marks the selected value. `*` marks the default.
 
 | Meta-parameter | Default | Pass 1 winner | **Final (Pass 2 winner)** |
 | --- | --- | --- | --- |
@@ -235,6 +231,8 @@ In Part 1 the existing Monte Carlo search beat both new variants, so it was kept
 
 > [!CAPTION] Table 12. Selected value per meta-parameter.
 
-- **The tuned search reaches about 59–64% validation**, against about 50% with the defaults.
-- **The simulation set size matters most:** the default 128 images was far too small.
-- **The other meta-parameters matter less than the random seed:** five of the nine Pass 1 winners changed in Pass 2.
+- **Later tuning sweeps reach about 59–64% validation.** This is not an independent confirmation of the final combined configuration.
+- **The simulation set size matters most:** the default 128-example subset was far too small.
+- **Several choices are sensitive to the tuning pass:** six of nine winners changed; large seed ranges limit confidence.
+
+Only two seeds were tested per value, with one parameter changed at a time. The planned 40-generation confirmation was not run, so the selected configuration remains a practical choice rather than a confirmed optimum.

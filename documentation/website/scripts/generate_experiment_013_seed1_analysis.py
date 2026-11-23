@@ -1,4 +1,4 @@
-"""Visualize completed Experiment 18 seed 1 using its saved board records."""
+"""Visualize completed Experiment 013 seed 1 using its saved board records."""
 import csv
 import json
 from collections import Counter
@@ -9,7 +9,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator, FuncFormatter
 
-from documentation.website.scripts.generate_experiment_017_action_scores import group_key, candidate_detail, GROUPS, COLORS
+from documentation.website.scripts.generate_experiment_013_origin_action_scores import group_key, candidate_detail, GROUPS, COLORS
 
 ROOT = Path(__file__).resolve().parents[3]
 RUN = ROOT / 'experiments/output/train_cifar10/runs/exp014_action_replay/v1/full_growth_5min/seed_1'
@@ -29,10 +29,10 @@ def generate():
                                     gridspec_kw={'height_ratios': [2, 1]}, layout='constrained')
     ax.plot(epochs, [100*r['trainAcc'] for r in metrics], label='Training', color='#2563eb')
     ax.plot(epochs, [100*r['valAcc'] for r in metrics], label='Validation', color='#e56b28')
-    ax.set(ylabel='Accuracy (%)', ylim=(0, 100), title='Experiment 18 Phase 5 · seed 1')
+    ax.set(ylabel='Accuracy (%)', ylim=(0, 100), title='Experiment 013 Phase 5 · seed 1')
     ax.legend()
-    size.step(epochs, [r['paramCount'] for r in metrics], where='post', color='#168a69')
-    size.set(xlabel='Training epoch', ylabel='Parameters')
+    size.step(epochs, [r['paramCount'] / 1000 for r in metrics], where='post', color='#168a69')
+    size.set(xlabel='Training epoch', ylabel='Parameters (thousands)', ylim=(0, None))
     size.xaxis.set_major_locator(MultipleLocator(20))
     size.yaxis.set_major_formatter(FuncFormatter(lambda x, _: f'{x:,.0f}'))
     for axis in (ax, size):

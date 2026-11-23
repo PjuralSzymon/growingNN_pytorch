@@ -1,6 +1,6 @@
 """Experiment 018 (code IDs keep "014"): replay the Experiment 017 generation-3 decision and test Monte Carlo 2.
 
-Run: python -u experiments/train_cifar10_exp014_action_replay.py --phase <name>
+Run: python -u experiments/train_cifar10_exp013_action_replay.py --phase <name>
 
   replay              Phase 1: train every recorded action (and no action) from the checkpoint
   scoring             Phase 2: score each action with 1, 5, 10 and 20 scoring epochs
@@ -480,7 +480,7 @@ def run_full_growth(output, seeds, phase='full', spec=None):
                 experiment_label=spec['label'], experiment_name=spec['name'],
                 experiment_id_prefix=spec['id_prefix'], scoring_epochs=spec['scoring_epochs'])
             if output == OUTPUT:
-                from documentation.website.scripts.generate_experiment_018_report import main as generate_report
+                from documentation.website.scripts.generate_experiment_013_report import main as generate_report
                 generate_report()
     finally:
         exp010.montecarlo_alg, exp010.sample_loaders, exp010.initial_graph = previous, previous_sampler, previous_starter
@@ -615,7 +615,7 @@ def run_decision_replay(output, epochs):
     write_json(target / 'summary.json', {'manifest': metadata, 'rebuilt_validation_accuracy':
                                          payload['validation_accuracy'], 'results': results})
     if output == OUTPUT:
-        from documentation.website.scripts.generate_experiment_018_report import main as generate_report
+        from documentation.website.scripts.generate_experiment_013_report import main as generate_report
         generate_report()
     print('COMPLETE', flush=True)
 
@@ -750,7 +750,7 @@ def run_scoring_calibration(output, measurements=CALIBRATION_MEASUREMENTS, setti
     write_json(target / 'summary.json', {'manifest': metadata, 'control_validation_accuracy': control,
                                          'settings': rows})
     if output == OUTPUT:
-        from documentation.website.scripts.generate_experiment_018_report import main as generate_report
+        from documentation.website.scripts.generate_experiment_013_report import main as generate_report
         generate_report()
     print('COMPLETE', flush=True)
 
@@ -1066,7 +1066,7 @@ def main():
                 args.output / 'montecarlo2_time' / f'{minutes}min', minutes * 60,
                 epochs_values=(20,))
         if args.output == OUTPUT:
-            from documentation.website.scripts.generate_experiment_018_report import main as generate_report
+            from documentation.website.scripts.generate_experiment_013_report import main as generate_report
             generate_report()
         return
     if args.phase in CHECK_PHASES:

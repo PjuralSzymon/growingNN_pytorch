@@ -1,60 +1,43 @@
 # Experiment 011: simulation-set selectors
 
-## Context
+## Introduction
 
-The search judges each candidate architecture by training a copy for a short time on a small simulation set and measuring its accuracy. Experiment 010 showed that the size of this set matters more than any other search setting: 10% of the training data was far better than 128 images. This experiment keeps the size at 10% and asks whether *which* images are chosen also matters. A random sample is the control; the other rules prefer hard, typical or well-spread images, ideas taken from data-pruning research.
+Experiment 010 found its largest improvement by enlarging the simulation set—the small subset used to train and score candidate architectures. Until now, we had created this set by randomly sampling data examples from the training dataset, with the same number from each class. We continued from 010's selected search settings and 10% subset size, but now asked whether a different way of choosing those examples would help. We tested four alternatives against the random sampling already in use.
 
-## Summary
-
-- **Question:** which images should the search train and score candidates on?
-- **Best overall: CCS** (75.2% mean over all runs). **Best on CIFAR-10: Moderate** (58.4%); CCS leads MNIST (96.6%) (Table 3, Figures 1–3).
-- **Seeds matter more than most rules:** stratified random ends at 38.6% or 61.1% on CIFAR-10 depending on the seed.
-- **Moderate coverage was clearly worst** (42.7% on CIFAR-10) and was removed.
+## Setup
 
 | Setting | Value |
 | --- | --- |
 | Datasets, seeds | CIFAR-10 and MNIST, seeds 1 and 2 (MNIST moderate: seed 1 only) |
-| Starter | Conv →8, ReLU, pool, Linear 8→10 |
+| Starter | Conv →8, ReLU, pool, Linear 8→10; **296 parameters on CIFAR-10, 152 on MNIST** |
 | Schedule | 10 generations × 20 epochs |
 | Search | Monte Carlo with the Experiment 010 winners, 32 s, 10% simulation set |
 
 > [!CAPTION] Table 1. Setup. The simulation set is drawn once before generation 0 and reused by every search.
 
-| Selector | Which images it keeps (per class) |
+| Simulation-set generator | Algorithm |
 | --- | --- |
-| Stratified random | A random equal share (the control) |
-| EL2N | The hardest images for a linear probe on pixels |
-| CCS | Error-scored like EL2N, without the hardest 30%, spread over difficulty bands |
-| Moderate | Images at the median distance from the class's mean image |
-| Moderate coverage | A central distance band, spread out with k-center |
+| Stratified random (existing method) | Take a random sample from the training dataset, with the same number of examples from each class. |
+| EL2N | Train a simple linear classifier on the examples' feature vectors, then select the examples on which it makes the largest prediction errors. |
+| CCS | Use the same prediction errors to estimate difficulty. Exclude the hardest 30%, then sample from across the remaining difficulty range. |
+| Moderate | Compute the mean feature vector for each class. Select examples whose distance from that mean is closest to the class's median distance. |
+| Moderate coverage | Start with examples around that median distance, then select examples far from those already chosen to avoid filling the set with similar data. |
 
-> [!CAPTION] Table 2. The five rules. EL2N, CCS and moderate score raw pixels, not the growing network.
+> [!CAPTION] Table 2. Five ways to build the simulation set. All keep classes balanced. EL2N and CCS use a separate linear classifier, not the network being grown.
 
-Every rule picks the same number of images per class, so the classes stay balanced; only the choice of images within a class differs. The set is chosen once, before training, and every search in the run reuses it.
+The generators that compare or score examples use a **data matrix**: one row per example and one column per numerical feature. In these runs, each input was flattened into a vector. Other data types can use a suitable numerical representation; the selection rules operate on those vectors and class labels.
 
-## Results
+“Stratified” simply means sampling separately within each class to keep those counts balanced. Each generator also selects a separate subset of validation examples for scoring. Both subsets are created before training and reused throughout the run.
 
-### Final results
+## 1. Comparing selectors on CIFAR-10
 
-**Best overall: CCS**, with the highest mean over all finished runs (75.2% validation, 75.3% test). **For CIFAR-10 alone, Moderate is best** (58.4%), and it is also the most stable there. Moderate coverage is clearly worst and was removed.
-
-| Rank | Selector | CIFAR-10 mean | MNIST mean | **Mean of all runs** |
-| ---: | --- | ---: | ---: | ---: |
-| 1 | **CCS** | 53.79% | **96.60%** | **75.19%** |
-| 2 | Stratified random (control) | 49.83% | 89.13% | 69.48% |
-| 3 | EL2N | 55.61% | 77.99% | 66.80% |
-| 4 | Moderate | **58.35%** | 74.38% (1 seed) | 63.69% |
-| 5 | Moderate coverage | 42.74% | — | 42.74% |
-
-> [!CAPTION] Table 3. Mean final validation accuracy per selector. The last column averages every finished run of the selector (up to 4: two datasets × two seeds), so it mixes the CIFAR-10 and MNIST scales. Test accuracy gives the same order.
-
-![Final validation accuracy of every run per selector](/assets/experiments/011-final-accuracy.svg)
-
-> [!CAPTION] Figure 1. Final validation accuracy (%) of every finished run. The gray line spans the lowest to the highest run, the black point is the mean; circles are CIFAR-10, diamonds MNIST; blue seed 1, orange seed 2.
-
-### CIFAR-10
+On CIFAR-10, stratified random sampling is the control. The four alternatives change which examples each class contributes, while keeping the subset size and search settings fixed.
 
 **Best: Moderate, 58.4%,** with both seeds within 0.9 pp. CCS and stratified random each had one good seed (about 61%) and one poor one (46% and 39%).
+
+![CIFAR-10 final accuracy per selector](/assets/experiments/011-final-accuracy-cifar10.svg)
+
+> [!CAPTION] Figure 1. CIFAR-10 final accuracy (%). Bars are two-seed means; circles are validation seeds, diamonds test seeds; blue seed 1, orange seed 2.
 
 | Selector | Mean validation | Seeds | Mean test |
 | --- | ---: | ---: | ---: |
@@ -64,13 +47,17 @@ Every rule picks the same number of images per class, so the classes stay balanc
 | Stratified random | 49.83% | 38.6–61.1 | 49.57% |
 | Moderate coverage | 42.74% | 38.7–46.8 | 42.87% |
 
-![CIFAR-10 final accuracy per selector](/assets/experiments/011-final-accuracy-cifar10.svg)
+> [!CAPTION] Table 3. CIFAR-10 final accuracy per selector: mean of two seeds, with the two seeds' validation results. Bold is the best.
 
-> [!CAPTION] Figure 2. CIFAR-10 final accuracy (%). Bars are two-seed means; circles are validation seeds, diamonds test seeds; blue seed 1, orange seed 2.
+## 2. Checking whether the ranking holds on MNIST
 
-### MNIST
+The same rules are also tested on MNIST to check whether the CIFAR-10 ranking generalizes.
 
 **Best: CCS, 96.6%,** with both seeds within 0.3 pp and 7.5 pp ahead of stratified random.
+
+![MNIST final accuracy per selector](/assets/experiments/011-final-accuracy-mnist.svg)
+
+> [!CAPTION] Figure 2. MNIST final accuracy (%). Bars are means; circles are validation seeds, diamonds test seeds. Moderate has seed 1 only.
 
 | Selector | Mean validation | Seeds | Mean test |
 | --- | ---: | ---: | ---: |
@@ -79,31 +66,65 @@ Every rule picks the same number of images per class, so the classes stay balanc
 | EL2N | 77.99% | 74.2–81.8 | 78.20% |
 | Moderate | 74.38% | seed 1 only | 74.58% |
 
-![MNIST final accuracy per selector](/assets/experiments/011-final-accuracy-mnist.svg)
+> [!CAPTION] Table 4. MNIST final accuracy per selector: mean of the finished seeds, with the seeds' validation results. Bold is the best.
 
-> [!CAPTION] Figure 3. MNIST final accuracy (%), same encoding as Figure 2. Moderate has seed 1 only.
+## 3. Summary
 
-### Training histories
+The combined view below averages the final accuracy of every completed run for each generator, giving each run equal weight.
 
-The histories show when the runs separate. A poor run is already behind after the first one to three generations (stratified random seed 1 from generation 1, CCS seed 2 after generation 3) rather than falling behind late, so the early search decisions decide most of the final result.
+![Mean final validation and test accuracy for all simulation-set generators](/assets/experiments/011-summary-means.svg)
 
-![Training and validation histories per selector and dataset](/assets/experiments/011-training-histories.svg)
+> [!CAPTION] Figure 3. Mean final accuracy across completed CIFAR-10 and MNIST runs. Bars show validation and test separately; labels below each generator show how many runs came from each dataset.
 
-> [!CAPTION] Figure 4. Training (solid) and validation (dashed) accuracy per selector, one row per dataset; blue seed 1, orange seed 2. Dotted lines are generation boundaries (20 epochs). Low runs are low from early generations, not because of a late collapse.
+| Simulation-set generator | CIFAR-10 runs | MNIST runs | Mean validation | Mean test |
+| --- | ---: | ---: | ---: | ---: |
+| **CCS** | 2 | 2 | **75.19%** | **75.26%** |
+| Stratified random | 2 | 2 | 69.48% | 69.66% |
+| EL2N | 2 | 2 | 66.80% | 66.94% |
+| Moderate | 2 | 1 | 63.69% | 64.24% |
+| Moderate coverage | 2 | 0 | 42.74% | 42.87% |
 
-## Conclusion
+> [!CAPTION] Table 5. Means from the saved final results. Moderate has only one MNIST seed; Moderate coverage has no MNIST run, so their combined means are not directly comparable with the complete four-run groups.
 
-There is no single best rule for both datasets. CCS has the best average and is the best choice on MNIST; Moderate is the best and most reliable choice on CIFAR-10, the dataset the later experiments use. Both are kept as options, and Experiment 018 (Phase 10) tests them inside the newer search, where they again end up practically equal. The bigger lesson is the seed spread: with two seeds, a difference of a few points between rules is not reliable.
+**CCS has the highest combined mean in the completed runs.** It also wins on MNIST, while Moderate wins on CIFAR-10. We therefore kept both as options and removed Moderate coverage. The combined average summarizes these runs; it does not establish one best generator for every dataset. Experiment 013 revisits the choice inside the revised search.
 
-## Limitations
+### How CCS builds the simulation set
 
-- Two seeds, with ranges up to 22 pp on CIFAR-10; MNIST moderate has one seed; CIFAR-100 was not run.
-- Selectors score pixels with a linear probe, not with the network being grown.
+CCS means **coverage-centric selection**. The idea is that a small subset should *cover* the whole range of examples, from easy to fairly hard, instead of keeping only one kind. To do that it first needs a difficulty score for every image.
 
-## Next
+**What "hard" and "easy" mean here.** A small separate linear classifier (not the network being grown) is trained on the training images for 10 epochs. After every epoch it predicts each image's class, and the size of its mistake is measured:
 
-Score the same candidates on the selected subset and on the full validation split to see whether the subset keeps their order.
+- An **easy** image is one the classifier gets right with high confidence in every epoch: its error stays close to 0.
+- A **hard** image is one it keeps getting wrong or keeps doubting: its error stays high, up to 2 for a confident wrong answer.
 
-## Saved results
+So "hard" means "this simple classifier has persistently high error on it", not a property of the image itself. The hardest images are often unusual, ambiguous or mislabelled.
 
-Script: `experiments/train_cifar10_exp011_simulation_sets.py`. Snapshot: `documentation/website/data/experiments/experiment-011-simulation-sets.json`. Charts: `generate_experiment_011_charts.py`.
+```text
+1. Difficulty score of every training image
+   Train a linear classifier on the training images for 10 epochs.
+   After each epoch, for each image:
+       p      = predicted probability of every class
+       target = 1 for the correct class, 0 for the others
+       error  = sum over classes of (p - target)²
+   difficulty = the image's average error over the 10 epochs
+       (0 = always right and sure  -> easy;  about 2 = always wrong and sure -> hard)
+
+2. For each class separately (every class gets the same number of images, its quota):
+   a. Sort the images of the class from hardest to easiest.
+   b. Drop the hardest 30%, the images most likely to be ambiguous or mislabelled
+      (fewer if dropping 30% would leave less than the quota).
+   c. Split the remaining difficulty range, from the easiest to the hardest kept score,
+      into 50 bands of equal width; ignore empty bands.
+   d. Fill the quota band by band, starting from the band with the fewest images:
+          share = remaining quota / number of bands still left
+          take `share` random images from the band (or all of them if it has fewer)
+      Places a small band cannot fill pass on to the larger bands.
+
+3. The simulation set is the union of all classes.
+```
+
+**Example of the error.** With two classes and the first one correct, a prediction of `[0.9, 0.1]` gives an error of (0.9 − 1)² + (0.1 − 0)² = **0.02**: easy. A prediction of `[0.2, 0.8]` gives (0.2 − 1)² + (0.8 − 0)² = **1.28**: hard.
+
+**Why bands of equal width.** Most images have low difficulty, so a random sample would be mostly easy images. Equal-width bands give each difficulty level roughly the same share of the subset, so easy, medium and fairly hard images are all represented. EL2N, by contrast, keeps only the hardest images, and Stratified random keeps a random mix.
+
+The validation subset is chosen the same way, using the trained classifier's predictions on the validation images (it is not trained on them). Both subsets stay fixed for the whole growing run.

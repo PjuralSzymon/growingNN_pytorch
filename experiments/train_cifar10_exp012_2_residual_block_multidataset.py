@@ -10,8 +10,8 @@ reaches 90%, or after the configured generation limit.
 Default: MNIST, CIFAR-10, CIFAR-100, Tiny ImageNet; seeds 1, 2, 3;
 30 generations x 10 epochs maximum. Tiny ImageNet is not full ImageNet.
 
-    pipenv run python -u experiments/train_cifar10_exp014_residual_block_multidataset.py
-    pipenv run python -u experiments/train_cifar10_exp014_residual_block_multidataset.py mnist cifar10
+    pipenv run python -u experiments/train_cifar10_exp012_2_residual_block_multidataset.py
+    pipenv run python -u experiments/train_cifar10_exp012_2_residual_block_multidataset.py mnist cifar10
 """
 
 from __future__ import annotations

@@ -1,5 +1,6 @@
-"""Create Experiment 018's report and learning-curve figure from saved results."""
+"""Create Experiment 013's report and learning-curve figure from saved results."""
 import json
+import re
 import random
 import sys
 from pathlib import Path
@@ -7,11 +8,16 @@ from pathlib import Path
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 RUN = ROOT / 'experiments/output/train_cifar10/runs/exp014_action_replay/v1'
-REPORT = ROOT / 'documentation/website/content/experiments/experiment-018-action-replay-notebook.md'
+REPORT = ROOT / 'documentation/website/content/experiments/experiment-013-monte-carlo-2.md'
+DETAILS_HEADING = '## Phase details'
+COMPARISON_REPORT_EPOCHS = 300  # Phase 18 charts show the first 300 epochs (10 generations)
+SUMMARY_HEADING = '## Summary'
+NEWLINE = chr(10)
 CHART = ROOT / 'documentation/website/app/public/assets/experiments/018-action-replay-validation.png'
 SCORING_CHART = ROOT / 'documentation/website/app/public/assets/experiments/018-scoring-epochs.png'
 MCTS_CHART = ROOT / 'documentation/website/app/public/assets/experiments/018-montecarlo2-epochs.png'
@@ -34,7 +40,7 @@ def scoring_section():
             ax.plot(epochs_list, [100 * values[(epoch, arm)] for epoch in epochs_list],
                     marker='o', linewidth=2.8 if i == 5 else 1.5, label=LABELS[arm])
         ax.set(xlabel='Scoring epochs', ylabel='Simulation validation accuracy (%)',
-               title='Experiment 18: effect of scoring epochs', xticks=epochs_list)
+               title='Experiment 013: effect of scoring epochs', xticks=epochs_list)
         ax.set_ylim(0, 100)
         ax.grid(alpha=.25)
         ax.legend()
@@ -93,7 +99,7 @@ def montecarlo2_section():
             ax.plot(epochs, [plotted[e][arm]['score'] for e in epochs], marker='o',
                     linewidth=2.8 if i == 5 else 1.5, label=LABELS[arm])
         ax.set(xlabel='Scoring epochs', ylabel='Mean search value',
-               title='Experiment 18: Monte Carlo 2 search values', xticks=sorted(plotted))
+               title='Experiment 013: Monte Carlo 2 search values', xticks=sorted(plotted))
         ax.grid(alpha=.25)
         ax.legend()
         fig.tight_layout()
@@ -169,7 +175,7 @@ def time_budget_section():
                                 else float('nan') for _, rows in plotted], marker='o',
                     linewidth=2.8 if i == 5 else 1.5, label=LABELS[arm])
         ax.set(xlabel='Nominal time budget', ylabel='Mean search value',
-               title='Experiment 18: Monte Carlo 2 time budgets',
+               title='Experiment 013: Monte Carlo 2 time budgets',
                xticks=list(positions), xticklabels=[label for label, _ in plotted])
         ax.grid(alpha=.25)
         ax.legend()
@@ -270,7 +276,7 @@ def score_fix_section():
              'The following issues were fixed in the Monte Carlo 2 simulation algorithm '
              '(`montecarlo_alg_2.py`):', '',
              *SCORE_FIX_LIST, '',
-             'This phase repeats the Phase 3 search on the same Experiment 017 generation-3 checkpoint '
+             'This phase repeats the Phase 3 search on the same generation-3 checkpoint '
              'and five recorded root actions, with the fixed algorithm and the settings planned for '
              'Phase 7: **rollout depth 0**, **5 scoring epochs**, convolution widening enabled, UCB C=1.0, '
              'minimum iterations 3 and a 32-second soft budget. Three search seeds are run to show '
@@ -335,7 +341,7 @@ def _near_ties(search):
 
 
 def sim_fixes_growth_section():
-    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_013_origin_action_scores import group_key
     target = RUN / 'full_growth_sim_fixes'
     lines = ['', '## Phase 12: full growth with the simulation fixes', '',
              'The best Phase 10 cell (UCB C = 1.0, CCS simulation set) repeated with all four simulation fixes made '
@@ -359,12 +365,12 @@ def sim_fixes_growth_section():
     ref_metrics, ref_searches, _ = _load_growth_run(RUN / 'full_grid' / 'c1p0_ccs' / 'seed_1')
     for label, directory in (('Phase 10, C = 1.0, CCS', RUN / 'full_grid' / 'c1p0_ccs' / 'seed_1'),
                              ('Phase 5 (no widening, 20 scoring epochs)', RUN / 'full_growth_5min' / 'seed_1'),
-                             ('Experiment 17 (family search)', EXP13_RUN)):
+                             ('the origin run (family search)', EXP13_RUN)):
         metrics, searches, run = _load_growth_run(directory)
         search_time = '—' if directory == EXP13_RUN else f"{sum(s['durationSec'] for s in searches) / 60:.0f} min"
         lines.append(f"| {label} | 1 | {100 * run['final_validation_accuracy']:.2f}% | "
                      f"{100 * run['final_test_accuracy']:.2f}% | {metrics[-1]['paramCount']:,} | {search_time} |")
-    lines += ['', "Experiment 17's search time is not shown: its simulation files record only part of the family "
+    lines += ['', "The origin run's search time is not shown: its simulation files record only part of the family "
               'search.']
     if not runs:
         return lines + ['', 'Run with `--phase full-sim-fixes`, then regenerate this report.', '']
@@ -379,9 +385,9 @@ def sim_fixes_growth_section():
                  label=f"{label} validation (final {100 * metrics[-1]['valAcc']:.1f}%)")
         acc.plot(epochs, [100 * row['trainAcc'] for row in metrics], color=color, lw=1.1, ls='--',
                  label=f'{label} training')
-        size.step(epochs, [row['paramCount'] for row in metrics], where='post', color=color, lw=1.6, label=label)
+        size.step(epochs, [row['paramCount'] / 1000 for row in metrics], where='post', color=color, lw=1.6, label=label)
     acc.set(ylabel='Accuracy (%)', ylim=(0, 80), title='Phase 12 against the best Phase 10 cell')
-    size.set(xlabel='Training epoch', ylabel='Parameters')
+    size.set(xlabel='Training epoch', ylabel='Parameters (thousands)', ylim=(0, None))
     for axis in (acc, size):
         axis.grid(alpha=.25)
         for boundary in range(20, 200, 20):
@@ -427,7 +433,7 @@ def sim_fixes_growth_section():
 
 
 def _sim_fixes_growth_findings(columns):
-    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_013_origin_action_scores import group_key
     mean = lambda values: sum(values) / len(values)
     late = range(5, 9)
     phase12 = {name: value for name, value in columns.items() if name.startswith('Phase 12')}
@@ -489,7 +495,7 @@ def _sim_fixes_growth_findings(columns):
             'Dropout leading under high-learning-rate scoring fits the point above, but the cause was not measured.',
             f'- **Widening was never selected** ({widen} of {sum(len(s) for _, s in phase12.values())} decisions), '
             'although it was runner-up in several searches; the runs ended at 4,400–5,600 parameters, '
-            'far below Experiment 17\'s 80,887.',
+            'far below the origin run\'s 80,887.',
             '- **Searches went shallower.** Measuring each node twice uses rollouts that used to expand the tree: '
             'Phase 12 searches reached depth 1 from generation 1 on, Phase 10 reached depth 2. Search time was '
             'unchanged (137 and 156 min against 157 min).', '',
@@ -618,12 +624,11 @@ def _partial_growth_run(directory):
 
 
 def _widening_training_chart(runs):
-    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_013_origin_action_scores import group_key
     short = {'Widen convolution': 'W', 'Sequential convolution + BN': 'SC', 'Sequential convolution without BN':
              'SC-', 'Residual convolution': 'RC', 'Sequential linear': 'SL', 'Add neurons': 'N',
              'Delete neurons': 'DN', 'Dropout': 'D', 'Delete layer': 'DL', 'Other': 'O'}
-    references = [(f'Phase 12 seed {seed}', _load_growth_run(RUN / 'full_growth_sim_fixes' / f'seed_{seed}')[0],
-                   color) for seed, color in ((1, '#9a9a9a'), (2, '#c9c9c9'))]
+    references = []  # Phase 14 only; Phase 12 is compared in the text
     colors = {1: '#2a78d6', 2: '#eb6834', 3: '#1baa7a'}
     fig, (acc, size) = plt.subplots(2, 1, figsize=(11, 8), sharex=True, layout='constrained',
                                     gridspec_kw={'height_ratios': [2, 1.3]})
@@ -635,15 +640,15 @@ def _widening_training_chart(runs):
         acc.plot(epochs, [100 * row['valAcc'] for row in metrics], color=color, lw=width,
                  label=f"{label} validation (last {100 * metrics[-1]['valAcc']:.1f}%)")
         acc.plot(epochs, [100 * row['trainAcc'] for row in metrics], color=color, lw=width * .7, ls='--')
-        size.step(epochs, [row['paramCount'] for row in metrics], where='post', color=color, lw=width, label=label)
+        size.step(epochs, [row['paramCount'] / 1000 for row in metrics], where='post', color=color, lw=width, label=label)
     for offset, (seed, (metrics, searches, _)) in enumerate(runs.items()):
         for generation, search in enumerate(searches):
             kind = group_key({'action': search['actionChosen']})
             size.annotate(short.get(kind, kind[:3]), (20 * (generation + 1) + .5, 0), xycoords=('data', 'axes fraction'),
                           xytext=(3, 4 + 11 * offset), textcoords='offset points', fontsize=7, color=colors[seed])
     acc.plot([], [], color='#666666', lw=1, ls='--', label='Dashed: training accuracy')
-    acc.set(ylabel='Accuracy (%)', ylim=(0, 80), title='Phase 14 (widening for every convolution) against Phase 12')
-    size.set(xlabel='Training epoch', ylabel='Parameters', yscale='log')
+    acc.set(ylabel='Accuracy (%)', ylim=(0, 80), title='Phase 14: full growth with widening offered for every convolution')
+    size.set(xlabel='Training epoch', ylabel='Parameters (thousands)', ylim=(0, None))
     for axis in (acc, size):
         axis.grid(alpha=.25)
         for boundary in range(20, 200, 20):
@@ -657,14 +662,14 @@ def _widening_training_chart(runs):
             'generation boundaries, where the selected action is applied. The letters at the bottom name the '
             'action applied at each boundary (W widen convolution, SC sequential convolution with BN + ReLU, '
             'SC- without them, RC residual convolution, SL sequential linear, N add neurons, O other, e.g. a '
-            'residual linear layer). Parameters use a log scale.', '']
+            'residual linear layer). Parameters are in thousands.', '']
 
 
 WIDENING_SEEDS = (1, 2, 3)
 
 
 def widening_growth_section():
-    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_013_origin_action_scores import group_key
     target = RUN / 'full_growth_widening'
     lines = ['', '## Phase 14: full growth with widening for every convolution', '',
              'Phase 12 repeated after the widening refactor (`91085d0`). Before it, widening was offered only '
@@ -743,7 +748,7 @@ NORMALIZATION_PARTS = (('16a', 'full_growth_normalization', 'Exp 010 starter, no
 
 
 def _normalization_searches(searches):
-    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_013_origin_action_scores import group_key
     rows = []
     for search in searches:
         measured = [row for row in search['candidates'] if row.get('visits', 0) > 0]
@@ -866,7 +871,7 @@ LONG_RUN_ARMS = (('17a: Monte Carlo 2 search', 'full_growth_long', '#1baa7a'),
 
 def _selected_actions(directory, searches):
     """Selected action types of a growth run: from its searches, or from its history for random growth."""
-    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_013_origin_action_scores import group_key
     if searches:
         return [group_key({'action': search['actionChosen']}) for search in searches]
     history = directory / 'history.pt'
@@ -918,13 +923,13 @@ def long_run_section():
         style = '-' if seed == 'seed_1' else ':'
         acc.plot(epochs, [100 * row['valAcc'] for row in metrics], color=color, lw=1.6, ls=style,
                  label=f"{label}, {seed.replace('_', ' ')} (last {100 * metrics[-1]['valAcc']:.1f}%)")
-        size.step(epochs, [row['paramCount'] for row in metrics], where='post', color=color, lw=1.6, ls=style)
+        size.step(epochs, [row['paramCount'] / 1000 for row in metrics], where='post', color=color, lw=1.6, ls=style)
     for boundary in range(20, 20 * LONG_RUN_GENERATIONS, 20):
         for axis in (acc, size):
             axis.axvline(boundary + .5, color='#dddddd', ls=':', lw=.8)
     acc.set(ylabel='Validation accuracy (%)', ylim=(20, 85),
             title='Phase 17: search, random growth and no growth from the residual-block starter')
-    size.set(xlabel='Training epoch', ylabel='Parameters', yscale='log')
+    size.set(xlabel='Training epoch', ylabel='Parameters (thousands)', ylim=(0, None))
     for axis in (acc, size):
         axis.grid(alpha=.25)
     acc.legend(loc='lower right', fontsize=8)
@@ -960,6 +965,7 @@ COMPARISON_ARMS = (('Monte Carlo 1', 'mc_comparison_mc1', '#3b6fd4'),
 def comparison_section():
     """Phase 18: Monte Carlo 1 against Monte Carlo 2 with a search after every generation."""
     total = COMPARISON_EPOCHS * LONG_RUN_GENERATIONS
+    shown = COMPARISON_REPORT_EPOCHS
     lines = ['', '## Phase 18: Monte Carlo 1 against Monte Carlo 2', '',
              f'Phase 17 stopped searching after 7.5 hours, so its search grew the network in only 9 of 14 '
              f'generations. Phase 18 drops that deadline and compares the two search algorithms on the Phase 17 '
@@ -980,7 +986,7 @@ def comparison_section():
     lines += ['| Algorithm | Seed | Epochs | Training accuracy | Validation accuracy | Test | Parameters | Searches '
               '| Mean search time | Selected actions |',
               '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |']
-    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_013_origin_action_scores import group_key
     for (label, seed), (metrics, searches, run, _) in runs.items():
         actions = [group_key({'action': search['actionChosen']}) for search in searches]
         summary = ', '.join(f'{name} {actions.count(name)}' for name in dict.fromkeys(actions)) or '—'
@@ -990,28 +996,63 @@ def comparison_section():
         lines.append(f"| {label} | {seed.split('_')[1]} | {len(metrics)} of {total} | "
                      f"{100 * last['trainAcc']:.2f}% | {100 * last['valAcc']:.2f}% | {test} | "
                      f"{last['paramCount']:,} | {len(searches)} | {minutes:.0f} min | {summary} |")
-    fig, (acc, size) = plt.subplots(2, 1, figsize=(11, 7.5), sharex=True, layout='constrained',
-                                    gridspec_kw={'height_ratios': [2, 1.2]})
+    runs = {key: ([row for row in value[0] if row['globalEpoch'] < shown], *value[1:]) for key, value in runs.items()}
+    fig, (train, acc, size) = plt.subplots(3, 1, figsize=(11, 15), sharex=True, layout='constrained',
+                                           gridspec_kw={'height_ratios': [2, 2, 1.2]})
     for (label, seed), (metrics, _, _, color) in runs.items():
         epochs = [row['globalEpoch'] + 1 for row in metrics]
         style = '-' if seed == 'seed_1' else ':'
+        train.plot(epochs, [100 * row['trainAcc'] for row in metrics], color=color, lw=1.6, ls=style,
+                   label=f"{label}, {seed.replace('_', ' ')} (last {100 * metrics[-1]['trainAcc']:.1f}%)")
         acc.plot(epochs, [100 * row['valAcc'] for row in metrics], color=color, lw=1.6, ls=style,
                  label=f"{label}, {seed.replace('_', ' ')} (last {100 * metrics[-1]['valAcc']:.1f}%)")
-        size.step(epochs, [row['paramCount'] for row in metrics], where='post', color=color, lw=1.6, ls=style)
-    for boundary in range(COMPARISON_EPOCHS, total, COMPARISON_EPOCHS):
-        for axis in (acc, size):
-            axis.axvline(boundary + .5, color='#dddddd', ls=':', lw=.8)
-    acc.set(ylabel='Validation accuracy (%)', ylim=(20, 90),
-            title='Phase 18: Monte Carlo 1 and Monte Carlo 2 from the residual-block starter')
-    size.set(xlabel='Training epoch', ylabel='Parameters', yscale='log')
-    for axis in (acc, size):
-        axis.grid(alpha=.25)
+        size.step(epochs, [row['paramCount'] / 1000 for row in metrics], where='post', color=color, lw=1.6, ls=style)
+    for axis in (train, acc, size):
+        axis.set_xlim(0, shown)
+        axis.xaxis.set_major_locator(MultipleLocator(COMPARISON_EPOCHS))
+        for boundary in range(COMPARISON_EPOCHS, shown, COMPARISON_EPOCHS):
+            axis.axvline(boundary + .5, color='gray', alpha=.4, lw=.8, zorder=0)
+        axis.grid(alpha=.25, axis='y')
+    top = train.secondary_xaxis('top')
+    top.set_xticks([COMPARISON_EPOCHS * (g + .5) for g in range(shown // COMPARISON_EPOCHS)],
+                   [str(g) for g in range(shown // COMPARISON_EPOCHS)])
+    top.tick_params(length=0, labelsize=7)
+    top.set_xlabel('Generation (30 epochs each)')
+    train.set(ylabel='Training accuracy (%)', ylim=(20, 95),
+              title='Phase 18: Monte Carlo 1 and Monte Carlo 2 from the residual-block starter')
+    acc.set(ylabel='Validation accuracy (%)', ylim=(20, 90))
+    size.set(xlabel='Training epoch', ylabel='Parameters (thousands)')
+    size.set_ylim(bottom=0)
+    train.legend(loc='lower right', fontsize=8)
     acc.legend(loc='lower right', fontsize=8)
     fig.savefig(ASSET_DIR / '018-mc-comparison-training.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
     return lines + ['', '![Phase 18 training history](/assets/experiments/018-mc-comparison-training.png)', '',
-                    'Validation accuracy (top) and parameter count (bottom, log scale) per epoch; solid lines are '
-                    'seed 1, dotted lines seed 2, and dotted vertical lines mark the generations.', '']
+                    '> [!CAPTION] Figure 31. Phase 18: training accuracy (top), validation accuracy (middle) and '
+                    'parameters in thousands (bottom) per epoch, first 300 epochs; solid lines are seed 1, dotted lines seed 2. Gray '
+                    'lines mark the generations (30 epochs). Monte Carlo 1 seed 1 and Monte Carlo 2 seed 2 crashed '
+                    'at epoch 150; the other two runs are still running.', '',
+                    'For the best run, Monte Carlo 2 seed 1, the chart below groups its selected actions by type and '
+                    'shows how training and validation accuracy changed over the generation after each one.', '',
+                    '![Accuracy change by action type, Monte Carlo 2 seed 1](/assets/experiments/013-mc2-action-types.png)', '',
+                    '> [!CAPTION] Figure 99. Phase 18, Monte Carlo 2 seed 1: mean training and validation change over '
+                    'the next generation by action type (bars), and every single action (dots). The number of times '
+                    'each type was selected is in brackets. Drawn by generate_experiment_013_phase18_details.py.', '',
+                    'The network of this run at four points: the starter, two generations in between, and generation 9, '
+                    'the last one in the charts. These are the drawings the run saved after each generation.', '',
+                    '![Monte Carlo 2 seed 1, starting network](/assets/experiments/013-mc2-structure-gen0.png)', '',
+                    '> [!CAPTION] Figure 99. Generation 0, the starter: 904 parameters. An 8-channel convolution with '
+                    'BatchNorm, one residual block, pooling and a linear classifier.', '',
+                    '![Monte Carlo 2 seed 1, network in generation 3](/assets/experiments/013-mc2-structure-gen3.png)', '',
+                    '> [!CAPTION] Figure 99. Generation 3: 19,840 parameters. A convolution with BatchNorm has been added '
+                    'after the residual block, and all convolutions are widened from 8 to 32 channels.', '',
+                    '![Monte Carlo 2 seed 1, network in generation 6](/assets/experiments/013-mc2-structure-gen6.png)', '',
+                    '> [!CAPTION] Figure 99. Generation 6: 189,632 parameters. The stem and block are widened to 64 '
+                    'channels and the added convolution to 256.', '',
+                    '![Monte Carlo 2 seed 1, network in generation 9](/assets/experiments/013-mc2-structure-gen9.png)', '',
+                    '> [!CAPTION] Figure 99. Generation 9: 485,504 parameters. Two more convolutions with BatchNorm were '
+                    'inserted inside the residual block branch (64 -> 256 -> 64 channels), so the block itself became '
+                    'deeper.', '']
 
 
 def scoring_calibration_section():
@@ -1053,7 +1094,7 @@ def sim_fixes_check_section():
     lines = ['', '## Phase 11: the A08 decision with the first three simulation fixes', '',
              'The Phase 9 replay repeated with the code at `5d3c3f0`: lazy expansion, the restarted scoring '
              'learning rate and futures that continue from trained models. Everything else matches Phase 9: '
-             'the Experiment 17 generation-3 checkpoint, the five recorded root actions, 5 scoring epochs with the '
+             'the origin run generation-3 checkpoint, the five recorded root actions, 5 scoring epochs with the '
              'mean of the last two, rollout depth 0, UCB C = 1.0, a 5-minute budget and seeds 1–3. This was a quick '
              'check run with a temporary script (saved with the results as `check_script.py`), not an experiment '
              'phase; measuring again before expanding (`abe0a33`) was not yet in the code.', '']
@@ -1230,9 +1271,9 @@ def _training_comparison(cells, title, filename, seed):
                  label=f"{label} validation (final {100 * metrics[-1]['valAcc']:.1f}%)")
         acc.plot(epochs, [100 * row['trainAcc'] for row in metrics], color=color, lw=1.2, ls='--',
                  label=f"{label} training (final {100 * metrics[-1]['trainAcc']:.1f}%)")
-        size.step(epochs, [row['paramCount'] for row in metrics], where='post', color=color, lw=1.6, label=label)
+        size.step(epochs, [row['paramCount'] / 1000 for row in metrics], where='post', color=color, lw=1.6, label=label)
     acc.set(ylabel='Accuracy (%)', ylim=(0, 80), title=title)
-    size.set(xlabel='Training epoch', ylabel='Parameters')
+    size.set(xlabel='Training epoch', ylabel='Parameters (thousands)', ylim=(0, None))
     for axis in (acc, size):
         axis.grid(alpha=.25)
         for boundary in range(20, 200, 20):
@@ -1296,8 +1337,8 @@ def _grid_figures(runs, complete):
     fig.savefig(ASSET_DIR / '018-grid-separation.png', dpi=150, bbox_inches='tight')
     plt.close(fig)
 
-    # What each selected action delivered, against Experiment 17.
-    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
+    # What each selected action delivered, against the origin run.
+    from documentation.website.scripts.generate_experiment_013_origin_action_scores import group_key
     fig, ax = plt.subplots(figsize=(11, 5), layout='constrained')
     styles = {'adds layer': ('o', '#2a78d6'), 'widens': ('D', '#1baf7a'), 'no capacity': ('x', '#eb6834')}
     plotted = set()
@@ -1318,7 +1359,7 @@ def _grid_figures(runs, complete):
     exp13 = json.loads((EXP13_RUN / 'board/metrics/training.json').read_text(encoding='utf-8'))['epochs']
     end13 = {row['globalEpoch'] // 20: row['valAcc'] for row in exp13}
     ax.plot(range(9), [100 * (end13[g + 1] - end13[g]) for g in range(9)], color='#6b6b66', lw=1.4,
-            marker='.', label='Experiment 17 (widened to 64 channels, then A08 at generation 3)')
+            marker='.', label='the origin run (widened to 64 channels, then A08 at generation 3)')
     ax.axhline(0, color='#999999', lw=.8)
     ax.set(xlabel='Generation in which the action was chosen', xticks=range(9),
            ylabel='Validation change over the next generation (pp)',
@@ -1329,7 +1370,7 @@ def _grid_figures(runs, complete):
     plt.close(fig)
 
     # Detailed candidate chart for the best cell only.
-    from documentation.website.scripts.generate_experiment_017_action_scores import COLORS, GROUPS
+    from documentation.website.scripts.generate_experiment_013_origin_action_scores import COLORS, GROUPS
     searches = _grid_searches(*best, seed)
     groups = [(key, name.replace('\n', ' ')) for key, name in GROUPS
               if any(group_key(row) == key for search in searches for row in search['candidates'])]
@@ -1376,7 +1417,7 @@ def _grid_figures(runs, complete):
             '### What the selected actions delivered', '',
             '![What each selected action delivered](/assets/experiments/018-grid-action-gains.png)', '',
             'Validation change over the generation after each decision, for every decision in the four cells, '
-            'by kind of action. The grey line is Experiment 17 for contrast: its generation-3 action (A08, '
+            'by kind of action. The grey line is the origin run for contrast: its generation-3 action (A08, '
             '64 → 64 convolution after widening to 64 channels) gave the +20.8 pp jump.', '',
             '### Candidate scores in the best cell', '',
             f'![Candidate scores, {_cell_label(*best)}](/assets/experiments/{best_name})', '',
@@ -1385,7 +1426,7 @@ def _grid_figures(runs, complete):
 
 
 def _grid_findings(runs, complete):
-    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_013_origin_action_scores import group_key
     seed = complete[0]
     searches = [search for cell in GRID_CELLS for search in _grid_searches(*cell, seed)]
     late = [search for search in searches if search['generation'] >= 3]
@@ -1437,7 +1478,7 @@ def _grid_findings(runs, complete):
 
     return ['', '### What Phase 10 shows', '',
             f'- **Final validation ranged from {min(values):.2f}% to {max(values):.2f}%.** No cell beat Phase 5 '
-            '(64.02%) and all stayed far below Experiment 17 (69.48%). C = 1.0 ended higher than C = 0.05 with both '
+            '(64.02%) and all stayed far below the origin run (69.48%). C = 1.0 ended higher than C = 0.05 with both '
             'simulation sets; with one seed per cell this is within the seed-to-seed spread. Moderate and CCS were '
             'practically equal.',
             f'- **Nothing useful was added after generation 2.** Generations 0–2 gained {mean(gains["early"]):+.1f} pp '
@@ -1452,7 +1493,7 @@ def _grid_findings(runs, complete):
             f'- **The network stayed 8 channels wide.** The only widening chosen took conv1 to 16 channels in '
             f'generation 7 of C = 1.0, Moderate, too late to matter. Every added convolution is 8 → 8 '
             f'(about +600 parameters) and everything reaches the classifier through an 8-channel global pool. Final '
-            f'models had {min(final_params):,}–{max(final_params):,} parameters. Experiment 17 widened conv1 to 64 '
+            f'models had {min(final_params):,}–{max(final_params):,} parameters. the origin run widened conv1 to 64 '
             f'channels in generations 0–2 and had {exp13_params[4]:,} parameters after its generation-3 action.',
             f'- **The score cannot see the value of widening.** Widening was offered in {widen_offered} of '
             f'{len(searches)} searches and chosen {widen_chosen} {"time" if widen_chosen == 1 else "times"}. Its best '
@@ -1465,7 +1506,7 @@ def _grid_findings(runs, complete):
             f'{min(late_sizes)}–{max(late_sizes)} candidates scored within 1 pp of the best (the separation chart).',
             f'- **Late changes have little learning rate left.** The cosine schedule falls from 0.1 to '
             f'{lr[5]:.3f} at the end of generation 5 and {lr[8]:.4f} at the end of generation 8, so a new layer added '
-            'late cannot learn much in the remaining epochs. Experiment 17 made its decisive change at generation 3, '
+            'late cannot learn much in the remaining epochs. the origin run made its decisive change at generation 3, '
             f'with the learning rate still at {lr[3]:.3f}.',
             f'- **The budget bought fewer rollouts than planned:** {rollouts / candidates:.1f} per candidate from '
             f'generation 3, at about {seconds:.0f} s per rollout instead of 10–12 s in Phase 9. Expanding a node builds '
@@ -1484,8 +1525,8 @@ def _grid_findings(runs, complete):
             'the run, or restart the learning rate after each structural change, so late additions can still learn.',
             '4. **Build children lazily** so the budget buys the intended two or more rollouts per candidate.',
             '', 'A cheap way to confirm the diagnosis before changing the search: one run that widens conv1 by 2× in '
-            'each of generations 0–2 (as Experiment 17 did) and then lets the Phase 10 search decide. If it reaches '
-            'Experiment 17 territory, width is the missing ingredient and items 1–2 are the right fix.']
+            'each of generations 0–2 (as the origin run did) and then lets the Phase 10 search decide. If it reaches '
+            'the origin run territory, width is the missing ingredient and items 1–2 are the right fix.']
 
 
 def _grid_searches(ucb_c, selector, seed):
@@ -1496,7 +1537,7 @@ def _grid_searches(ucb_c, selector, seed):
 
 
 def _grid_decisions(seed):
-    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_013_origin_action_scores import group_key
     lines = ['', f'### Seed {seed} decisions', '',
              'Selected action type in each generation, with the rank of the best widening candidate '
              '(by mean score) in brackets.', '',
@@ -1661,7 +1702,7 @@ def _load_growth_run(directory):
 
 
 def _action_label(action):
-    from documentation.website.scripts.generate_experiment_017_action_scores import candidate_detail, group_key
+    from documentation.website.scripts.generate_experiment_013_origin_action_scores import candidate_detail, group_key
     row = {'action': action}
     detail = ' / '.join(part for part in candidate_detail(row).splitlines() if part)
     return f'{group_key(row)} — {detail}' if detail else group_key(row)
@@ -1675,9 +1716,9 @@ def _phase7_seed1_analysis(target):
     for (metrics, _, _), name, color in ((phase5, 'Phase 5', '#888888'), (phase7, 'Phase 7', '#e56b28')):
         epochs = [row['globalEpoch'] + 1 for row in metrics]
         acc.plot(epochs, [100 * row['valAcc'] for row in metrics], label=f'{name} validation', color=color)
-        size.step(epochs, [row['paramCount'] for row in metrics], where='post', label=name, color=color)
-    acc.set(ylabel='Validation accuracy (%)', ylim=(0, 100), title='Experiment 18 seed 1: Phase 7 vs Phase 5')
-    size.set(xlabel='Training epoch', ylabel='Parameters')
+        size.step(epochs, [row['paramCount'] / 1000 for row in metrics], where='post', label=name, color=color)
+    acc.set(ylabel='Validation accuracy (%)', ylim=(0, 100), title='Experiment 013 seed 1: Phase 7 vs Phase 5')
+    size.set(xlabel='Training epoch', ylabel='Parameters (thousands)', ylim=(0, None))
     for axis in (acc, size):
         axis.grid(alpha=.25)
         axis.legend()
@@ -1734,7 +1775,7 @@ def _generations(numbers):
 
 def _phase7_seed1_findings(phase5, phase7):
     """Findings computed from the saved seed-1 records, so they stay in step with the tables."""
-    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
+    from documentation.website.scripts.generate_experiment_013_origin_action_scores import group_key
     (metrics5, searches5, run5), (metrics7, searches7, run7) = phase5, phase7
     minutes5 = [search['durationSec'] / 60 for search in searches5]
     minutes7 = [search['durationSec'] / 60 for search in searches7]
@@ -1809,6 +1850,61 @@ def full_growth_score_fix_section():
     return lines + ['', 'Run with `--phase full-score-fix`, then regenerate this report.', '']
 
 
+def _caption_details(lines, first_figure=11):
+    """Give every figure and table in the phase details a numbered caption, so each can be referenced.
+
+    Figures continue the overview's numbering (from first_figure); a table caption names its phase and
+    the subsection it belongs to. Existing captions are kept and renumbered."""
+    out, figure, table, phase, section = [], first_figure, 0, '', ''
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        if line.startswith('### Phase'):
+            phase, section = line.lstrip('#').strip(), ''
+        elif line.startswith('####'):
+            section = line.lstrip('#').strip()
+        if line.startswith('!['):
+            out.append(line)
+            alt = line[2:line.index('](')]
+            follow_at = next((i for i in range(index + 1, min(index + 3, len(lines))) if lines[i].strip()), None)
+            if follow_at is not None and lines[follow_at].startswith('> [!CAPTION]'):
+                lines[follow_at] = re.sub(r'Figure \d+\.', f'Figure {figure}.', lines[follow_at], count=1)
+            else:
+                out += ['', f'> [!CAPTION] Figure {figure}. {phase.split(":")[0]}: {alt}.']
+            figure += 1
+            index += 1
+            continue
+        if line.startswith('|') and (not out or not out[-1].startswith('|')):
+            end = index
+            while end < len(lines) and lines[end].startswith('|'):
+                end += 1
+            out += lines[index:end]
+            table += 1
+            follow = next((x for x in lines[end:end + 2] if x.strip()), '')
+            if not follow.startswith('> [!CAPTION]'):
+                where = f'{phase.split(":")[0]}: {section}' if section else phase
+                out += ['', f'> [!CAPTION] Table {table}. {where}.']
+            index = end
+            continue
+        out.append(line)
+        index += 1
+    return NEWLINE.join(out)
+
+
+def write_details(lines):
+    """Replace the report's phase-details section (between DETAILS_HEADING and SUMMARY_HEADING).
+
+    The overview at the top of the report and the summary at its end are written by hand; this script
+    owns only the detailed, phase-by-phase part, with every heading one level deeper."""
+    details = _caption_details([('#' + line) if line.startswith('#') else line for line in NEWLINE.join(lines).split(NEWLINE)])
+    text = REPORT.read_text(encoding='utf-8')
+    start = text.index(DETAILS_HEADING)
+    end = text.index(SUMMARY_HEADING, start)
+    intro = 'Every phase in the order it was run, with its full protocol and tables.'
+    parts = [text[:start] + DETAILS_HEADING, intro, details.strip(), text[end:]]
+    REPORT.write_text((NEWLINE * 2).join(parts), encoding='utf-8')
+
+
 def main():
     summary = json.loads((RUN / 'summary.json').read_text(encoding='utf-8'))
     rows = summary['results']
@@ -1818,18 +1914,15 @@ def main():
         ax.plot(range(81, 81 + len(vals)), [100 * v for v in vals], label=LABELS[row['arm']],
                 linewidth=2.5 if row['original_chosen'] else 1.5)
     ax.set(xlabel='Total training epoch', ylabel='Held-out validation accuracy (%)',
-           title='Experiment 18: training after each generation-3 action')
+           title='Experiment 013: training after each generation-3 action')
     ax.grid(alpha=.25)
     ax.legend()
     fig.tight_layout()
     CHART.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(CHART, dpi=150)
     plt.close(fig)
-    lines = ['---', 'title: "Experiment 018 lab notebook: every phase in detail"', '---', '',
-             'Full tables and notes for every phase. The short version with the main results is '
-             '[Experiment 018](experiment-018-action-replay.md).', '',
-             '## Phase 1: replaying the epoch-80 decision', '',
-             'All arms start from the Experiment 17 generation-3 pre-decision checkpoint, after epoch 80. '
+    lines = ['## Phase 1: replaying the epoch-80 decision', '',
+             'All arms start from the origin run generation-3 pre-decision checkpoint, after epoch 80. '
              'Each recorded action and an unchanged control is trained for 20 epochs with the same '
              'nominal seed, training recipe and saved learning-rate schedule. The primary comparison uses '
              '3,880 validation examples outside the original 1,120-example simulation validation subset.', '',
@@ -1853,7 +1946,7 @@ def main():
     lines += montecarlo2_section()
     lines += time_budget_section()
     lines += full_growth_section()
-    from documentation.website.scripts.generate_experiment_018_seed1_analysis import generate as generate_seed1
+    from documentation.website.scripts.generate_experiment_013_seed1_analysis import generate as generate_seed1
     lines += generate_seed1()
     lines += score_fix_section()
     lines += full_growth_score_fix_section()
@@ -1870,7 +1963,7 @@ def main():
     lines += long_run_section()
     lines += comparison_section()
     REPORT.parent.mkdir(parents=True, exist_ok=True)
-    REPORT.write_text('\n'.join(lines), encoding='utf-8')
+    write_details(lines)
     print(f'Wrote {REPORT} and {CHART}')
 
 

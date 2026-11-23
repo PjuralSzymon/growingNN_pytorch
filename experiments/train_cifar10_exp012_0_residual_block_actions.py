@@ -7,8 +7,8 @@ types and training/search settings are held fixed. Two seeds are run per arm
 and dataset; history.pt records train/validation/test histories and each
 chosen action with generation and validation change.
 
-    pipenv run python -u experiments/train_cifar10_exp012_residual_block_actions.py
-    pipenv run python -u experiments/train_cifar10_exp012_residual_block_actions.py cifar10
+    pipenv run python -u experiments/train_cifar10_exp012_0_residual_block_actions.py
+    pipenv run python -u experiments/train_cifar10_exp012_0_residual_block_actions.py cifar10
 """
 
 from __future__ import annotations

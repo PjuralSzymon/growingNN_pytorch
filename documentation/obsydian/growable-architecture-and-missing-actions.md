@@ -64,7 +64,7 @@ linear2: Linear(8→10, no bias)            # head, output pinned
 
 At the start, `conv1` is fed by the input and `linear2` feeds the output, so **neither is hidden**. Only actions that need sequential pairs are available: seq conv(8→8), seq conv + BN + ReLU(8→8), seq linear(8→8), and dropout. Residual actions and add neurons become possible only after a hidden layer exists. **Every conv stays at 8 channels for the whole run.**
 
-**Experiment 014/015 starter** (`ResidualStarter`, `experiments/train_cifar10_exp014_residual_block_multidataset.py`), 2,970 parameters:
+**Experiment 014/015 starter** (`ResidualStarter`, `experiments/train_cifar10_exp012_2_residual_block_multidataset.py`), 2,970 parameters:
 
 ```text
 input 3×32×32

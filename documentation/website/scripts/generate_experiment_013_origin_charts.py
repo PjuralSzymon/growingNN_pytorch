@@ -71,11 +71,11 @@ def individual(identifier, name, metrics, metadata):
     acc.legend(loc='upper left', frameon=False, ncol=2)
     acc.set_title(f"Final validation: {metadata['final_validation_accuracy'] * 100:.2f}%  |  "
                   f"Final test: {metadata['final_test_accuracy'] * 100:.2f}%", fontsize=10)
-    size.step(x, [row['paramCount'] for row in metrics], where='post', color='C2')
+    size.step(x, [row['paramCount'] / 1000 for row in metrics], where='post', color='C2')
     size.set_xlabel('Training epoch')
     size.yaxis.set_major_formatter(FuncFormatter(lambda value, _: f'{value:,.0f}'))
-    size.set_yscale('log')
-    size.set_ylabel('Parameters (log scale)')
+    size.set_ylabel('Parameters (thousands)')
+    size.set_ylim(bottom=0)
     for axis in (acc, size):
         setup_axis(axis)
     mark_generations((acc, size))
@@ -93,12 +93,12 @@ def comparison(runs):
         x = [row['globalEpoch'] + 1 for row in metrics]
         label = f'{identifier}: {name}'
         acc.plot(x, [100 * row['valAcc'] for row in metrics], label=label, color=color)
-        size.step(x, [row['paramCount'] for row in metrics], where='post', color=color, label=label)
+        size.step(x, [row['paramCount'] / 1000 for row in metrics], where='post', color=color, label=label)
     acc.set_ylim(0, 100)
     acc.set_ylabel('Validation accuracy (%)')
     acc.legend(loc='lower right', frameon=False)
-    size.set_yscale('log')
-    size.set_ylabel('Parameters (log scale)')
+    size.set_ylabel('Parameters (thousands)')
+    size.set_ylim(bottom=0)
     size.set_xlabel('Training epoch')
     size.yaxis.set_major_formatter(FuncFormatter(lambda value, _: f'{value:,.0f}'))
     for axis in (acc, size):
