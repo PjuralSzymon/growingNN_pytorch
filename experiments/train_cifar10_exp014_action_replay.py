@@ -631,9 +631,28 @@ def calibration_setting_name(epochs, percent):
     return f'epochs_{epochs}_set_{percent:g}'
 
 
+def _average_ranks(values):
+    """Ranks starting at 1, with tied values sharing the mean of their ranks."""
+    order = sorted(range(len(values)), key=values.__getitem__)
+    ranks = [0.0] * len(values)
+    start = 0
+    while start < len(order):
+        end = start
+        while end + 1 < len(order) and values[order[end + 1]] == values[order[start]]:
+            end += 1
+        for position in range(start, end + 1):
+            ranks[order[position]] = (start + end) / 2 + 1
+        start = end + 1
+    return ranks
+
+
 def _spearman(first, second):
-    from scipy.stats import spearmanr
-    return float(spearmanr(first, second).statistic)
+    """Spearman rank correlation: the Pearson correlation of the average ranks (nan when a side is constant)."""
+    first, second = _average_ranks(list(first)), _average_ranks(list(second))
+    mean = (len(first) + 1) / 2
+    covariance = sum((a - mean) * (b - mean) for a, b in zip(first, second))
+    spread = (sum((a - mean) ** 2 for a in first) * sum((b - mean) ** 2 for b in second)) ** .5
+    return covariance / spread if spread else float('nan')
 
 
 def calibration_metrics(rows, control_accuracy, top=CALIBRATION_TOP):
