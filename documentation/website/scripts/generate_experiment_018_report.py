@@ -856,6 +856,164 @@ def normalization_section():
     return lines + ['']
 
 
+LONG_RUN_GENERATIONS = 15
+
+
+LONG_RUN_ARMS = (('17a: Monte Carlo 2 search', 'full_growth_long', '#1baa7a'),
+                 ('17b: random growth', 'full_growth_long_random', '#eb6834'),
+                 ('17c: no growth', 'full_growth_long_static', '#7a7a7a'))
+
+
+def _selected_actions(directory, searches):
+    """Selected action types of a growth run: from its searches, or from its history for random growth."""
+    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
+    if searches:
+        return [group_key({'action': search['actionChosen']}) for search in searches]
+    history = directory / 'history.pt'
+    if not history.exists():
+        return []
+    import torch
+    names = torch.load(history, weights_only=False).get('action_name', [])
+    return [name.replace('Layer', '').replace('Action', '') for name in names]
+
+
+def long_run_section():
+    """Phase 17: a long overnight growth run from the residual-block starter, against random and no growth."""
+    lines = ['', '## Phase 17: does the search beat random growth on a long run?', '',
+             'Phase 16c showed that the residual block in the starter is worth about 5 pp. Phase 17 grows the same '
+             f'small starter for {LONG_RUN_GENERATIONS} generations of 20 epochs (300 epochs, as long as the '
+             'residual-block experiments on main), with three arms on the same schedule and growth candidates '
+             '(no dropout, deleting layers or neurons, or shrinking blocks):', '',
+             '- **17a**: Monte Carlo 2 with more search: 10 scoring epochs on the CCS 10% simulation set (the best '
+             'setting in Phase 15a), 60 s per candidate (5-25 minutes per search), no search started after 7.5 '
+             'hours. Seed 1.',
+             '- **17b**: the same candidates, one picked at random (a random action type, then a random action of '
+             'that type). Seeds 1 and 2.',
+             '- **17c**: the starter trained for 300 epochs without growing. Seeds 1 and 2.', '',
+             'No experiment so far compared the search with random choice. If 17a does not beat 17b by more than '
+             'the seed-to-seed spread (about 3 pp in Phase 12), the search does not pay for its time; 17c shows '
+             'how much growth adds at all.', '']
+    runs = {}
+    for label, folder, color in LONG_RUN_ARMS:
+        for seed_dir in sorted((RUN / folder).glob('seed_*')):
+            if (seed_dir / 'board/metrics/training.json').exists():
+                complete = (seed_dir / 'run.json').exists()
+                loaded = _load_growth_run(seed_dir) if complete else _partial_growth_run(seed_dir)
+                runs[(label, seed_dir.name)] = (seed_dir, *loaded, color)
+    if not runs:
+        return lines + ['Pending. Run with `--phase long-run --seeds 1` and `--phase long-run-baselines --seeds 1 2`.',
+                        '']
+    lines += ['| Arm | Seed | Epochs | Validation at the last epoch | Test | Parameters | Selected actions |',
+              '| --- | ---: | ---: | ---: | ---: | ---: | --- |']
+    for (label, seed), (directory, metrics, searches, run, _) in runs.items():
+        actions = _selected_actions(directory, searches)
+        summary = ', '.join(f'{name} {actions.count(name)}' for name in dict.fromkeys(actions)) or '—'
+        test = f"{100 * run['final_test_accuracy']:.2f}%" if run else 'running'
+        lines.append(f"| {label} | {seed.split('_')[1]} | {len(metrics)} of {20 * LONG_RUN_GENERATIONS} | "
+                     f"{100 * metrics[-1]['valAcc']:.2f}% | {test} | {metrics[-1]['paramCount']:,} | {summary} |")
+    fig, (acc, size) = plt.subplots(2, 1, figsize=(11, 7.5), sharex=True, layout='constrained',
+                                    gridspec_kw={'height_ratios': [2, 1.2]})
+    for (label, seed), (_, metrics, _, _, color) in runs.items():
+        epochs = [row['globalEpoch'] + 1 for row in metrics]
+        style = '-' if seed == 'seed_1' else ':'
+        acc.plot(epochs, [100 * row['valAcc'] for row in metrics], color=color, lw=1.6, ls=style,
+                 label=f"{label}, {seed.replace('_', ' ')} (last {100 * metrics[-1]['valAcc']:.1f}%)")
+        size.step(epochs, [row['paramCount'] for row in metrics], where='post', color=color, lw=1.6, ls=style)
+    for boundary in range(20, 20 * LONG_RUN_GENERATIONS, 20):
+        for axis in (acc, size):
+            axis.axvline(boundary + .5, color='#dddddd', ls=':', lw=.8)
+    acc.set(ylabel='Validation accuracy (%)', ylim=(20, 85),
+            title='Phase 17: search, random growth and no growth from the residual-block starter')
+    size.set(xlabel='Training epoch', ylabel='Parameters', yscale='log')
+    for axis in (acc, size):
+        axis.grid(alpha=.25)
+    acc.legend(loc='lower right', fontsize=8)
+    fig.savefig(ASSET_DIR / '018-long-run-training.png', dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    lines += ['', '![Phase 17 training history](/assets/experiments/018-long-run-training.png)', '',
+              'Solid lines are seed 1, dotted lines seed 2.', '']
+    search_run = runs.get(('17a: Monte Carlo 2 search', 'seed_1'))
+    if search_run and search_run[2]:
+        _, metrics, searches, _, _ = search_run
+        ends = {row['generation']: row for row in metrics if row['epochInGeneration'] == 19}
+        lines += ['### 17a decisions', '',
+                  '| Search after generation | Selected | Candidates | Mean measurements per candidate | Search time '
+                  '| Parameters after | Validation at the end of the next generation |',
+                  '| ---: | --- | ---: | ---: | ---: | ---: | ---: |']
+        for search in searches:
+            generation = search['generation']
+            measured = [row for row in search['candidates'] if row.get('visits')]
+            visits = sum(row['visits'] for row in measured) / len(measured) if measured else 0
+            after = ends.get(generation + 1)
+            tail = f"{after['paramCount']:,} | {100 * after['valAcc']:.1f}% |" if after else '— | — |'
+            lines.append(f"| {generation} | {_action_label(search['actionChosen'])} | {len(search['candidates'])} | "
+                         f"{visits:.1f} | {search['durationSec'] / 60:.0f} min | {tail}")
+        lines.append('')
+    return lines
+
+
+COMPARISON_EPOCHS = 30
+COMPARISON_ARMS = (('Monte Carlo 1', 'mc_comparison_mc1', '#3b6fd4'),
+                   ('Monte Carlo 2', 'mc_comparison_mc2', '#1baa7a'))
+
+
+def comparison_section():
+    """Phase 18: Monte Carlo 1 against Monte Carlo 2 with a search after every generation."""
+    total = COMPARISON_EPOCHS * LONG_RUN_GENERATIONS
+    lines = ['', '## Phase 18: Monte Carlo 1 against Monte Carlo 2', '',
+             f'Phase 17 stopped searching after 7.5 hours, so its search grew the network in only 9 of 14 '
+             f'generations. Phase 18 drops that deadline and compares the two search algorithms on the Phase 17 '
+             f'settings: the residual-block starter, {LONG_RUN_GENERATIONS} generations of {COMPARISON_EPOCHS} '
+             f'epochs ({total} epochs), 10 scoring epochs on the CCS 10% simulation set, 60 s per candidate within '
+             '5-25 minutes per search, and growth actions only. Seeds 1 and 2 for each algorithm.', '',
+             'Both algorithms measure every candidate at least once before they stop, so a search can run past its '
+             '25 minutes when there are many candidates.', '']
+    runs = {}
+    for label, folder, color in COMPARISON_ARMS:
+        for seed_dir in sorted((RUN / folder).glob('seed_*')):
+            if (seed_dir / 'board/metrics/training.json').exists():
+                complete = (seed_dir / 'run.json').exists()
+                loaded = _load_growth_run(seed_dir) if complete else _partial_growth_run(seed_dir)
+                runs[(label, seed_dir.name)] = (*loaded, color)
+    if not runs:
+        return lines + ['Pending. Run with `--phase mc1 --seeds 1 2` and `--phase mc2 --seeds 1 2`.', '']
+    lines += ['| Algorithm | Seed | Epochs | Training accuracy | Validation accuracy | Test | Parameters | Searches '
+              '| Mean search time | Selected actions |',
+              '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |']
+    from documentation.website.scripts.generate_experiment_017_action_scores import group_key
+    for (label, seed), (metrics, searches, run, _) in runs.items():
+        actions = [group_key({'action': search['actionChosen']}) for search in searches]
+        summary = ', '.join(f'{name} {actions.count(name)}' for name in dict.fromkeys(actions)) or '—'
+        test = f"{100 * run['final_test_accuracy']:.2f}%" if run else 'running'
+        minutes = sum(search['durationSec'] for search in searches) / 60 / len(searches) if searches else 0
+        last = metrics[-1]
+        lines.append(f"| {label} | {seed.split('_')[1]} | {len(metrics)} of {total} | "
+                     f"{100 * last['trainAcc']:.2f}% | {100 * last['valAcc']:.2f}% | {test} | "
+                     f"{last['paramCount']:,} | {len(searches)} | {minutes:.0f} min | {summary} |")
+    fig, (acc, size) = plt.subplots(2, 1, figsize=(11, 7.5), sharex=True, layout='constrained',
+                                    gridspec_kw={'height_ratios': [2, 1.2]})
+    for (label, seed), (metrics, _, _, color) in runs.items():
+        epochs = [row['globalEpoch'] + 1 for row in metrics]
+        style = '-' if seed == 'seed_1' else ':'
+        acc.plot(epochs, [100 * row['valAcc'] for row in metrics], color=color, lw=1.6, ls=style,
+                 label=f"{label}, {seed.replace('_', ' ')} (last {100 * metrics[-1]['valAcc']:.1f}%)")
+        size.step(epochs, [row['paramCount'] for row in metrics], where='post', color=color, lw=1.6, ls=style)
+    for boundary in range(COMPARISON_EPOCHS, total, COMPARISON_EPOCHS):
+        for axis in (acc, size):
+            axis.axvline(boundary + .5, color='#dddddd', ls=':', lw=.8)
+    acc.set(ylabel='Validation accuracy (%)', ylim=(20, 90),
+            title='Phase 18: Monte Carlo 1 and Monte Carlo 2 from the residual-block starter')
+    size.set(xlabel='Training epoch', ylabel='Parameters', yscale='log')
+    for axis in (acc, size):
+        axis.grid(alpha=.25)
+    acc.legend(loc='lower right', fontsize=8)
+    fig.savefig(ASSET_DIR / '018-mc-comparison-training.png', dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    return lines + ['', '![Phase 18 training history](/assets/experiments/018-mc-comparison-training.png)', '',
+                    'Validation accuracy (top) and parameter count (bottom, log scale) per epoch; solid lines are '
+                    'seed 1, dotted lines seed 2, and dotted vertical lines mark the generations.', '']
+
+
 def scoring_calibration_section():
     path = RUN / 'scoring_calibration/gen_3/summary.json'
     lines = ['', '## Phase 15a: which scoring setting predicts real training', '',
@@ -1706,6 +1864,8 @@ def main():
     lines += widening_growth_section()
     lines += scoring_calibration_section()
     lines += normalization_section()
+    lines += long_run_section()
+    lines += comparison_section()
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     REPORT.write_text('\n'.join(lines), encoding='utf-8')
     print(f'Wrote {REPORT} and {CHART}')

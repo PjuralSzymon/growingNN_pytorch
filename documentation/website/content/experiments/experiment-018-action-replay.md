@@ -645,13 +645,12 @@ Each dot is one measured candidate of one search; normalization candidates are m
 
 ### 16c: Starter with BatchNorm and a residual block
 
-Partial: 4 of 5 generations trained and 3 searches finished; read from the run files.
-
 | Search after generation | Candidates | Normalization candidates | Best normalization score (rank) | Best score | Mean visits, normalization | Selected |
 | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 | 0 | 17 | 0 | — | 42.8% | — | Widen convolution |
 | 1 | 17 | 0 | — | 47.3% | — | Sequential linear |
 | 2 | 29 | 1 | 42.1% (24 of 29) | 49.9% | 3.0 | Sequential convolution + BN |
+| 3 | 42 | 1 | 44.1% (33 of 42) | 52.2% | 3.0 | Add neurons |
 
 ![Phase 16c candidate scores](/assets/experiments/018-normalization-16c-scores.png)
 
@@ -668,4 +667,50 @@ Solid lines are validation accuracy, dashed lines training accuracy.
 | Phase 14 seed 1 | 100 | 53.78% | — | 6,328 |
 | Phase 16a: Exp 010 starter, normalization action | 100 | 57.64% | 57.76% | 2,888 |
 | Phase 16b: Starter with BatchNorm after conv1 | 100 | 58.24% | 58.47% | 2,696 |
-| Phase 16c: Starter with BatchNorm and a residual block | 80 | 60.94% | — | 5,584 |
+| Phase 16c: Starter with BatchNorm and a residual block | 100 | 63.24% | 64.04% | 5,611 |
+
+
+## Phase 17: does the search beat random growth on a long run?
+
+Phase 16c showed that the residual block in the starter is worth about 5 pp. Phase 17 grows the same small starter for 15 generations of 20 epochs (300 epochs, as long as the residual-block experiments on main), with three arms on the same schedule and growth candidates (no dropout, deleting layers or neurons, or shrinking blocks):
+
+- **17a**: Monte Carlo 2 with more search: 10 scoring epochs on the CCS 10% simulation set (the best setting in Phase 15a), 60 s per candidate (5-25 minutes per search), no search started after 7.5 hours. Seed 1.
+- **17b**: the same candidates, one picked at random (a random action type, then a random action of that type). Seeds 1 and 2.
+- **17c**: the starter trained for 300 epochs without growing. Seeds 1 and 2.
+
+No experiment so far compared the search with random choice. If 17a does not beat 17b by more than the seed-to-seed spread (about 3 pp in Phase 12), the search does not pay for its time; 17c shows how much growth adds at all.
+
+| Arm | Seed | Epochs | Validation at the last epoch | Test | Parameters | Selected actions |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 17a: Monte Carlo 2 search | 1 | 300 of 300 | 81.74% | 82.26% | 122,624 | Sequential convolution + BN 4, Widen convolution 4, Residual convolution 1 |
+| 17b: random growth | 1 | 300 of 300 | 73.18% | 72.56% | 11,852 | AddSeqConv 2, AddNormalization 3, ResidualBlock 1, WidenConv 1, AddSeqLinear 2, AddResConv 1, AddNeurons 3, AddResLinear 1 |
+| 17b: random growth | 2 | 300 of 300 | 85.56% | 85.65% | 5,388,544 | WidenConv 3, AddResConv 2, ResidualBlock 5, AddSeqLinear 1, AddNeurons 1, AddNormalization 1, AddSeqConv 1 |
+| 17c: no growth | 1 | 300 of 300 | 53.94% | 53.43% | 904 | — |
+| 17c: no growth | 2 | 300 of 300 | 52.60% | 53.22% | 904 | — |
+
+![Phase 17 training history](/assets/experiments/018-long-run-training.png)
+
+Solid lines are seed 1, dotted lines seed 2.
+
+### 17a decisions
+
+| Search after generation | Selected | Candidates | Mean measurements per candidate | Search time | Parameters after | Validation at the end of the next generation |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: |
+| 0 | Sequential convolution + BN — conv1 → linear2 / 8→8, 3×3 | 14 | 2.3 | 14 min | 1,504 | 48.3% |
+| 1 | Widen convolution — block_conv → 32 ch | 19 | 1.9 | 19 min | 12,616 | 56.6% |
+| 2 | Sequential convolution + BN — conv1 → block_conv / 32→32, 3×3 | 17 | 1.0 | 18 min | 21,928 | 64.1% |
+| 3 | Widen convolution — seq_conv_0 → 32 ch | 23 | 1.0 | 55 min | 29,152 | 51.1% |
+| 4 | Residual convolution — conv1 → seq_conv_0 / 32→32, 3×3 | 26 | 1.0 | 98 min | 38,400 | 66.5% |
+| 5 | Sequential convolution + BN — conv1 → res_conv__0 / 32→32, 3×3 | 35 | 1.0 | 121 min | 47,712 | 70.0% |
+| 6 | Sequential convolution + BN — seq_conv_2 → res_conv__0 / 32→32, 3×3 | 41 | 1.1 | 25 min | 57,024 | 72.2% |
+| 7 | Widen convolution — block_conv → 64 ch | 48 | 1.0 | 28 min | 94,880 | 69.0% |
+| 8 | Widen convolution — seq_conv_2 → 64 ch | 40 | 1.1 | 26 min | 122,624 | 75.6% |
+
+
+## Phase 18: Monte Carlo 1 against Monte Carlo 2
+
+Phase 17 stopped searching after 7.5 hours, so its search grew the network in only 9 of 14 generations. Phase 18 drops that deadline and compares the two search algorithms on the Phase 17 settings: the residual-block starter, 15 generations of 30 epochs (450 epochs), 10 scoring epochs on the CCS 10% simulation set, 60 s per candidate within 5-25 minutes per search, and growth actions only. Seeds 1 and 2 for each algorithm.
+
+Both algorithms measure every candidate at least once before they stop, so a search can run past its 25 minutes when there are many candidates.
+
+Pending. Run with `--phase mc1 --seeds 1 2` and `--phase mc2 --seeds 1 2`.

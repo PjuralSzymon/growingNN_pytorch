@@ -472,3 +472,122 @@ def test_residual_stem_starter_adds_the_block_output_to_the_stem():
     assert len(sums) == 1
     assert {str(arg.target) for arg in sums[0].all_input_nodes} == {str(torch.relu), 'block_bn'}
     assert traced.gm(torch.randn(2, 3, 32, 32)).shape == (2, 10)
+
+
+def test_long_run_phase_grows_the_residual_starter_for_fifteen_generations(tmp_path, monkeypatch):
+    import json
+    import sys
+
+    seen = []
+    monkeypatch.setattr(exp014, 'source_fingerprint', lambda: 'test-fingerprint')
+    monkeypatch.setattr(exp014, 'write_source_snapshot', lambda path, digest: None)
+    monkeypatch.setattr(exp014, 'get_datasets', lambda name: SimpleNamespace(name=name))
+    monkeypatch.setattr(exp014.exp010, 'run_candidate',
+                        lambda *args, **kwargs: seen.append((args, kwargs, exp014.exp010.montecarlo_alg,
+                                                             exp014.exp010.initial_graph('cifar10'))))
+    monkeypatch.setattr(sys, 'argv', ['exp014', '--phase', 'long-run', '--output', str(tmp_path), '--seeds', '1'])
+
+    exp014.main()
+
+    (args, kwargs, search, starter), = seen
+    assert isinstance(starter, exp014.ResidualStemStarter)
+    assert args[6] == tmp_path / 'full_growth_long' / 'seed_1'
+    assert kwargs['phase_name'] == 'phase17' and kwargs['generations'] == 15 and kwargs['scoring_epochs'] == 10
+    manifest = json.loads((tmp_path / 'full_growth_long' / 'manifest.json').read_text(encoding='utf-8'))
+    assert manifest['search_budget']['maximum_seconds'] == 1500 and manifest['generations'] == 15
+
+
+def test_long_run_search_uses_growth_actions_caps_its_time_and_stops_after_the_deadline(monkeypatch):
+    from growingnn.core.config import RunningConfig
+    search = exp014.LongRunMonteCarlo2(60.0, 300.0, 1500.0, search_hours=1.0, score_last_epochs=2)
+    config = RunningConfig(generations=1, epochs=1)
+    config.simulation_score = SimpleNamespace()
+    config.simulation_scheduler = SimpleNamespace()
+    monkeypatch.setattr(exp014, 'generate_all_actions', lambda traced, cfg: list(range(40)))
+    monkeypatch.setattr(exp014.montecarlo_alg_2, 'get_action', lambda traced, cfg: ('chosen', 0, 0))
+
+    assert search.get_action(None, config) == ('chosen', 0, 0)
+    assert config.simulation_scheduler.simulation_time == 1500.0
+    assert not config.ACTIONS_ENABLE_DEL_LAYER and not config.ACTIONS_ENABLE_RESIDUAL_BLOCK_SHRINK
+    assert not config.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_05 and config.ACTIONS_ENABLE_ADD_NORMALIZATION
+
+    search.deadline -= 7200
+    assert search.get_action(None, config) == (None, 0, 0)
+
+
+def test_long_run_baselines_run_random_growth_then_no_growth_for_each_seed(tmp_path, monkeypatch):
+    import sys
+
+    seen = []
+    monkeypatch.setattr(exp014, 'source_fingerprint', lambda: 'test-fingerprint')
+    monkeypatch.setattr(exp014, 'write_source_snapshot', lambda path, digest: None)
+    monkeypatch.setattr(exp014, 'get_datasets', lambda name: SimpleNamespace(name=name))
+    monkeypatch.setattr(exp014.exp010, 'run_candidate',
+                        lambda *args, **kwargs: seen.append((args[6], kwargs, exp014.exp010.montecarlo_alg)))
+    monkeypatch.setattr(sys, 'argv', ['exp014', '--phase', 'long-run-baselines', '--output', str(tmp_path),
+                                      '--seeds', '1', '2'])
+
+    exp014.main()
+
+    assert [path.relative_to(tmp_path).as_posix() for path, _, _ in seen] == [
+        'full_growth_long_random/seed_1', 'full_growth_long_random/seed_2',
+        'full_growth_long_static/seed_1', 'full_growth_long_static/seed_2']
+    assert all(kwargs['generations'] == 15 for _, kwargs, _ in seen)
+    assert isinstance(seen[0][2], exp014.RandomGrowth) and seen[2][2] is exp014.NoGrowth
+
+
+def test_random_growth_picks_an_executable_growth_action_and_no_growth_picks_none():
+    import random
+    import torch
+    from growingnn.core.config import RunningConfig
+    from growingnn.core.traced_model import TracedModel
+    random.seed(0)
+    traced = TracedModel.create(exp014.ResidualStemStarter(), (1, 3, 32, 32))
+    config = RunningConfig(generations=1, epochs=1)
+    search = exp014.RandomGrowth(0.0, 0.0, 0.0, search_hours=1.0, score_last_epochs=2)
+    for _ in range(5):
+        action, _, _ = search.get_action(traced, config)
+        assert type(action).__name__ not in ('AddSeqDropoutLayer', 'DelLayer', 'DelNeurons')
+        action.execute(traced)
+    assert traced.gm(torch.randn(2, 3, 32, 32)).shape == (2, 10)
+    assert exp014.NoGrowth.get_action(traced, config) == (None, 0, 0)
+
+
+def test_comparison_phases_run_each_monte_carlo_version_with_30_epochs_per_generation(tmp_path, monkeypatch):
+    import json
+    import sys
+
+    seen = []
+    monkeypatch.setattr(exp014, 'source_fingerprint', lambda: 'test-fingerprint')
+    monkeypatch.setattr(exp014, 'write_source_snapshot', lambda path, digest: None)
+    monkeypatch.setattr(exp014, 'get_datasets', lambda name: SimpleNamespace(name=name))
+    monkeypatch.setattr(exp014.exp010, 'run_candidate',
+                        lambda *args, **kwargs: seen.append((args[6], kwargs, exp014.exp010.montecarlo_alg,
+                                                             exp014.exp010.EPOCHS)))
+    for phase in ('mc1', 'mc2'):
+        monkeypatch.setattr(sys, 'argv', ['exp014', '--phase', phase, '--output', str(tmp_path), '--seeds', '1', '2'])
+        exp014.main()
+
+    assert [path.relative_to(tmp_path).as_posix() for path, _, _, _ in seen] == [
+        'mc_comparison_mc1/seed_1', 'mc_comparison_mc1/seed_2', 'mc_comparison_mc2/seed_1', 'mc_comparison_mc2/seed_2']
+    assert all(kwargs['generations'] == 15 and epochs == 30 for _, kwargs, _, epochs in seen)
+    assert seen[0][2].algorithm is exp014.montecarlo_alg and seen[2][2].algorithm is exp014.montecarlo_alg_2
+    assert all(search.search_hours is None for _, _, search, _ in seen)
+    assert exp014.exp010.EPOCHS == 20
+    manifest = json.loads((tmp_path / 'mc_comparison_mc1' / 'manifest.json').read_text(encoding='utf-8'))
+    assert manifest['algorithm'] == 'montecarlo_alg' and manifest['epochs_per_generation'] == 30
+
+
+def test_search_without_deadline_searches_every_generation(monkeypatch):
+    from growingnn.core.config import RunningConfig
+    search = exp014.LongRunMonteCarlo2(60.0, 300.0, 1500.0, None, score_last_epochs=2,
+                                       algorithm=exp014.montecarlo_alg)
+    config = RunningConfig(generations=1, epochs=1)
+    config.simulation_score = SimpleNamespace()
+    config.simulation_scheduler = SimpleNamespace()
+    monkeypatch.setattr(exp014, 'generate_all_actions', lambda traced, cfg: list(range(3)))
+    monkeypatch.setattr(exp014.montecarlo_alg, 'get_action', lambda traced, cfg: ('chosen', 0, 0))
+    monkeypatch.setattr(exp014.time, 'time', lambda: 1e12)
+
+    assert search.get_action(None, config) == ('chosen', 0, 0)
+    assert config.simulation_scheduler.simulation_time == 300.0

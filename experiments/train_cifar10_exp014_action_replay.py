@@ -18,6 +18,9 @@ Run: python -u experiments/train_cifar10_exp014_action_replay.py --phase <name>
   full-normalization  Phase 16: short Phase 14 runs (5 generations, --seeds 1): a) with the add-normalization
                       action, b) the same from the starter with BatchNorm after conv1
   full-residual-stem  Phase 16c: Phase 16b from a starter with a residual block relu(x + BN(conv(x))) (--seeds 1)
+  long-run            Phase 17: 15-generation overnight run from the Phase 16c starter, 10 scoring epochs,
+                      growth actions only, searches capped at 25 min and stopped after 8 h (--seeds 1)
+  long-run-baselines  Phase 17b/c: the same run with random actions (17b) and without growth (17c)
   scoring-calibration Phase 15a: score the Phase 13 arms with longer scoring and larger simulation sets,
                       3 measurements each, and compare with their real 20-epoch result
   check-noise-fix     Phase 9: Phase 6 with a 5-minute budget, type-balanced expansion and
@@ -32,6 +35,7 @@ import copy
 import hashlib
 import json
 import os
+import random
 import re
 import sys
 import time
@@ -62,7 +66,7 @@ from growingnn.utils.seed import seed_all
 from growingnn.simulation.score_functions.simulation_score import SimulationScore
 from growingnn.simulation.simulation_schedulers import AlwaysSimulationScheduler
 from growingnn.simulation.simulation_algorithms.montecarlo_alg import TreeNode
-from growingnn.simulation.simulation_algorithms import montecarlo_alg_2
+from growingnn.simulation.simulation_algorithms import montecarlo_alg, montecarlo_alg_2
 from growingnn.simulation.simulation_sets import CcsSimulationSet, ModerateSimulationSet
 import growingnn.core.config as project_config
 
@@ -297,6 +301,142 @@ def residual_stem_spec():
             'id_prefix': 'exp014_residual_stem', 'note': RESIDUAL_STEM_NOTE, 'starter': ResidualStemStarter,
             'starter_name': 'TinyCifar10Starter + BatchNorm after conv1 + residual block relu(x + BN(conv(x)))'}
 
+
+LONG_RUN_GENERATIONS = 15
+LONG_RUN_SCORING_EPOCHS = 10
+LONG_RUN_SECONDS_PER_CANDIDATE = 60.0  # about two 10-epoch measurements per candidate
+LONG_RUN_MAXIMUM_SECONDS = 25 * 60.0
+LONG_RUN_SEARCH_HOURS = 7.5  # no search starts later than this after the run began
+LONG_RUN_NOTE = ('Phase 17: a long overnight run from the Phase 16c starter: 15 generations of 20 epochs (300 '
+                 'epochs), 10 scoring epochs on the CCS 10% simulation set (best in Phase 15a), 60 s of search per '
+                 'candidate within 5-25 minutes per search, growth actions only (no dropout or shrinking), and no '
+                 'search started after 7.5 hours.')
+
+
+class LongRunMonteCarlo2(GridMonteCarlo2):
+    """The Phase 16 search with growth actions only, a cap on each search and an optional deadline for starting one.
+
+    Without ``search_hours`` every generation is searched; ``algorithm`` is Monte Carlo 2 unless given.
+    """
+
+    def __init__(self, seconds_per_candidate, minimum_seconds, maximum_seconds, search_hours, score_last_epochs,
+                 algorithm=montecarlo_alg_2):
+        super().__init__(seconds_per_candidate, minimum_seconds, score_last_epochs)
+        self.maximum_seconds = maximum_seconds
+        self.search_hours = search_hours
+        self.algorithm = algorithm
+        self.deadline = None
+
+    def get_action(self, traced, config):
+        if self.search_hours is not None:
+            self.deadline = self.deadline or time.time() + 3600 * self.search_hours
+            if time.time() > self.deadline:
+                print('Search deadline passed; training continues without growing', flush=True)
+                return None, 0, 0
+        config.update_shrink_actions(False)
+        config.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_01 = False
+        config.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_02 = False
+        config.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_05 = False
+        config.ACTIONS_ENABLE_WIDEN_CONV = True
+        config.ACTIONS_ENABLE_ADD_NORMALIZATION = True
+        config.simulation_score.average_last_epochs = self.score_last_epochs
+        candidates = len(generate_all_actions(traced, config))
+        config.simulation_scheduler.simulation_time = min(
+            self.maximum_seconds, max(self.minimum_seconds, self.seconds_per_candidate * candidates))
+        return self.algorithm.get_action(traced, config)
+
+
+def long_run_spec():
+    """Phase 17: a long overnight growth run from the residual-block starter."""
+    return {**residual_stem_spec(), 'folder': 'full_growth_long', 'phase_name': 'phase17',
+            'label': '014_full_growth_long', 'name': 'Experiment 018 Phase 17 (long overnight run)',
+            'id_prefix': 'exp014_long', 'note': LONG_RUN_NOTE, 'generations': LONG_RUN_GENERATIONS,
+            'scoring_epochs': LONG_RUN_SCORING_EPOCHS,
+            'search': LongRunMonteCarlo2(LONG_RUN_SECONDS_PER_CANDIDATE, GRID_MINIMUM_SECONDS,
+                                         LONG_RUN_MAXIMUM_SECONDS, LONG_RUN_SEARCH_HOURS, score_last_epochs=2),
+            'search_budget': {'seconds_per_candidate': LONG_RUN_SECONDS_PER_CANDIDATE,
+                              'minimum_seconds': GRID_MINIMUM_SECONDS, 'maximum_seconds': LONG_RUN_MAXIMUM_SECONDS,
+                              'search_hours': LONG_RUN_SEARCH_HOURS, 'score_last_epochs': 2,
+                              'actions': 'growth only: no dropout, delete layer, delete neurons or block shrink'}}
+
+
+class RandomGrowth(LongRunMonteCarlo2):
+    """Phase 17b: the Phase 17 candidates, but one picked at random (a type first, then an action of it)."""
+
+    def get_action(self, traced, config):
+        self.deadline = self.deadline or time.time() + 3600 * self.search_hours
+        if time.time() > self.deadline:
+            return None, 0, 0
+        config.update_shrink_actions(False)
+        config.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_01 = False
+        config.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_02 = False
+        config.ACTIONS_ENABLE_ADD_SEQ_DROPOUT_05 = False
+        config.ACTIONS_ENABLE_WIDEN_CONV = True
+        config.ACTIONS_ENABLE_ADD_NORMALIZATION = True
+        actions = generate_all_actions(traced, config)
+        if not actions:
+            return None, 0, 0
+        by_type = {}
+        for action in actions:
+            by_type.setdefault(type(action).__name__, []).append(action)
+        action = random.choice(by_type[random.choice(sorted(by_type))])
+        print(f'Random growth picked {action}', flush=True)
+        return action, 0, 0
+
+
+class NoGrowth:
+    """Phase 17c: the starter trained for the whole run without any action."""
+
+    @staticmethod
+    def get_action(traced, config):
+        return None, 0, 0
+
+
+LONG_RUN_RANDOM_NOTE = ('Phase 17b: the Phase 17 run with the search replaced by a random choice among the same '
+                        'growth candidates (a random action type, then a random action of that type).')
+LONG_RUN_STATIC_NOTE = 'Phase 17c: the Phase 17 starter trained for the same 300 epochs without growing.'
+
+
+def long_run_random_spec():
+    """Phase 17b: Phase 17 with random actions instead of the search."""
+    return {**long_run_spec(), 'folder': 'full_growth_long_random', 'phase_name': 'phase17b',
+            'label': '014_full_growth_long_random', 'name': 'Experiment 018 Phase 17b (random growth)',
+            'id_prefix': 'exp014_long_random', 'note': LONG_RUN_RANDOM_NOTE,
+            'search': RandomGrowth(0.0, 0.0, 0.0, LONG_RUN_SEARCH_HOURS, score_last_epochs=2),
+            'search_budget': {'selection': 'random type, then random action of that type',
+                              'actions': 'growth only: no dropout, delete layer, delete neurons or block shrink'}}
+
+
+def long_run_static_spec():
+    """Phase 17c: the Phase 17 starter without growth."""
+    return {**long_run_spec(), 'folder': 'full_growth_long_static', 'phase_name': 'phase17c',
+            'label': '014_full_growth_long_static', 'name': 'Experiment 018 Phase 17c (no growth)',
+            'id_prefix': 'exp014_long_static', 'note': LONG_RUN_STATIC_NOTE, 'search': NoGrowth,
+            'search_budget': {'selection': 'none: the starter is not grown'}}
+
+
+COMPARISON_EPOCHS = 30
+COMPARISON_NOTE = ('Phase 18: Monte Carlo 1 against Monte Carlo 2 on the Phase 17 settings without the deadline: '
+                   'every one of the 15 generations of 30 epochs (450 epochs) is followed by a search, with 10 '
+                   'scoring epochs on the CCS 10% simulation set, 60 s per candidate within 5-25 minutes per search '
+                   'and growth actions only.')
+
+
+def comparison_spec(algorithm):
+    """Phase 18: the Phase 17 run with 30 epochs per generation, no deadline and the given Monte Carlo version."""
+    version = {montecarlo_alg: 1, montecarlo_alg_2: 2}[algorithm]
+    return {**long_run_spec(), 'folder': f'mc_comparison_mc{version}', 'phase_name': f'phase18_mc{version}',
+            'label': f'014_mc_comparison_mc{version}', 'name': f'Experiment 018 Phase 18 (Monte Carlo {version})',
+            'id_prefix': f'exp014_mc{version}', 'note': COMPARISON_NOTE, 'epochs': COMPARISON_EPOCHS,
+            'algorithm': algorithm.__name__.rsplit('.', 1)[-1],
+            'search': LongRunMonteCarlo2(LONG_RUN_SECONDS_PER_CANDIDATE, GRID_MINIMUM_SECONDS,
+                                         LONG_RUN_MAXIMUM_SECONDS, None, score_last_epochs=2, algorithm=algorithm),
+            'search_budget': {'seconds_per_candidate': LONG_RUN_SECONDS_PER_CANDIDATE,
+                              'minimum_seconds': GRID_MINIMUM_SECONDS, 'maximum_seconds': LONG_RUN_MAXIMUM_SECONDS,
+                              'score_last_epochs': 2,
+                              'actions': 'growth only: no dropout, delete layer, delete neurons or block shrink'}}
+
+
 def run_full_growth(output, seeds, phase='full', spec=None):
     """Phases 5, 7 and 10: repeat Experiment 010's 10-generation recipe using Monte Carlo 2."""
     spec = spec or FULL_GROWTH_PHASES[phase]
@@ -304,9 +444,10 @@ def run_full_growth(output, seeds, phase='full', spec=None):
     digest = source_fingerprint()
     settings = full_growth_settings(spec)
     generations = spec.get('generations', 10)
+    epochs = spec.get('epochs', 20)
     metadata = {'source_sha256': digest, 'dataset': 'cifar10', 'generations': generations,
-                'epochs_per_generation': 20, 'scoring_epochs': spec['scoring_epochs'], 'settings': settings,
-                'algorithm': 'montecarlo_alg_2', 'rollout_weight_decay': project_config.MCTS_ROLLOUT_WEIGHT_DECAY,
+                'epochs_per_generation': epochs, 'scoring_epochs': spec['scoring_epochs'], 'settings': settings,
+                'algorithm': spec.get('algorithm', 'montecarlo_alg_2'), 'rollout_weight_decay': project_config.MCTS_ROLLOUT_WEIGHT_DECAY,
                 'reference': 'Experiment 010 Pass 2 10-generation recipe'}
     if spec['widen_conv']:
         metadata['widen_conv'] = True
@@ -324,6 +465,7 @@ def run_full_growth(output, seeds, phase='full', spec=None):
         write_source_snapshot(target / 'source_snapshot.zip', digest)
         write_json(manifest, metadata)
     previous, previous_sampler, previous_starter = exp010.montecarlo_alg, exp010.sample_loaders, exp010.initial_graph
+    previous_epochs, exp010.EPOCHS = exp010.EPOCHS, epochs
     exp010.montecarlo_alg = spec.get('search') or (WideningMonteCarlo2 if spec['widen_conv'] else montecarlo_alg_2)
     if 'simulation_set' in spec:
         exp010.sample_loaders = GRID_SIMULATION_SETS[spec['simulation_set']]().sample_loaders
@@ -342,6 +484,7 @@ def run_full_growth(output, seeds, phase='full', spec=None):
                 generate_report()
     finally:
         exp010.montecarlo_alg, exp010.sample_loaders, exp010.initial_graph = previous, previous_sampler, previous_starter
+        exp010.EPOCHS = previous_epochs
 
 
 DECISION_REPLAY_RUN = OUTPUT / 'full_growth_sim_fixes' / 'seed_2'
@@ -820,7 +963,7 @@ def main():
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--epochs', type=int, default=20)
     parser.add_argument('--phase', choices=('replay', 'scoring', 'montecarlo2', 'time',
-                                            *FULL_GROWTH_PHASES, 'full-grid', 'full-sim-fixes', 'decision-replay', 'full-widening', 'full-normalization', 'full-residual-stem',
+                                            *FULL_GROWTH_PHASES, 'full-grid', 'full-sim-fixes', 'decision-replay', 'full-widening', 'full-normalization', 'full-residual-stem', 'long-run', 'long-run-baselines', 'mc1', 'mc2',
                                             'scoring-calibration',
                                             *CHECK_PHASES),
                         default='replay')
@@ -841,6 +984,17 @@ def main():
         return
     if args.phase == 'full-widening':
         run_full_growth(args.output, args.seeds, spec=widening_spec())
+        return
+    if args.phase == 'long-run-baselines':
+        run_full_growth(args.output, args.seeds, spec=long_run_random_spec())
+        run_full_growth(args.output, args.seeds, spec=long_run_static_spec())
+        return
+    if args.phase in ('mc1', 'mc2'):
+        algorithm = montecarlo_alg if args.phase == 'mc1' else montecarlo_alg_2
+        run_full_growth(args.output, args.seeds, spec=comparison_spec(algorithm))
+        return
+    if args.phase == 'long-run':
+        run_full_growth(args.output, args.seeds, spec=long_run_spec())
         return
     if args.phase == 'full-residual-stem':
         run_full_growth(args.output, args.seeds, spec=residual_stem_spec())
