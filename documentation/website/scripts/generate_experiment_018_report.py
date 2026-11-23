@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 RUN = ROOT / 'experiments/output/train_cifar10/runs/exp014_action_replay/v1'
-REPORT = ROOT / 'documentation/website/content/experiments/experiment-018-action-replay.md'
+REPORT = ROOT / 'documentation/website/content/experiments/experiment-018-action-replay-notebook.md'
 CHART = ROOT / 'documentation/website/app/public/assets/experiments/018-action-replay-validation.png'
 SCORING_CHART = ROOT / 'documentation/website/app/public/assets/experiments/018-scoring-epochs.png'
 MCTS_CHART = ROOT / 'documentation/website/app/public/assets/experiments/018-montecarlo2-epochs.png'
@@ -1825,7 +1825,10 @@ def main():
     CHART.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(CHART, dpi=150)
     plt.close(fig)
-    lines = ['---', 'title: "Experiment 18: replaying the epoch-80 decision"', '---', '',
+    lines = ['---', 'title: "Experiment 018 lab notebook: every phase in detail"', '---', '',
+             'Full tables and notes for every phase. The short version with the main results is '
+             '[Experiment 018](experiment-018-action-replay.md).', '',
+             '## Phase 1: replaying the epoch-80 decision', '',
              'All arms start from the Experiment 17 generation-3 pre-decision checkpoint, after epoch 80. '
              'Each recorded action and an unchanged control is trained for 20 epochs with the same '
              'nominal seed, training recipe and saved learning-rate schedule. The primary comparison uses '
