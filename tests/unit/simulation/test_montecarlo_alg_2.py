@@ -194,7 +194,7 @@ def test_backprop_keeps_true_mean_values(monkeypatch):
 
 
 def test_chosen_row_matches_selected_action_when_board_sorts_rows(monkeypatch):
-    from experiments.train_cifar10_exp014_action_replay import Phase3Board
+    from experiments.train_cifar10_exp013_action_replay import Phase3Board
     from growingnn.core.config import RunningConfig
 
     class SortingBoard(Phase3Board):
@@ -226,7 +226,7 @@ def test_chosen_row_matches_selected_action_when_board_sorts_rows(monkeypatch):
 
 
 def test_search_skips_root_rollout_and_covers_each_root_action_once(monkeypatch):
-    from experiments.train_cifar10_exp014_action_replay import Phase3Board
+    from experiments.train_cifar10_exp013_action_replay import Phase3Board
     from growingnn.core.config import RunningConfig
 
     scored = []

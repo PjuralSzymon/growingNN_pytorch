@@ -24,10 +24,12 @@ def draw_torch_fx_graph(gm, output_file="fx_graph", fmt="svg"):
         )
     writer(path)
 
-def draw_filtered_fx_graph(gm, output_file="fx_graph", fmt="svg"):
+def draw_filtered_fx_graph(gm, output_file="fx_graph", fmt="svg", node_colors=None, rankdir="LR"):
+    """Draw call_module/call_function nodes; node_colors maps node names to a fill colour."""
+    node_colors = node_colors or {}
     kept_ops = {"call_module", "call_function"}
     dot = Digraph(name="FXGraph")
-    dot.attr(rankdir="LR")
+    dot.attr(rankdir=rankdir)
     dot.attr("node", shape="box", fontsize="10")
 
     kept_nodes = [n for n in gm.graph.nodes if n.op in kept_ops]
@@ -65,7 +67,11 @@ def draw_filtered_fx_graph(gm, output_file="fx_graph", fmt="svg"):
 
     # add only kept nodes
     for node in kept_nodes:
-        dot.node(node.name, short_label(node))
+        color = node_colors.get(node.name)
+        if color:
+            dot.node(node.name, short_label(node), style="filled", fillcolor=color)
+        else:
+            dot.node(node.name, short_label(node))
 
     # connect each kept node to the nearest previous kept nodes
     for node in kept_nodes:

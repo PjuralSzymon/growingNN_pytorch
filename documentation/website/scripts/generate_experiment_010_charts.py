@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -11,9 +12,18 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.ticker import MultipleLocator
 
 SITE = Path(__file__).resolve().parents[1]
-RUNS = SITE.parents[1] / "experiments" / "output" / "train_cifar10" / "runs" / "exp010_mcts_meta_g10_tiny"
+# The run folder can be passed as the first argument when the runs live in another checkout.
+RUNS = Path(sys.argv[1]) if len(sys.argv) > 1 else (
+    SITE.parents[1] / "experiments" / "output" / "train_cifar10" / "runs" / "exp010_mcts_meta_g10_tiny")
+PARAMETER_TITLES = {
+    "MCTS_UCB1_C": "C", "MCTS_UCB1_USE_SQRT": "square root", "MCTS_PROPAGATE_ROLLOUT_VALUE": "propagate",
+    "MCTS_ROLLOUT_DEPTH": "depth", "MCTS_ROLLOUT_EPOCHS": "rollout epochs", "MCTS_ROLLOUT_LR": "rollout LR",
+    "SIMULATION_MIN_ALGORITHM_ITERATION_RUNS": "min iterations", "simulation_time": "search time",
+    "simulation_set_percent": "simulation set %",
+}
 OUTPUT = SITE / "app" / "public" / "assets" / "experiments"
 DATASETS = ("cifar10",)
 COLORS = {"cifar10": "#2563eb"}
@@ -70,6 +80,21 @@ def _chart(pass_number: int, parameter: str, rows: list[dict[str, object]]) -> N
     plt.close(fig)
 
 
+def _value_label(folder_value: str) -> str:
+    """Folder names store numbers with 'p' for the decimal point, for example 10p0 or 0p28444."""
+    try:
+        return f"{float(folder_value.replace('p', '.')):.3g}"
+    except ValueError:
+        return folder_value
+
+
+def _value_order(label: str) -> tuple[int, float, str]:
+    try:
+        return (0, float(label), label)
+    except ValueError:
+        return (1, 0.0, label)
+
+
 def _training_history_chart(pass_number: int, parameter: str) -> None:
     """Plot train/validation histories from board metrics for the active sweep."""
     run_dirs = sorted((RUNS / f"pass_{pass_number}" / parameter).glob("value_*/*/seed_*"))
@@ -82,7 +107,7 @@ def _training_history_chart(pass_number: int, parameter: str) -> None:
         metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
         board = json.loads(board_path.read_text(encoding="utf-8"))
         records.append({
-            "candidate": run_dir.parent.parent.name.removeprefix("value_"),
+            "candidate": _value_label(run_dir.parent.parent.name.removeprefix("value_")),
             "dataset": board["dataset"],
             "seed": int(run_dir.name.removeprefix("seed_")),
             "status": board["status"],
@@ -90,7 +115,7 @@ def _training_history_chart(pass_number: int, parameter: str) -> None:
         })
     if not records:
         return
-    candidates = sorted({row["candidate"] for row in records})
+    candidates = sorted({row["candidate"] for row in records}, key=_value_order)
     present_datasets = [dataset for dataset in DATASETS if any(row["dataset"] == dataset for row in records)]
     panels = [(candidate, dataset) for candidate in candidates for dataset in present_datasets]
     columns = min(3, len(panels))
@@ -100,7 +125,7 @@ def _training_history_chart(pass_number: int, parameter: str) -> None:
         figsize=(4.2 * columns, 3.6 * rows),
         sharex=True, sharey=True, squeeze=False,
     )
-    seed_colors = {1: "#2563eb", 2: "#ea580c"}
+    seed_colors = {1: "C0", 2: "C1"}
     flat_axes = list(axes.flat)
     for panel_index, (candidate, dataset) in enumerate(panels):
         ax = flat_axes[panel_index]
@@ -108,7 +133,7 @@ def _training_history_chart(pass_number: int, parameter: str) -> None:
         for item in sorted(subset, key=lambda r: r["seed"]):
             epochs = item["epochs"]
             x = [int(r["globalEpoch"]) + 1 for r in epochs]
-            color = seed_colors.get(item["seed"], "#64748b")
+            color = seed_colors.get(item["seed"], "C7")
             ax.plot(x, [float(r["trainAcc"]) * 100 for r in epochs], color=color, lw=1.35,
                     label=f"seed {item['seed']} train")
             ax.plot(x, [float(r["valAcc"]) * 100 for r in epochs], color=color, lw=1.25,
@@ -117,12 +142,13 @@ def _training_history_chart(pass_number: int, parameter: str) -> None:
             n_epochs = max(len(item["epochs"]) for item in subset)
             for boundary in range(20, 201, 20):
                 if boundary < n_epochs:
-                    ax.axvline(boundary, color="#94a3b8", lw=0.65, ls=":", zorder=0)
-        ax.set_title(f"{dataset.upper()} · C = {candidate}")
+                    ax.axvline(boundary + 0.5, color="gray", alpha=0.5, lw=0.8, zorder=0)
+            ax.xaxis.set_major_locator(MultipleLocator(20))
+        ax.set_title(f"{dataset.upper()} · {PARAMETER_TITLES.get(parameter, parameter)} = {candidate}")
         ax.set_xlabel("Global epoch")
         ax.set_ylabel("Accuracy (%)")
         ax.set_ylim(0, 100)
-        ax.grid(alpha=0.22)
+        ax.grid(alpha=0.22, axis="y")
         ax.legend(fontsize=7, ncol=2, loc="lower right", framealpha=0.9)
     for ax in flat_axes[len(panels):]:
         ax.axis("off")
